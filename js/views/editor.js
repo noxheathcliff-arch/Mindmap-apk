@@ -49,6 +49,8 @@
       paneFor: undefined,
       noteTab: null,
       fresh: new Set(),      // nœuds nés (animation)
+      origin: new Map(),     // id → parent d'où le nœud émerge (clonage)
+      retract: new Map(),    // id → parent dans lequel le nœud se range (repli)
       lastTap: null,
       destroyed: false,
     };
@@ -70,7 +72,8 @@
     const labelsLayer = h('div.edge-labels');
     const world = h('div.world', svg, labelsLayer, nodesLayer);
     const marquee = h('div.marquee', { hidden: true });
-    const canvas = h('div.canvas', { tabindex: '0', role: 'application', 'aria-label': 'Carte mentale — ' + map.title }, world, marquee);
+    const grid = h('div.grid', { 'aria-hidden': 'true' });
+    const canvas = h('div.canvas', { tabindex: '0', role: 'application', 'aria-label': 'Carte mentale — ' + map.title, dataset: { hero: 'map:' + map.id + ':thumb' } }, grid, world, marquee);
 
     const ctxBar = h('div.ctx-bar', { role: 'toolbar', 'aria-label': 'Actions du nœud' });
     const banner = h('div.ed-banner', { hidden: true, role: 'status' });
@@ -87,7 +90,7 @@
 
     const bottomBar = h('div.bottombar', { role: 'toolbar' });
     const saveState = h('span.save-state', { 'aria-live': 'polite' }, R.icon('check', 16), h('span', 'Enregistré'));
-    const titleBtn = h('button.ed-title', { type: 'button', 'data-tip': 'Renommer la carte', onclick: () => R.actions.renameMap(map) });
+    const titleBtn = h('button.ed-title', { type: 'button', 'data-tip': 'Renommer la carte', onclick: () => R.actions.renameMap(map), dataset: { hero: 'map:' + map.id + ':title' } });
     const crumbCourse = h('a.crumb', { href: '#/cours/' + map.courseId });
     const undoBtn = ui.iconBtn('undo', { title: 'Annuler', onClick: () => undo() });
     const redoBtn = ui.iconBtn('redo', { title: 'Rétablir', onClick: () => redo() });
@@ -103,6 +106,7 @@
       b.addEventListener('click', () => setMode(mode));
       return b;
     }
+    ui.segIndicator(modeSeg, 'editor-mode');
 
     const topbar = h('header.topbar.ed-topbar',
       ui.iconBtn('back', { title: 'Retour au cours', onClick: () => { flushEdit(); R.app.go('#/cours/' + map.courseId); } }),
@@ -158,12 +162,19 @@
     /* Vue / caméra                                                       */
     /* ------------------------------------------------------------------ */
     const saveViewport = U.debounce(() => { map.viewport = { ...st.view }; S.save(); }, 400);
+    /* will-change seulement pendant le mouvement : au repos le navigateur re-rastérise
+       le texte à la bonne échelle (sinon flou après un zoom) */
+    const stillSoon = U.debounce(() => canvas.classList.remove('moving'), 160);
+    let lastGrid = 0;
     function applyView() {
       const { x, y, k } = st.view;
       world.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
       const g = 24 * k;
-      canvas.style.backgroundSize = `${g}px ${g}px`;
-      canvas.style.backgroundPosition = `${x}px ${y}px`;
+      if (g !== lastGrid) { grid.style.backgroundSize = `${g}px ${g}px`; lastGrid = g; }
+      // la grille ne bouge que modulo un pas : translation composite, pas de repeinte
+      grid.style.transform = `translate(${(((x + 48) % g) + g) % g}px, ${(((y + 48) % g) + g) % g}px)`;
+      canvas.classList.add('moving');
+      stillSoon();
       canvas.classList.toggle('far', k < 0.45);
       zoomLabel.textContent = Math.round(k * 100) + ' %';
       positionCtx();
@@ -180,11 +191,18 @@
       applyView();
     }
     let camStop = null;
-    function animateView(target, duration = 450) {
+    /** Caméra : déplacement visible du début à la fin → ease-in-out ;
+        durée proportionnée à la distance (racine), interruptible. */
+    function animateView(target, duration) {
       if (camStop) camStop();
       const from = { ...st.view };
+      if (duration == null) {
+        const r = canvas.getBoundingClientRect();
+        const dist = Math.hypot(target.x - from.x, target.y - from.y) + Math.abs(Math.log(target.k / from.k)) * Math.min(r.width, r.height);
+        duration = motion.durationFor(dist, { min: 200, max: 480 });
+      }
       camStop = motion.tween({
-        duration, ease: motion.ease.emphDecel,
+        duration, ease: motion.ease.inOut,
         onUpdate: (p, e) => {
           const t = e(p);
           st.view.x = from.x + (target.x - from.x) * t;
@@ -200,7 +218,7 @@
       const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
       const wx = (cx - st.view.x) / st.view.k, wy = (cy - st.view.y) / st.view.k;
       k = U.clamp(k, MIN_K, MAX_K);
-      animateView({ k, x: cx - wx * k, y: cy - wy * k }, 300);
+      animateView({ k, x: cx - wx * k, y: cy - wy * k }, 240);
     }
     /** Zone du canvas non masquée par le panneau / la feuille (coordonnées canvas) */
     function visibleRect() {
@@ -256,7 +274,7 @@
       const r = visibleRect();
       const k = minK ? Math.max(st.view.k, minK) : st.view.k;
       const target = { k, x: r.x + r.w / 2 - (n.x + s.w / 2) * k, y: r.y + r.h / 2 - (n.y + s.h / 2) * k };
-      if (animate) animateView(target, 400); else { Object.assign(st.view, target); applyView(); }
+      if (animate) animateView(target); else { Object.assign(st.view, target); applyView(); }
     }
     function ensureVisible(id) {
       const n = S.node(map, id);
@@ -330,6 +348,7 @@
       const childCount = {};
       for (const e of map.edges) if (e.kind === 'tree') childCount[e.from] = (childCount[e.from] || 0) + 1;
       const alive = new Set();
+      const emerging = [];
       for (const n of map.nodes) {
         if (hidden.has(n.id)) continue;
         alive.add(n.id);
@@ -339,31 +358,82 @@
           el = nodeEl(n);
           st.els.set(n.id, el);
           nodesLayer.appendChild(el);
-          if (!st.fresh.has(n.id) && st.ready) { el.classList.add('born'); setTimeout(() => el.classList.remove('born'), 500); }
+          if (st.ready) {
+            const from = st.origin.get(n.id);
+            if (from && S.node(map, from)) emerging.push({ n, el, from });
+            else { el.classList.add('born'); setTimeout(() => el.classList.remove('born'), 300); }
+          }
         }
         paintNode(el, n, {
           childCount: childCount[n.id] || 0,
           descCount: n.collapsed ? S.descendants(map, n.id).length : 0,
           isRoot: !parents.has(n.id),
         });
-        if (st.fresh.has(n.id)) { el.classList.add('born'); setTimeout(() => el.classList.remove('born'), 500); }
       }
       st.fresh.clear();
+      const leaving = [];
       for (const [id, el] of st.els) {
         if (alive.has(id)) continue;
         st.els.delete(id);
         st.sizes.delete(id);
-        el.classList.add('dying');
         el.classList.remove('selected', 'primary');
-        setTimeout(() => el.remove(), U.reducedMotion() ? 0 : 240);
+        const to = st.retract.get(id);
+        if (to && alive.has(to) && !motion.reduced()) leaving.push({ id, el, to });
+        else {
+          el.classList.add('dying');
+          setTimeout(() => el.remove(), motion.reduced() ? 0 : 170);
+        }
       }
       measure();
+      playEmerge(emerging);
+      playRetract(leaving);
       renderEdges(hidden);
       positionCtx();
       renderBottomBar();
       updateBanner();
       canvas.classList.toggle('is-masked', st.masked);
       canvas.classList.toggle('is-linking', !!st.linking);
+    }
+
+    /* Clonage (UX in Motion) : un nouvel élément naît de son parent — il part de la
+       poignée du parent et rejoint sa place. 240 ms ease-out, cascade de 20 ms. */
+    function anchorOf(id) {
+      const p = S.node(map, id);
+      const s = size(p);
+      return { x: p.x + s.w, y: p.y + s.h / 2 };
+    }
+    function playEmerge(list) {
+      if (!list.length) return;
+      list.sort((a, b) => a.n.y - b.n.y);
+      list.forEach(({ n, el, from }, i) => {
+        st.origin.delete(n.id);
+        if (motion.reduced() || !el.animate) return;
+        const a = anchorOf(from);
+        const s = size(n);
+        const dx = a.x - (n.x + s.w / 2), dy = a.y - (n.y + s.h / 2);
+        el.animate([
+          { translate: `${dx}px ${dy}px`, scale: 0.6, opacity: 0 },
+          { translate: '0px 0px', scale: 1, opacity: 1 },
+        ], { duration: motion.dur.md, delay: Math.min(i, 8) * 20, easing: motion.css.out, fill: 'backwards' });
+      });
+    }
+    /* Repli : les enfants rentrent dans leur parent (sortie, ease-in, 200 ms) */
+    function playRetract(list) {
+      if (!list.length) return;
+      list.forEach(({ id, el, to }, i) => {
+        st.retract.delete(id);
+        const n = S.node(map, id);
+        const a = anchorOf(to);
+        const w = el.offsetWidth, hh = el.offsetHeight;
+        const nx = n ? n.x : 0, ny = n ? n.y : 0;
+        const dx = a.x - (nx + w / 2), dy = a.y - (ny + hh / 2);
+        el.style.pointerEvents = 'none';
+        const anim = el.animate([
+          { translate: '0px 0px', scale: 1, opacity: 1 },
+          { translate: `${dx}px ${dy}px`, scale: 0.6, opacity: 0 },
+        ], { duration: 200, delay: Math.min(i, 6) * 12, easing: motion.css.in, fill: 'forwards' });
+        anim.finished.then(() => el.remove(), () => el.remove());
+      });
     }
 
     function measure() {
@@ -420,11 +490,12 @@
           path.setAttribute('class', 'edge');
           hit.setAttribute('class', 'edge-hit');
           hit.dataset.edge = e.id;
-          g.append(path, hit);
+          // zone de clic avant le trait visible : .edge-hit:hover + .edge (survol)
+          g.append(hit, path);
           edgesG.appendChild(g);
           const label = h('button.edge-label', { type: 'button', tabindex: '-1', dataset: { edge: e.id } });
           labelsLayer.appendChild(label);
-          rec = { g, path, hit, label, born: st.fresh.has(e.id) || ed._newEdges?.has(e.id) };
+          rec = { g, path, hit, label, born: ed._newEdges?.has(e.id) || (st.ready && st.origin.has(e.to)) };
           st.edgeEls.set(e.id, rec);
         }
         const { p1, p2, d1, d2 } = anchors(a, size(a), b, size(b));
@@ -438,6 +509,10 @@
         if (e.kind === 'link') rec.path.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
         else rec.path.removeAttribute('marker-end');
         const lbl = edgeLabel(e);
+        if (rec.label.textContent !== lbl && lbl && rec.lblReady && !motion.reduced()) {
+          rec.label.classList.remove('pop'); void rec.label.offsetWidth; rec.label.classList.add('pop');
+        }
+        rec.lblReady = true;
         rec.label.textContent = lbl;
         rec.label.hidden = !lbl;
         rec.label.classList.toggle('sel', sel);
@@ -452,9 +527,9 @@
               rec.path.style.strokeDasharray = len;
               rec.path.style.strokeDashoffset = len;
               rec.path.getBoundingClientRect();
-              rec.path.style.transition = 'stroke-dashoffset var(--dur-long2) var(--ease-emph-decel)';
+              rec.path.style.transition = 'stroke-dashoffset 240ms var(--ease-out)';
               rec.path.style.strokeDashoffset = '0';
-              setTimeout(() => { rec.path.style.strokeDasharray = ''; rec.path.style.strokeDashoffset = ''; rec.path.style.transition = ''; }, 600);
+              setTimeout(() => { rec.path.style.strokeDasharray = ''; rec.path.style.strokeDashoffset = ''; rec.path.style.transition = ''; }, 300);
             } else {
               rec.g.classList.add('fade-in');
             }
@@ -512,7 +587,7 @@
         map.nodes.push(n);
         const e = { id: U.uid('e'), from: p.id, to: n.id, kind: 'tree', label: '' };
         map.edges.push(e);
-        st.fresh.add(n.id);
+        st.origin.set(n.id, p.id);
         ed._newEdges.add(e.id);
         nudgeOverlaps(n);
       }, { pane: false });
@@ -577,7 +652,7 @@
       const all = new Set();
       for (const id of ids) { all.add(id); for (const d of S.descendants(map, id)) all.add(d); }
       const prevParent = S.parentOf(map, ids[0]);
-      // anticipation : le nœud se gonfle avant de disparaître (CSS .dying)
+      // sortie courte (160 ms ease-in) : pas d'anticipation sur une action fréquente
       mutate(() => {
         map.nodes = map.nodes.filter((n) => !all.has(n.id));
         map.edges = map.edges.filter((e) => !all.has(e.from) && !all.has(e.to));
@@ -599,6 +674,9 @@
       const tree = S.canTree(map, from, to);
       const e = { id: U.uid('e'), from, to, kind: tree ? 'tree' : 'link', label: '' };
       mutate(() => { map.edges.push(e); ed._newEdges.add(e.id); });
+      const tel = st.els.get(to);
+      if (tel && !motion.reduced()) { tel.classList.remove('linked'); void tel.offsetWidth; tel.classList.add('linked'); setTimeout(() => tel.classList.remove('linked'), 300); }
+      motion.haptic(10);
       ui.snack(tree ? 'Rattaché comme sous-élément' : 'Renvoi créé', { action: 'Modifier', onAction: () => selectEdge(e.id) });
     }
     function setType(ids, type) {
@@ -610,7 +688,15 @@
     function toggleCollapse(id) {
       const n = S.node(map, id);
       if (!n || !S.childrenOf(map, id).length) return;
-      mutate(() => { n.collapsed = !n.collapsed; });
+      const visibleBefore = new Set(st.els.keys());
+      if (!n.collapsed) for (const d of S.descendants(map, id)) { if (visibleBefore.has(d)) st.retract.set(d, id); }
+      mutate(() => {
+        n.collapsed = !n.collapsed;
+        if (!n.collapsed) {
+          const hidden = S.hiddenSet(map);
+          for (const d of S.descendants(map, id)) if (!hidden.has(d)) st.origin.set(d, id);
+        }
+      });
     }
     function duplicateBranch(id) {
       const ids = [id, ...S.descendants(map, id)];
@@ -622,7 +708,7 @@
           const n = S.node(map, i);
           const c = JSON.parse(JSON.stringify(n));
           c.id = U.uid('n'); idMap[i] = c.id; c.y += dy; c.review = { box: 0, due: 0, last: 0, rating: null };
-          map.nodes.push(c); st.fresh.add(c.id);
+          map.nodes.push(c); st.origin.set(c.id, i);
         }
         for (const e of map.edges.filter((x) => ids.includes(x.from) && ids.includes(x.to))) {
           map.edges.push({ ...e, id: U.uid('e'), from: idMap[e.from], to: idMap[e.to] });
@@ -646,15 +732,22 @@
       if (!moved) { fit(); return; }
       st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
       if (tidyStop) tidyStop();
+      /* Overlapping action : chaque niveau de profondeur démarre 24 ms après son
+         parent (plafond 120 ms). Arcs : x et y suivent des courbes différentes. */
+      const depth = {};
+      for (const n of map.nodes) depth[n.id] = Math.min(5, S.ancestors(map, n.id).length);
+      const D = 440, LAG = 24, TOTAL = D + 5 * LAG;
       tidyStop = motion.tween({
-        duration: 600, ease: (p) => p,
+        duration: TOTAL, ease: (p) => p,
         onUpdate: (p) => {
-          const ex = motion.ease.emphDecel(p), ey = motion.ease.standard(p);
+          const t = p * TOTAL;
           for (const n of map.nodes) {
-            const t = target[n.id];
-            if (!t) continue;
-            n.x = from[n.id].x + (t.x - from[n.id].x) * ex;
-            n.y = from[n.id].y + (t.y - from[n.id].y) * ey;
+            const tg = target[n.id];
+            if (!tg) continue;
+            const q = U.clamp((t - depth[n.id] * LAG) / D, 0, 1);
+            const ex = motion.ease.out(q), ey = motion.ease.inOut(q);
+            n.x = from[n.id].x + (tg.x - from[n.id].x) * ex;
+            n.y = from[n.id].y + (tg.y - from[n.id].y) * ey;
             const el = st.els.get(n.id);
             if (el) el.style.transform = `translate(${n.x}px, ${n.y}px)`;
           }
@@ -1046,6 +1139,8 @@
     /* Gestes (souris, tactile, stylet)                                   */
     /* ------------------------------------------------------------------ */
     const pointers = new Map();
+    const panVel = motion.velocity();
+    let flingStop = null;
     let gesture = null;
     let longPress = null;
 
@@ -1065,8 +1160,13 @@
       if (e.button === 2) return;
       if (e.button === 1) e.preventDefault();
       canvas.focus({ preventScroll: true });
+      canvas.classList.remove('kbd');
+      // tout geste interrompt la caméra, l'inertie et « Ranger » (interruptible, sans saut)
       if (camStop) { camStop(); camStop = null; }
+      if (flingStop) { flingStop(); flingStop = null; }
+      if (tidyStop) { tidyStop(); tidyStop = null; S.touchMap(map, 'edit'); render(); }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      panVel.reset(); panVel.add(e.clientX, e.clientY);
       try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
 
       if (pointers.size === 2) { startPinch(); return; }
@@ -1131,7 +1231,7 @@
 
     function onMove(e) {
       if (!pointers.has(e.pointerId)) {
-        // survol : poignée de liaison & aperçu
+        if (e.pointerType === 'mouse') canvas.classList.remove('kbd');
         return;
       }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1147,8 +1247,10 @@
       if (!gesture.moved) return;
 
       if (gesture.type === 'pan') {
+        // suivi 1:1 du doigt, aucun easing pendant le geste
         st.view.x = gesture.view.x + dx;
         st.view.y = gesture.view.y + dy;
+        panVel.add(e.clientX, e.clientY);
         applyView();
       } else if (gesture.type === 'node') {
         const k = st.view.k;
@@ -1171,6 +1273,7 @@
         tempEdge.setAttribute('d', curve(p1, d1, [p.x, p.y], [-d1[0], 0]).d);
         const over = hitNode(document.elementFromPoint(e.clientX, e.clientY) || canvas);
         for (const [id, el] of st.els) el.classList.toggle('drop-target', id === over && id !== gesture.from);
+        if (over && over !== gesture.from && over !== gesture.over) motion.haptic(6); // seuil franchi
         gesture.over = over;
         autoPan(e);
       } else if (gesture.type === 'marquee') {
@@ -1249,9 +1352,19 @@
 
       if (g.type === 'pan') {
         if (!g.moved) onTapBackground(e);
+        else {
+          // conservation du momentum : la carte continue sur sa lancée puis ralentit
+          const v = panVel.get();
+          flingStop = motion.decay({
+            velocity: v, rate: 0.994,
+            onUpdate: (dx, dy) => { st.view.x += dx; st.view.y += dy; applyView(); },
+            onDone: () => { flingStop = null; },
+          });
+        }
       } else if (g.type === 'node') {
         if (g.moved) {
-          for (const i of g.moving) { const el = st.els.get(i); if (el) { el.classList.remove('dragging'); el.classList.add('settle'); setTimeout(() => el.classList.remove('settle'), 300); } }
+          // dépôt : le nœud redescend avec un ressort amorti (transition CSS --ease-settle)
+          for (const i of g.moving) { const el = st.els.get(i); if (el) el.classList.remove('dragging'); }
           // dépôt sur un autre nœud ? (Maj) → rattacher
           for (const id of g.moving) { const n = S.node(map, id); n.x = Math.round(n.x); n.y = Math.round(n.y); }
           S.touchMap(map, 'edit');
@@ -1321,6 +1434,7 @@
     function onWheel(e) {
       e.preventDefault();
       if (camStop) { camStop(); camStop = null; }
+      if (flingStop) { flingStop(); flingStop = null; }
       const isMouseWheel = e.deltaMode === 1 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 50 && Number.isInteger(e.deltaY) && !e.shiftKey);
       if (e.ctrlKey || e.metaKey || isMouseWheel) {
         const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
@@ -1386,6 +1500,7 @@
       if (U.isTyping()) return;
       const mod = e.ctrlKey || e.metaKey;
       const k = e.key;
+      if (k.startsWith('Arrow') || k === 'Tab' || k === 'Enter') canvas.classList.add('kbd');
       if (mod && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
       if (mod && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if (mod && k.toLowerCase() === 'a' && st.mode === 'map') { e.preventDefault(); st.sel = new Set([...st.els.keys()]); st.primary = [...st.sel][0] || null; render(); renderPane(); return; }
@@ -1485,9 +1600,19 @@
     }
     function openPane(focusNote) {
       const m = paneMode();
+      const wasShown = isPaneShown();
       if (m === 'docked') { S.data.settings.paneOpen = true; S.save(); }
       else { st.paneOpen = true; if (m === 'bottom' && st.sheet === 'closed') st.sheet = 'half'; }
+      if (m === 'docked' && closeAnim) {
+        // interruption : la fermeture repart en arrière depuis sa position actuelle (aucun saut)
+        closeAnim.reverse();
+        closeAnim.reversing = true;
+      }
       applyPaneState();
+      if (m === 'docked' && !wasShown && !closeAnim && !motion.reduced()) {
+        // la colonne s'ouvre d'un coup (layout), son contenu glisse : 240 ms ease-out
+        paneInner.animate([{ translate: '24px 0', opacity: 0 }, { translate: '0 0', opacity: 1 }], { duration: motion.dur.md, easing: motion.css.out });
+      }
       renderPane(true);
       const n = primaryNode();
       if (n) setTimeout(() => ensureVisible(n.id), 320);
@@ -1497,26 +1622,44 @@
         setTimeout(() => { const ta = pane.querySelector('.note-input'); if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); } }, m === 'docked' ? 50 : 360);
       }
     }
+    let closeAnim = null;
     function closePane() {
       const m = paneMode();
-      if (m === 'docked') { S.data.settings.paneOpen = false; S.save(); }
-      else { st.paneOpen = false; st.sheet = 'closed'; }
       if (document.activeElement && pane.contains(document.activeElement)) canvas.focus({ preventScroll: true });
+      if (m === 'docked') {
+        const apply = () => { S.data.settings.paneOpen = false; S.save(); applyPaneState(); };
+        if (closeAnim) { if (closeAnim.reversing) { closeAnim.reverse(); closeAnim.reversing = false; } return; }
+        if (motion.reduced() || !isPaneShown()) { apply(); return; }
+        // sortie : 160 ms ease-in, puis la colonne se referme
+        const a = paneInner.animate([{ translate: '0 0', opacity: 1 }, { translate: '32px 0', opacity: 0 }], { duration: motion.dur.sm, easing: motion.css.in });
+        closeAnim = a;
+        a.onfinish = () => { const reopened = a.reversing; closeAnim = null; if (!reopened) apply(); };
+        return;
+      }
+      st.paneOpen = false; st.sheet = 'closed';
       applyPaneState();
     }
     function closePaneIfOverlay() { if (paneMode() !== 'docked' && st.paneOpen) closePane(); }
-    function togglePane() { isPaneShown() ? closePane() : openPane(false); }
+    function togglePane() {
+      if (closeAnim) { closeAnim.reversing ? closePane() : openPane(false); return; }
+      isPaneShown() ? closePane() : openPane(false);
+    }
 
     function renderPane(force) {
       const n = primaryNode();
       const key = n ? n.id : st.selEdge ? 'e:' + st.selEdge : st.sel.size > 1 ? 'multi' : null;
       if (!force && key === st.paneFor) return;
-      if (st.paneFor !== key) st.noteTab = null;
+      const changed = st.paneFor !== key;
+      if (changed) st.noteTab = null;
       st.paneFor = key;
       const active = document.activeElement;
       if (active && pane.contains(active) && !force) return;
+      const scroll = paneInner.scrollTop;
       U.clear(paneInner);
-      paneInner.classList.remove('swap'); void paneInner.offsetWidth; paneInner.classList.add('swap');
+      // la cascade ne se joue qu'en changeant de nœud ; une mise à jour sur place reste immobile
+      paneInner.classList.remove('swap');
+      if (changed) { void paneInner.offsetWidth; paneInner.classList.add('swap'); }
+      else requestAnimationFrame(() => { paneInner.scrollTop = scroll; });
       if (!n) { paneInner.appendChild(paneSummary()); return; }
       paneInner.appendChild(paneNode(n));
     }
@@ -1584,6 +1727,7 @@
           b.addEventListener('click', () => setLogic(n.id, v));
           return b;
         }));
+      ui.segIndicator(logicSeg, 'logic:' + n.id);
 
       // note
       const hasNote = !!n.note.trim();
@@ -1624,14 +1768,30 @@
         fmtBtn('link', 'Lien vers un nœud [[…]]', () => wrapSel(noteIn, '[[', ']]')));
       const noteTabs = h('div.segmented.seg-sm', { role: 'tablist' },
         noteTabBtn('write', 'Écrire', 'edit'), noteTabBtn('read', 'Aperçu', 'eye'));
+      ui.segIndicator(noteTabs, 'note-tab');
+      const writeBody = h('div.note-write', fmt, noteIn);
+      /* Écrire ↔ Aperçu : bascule sur place (fondu 160 ms), l'indicateur glisse */
+      const switchTab = (v, focus) => {
+        if (st.noteTab === v && noteBody.isConnected) return;
+        st.noteTab = v;
+        U.$$('.seg-btn', noteTabs).forEach((x) => x.setAttribute('aria-selected', String(x.dataset.tab === v)));
+        noteTabs._place();
+        if (v === 'read') paintPreview();
+        const next = v === 'read' ? preview : writeBody;
+        noteBody.replaceWith(next);
+        noteBody = next;
+        next.classList.remove('note-swap'); void next.offsetWidth; next.classList.add('note-swap');
+        if (focus && v === 'write') noteIn.focus();
+      };
       function noteTabBtn(v, l, ic) {
-        const b = h('button.seg-btn', { type: 'button', role: 'tab', 'aria-selected': String(tab === v) }, R.icon(ic, 16), h('span', l));
-        b.addEventListener('click', () => { st.noteTab = v; renderPane(true); if (v === 'write') setTimeout(() => noteIn.focus(), 30); });
+        const b = h('button.seg-btn', { type: 'button', role: 'tab', 'aria-selected': String(tab === v), dataset: { tab: v } }, R.icon(ic, 16), h('span', l));
+        b.addEventListener('click', () => switchTab(v, true));
         return b;
       }
       let noteBody;
-      if (tab === 'read') { paintPreview(); noteBody = preview; preview.addEventListener('dblclick', () => { st.noteTab = 'write'; renderPane(true); setTimeout(() => noteIn.focus(), 30); }); }
-      else noteBody = h('div.note-write', fmt, noteIn);
+      preview.addEventListener('dblclick', () => switchTab('write', true));
+      if (tab === 'read') { paintPreview(); noteBody = preview; }
+      else noteBody = writeBody;
 
       // décomposition
       const addIn = h('input.decomp-input', { type: 'text', placeholder: kids.length ? 'Ajouter un élément…' : 'Décomposer : ajouter un élément…', 'aria-label': 'Ajouter un élément rattaché' });
@@ -1763,34 +1923,65 @@
     }
 
     /* Bottom sheet : glisser la poignée (mobile) */
+    /* Bottom sheet : manipulation directe (Apple Fluid Interfaces)
+       — suivi 1:1, résistance élastique au-delà du haut (rubber band),
+       — au relâchement, projection de la position avec la vitesse du doigt,
+       — ressort vers le cran le plus proche (plein / mi-hauteur / fermé). */
     (function sheetDrag() {
-      let startY = 0, startT = 0, h0 = 0, dragging = false;
+      let startY = 0, y0 = 0, y = 0, dragging = false, moved = false, springStop = null;
+      const vt = motion.velocity();
+      const snaps = () => {
+        const H = pane.offsetHeight;
+        return { full: 0, half: Math.max(0, H - window.innerHeight * 0.52), closed: H };
+      };
+      const currentY = () => pane.getBoundingClientRect().top - (window.innerHeight - pane.offsetHeight);
+      const rubber = (over) => over * 0.55 / (1 + over / 300);
       const onDownH = (e) => {
         if (paneMode() !== 'bottom') return;
-        dragging = true;
-        startY = e.clientY; startT = Date.now();
-        h0 = pane.getBoundingClientRect().top;
+        if (springStop) { springStop(); springStop = null; }
+        dragging = true; moved = false;
+        startY = e.clientY;
+        y0 = y = currentY();
+        vt.reset(); vt.add(0, e.clientY);
         pane.classList.add('no-anim');
+        pane.style.transform = `translateY(${y}px)`;
         paneHandle.setPointerCapture(e.pointerId);
       };
       const onMoveH = (e) => {
         if (!dragging) return;
-        const dy = Math.max(-h0 + 40, e.clientY - startY);
-        pane.style.transform = `translateY(calc(var(--sheet-y) + ${dy}px))`;
+        const raw = y0 + e.clientY - startY;
+        if (Math.abs(e.clientY - startY) > 4) moved = true;
+        y = raw < 0 ? -rubber(-raw) : raw;
+        vt.add(0, e.clientY);
+        pane.style.transform = `translateY(${y}px)`;
       };
-      const onUpH = (e) => {
+      const onUpH = () => {
         if (!dragging) return;
         dragging = false;
-        pane.classList.remove('no-anim');
-        const dy = e.clientY - startY;
-        const v = dy / Math.max(1, Date.now() - startT);
-        pane.style.transform = '';
-        if (Math.abs(dy) < 6) { st.sheet = st.sheet === 'full' ? 'half' : 'full'; applyPaneState(); return; }
-        if (dy > 0 || v > 0.6) {
-          if (st.sheet === 'full' && dy < window.innerHeight * 0.35 && v < 1) st.sheet = 'half';
-          else { closePane(); return; }
-        } else st.sheet = 'full';
-        applyPaneState();
+        if (!moved) {
+          // simple toucher : bascule mi-hauteur ↔ plein écran (transition CSS)
+          pane.classList.remove('no-anim');
+          pane.style.transform = '';
+          st.sheet = st.sheet === 'full' ? 'half' : 'full';
+          applyPaneState();
+          return;
+        }
+        const v = vt.get().y; // px/ms
+        const S2 = snaps();
+        const projected = y + v * 99; // decelerationRate 0.99
+        let target = 'full', best = Infinity;
+        for (const [k, val] of Object.entries(S2)) { const d = Math.abs(projected - val); if (d < best) { best = d; target = k; } }
+        springStop = motion.spring({
+          from: y, to: S2[target], velocity: v, ...motion.springs.drawer,
+          onUpdate: (val) => { pane.style.transform = `translateY(${val}px)`; },
+          onDone: () => {
+            springStop = null;
+            if (target === 'closed') { st.paneOpen = false; st.sheet = 'closed'; if (pane.contains(document.activeElement)) canvas.focus({ preventScroll: true }); }
+            else st.sheet = target;
+            applyPaneState(false);
+            pane.classList.remove('no-anim');
+          },
+        });
       };
       paneHandle.addEventListener('pointerdown', onDownH);
       paneHandle.addEventListener('pointermove', onMoveH);
@@ -1810,14 +2001,20 @@
       R.app.route = { ...R.app.route, mode };
       page.dataset.mode = mode;
       for (const b of U.$$('.mode-seg .seg-btn', page)) b.setAttribute('aria-selected', String(b.dataset.mode === mode));
-      planHost.hidden = mode !== 'plan';
+      if (modeSeg._place) modeSeg._place();
+      if (mode === 'plan') planHost.hidden = false;
       if (mode === 'plan') {
         R.outline.render(planHost, map, {
           onOpen: (id) => { setMode('map'); select(id); setTimeout(() => { centerOn(id); openPane(false); }, 60); },
         });
         planHost.scrollTop = 0;
       } else {
-        U.clear(planHost);
+        // retour à la carte : le plan sort (120 ms ease-in) au lieu de disparaître d'un coup
+        const done = () => { if (st.mode !== 'plan') { planHost.hidden = true; U.clear(planHost); } };
+        if (!planHost.hidden && !replace && !motion.reduced()) {
+          planHost.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(8px)' }], { duration: 120, easing: motion.css.in })
+            .finished.then(done, done);
+        } else done();
         canvas.focus({ preventScroll: true });
       }
       applyPaneState();
@@ -1851,14 +2048,21 @@
     };
     updateHeader();
 
+    let pendingTimer = null;
     const offStore = S.on((type) => {
       if (type === 'saved') {
+        // un indicateur d'attente n'apparaît pas pour une sauvegarde < 400 ms (pas de clignotement)
+        clearTimeout(pendingTimer);
         saveState.classList.toggle('error', !!S.saveError);
         saveState.querySelector('span:last-child').textContent = S.saveError ? 'Non enregistré' : 'Enregistré';
         saveState.classList.remove('pending');
         return;
       }
-      if (type === 'edit') { saveState.classList.add('pending'); saveState.querySelector('span:last-child').textContent = 'Enregistrement…'; return; }
+      if (type === 'edit') {
+        clearTimeout(pendingTimer);
+        pendingTimer = setTimeout(() => { saveState.classList.add('pending'); saveState.querySelector('span:last-child').textContent = 'Enregistrement…'; }, 400);
+        return;
+      }
       if (type === 'change' || type === 'import') {
         if (!S.map(map.id)) { st.destroyed = true; return; }
         updateHeader();
@@ -1873,8 +2077,9 @@
     render();
     st.ready = true;
     renderPane(true);
-    // la carte doit être mesurée avant de cadrer
-    requestAnimationFrame(() => {
+    // mesure et cadrage synchrones : la transition de page (View Transitions)
+    // capture ainsi la carte déjà cadrée, sans saut à la frame suivante
+    (() => {
       if (st.destroyed) return;
       if (!U.$('.dialog') && st.mode === 'map') canvas.focus({ preventScroll: true });
       measure();
@@ -1900,7 +2105,7 @@
       }
       if (route.q.print && st.mode === 'plan') setTimeout(() => window.print(), 300);
       if (route.q.n || route.q.new || route.q.print) history.replaceState(null, '', '#/carte/' + map.id + (st.mode === 'plan' ? '/plan' : ''));
-    });
+    })();
     setMode(st.mode, true);
     updateHistoryBtns();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (st.destroyed) return; for (const el of st.els.values()) el.dataset.sized = ''; measure(); renderEdges(); positionCtx(); });
@@ -1920,6 +2125,7 @@
       window.removeEventListener('resize', onResize);
       if (camStop) camStop();
       if (tidyStop) tidyStop();
+      if (flingStop) flingStop();
     };
   }
 })(window.R);

@@ -33,7 +33,7 @@
       version: 1,
       courses: [],
       maps: [],
-      settings: { theme: 'system', onboarded: false, reviewLog: {}, paneOpen: true },
+      settings: { theme: 'system', motion: 'system', onboarded: false, reviewLog: {}, paneOpen: true },
     };
   }
 
@@ -79,6 +79,7 @@
     }).filter((m) => courseIds.has(m.courseId)) : [];
     if (d.settings && typeof d.settings === 'object') {
       out.settings.theme = ['system', 'light', 'dark'].includes(d.settings.theme) ? d.settings.theme : 'system';
+      out.settings.motion = ['system', 'reduce', 'full'].includes(d.settings.motion) ? d.settings.motion : 'system';
       out.settings.onboarded = !!d.settings.onboarded;
       out.settings.paneOpen = d.settings.paneOpen !== false;
       out.settings.reviewLog = d.settings.reviewLog && typeof d.settings.reviewLog === 'object' ? { ...d.settings.reviewLog } : {};

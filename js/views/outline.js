@@ -85,7 +85,7 @@
       roots.forEach((r, i) => doc.appendChild(section(r, 0, i)));
     }
     host.appendChild(doc);
-    R.motion.stagger(U.$$('.plan-sec.lvl-0', doc));
+    if (R.motion.first('plan:' + map.id)) R.motion.stagger(U.$$('.plan-sec.lvl-0', doc));
     for (const a of U.$$('.md-wiki', doc)) {
       const t = map.nodes.find((x) => U.norm(x.title) === U.norm(a.dataset.wiki));
       a.addEventListener('click', (ev) => { ev.preventDefault(); if (t && onOpen) onOpen(t.id); });

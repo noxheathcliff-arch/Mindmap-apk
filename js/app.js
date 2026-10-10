@@ -39,6 +39,30 @@
   let navCount = 0;
   window.addEventListener('hashchange', () => { navCount++; app.canGoBack = navCount > 0; render(); });
 
+  /* ---- Transitions de page ---------------------------------------------
+     Hiérarchie (Cours → Cours › Carte) = axe Z : on « entre dans » l'élément.
+     Élément partagé (container transform) : la carte cliquée devient l'en-tête
+     ou le canvas de la page suivante, et inversement au retour (View Transitions).
+     Repli sans View Transitions : axe Z simple (scale + fondu). */
+  const supportsVT = typeof document.startViewTransition === 'function';
+  let vtRunning = null;
+  const entityOf = (r) => (r && r.name === 'course' ? 'course:' + r.id : r && r.name === 'editor' ? 'map:' + r.id : null);
+
+  /** Nomme les éléments « héros » d'une page pour une clé d'entité (un seul par rôle) */
+  function nameHeroes(container, key) {
+    if (!container || !key) return [];
+    const named = [];
+    const used = new Set();
+    for (const el of U.$$(`[data-hero^="${key}:"]`, container)) {
+      const part = el.dataset.hero.split(':')[2];
+      if (used.has(part) || !el.getClientRects().length) continue;
+      used.add(part);
+      el.style.viewTransitionName = 'hero-' + part;
+      named.push(el);
+    }
+    return named;
+  }
+
   function render() {
     const route = parse();
     const prev = app.route;
@@ -51,19 +75,45 @@
       updateNav(route);
       return;
     }
+    const dir = prev ? Math.sign((DEPTH[route.name] ?? 0) - (DEPTH[prev.name] ?? 0)) : 0;
+    const host = U.$('#view');
+    const useVT = !!prev && supportsVT && !U.reducedMotion() && !document.hidden;
+
+    if (!useVT) { mountRoute(route, prev, dir, false); return; }
+
+    if (vtRunning) { try { vtRunning.skipTransition(); } catch (e) { /* ignore */ } }
+    const root = document.documentElement;
+    root.dataset.vt = dir > 0 ? 'forward' : dir < 0 ? 'back' : 'peer';
+    // en avançant, le héros est la destination ; en reculant, ce que l'on quitte
+    const key = dir >= 0 ? entityOf(route) : entityOf(prev);
+    const oldNamed = nameHeroes(host.querySelector('.page-wrap'), key);
+    let newNamed = [];
+    const vt = document.startViewTransition(() => {
+      oldNamed.forEach((el) => { el.style.viewTransitionName = ''; });
+      const page = mountRoute(route, prev, dir, true);
+      // ne garder que les paires présentes des deux côtés
+      newNamed = nameHeroes(page, key);
+    });
+    vtRunning = vt;
+    vt.finished.finally(() => {
+      newNamed.forEach((el) => { el.style.viewTransitionName = ''; });
+      if (vtRunning === vt) { vtRunning = null; delete root.dataset.vt; }
+    });
+  }
+
+  function mountRoute(route, prev, dir, viaVT) {
     const view = R.views[route.name];
     const host = U.$('#view');
-    const dir = prev ? Math.sign((DEPTH[route.name] ?? 0) - (DEPTH[prev.name] ?? 0)) || 1 : 0;
-
     if (app.current && app.current.unmount) app.current.unmount();
-    const old = host.querySelector('.page-wrap:not(.leaving)');
-    if (old) {
+    for (const old of U.$$('.page-wrap', host)) {
+      if (viaVT) { old.remove(); continue; }
+      if (old.classList.contains('leaving')) continue;
       old.classList.add('leaving');
       old.style.setProperty('--dir', dir);
-      setTimeout(() => old.remove(), 160);
+      setTimeout(() => old.remove(), 170);
     }
     const page = h('div.page-wrap', { style: { '--dir': dir } });
-    if (prev) page.classList.add('entering');
+    if (prev && !viaVT) page.classList.add('entering');
     host.appendChild(page);
     app.setFab(null);
     app.route = route;
@@ -72,7 +122,8 @@
     if (prev) host.focus({ preventScroll: true });
     app.current = view.mount(page, route) || {};
     updateNav(route);
-    setTimeout(() => page.classList.remove('entering'), 600);
+    if (prev && !viaVT) setTimeout(() => page.classList.remove('entering'), 400);
+    return page;
   }
 
   /* ------------------------------------------------------------------ */
@@ -121,9 +172,14 @@
       if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
     }
     const due = S.dueCount();
+    const label = due > 99 ? '99+' : String(due);
     for (const b of U.$$('.nav-item[data-key="review"] .nav-badge')) {
+      const changed = b.textContent !== label;
       b.hidden = !due;
-      b.textContent = due > 99 ? '99+' : due;
+      b.textContent = label;
+      // value change : le badge « pop » seulement quand son nombre change
+      if (changed && due && b.dataset.ready && !U.reducedMotion()) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+      b.dataset.ready = '1';
     }
   }
   app.updateNav = updateNav;
@@ -156,6 +212,17 @@
   }
   app.logo = logo;
 
+  let lastScroll = 0;
+  document.addEventListener('scroll', (e) => {
+    const t = e.target;
+    if (!(t instanceof Element) || !t.classList.contains('page-scroll')) return;
+    const f = U.$('#fab-float');
+    const y = t.scrollTop, d = y - lastScroll;
+    lastScroll = y;
+    if (!f || Math.abs(d) < 6) return;
+    f.classList.toggle('hide', d > 0 && y > 80);
+  }, true);
+
   /* ------------------------------------------------------------------ */
   /* Thème                                                              */
   /* ------------------------------------------------------------------ */
@@ -166,27 +233,51 @@
     const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
     for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#121211' : '#fbfaf7');
   }
-  app.setTheme = (t) => { S.data.settings.theme = t; S.changed('settings'); applyTheme(); };
+  app.setTheme = (t, origin) => {
+    const apply = () => { S.data.settings.theme = t; S.changed('settings'); applyTheme(); };
+    if (!origin || !supportsVT || U.reducedMotion()) { apply(); return; }
+    const root = document.documentElement;
+    const r = Math.hypot(Math.max(origin.x, innerWidth - origin.x), Math.max(origin.y, innerHeight - origin.y));
+    root.style.setProperty('--vx', origin.x + 'px');
+    root.style.setProperty('--vy', origin.y + 'px');
+    root.style.setProperty('--vr', r + 'px');
+    root.dataset.vt = 'theme';
+    const vt = document.startViewTransition(apply);
+    vt.finished.finally(() => { if (root.dataset.vt === 'theme') delete root.dataset.vt; });
+  };
+
+  /* ---- Mouvement : réglage de l'app > préférence système ---------------- */
+  const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+  function applyMotion() {
+    const m = S.data.settings.motion || 'system';
+    document.documentElement.dataset.motion = m === 'system' ? (mqReduce.matches ? 'reduce' : 'full') : m;
+  }
+  app.setMotion = (m) => { S.data.settings.motion = m; S.changed('settings'); applyMotion(); };
+  mqReduce.addEventListener('change', applyMotion);
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 
   /* ------------------------------------------------------------------ */
   /* Réglages                                                           */
   /* ------------------------------------------------------------------ */
   function openSettings() {
-    const seg = h('div.segmented', { role: 'radiogroup', 'aria-label': 'Thème' });
-    for (const [v, label, icon] of [['system', 'Système', 'panel'], ['light', 'Clair', 'sun'], ['dark', 'Sombre', 'moon']]) {
-      const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(S.data.settings.theme === v) },
-        R.icon(S.data.settings.theme === v ? 'check' : icon, 18), h('span', label));
-      b.addEventListener('click', () => {
-        app.setTheme(v);
-        for (const x of seg.children) { x.setAttribute('aria-checked', String(x === b)); }
-        U.$$('.seg-btn', seg).forEach((x, i) => {
-          const ic = x.querySelector('.ic');
-          ic.replaceWith(R.icon(x === b ? 'check' : ['panel', 'sun', 'moon'][i], 18));
+    const makeSeg = (label, key, options, current, onPick) => {
+      const seg = h('div.segmented', { role: 'radiogroup', 'aria-label': label });
+      for (const [v, text, icon] of options) {
+        const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(current === v) }, R.icon(icon, 18), h('span', text));
+        b.addEventListener('click', (e) => {
+          U.$$('.seg-btn', seg).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+          seg._place();
+          onPick(v, e);
         });
-      });
-      seg.appendChild(b);
-    }
+        seg.appendChild(b);
+      }
+      ui.segIndicator(seg, key);
+      return seg;
+    };
+    const seg = makeSeg('Thème', 'settings-theme', [['system', 'Système', 'panel'], ['light', 'Clair', 'sun'], ['dark', 'Sombre', 'moon']],
+      S.data.settings.theme, (v, e) => app.setTheme(v, { x: e.clientX || innerWidth / 2, y: e.clientY || innerHeight / 2 }));
+    const motionSeg = makeSeg('Animations', 'settings-motion', [['system', 'Système', 'panel'], ['reduce', 'Réduites', 'pause'], ['full', 'Complètes', 'sparkle']],
+      S.data.settings.motion || 'system', (v) => app.setMotion(v));
 
     const fileInput = h('input', { type: 'file', accept: 'application/json,.json', hidden: true });
     fileInput.addEventListener('change', async () => {
@@ -220,6 +311,10 @@
       h('section.settings-sec',
         h('h3.settings-h', 'Apparence'),
         seg),
+      h('section.settings-sec',
+        h('h3.settings-h', 'Animations'),
+        motionSeg,
+        h('p.settings-p', '« Réduites » remplace les déplacements et zooms par des fondus courts.')),
       h('section.settings-sec',
         h('h3.settings-h', 'Données'),
         h('p.settings-p', `Tout est enregistré sur cet appareil (${kb} Ko). Exporte régulièrement une sauvegarde.`),
@@ -284,31 +379,57 @@
       { icon: 'child', title: 'Décompose chaque notion', text: 'Une carte part d’une notion et se décompose : définition, conditions de fond et de forme (cumulatives ET / alternatives OU), exceptions, jurisprudence. Chaque nœud a sa note.' },
       { icon: 'cards', title: 'Révise en rappel actif', text: 'Ratio transforme tes cartes en questions. Tu notes ta réponse — À revoir, Compris, Maîtrisé — et la répétition espacée te les représente au bon moment.' },
     ];
-    let i = 0;
+    let i = 0, busy = false;
     const art = h('div.onb-art');
     const title = h('h2.onb-title');
     const text = h('p.onb-text');
     const dots = h('div.onb-dots', steps.map(() => h('span.onb-dot')));
     const body = h('div.onb', art, title, text, dots);
-    const paint = () => {
+    const paint = (d) => {
       const s = steps[i];
+      body.style.setProperty('--d', d || 0);
       body.classList.remove('swap');
       void body.offsetWidth;
       body.classList.add('swap');
       U.clear(art).appendChild(R.icon(s.icon, 40));
       title.textContent = s.title;
       text.textContent = s.text;
-      U.$$('.onb-dot', dots).forEach((d, k) => d.classList.toggle('on', k === i));
+      U.$$('.onb-dot', dots).forEach((dot, k) => dot.classList.toggle('on', k === i));
       next.querySelector('.btn-label').textContent = i === steps.length - 1 ? 'Commencer' : 'Suivant';
+    };
+    /* Étapes = pairs : axe X. L'ancien contenu part (100 ms, ease-in), le nouveau
+       arrive du côté où l'on va (240 ms, ease-out) — sortie avant entrée. */
+    const go = (to) => {
+      if (busy || to === i || to < 0 || to >= steps.length) return;
+      const d = Math.sign(to - i);
+      i = to;
+      if (R.motion.reduced()) { paint(d); return; }
+      busy = true;
+      const kids = [art, title, text];
+      Promise.all(kids.map((k) => k.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-d * 16}px 0` }],
+        { duration: 100, easing: R.motion.css.in, fill: 'forwards' }).finished))
+        .then(() => { kids.forEach((k) => k.getAnimations().forEach((a) => a.cancel())); paint(d); busy = false; });
     };
     const next = ui.btn('Suivant', { variant: 'filled' });
     const skip = ui.btn('Passer', { variant: 'text' });
     ui.dialog({
       body: h('div', body, h('div.dialog-actions', skip, next)), cls: 'dialog-onb', dismissible: true,
-      onOpen: (_, close) => {
-        paint();
-        next.addEventListener('click', () => { if (i < steps.length - 1) { i++; paint(); } else close(true); });
+      onOpen: (box, close) => {
+        paint(0);
+        next.addEventListener('click', () => { if (i < steps.length - 1) go(i + 1); else close(true); });
         skip.addEventListener('click', () => close(true));
+        box.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight') { e.preventDefault(); go(i + 1); }
+          if (e.key === 'ArrowLeft') { e.preventDefault(); go(i - 1); }
+        });
+        // swipe horizontal entre les étapes
+        let sx = null;
+        body.addEventListener('pointerdown', (e) => { sx = e.clientX; });
+        body.addEventListener('pointerup', (e) => {
+          if (sx == null) return;
+          const dx = e.clientX - sx; sx = null;
+          if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1));
+        });
         next.focus();
       },
     }).then(() => {
@@ -332,6 +453,7 @@
   app.start = function () {
     S.load();
     applyTheme();
+    applyMotion();
     if (S.fresh) R.seed();
     buildNav();
     const navLater = U.debounce(() => updateNav(), 800);

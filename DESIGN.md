@@ -126,27 +126,57 @@ compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 ·
 ---
 
 ## 5. Motion design
-*(Thomas & Johnston — The Illusion of Life ; Animator's kit ; tokens de mouvement M3)*
+*(Thomas & Johnston — The Illusion of Life ; Richard Williams ; Willenskomer — UX in Motion ; Apple — Designing Fluid Interfaces ; Emil Kowalski ; Material 3 & IBM Carbon)*
 
-Courbes M3 : `standard (0.2,0,0,1)`, `emphasized-decelerate (0.05,0.7,0.1,1)`, `emphasized-accelerate (0.3,0,0.8,0.15)`. Durées : short 50–200 ms, medium 250–400 ms, long 450–600 ms. `prefers-reduced-motion` → transitions réduites à des fondus.
+### 5.1 Diagnostic
+- **Régime** : *productif* à 90 % (sélectionner, créer, relier, écrire — des dizaines de fois par séance), *expressif* à 10 % (fin de session, « Maîtrisé », onboarding, première visite).
+- **Personnalité** : *précis, studieux* — plutôt léger, précis, calme. Aucun rebond dans le travail ; un léger overshoot réservé aux moments expressifs.
+- **Règle de fréquence** : plus une animation est vue souvent, plus elle est courte et discrète. Les actions clavier répétées ne s'animent pas (sélection au clavier sans balayage).
 
-| Principe | Où dans Ratio |
-|---|---|
-| **Squash & stretch** | Boutons et FAB s'écrasent à l'appui (scale .96) ; un nouveau nœud naît en s'étirant légèrement puis se stabilise. |
-| **Anticipation** | Un nœud supprimé se gonfle d'abord (1.06) avant de disparaître ; la carte de révision recule légèrement avant de se retourner. |
-| **Mise en scène (staging)** | Une chose à la fois : voile (scrim) derrière les feuilles ; mode « Masquer » qui floute tout sauf le nœud révélé ; la sélection est la seule tache de couleur. |
-| **Pose à pose** | « Ranger » : chaque nœud interpole de sa pose actuelle vers sa pose calculée (FLIP). |
-| **Continuité & chevauchement** | Les listes entrent en cascade (stagger 30 ms) ; le contenu de la feuille arrive après son contenant. |
-| **Ralenti début/fin** | Toutes les transitions utilisent les courbes M3, jamais `linear`. |
-| **Arcs** | Pendant « Ranger », x et y ont des courbes différentes → les nœuds suivent des **arcs** et non des droites. |
-| **Action secondaire** | Le trait de surligneur balaie le titre sélectionné ; la flamme de série vacille. |
-| **Timing** | Petits objets = short (100–200 ms), panneaux = medium (300–400 ms), changements de page = long (450–500 ms). |
-| **Exagération** | Moment « Maîtrisé » et fin de session : éclat de particules jaunes (pic-fin). |
-| **Dessin solide** | Une seule source de lumière (ombres vers le bas), élévations cohérentes. |
-| **Attrait** | Signature unique : le **trait de surligneur**, partout où quelque chose devient important. |
-| **Lignes « tracées »** | Un nouveau lien se dessine (stroke-dashoffset) de la source à la cible. |
+### 5.2 Tokens (un seul système, CSS et JS)
+| Token | Valeur | Rôle |
+|---|---|---|
+| `--ease-out` | `cubic-bezier(0.23, 1, 0.32, 1)` (out-quint) | entrées, réponses au geste |
+| `--ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` (in-cubic) | sorties définitives |
+| `--ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | déplacement visible (caméra, Ranger, indicateurs) |
+| `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | panneaux, feuilles, morphing de page |
+| `--ease-pop` | `cubic-bezier(0.175, 0.885, 0.32, 1.275)` | **expressif uniquement** (flamme, badge, révélation) |
+| `--ease-settle` | ressort `linear()` ζ ≈ 0.85 | dépôt d'un nœud |
+| `--dur-xs / sm / md / lg / xl` | 100 / 160 / 240 / 360 / 560 ms | press · hover/menus · composants · panneaux/pages · expressif |
 
----
+Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 500/36, `drawer` 380/38. Inertie : décroissance exponentielle (0.994/ms).
+
+### 5.3 Spécification
+| Élément | Propriété | De → à | Durée | Courbe | Principe |
+|---|---|---|---|---|---|
+| Bouton (press / relâche) | scale | 1 → 0.97 → 1 | 100 / 160 | out | squash, feedback |
+| Page (hiérarchie) | scale + opacité, axe Z | 0.97 → 1 / 1 → 1.02 | 240 (+60 délai) / 160 | out / in | sortie avant entrée, overlap |
+| Carte → page (cours, carte) | élément partagé (View Transitions) | carte → en-tête ; vignette → canvas | 360 | drawer | continuité, container transform |
+| Dialogue | opacité, scale, y | 0.96, 8 px → 1 | 280 / 180 | out / in | staging (scrim 200 ms) |
+| Menu | scale depuis le déclencheur | 0.96 → 1, items +12 ms | 160 / 100 | out / in | follow-through |
+| Tooltip | opacité | 0 → 1 (400 ms de délai, 0 ensuite) | 120 | out | — |
+| Snackbar | y depuis le bord | 100 % + 16 px → 0 | 360 / 200 | out / in | pause au survol, swipe |
+| Nouveau nœud | translate + scale depuis la poignée du parent | parent → place, 0.6 → 1 | 240, cascade 20 ms | out | **clonage** |
+| Nouveau lien | stroke-dashoffset | 0 → longueur | 240 | out | tracé synchrone |
+| Repli / dépli | translate + scale vers / depuis le parent | — | 200 / 240 | in / out | relation parent-enfant |
+| Suppression | scale + opacité | 1 → 0.92 | 160 | in | pas d'anticipation (fréquent) |
+| Sélection | trait de surligneur | 0 → 100 % | 200 (0 au clavier) | out | signature |
+| Prise / dépôt d'un nœud | scale + ombre (pseudo-élément) | 1 → 1.03 → 1 | 160 / 300 | out / settle | dessin solide |
+| Ranger | x, y | pose → pose, +24 ms par niveau | 440 (+120) | x out, y in-out | **arcs**, overlap |
+| Caméra (ajuster, centrer) | transform | durée ∝ √distance | 200–480 | in-out | — |
+| Pan relâché | transform | inertie | — | décroissance | momentum |
+| Panneau docké | contenu translate + opacité | 24 px → 0 / → 32 px | 240 / 160 | out / in | interruptible (reverse) |
+| Feuille latérale / bottom sheet | translateY / X | crans | 360–420 / 240–280 | drawer / in | ressort + vélocité, rubber band |
+| Carte de révision | entrée / sortie | 24 px → 0 / arc ±8° | 300 / 220 | out / in | direction = note |
+| Swipe de révision | x lié au doigt, tampons liés à x | — | ressort | snappy | parenting, momentum |
+| Fin de session | flamme, titre, bilan, barres, compteurs | séquence 4 temps | ≈ 1 s | pop / out | pic-fin, value change |
+| Thème | clip-path circulaire depuis le geste | 0 → rayon | 560 | in-out | masking |
+
+### 5.4 Performance
+On n'anime que `transform` et `opacity`. Ombres portées par des pseudo-éléments dont seule l'opacité change ; grille de points sur son propre calque (translation modulo un pas) ; `will-change` posé seulement pendant le mouvement (le texte reste net après un zoom) ; panneau docké animé en `transform`, jamais en largeur ; barres de progression en `scaleX`.
+
+### 5.5 Accessibilité
+Réglage *Animations : Système / Réduites / Complètes*. En mode réduit, déplacements, zooms et boucles deviennent des fondus de 120–150 ms ; pas de View Transitions, pas de particules, pas d'inertie. Aucune information n'est portée par le seul mouvement (le shake d'erreur s'accompagne d'une bordure et d'un libellé rouges). Pas de boucle décorative infinie : la flamme vacille deux fois puis se pose ; seul l'anneau d'attente du mode « Relier » respire tant que l'action est en cours.
 
 ## 6. Composition par écran
 

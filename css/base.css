@@ -65,9 +65,12 @@ kbd {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   padding: 0 .06em;
-  animation: sweep var(--dur-long4) var(--ease-emph-decel) 180ms forwards;
+  background-size: 100% 32%;
 }
-@keyframes sweep { to { background-size: 100% 32%; } }
+/* Le balayage ne se joue que la première fois (classe .intro posée par la vue) :
+   ce qui est vu souvent doit rester calme. */
+.intro .hl-sweep { animation: sweep var(--dur-xl) var(--ease-out) 160ms both; }
+@keyframes sweep { from { background-size: 0% 32%; } }
 
 /* ==========================================================================
    Coque — classes de fenêtre M3
@@ -78,7 +81,7 @@ kbd {
   height: 100vh;
   height: 100dvh;
   opacity: 0;
-  transition: opacity var(--dur-medium2) var(--ease-standard);
+  transition: opacity var(--dur-md) var(--ease-out);
 }
 body.ready .app { opacity: 1; }
 .view { position: relative; overflow: hidden; min-width: 0; min-height: 0; }
@@ -112,17 +115,17 @@ body.immersive .rail, body.immersive .navbar, body.immersive .fab-float { displa
 .nav-indicator {
   position: relative; display: grid; place-items: center;
   width: 56px; height: 32px; border-radius: var(--shape-full);
-  transition: background-color var(--dur-short4) var(--ease-standard);
+  transition: background-color var(--dur-xs) var(--ease-out);
 }
 .nav-indicator::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   background: var(--inverse-surface);
   transform: scaleX(.3); opacity: 0;
-  transition: transform var(--dur-medium2) var(--ease-emph-decel), opacity var(--dur-short3) var(--ease-standard);
+  transition: transform var(--dur-md) var(--ease-out), opacity var(--dur-sm) var(--ease-out);
 }
-.nav-indicator > .ic { position: relative; transition: transform var(--dur-short4) var(--ease-overshoot); }
+.nav-indicator > .ic { position: relative; transition: transform var(--dur-sm) var(--ease-out); }
 .nav-item:hover .nav-indicator { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
-.nav-item:active .nav-indicator > .ic { transform: scale(.88); }
+.nav-item:active .nav-indicator > .ic { transform: scale(.92); transition-duration: var(--dur-xs); }
 .nav-item.active { color: var(--on-surface); font-weight: 600; }
 .nav-item.active .nav-indicator::before { transform: scaleX(1); opacity: 1; }
 .nav-item.active .nav-indicator > .ic { color: var(--inverse-on-surface); }
@@ -133,9 +136,10 @@ body.immersive .rail, body.immersive .navbar, body.immersive .fab-float { displa
   background: var(--primary); color: var(--on-primary);
   font: 600 11px/18px var(--font-plain); text-align: center;
   box-shadow: 0 0 0 2px var(--surface);
-  animation: pop var(--dur-medium2) var(--ease-overshoot);
 }
-@keyframes pop { from { transform: scale(.4); opacity: 0; } }
+/* Value change : le badge réagit quand son nombre change (jamais depuis 0) */
+.nav-badge.pop { animation: badge-pop var(--dur-md) var(--ease-pop); }
+@keyframes badge-pop { from { transform: scale(.6); } }
 .rail .nav-item .ripple-wave, .navbar .nav-item .ripple-wave { display: none; }
 
 /* ---- Barre de navigation (compact) ------------------------------------- */
@@ -158,12 +162,45 @@ body.immersive .rail, body.immersive .navbar, body.immersive .fab-float { displa
   body.immersive .app { grid-template-rows: minmax(0, 1fr); }
 }
 
-/* ---- Pages & transitions (axe partagé M3) ------------------------------ */
+/* ---- Pages & transitions ------------------------------------------------
+   Hiérarchie = axe Z : en avançant, la nouvelle page arrive de 97 % → 100 %
+   et l'ancienne part vers 102 % ; en reculant, l'inverse. Sortie avant entrée,
+   avec chevauchement (60 ms). Repli quand View Transitions n'existe pas. */
 .page-wrap { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.page-wrap.entering { animation: page-in var(--dur-long1) var(--ease-emph-decel) both; }
-.page-wrap.leaving { animation: page-out var(--dur-short3) var(--ease-emph-accel) forwards; pointer-events: none; z-index: 0; }
-@keyframes page-in { from { opacity: 0; transform: translateX(calc(var(--dir, 0) * 32px)); } }
-@keyframes page-out { to { opacity: 0; transform: translateX(calc(var(--dir, 0) * -16px)); } }
+.page-wrap.entering { animation: page-in var(--dur-md) var(--ease-out) 60ms both; }
+.page-wrap.leaving { animation: page-out var(--dur-sm) var(--ease-in) forwards; pointer-events: none; z-index: 0; }
+@keyframes page-in { from { opacity: 0; transform: scale(calc(1 - var(--dir, 0) * 0.03)); } }
+@keyframes page-out { to { opacity: 0; transform: scale(calc(1 + var(--dir, 0) * 0.02)); } }
+
+/* ---- View Transitions (élément partagé) --------------------------------- */
+.rail { view-transition-name: rail; }
+.navbar { view-transition-name: navbar; }
+.fab-float { view-transition-name: fab; }
+::view-transition-group(*) { animation-duration: var(--dur-lg); animation-timing-function: var(--ease-drawer); }
+::view-transition-old(root) { animation: var(--dur-sm) var(--ease-in) both vt-out; }
+::view-transition-new(root) { animation: var(--dur-md) var(--ease-out) 60ms both vt-in; }
+@keyframes vt-out { to { opacity: 0; transform: scale(var(--vt-out, 1)); } }
+@keyframes vt-in { from { opacity: 0; transform: scale(var(--vt-in, 1)); } }
+:root[data-vt="forward"] { --vt-out: 1.02; --vt-in: 0.97; }
+:root[data-vt="back"] { --vt-out: 0.98; --vt-in: 1.03; }
+:root[data-vt="peer"] { --vt-out: 1; --vt-in: 0.98; }
+/* les héros (carte → en-tête, vignette → canvas) se transforment, leur image se fond */
+::view-transition-old(hero-title), ::view-transition-new(hero-title),
+::view-transition-old(hero-mono), ::view-transition-new(hero-mono) {
+  animation-duration: var(--dur-lg); animation-timing-function: var(--ease-drawer);
+}
+::view-transition-old(hero-thumb), ::view-transition-new(hero-thumb) {
+  height: 100%; object-fit: cover; overflow: clip;
+  animation-duration: var(--dur-lg); animation-timing-function: var(--ease-drawer);
+}
+/* thème : révélation circulaire depuis le geste (masking) */
+:root[data-vt="theme"] .rail, :root[data-vt="theme"] .navbar, :root[data-vt="theme"] .fab-float { view-transition-name: none; }
+:root[data-vt="theme"]::view-transition-old(root) { animation: none; }
+:root[data-vt="theme"]::view-transition-new(root) { animation: theme-reveal var(--dur-xl) var(--ease-in-out) both; }
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--vx, 50%) var(--vy, 50%)); }
+  to { clip-path: circle(var(--vr, 150vmax) at var(--vx, 50%) var(--vy, 50%)); }
+}
 
 .page { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .page-scroll {
@@ -211,3 +248,32 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 * { scrollbar-width: thin; scrollbar-color: var(--outline-variant) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 10px; border: 3px solid transparent; background-clip: content-box; }
+
+/* ==========================================================================
+   Mouvement réduit (préférence système ou réglage de l'app)
+   On ne supprime pas tout : les déplacements, zooms et boucles deviennent
+   des fondus courts (≤ 150 ms) qui gardent la compréhension des changements.
+   ========================================================================== */
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  animation-duration: 150ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 120ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+:root[data-motion="reduce"] .stagger, :root[data-motion="reduce"] .page-wrap.entering,
+:root[data-motion="reduce"] .dialog:not(.out), :root[data-motion="reduce"] .rcard:not(.leaving),
+:root[data-motion="reduce"] .empty, :root[data-motion="reduce"] .today, :root[data-motion="reduce"] .tip-card,
+:root[data-motion="reduce"] .onb.swap > *, :root[data-motion="reduce"] .fab, :root[data-motion="reduce"] .node.born,
+:root[data-motion="reduce"] .vtoolbar, :root[data-motion="reduce"] .bottombar.swap .ctx-btn,
+:root[data-motion="reduce"] .pane-inner.swap .pane-body > *, :root[data-motion="reduce"] .review-end > * {
+  animation-name: rm-fade !important;
+}
+:root[data-motion="reduce"] .page-wrap.leaving, :root[data-motion="reduce"] .dialog.out,
+:root[data-motion="reduce"] .rcard.leaving, :root[data-motion="reduce"] .node.dying {
+  animation-name: rm-fade-out !important;
+}
+:root[data-motion="reduce"] .ripple-wave, :root[data-motion="reduce"] .burst { display: none !important; }
+@keyframes rm-fade { from { opacity: 0; } }
+@keyframes rm-fade-out { to { opacity: 0; } }

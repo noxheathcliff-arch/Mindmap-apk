@@ -52,9 +52,9 @@
     const more = ui.iconBtn('more', { title: 'Options de la carte', cls: 'card-more' });
     more.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); R.actions.mapMenu(more, m, rerender); });
     return h('a.map-card.ripple', { href: '#/carte/' + m.id },
-      h('div.mc-thumb', R.thumb(m)),
+      h('div.mc-thumb', { dataset: { hero: 'map:' + m.id + ':thumb' } }, R.thumb(m)),
       h('div.mc-body',
-        h('div.mc-head', h('h3.mc-title', m.title), more),
+        h('div.mc-head', h('h3.mc-title', h('span', { dataset: { hero: 'map:' + m.id + ':title' } }, m.title)), more),
         h('p.mc-meta', `${U.plural(st.nodes, 'nœud')} · ${U.relTime(m.updatedAt)}`),
         h('div.mc-foot',
           ui.progress(st.progress, { label: 'Maîtrise de la carte' }),
@@ -63,6 +63,7 @@
 
   R.views.course = {
     mount(el, route) {
+      let intro = R.motion.first('course:' + route.id);
       let course = S.course(route.id);
       const draw = () => {
         course = S.course(route.id);
@@ -89,14 +90,14 @@
         maps.forEach((m) => grid.appendChild(mapCard(m, draw)));
         grid.appendChild(h('button.map-card.map-add.ripple', { type: 'button', onclick: () => R.actions.newMap(course.id) },
           h('span.add-ic', R.icon('plus', 24)), h('span.add-l', 'Nouvelle carte')));
-        R.motion.stagger(Array.from(grid.children));
+        if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
         const header = h('div.course-head',
           h('div.course-head-main',
-            h('span.cc-mono.lg', U.initials(course.title)),
+            h('span.cc-mono.lg', { dataset: { hero: 'course:' + course.id + ':mono' } }, U.initials(course.title)),
             h('div',
               h('p.overline', 'Cours'),
-              h('h1.course-title', h('span.hl-sweep', course.title)),
+              h('h1.course-title', h('span.hl-sweep', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
               course.description ? h('p.course-desc', course.description) : null)),
           h('div.course-stats',
             stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),
@@ -110,7 +111,7 @@
             ui.btn('Nouvelle carte', { icon: 'plus', variant: 'filled', onClick: () => R.actions.newMap(course.id) }),
             ui.btn('Réviser ce cours', { icon: 'cards', variant: 'outlined', disabled: !st.reviewable, onClick: () => R.app.go('#/reviser/cours/' + course.id) })));
 
-        el.appendChild(h('div.page.page-course', topbar, h('div.page-scroll',
+        el.appendChild(h('div.page.page-course', { class: intro ? 'intro' : '' }, topbar, h('div.page-scroll',
           h('div.course-layout', header,
             maps.length ? h('section.lib-sec', h('div.sec-head', h('h2.sec-title', 'Cartes'), h('span.sec-count', String(maps.length))), grid)
               : h('section.lib-sec', ui.emptyState({
@@ -118,6 +119,16 @@
                 text: 'Une carte = une notion à décomposer : sa définition, ses conditions, ses exceptions…',
                 action: ui.btn('Créer la première carte', { icon: 'plus', variant: 'filled', onClick: () => R.actions.newMap(course.id) }),
               }))))));
+        if (intro) {
+          // value change : les chiffres du cours défilent à la première ouverture
+          for (const n of U.$$('.course-stats .stat-n', el)) {
+            const m = n.textContent.match(/^(\d+)( %)?$/);
+            if (m) R.motion.countUp(n, +m[1], { duration: 800, format: (v) => v + (m[2] || '') });
+          }
+          const pg = el.querySelector('.page-course');
+          setTimeout(() => pg && pg.classList.remove('intro'), 1400);
+        }
+        intro = false;
       };
       const stat = (n, l) => h('div.stat', h('span.stat-n', String(n)), h('span.stat-l', l));
       draw();

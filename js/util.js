@@ -131,7 +131,12 @@ window.R = window.R || {};
     return upper ? s.toUpperCase() : s;
   };
 
-  U.reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** Mouvement réduit : réglage de l'app (data-motion) prioritaire, sinon préférence système */
+  U.reducedMotion = () => {
+    const m = document.documentElement.dataset.motion;
+    if (m) return m === 'reduce';
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  };
 
   /** Classe de fenêtre M3 */
   U.windowClass = () => {

@@ -143,9 +143,9 @@
     more.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); R.actions.courseMenu(more, c, rerender); });
     return h('a.course-card.ripple', { href: '#/cours/' + c.id },
       h('div.cc-top',
-        h('span.cc-mono', U.initials(c.title)),
+        h('span.cc-mono', { dataset: { hero: 'course:' + c.id + ':mono' } }, U.initials(c.title)),
         more),
-      h('h3.cc-title', c.title),
+      h('h3.cc-title', h('span', { dataset: { hero: 'course:' + c.id + ':title' } }, c.title)),
       c.description ? h('p.cc-desc', c.description) : h('p.cc-desc.muted', U.relTime(S.courseActivity(c))),
       h('div.cc-foot',
         h('span.cc-meta', `${U.plural(st.maps, 'carte')} · ${U.plural(st.nodes, 'nœud')}`),
@@ -156,9 +156,9 @@
     const c = S.course(m.courseId);
     const st = S.mapStats(m);
     return h('a.map-row.ripple', { href: '#/carte/' + m.id },
-      R.thumb(m),
+      (() => { const t = R.thumb(m); t.dataset.hero = 'map:' + m.id + ':thumb'; return t; })(),
       h('div.map-row-body',
-        h('span.map-row-title', m.title),
+        h('span.map-row-title', h('span', { dataset: { hero: 'map:' + m.id + ':title' } }, m.title)),
         h('span.map-row-meta', [showCourse && c ? c.title : null, U.plural(st.nodes, 'nœud'), U.relTime(m.updatedAt)].filter(Boolean).join(' · '))),
       h('div.map-row-end', ui.mastery(st.progress >= 0.999 ? 'maitrise' : st.progress >= 0.5 ? 'compris' : st.progress > 0 ? 'revoir' : null, 14)));
   };
@@ -166,6 +166,9 @@
   /* ---------------- Vue -------------------------------------------- */
   R.views.library = {
     mount(el) {
+      // première visite de la session : entrée en cascade, balayage, compteurs.
+      // Les visites suivantes (et les mises à jour) restent immobiles : vu souvent = calme.
+      let intro = R.motion.first('library');
       const draw = () => {
         U.clear(el);
         const courses = S.coursesSorted();
@@ -184,7 +187,7 @@
         const add = h('button.course-card.course-add.ripple', { type: 'button', onclick: R.actions.newCourse },
           h('span.add-ic', R.icon('plus', 24)), h('span.add-l', 'Nouveau cours'));
         grid.appendChild(add);
-        R.motion.stagger(Array.from(grid.children));
+        if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
         const recents = S.recentMaps(5);
         const main = h('div.lib-main',
@@ -206,8 +209,14 @@
             h('div.map-list', recents.map((m) => R.mapRow(m)))) : null);
 
         const aside = h('aside.lib-aside.only-wide', todayCard(), tipCard());
-        el.appendChild(h('div.page.page-lib', topbar, h('div.page-scroll', h('div.lib-layout', main, aside))));
-        R.motion.stagger(U.$$('.map-row', el), 2);
+        const pageEl = h('div.page.page-lib', { class: intro ? 'intro' : '' }, topbar, h('div.page-scroll', h('div.lib-layout', main, aside)));
+        el.appendChild(pageEl);
+        if (intro) {
+          R.motion.stagger(U.$$('.map-row', el), Math.min(grid.children.length + 1, 6));
+          for (const num of U.$$('.today-num', el)) R.motion.countUp(num, +num.textContent, { duration: 900 });
+          setTimeout(() => pageEl.classList.remove('intro'), 1400);
+        }
+        intro = false;
       };
       draw();
       R.app.setFab({ icon: 'plus', label: 'Nouveau cours', onClick: R.actions.newCourse });

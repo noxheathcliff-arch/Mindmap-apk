@@ -37,7 +37,7 @@
       style: { width: size + 'px', height: size + 'px', left: e.clientX - r.left - size / 2 + 'px', top: e.clientY - r.top - size / 2 + 'px' },
     });
     t.appendChild(wave);
-    const done = () => { wave.classList.add('out'); setTimeout(() => wave.remove(), 400); };
+    const done = () => { wave.classList.add('out'); setTimeout(() => wave.remove(), 260); };
     window.addEventListener('pointerup', done, { once: true });
     window.addEventListener('pointercancel', done, { once: true });
   }, { passive: true });
@@ -45,20 +45,24 @@
   /* ------------------------------------------------------------------ */
   /* Infobulles (souris uniquement)                                     */
   /* ------------------------------------------------------------------ */
-  let tipEl = null, tipTimer = null;
+  let tipEl = null, tipTimer = null, tipWarmUntil = 0, tipFor = null;
   document.addEventListener('pointerover', (e) => {
     if (e.pointerType !== 'mouse') return;
     const t = e.target.closest('[data-tip]');
+    if (t && t === tipFor) return;
     clearTimeout(tipTimer);
     if (!t) { hideTip(); return; }
-    tipTimer = setTimeout(() => showTip(t), 450);
+    // premier survol : 400 ms ; ensuite, entre infobulles voisines : immédiat
+    const warm = performance.now() < tipWarmUntil;
+    tipTimer = setTimeout(() => showTip(t, warm), warm ? 0 : 400);
   });
   document.addEventListener('pointerdown', () => { clearTimeout(tipTimer); hideTip(); }, true);
-  function showTip(t) {
+  function showTip(t, warm) {
     const text = t.getAttribute('data-tip');
     if (!text || !document.body.contains(t)) return;
     hideTip();
-    tipEl = h('div.tooltip', { role: 'tooltip' }, text);
+    tipFor = t;
+    tipEl = h('div.tooltip', { role: 'tooltip', class: warm ? 'warm' : '' }, text);
     const kbd = t.getAttribute('data-kbd');
     if (kbd) tipEl.appendChild(h('span.tooltip-kbd', kbd));
     document.body.appendChild(tipEl);
@@ -72,7 +76,10 @@
     tipEl.style.top = top + 'px';
     requestAnimationFrame(() => tipEl && tipEl.classList.add('in'));
   }
-  function hideTip() { if (tipEl) { tipEl.remove(); tipEl = null; } }
+  function hideTip() {
+    if (tipEl) { tipEl.remove(); tipEl = null; tipWarmUntil = performance.now() + 600; }
+    tipFor = null;
+  }
   ui.hideTip = hideTip;
 
   /* ------------------------------------------------------------------ */
@@ -98,7 +105,7 @@
         box.classList.add('out');
         scrim.classList.add('out');
         document.removeEventListener('keydown', onKey, true);
-        setTimeout(() => { wrap.remove(); if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); }, 200);
+        setTimeout(() => { wrap.remove(); if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); }, motion.reduced() ? 120 : 180);
         resolve(val);
       };
       for (const a of actions) {
@@ -172,9 +179,11 @@
     const validate = () => {
       for (const f of fields) {
         if (f.required && !inputs[f.key].value.trim()) {
-          inputs[f.key].closest('.field').classList.add('invalid');
+          const fld = inputs[f.key].closest('.field');
+          fld.classList.add('invalid');
           inputs[f.key].focus();
-          setTimeout(() => inputs[f.key].closest('.field').classList.remove('invalid'), 600);
+          motion.shake(fld);
+          setTimeout(() => fld.classList.remove('invalid'), 1600);
           return false;
         }
       }
@@ -206,7 +215,7 @@
       if (!it) continue;
       if (it.divider) { el.appendChild(h('div.menu-divider')); continue; }
       if (it.header) { el.appendChild(h('div.menu-header', it.header)); continue; }
-      const b = h('button.menu-item', { type: 'button', role: 'menuitem', class: (it.danger ? 'danger ' : '') + (it.checked ? 'checked' : ''), style: { '--i': idx++ } });
+      const b = h('button.menu-item', { type: 'button', role: 'menuitem', class: (it.danger ? 'danger ' : '') + (it.checked ? 'checked' : ''), style: { '--i': Math.min(idx++, 6) } });
       if (it.icon) b.appendChild(R.icon(it.icon, 20));
       else if (it.checked != null) b.appendChild(h('span.menu-check', it.checked ? R.icon('check', 20) : ''));
       b.appendChild(h('span.menu-label', it.label));
@@ -247,7 +256,7 @@
       document.removeEventListener('keydown', onKey, true);
       el.classList.remove('in');
       el.classList.add('out');
-      setTimeout(() => el.remove(), 150);
+      setTimeout(() => el.remove(), 110);
       if (openMenu === closeRef) openMenu = null;
     }
     const closeRef = close;
@@ -258,9 +267,9 @@
   /* ------------------------------------------------------------------ */
   /* Snackbar                                                           */
   /* ------------------------------------------------------------------ */
-  let snackTimer = null, snackEl = null;
+  let snackEl = null;
   ui.snack = function (text, { action, onAction, duration = 4000 } = {}) {
-    if (snackEl) { snackEl.remove(); clearTimeout(snackTimer); }
+    if (snackEl) snackEl._dismiss(true);
     const el = h('div.snackbar', { role: 'status' }, h('span.snackbar-text', text));
     if (action) {
       const b = ui.btn(action, { variant: 'text', cls: 'snackbar-action' });
@@ -270,13 +279,56 @@
     U.$('#snack-host').appendChild(el);
     snackEl = el;
     requestAnimationFrame(() => el.classList.add('in'));
-    function dismiss() {
-      el.classList.remove('in');
-      el.classList.add('out');
-      setTimeout(() => el.remove(), 250);
+
+    // minuteur suspendu au survol / focus (le temps de lire et d'agir)
+    let remaining = duration, startedAt = performance.now(), timer = setTimeout(dismiss, remaining);
+    const pause = () => { clearTimeout(timer); remaining -= performance.now() - startedAt; };
+    const resume = () => { startedAt = performance.now(); clearTimeout(timer); timer = setTimeout(dismiss, Math.max(1200, remaining)); };
+    el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') pause(); });
+    el.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') resume(); });
+    el.addEventListener('focusin', pause);
+    el.addEventListener('focusout', resume);
+
+    // glisser horizontalement pour fermer (suivi 1:1, puis fling ou retour en ressort)
+    let sx = 0, dx = 0, drag = false;
+    const vt = motion.velocity();
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return;
+      drag = true; sx = e.clientX; dx = 0; vt.reset(); vt.add(e.clientX, 0);
+      el.setPointerCapture(e.pointerId); el.classList.add('dragging'); pause();
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      dx = e.clientX - sx; vt.add(e.clientX, 0);
+      el.style.translate = dx + 'px 0';
+      el.style.opacity = String(1 - Math.min(0.6, Math.abs(dx) / 300));
+    });
+    const end = () => {
+      if (!drag) return;
+      drag = false; el.classList.remove('dragging');
+      const v = vt.get().x;
+      if (Math.abs(dx) > 90 || Math.abs(v) > 0.5) {
+        const dir = Math.sign(dx || v);
+        el.animate([{ translate: dx + 'px 0', opacity: el.style.opacity }, { translate: dir * (el.offsetWidth + 40) + 'px 0', opacity: 0 }],
+          { duration: motion.reduced() ? 1 : 180, easing: motion.css.in, fill: 'forwards' });
+        dismiss(true, 180);
+      } else {
+        el.animate([{ translate: dx + 'px 0' }, { translate: '0 0' }], { duration: 240, easing: motion.css.settle });
+        el.style.translate = ''; el.style.opacity = '';
+        resume();
+      }
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+
+    function dismiss(immediate, delay) {
+      clearTimeout(timer);
       if (snackEl === el) snackEl = null;
+      if (immediate && !delay) { el.remove(); return; }
+      if (!delay) { el.classList.remove('in'); el.classList.add('out'); }
+      setTimeout(() => el.remove(), delay || 200);
     }
-    snackTimer = setTimeout(dismiss, duration);
+    el._dismiss = dismiss;
     return dismiss;
   };
 
@@ -286,7 +338,7 @@
   ui.progress = (value, { label } = {}) => {
     const p = Math.round(U.clamp(value, 0, 1) * 100);
     return h('div.progress', { role: 'progressbar', 'aria-valuenow': p, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-label': label || 'Progression' },
-      h('div.progress-bar', { style: { '--p': p + '%' } }));
+      h('div.progress-bar', { style: { '--p': String(p / 100) } }));
   };
 
   /** Pastille de maîtrise (○ ◔ ◑ ●) — monochrome */
@@ -296,6 +348,31 @@
     return el;
   };
 
+  /** Contrôle segmenté avec indicateur qui glisse d'une option à l'autre (Tabs indicator).
+      key : identifiant stable pour animer depuis la position précédente même après un re-rendu. */
+  const segMemory = new Map();
+  ui.segIndicator = function (seg, key) {
+    let ind = seg.querySelector(':scope > .seg-ind');
+    if (!ind) { ind = h('span.seg-ind', { 'aria-hidden': 'true' }); seg.prepend(ind); }
+    const place = (animate) => {
+      const sel = seg.querySelector('.seg-btn[aria-checked="true"], .seg-btn[aria-selected="true"]');
+      if (!sel || !seg.isConnected) { ind.style.opacity = '0'; return; }
+      const x = sel.offsetLeft, w = sel.offsetWidth;
+      const from = key && segMemory.get(key);
+      const to = `translateX(${x}px) scaleX(${w / 100})`;
+      ind.style.opacity = '1';
+      if (animate !== false && from && from !== to && !motion.reduced()) {
+        ind.animate([{ transform: from }, { transform: to }], { duration: 240, easing: motion.css.inOut });
+      }
+      ind.style.transform = to;
+      if (key) segMemory.set(key, to);
+    };
+    seg._place = place;
+    // premier placement après mise en page
+    requestAnimationFrame(() => place(true));
+    return place;
+  };
+
   ui.emptyState = ({ icon, title, text, action }) => h('div.empty',
     h('div.empty-art', R.icon(icon, 40)),
     h('h3.empty-title', title),
@@ -303,9 +380,12 @@
     action || null);
 
   /* ------------------------------------------------------------------ */
-  /* Motion                                                             */
+  /* Motion — tokens, courbes, ressorts, inertie                        */
   /* ------------------------------------------------------------------ */
   const motion = {};
+
+  /** Mouvement réduit : préférence système OU réglage de l'app */
+  motion.reduced = () => U.reducedMotion();
 
   /** Bézier cubique (implémentation type WebKit) */
   motion.bezier = function (x1, y1, x2, y2) {
@@ -315,6 +395,8 @@
     const sy = (t) => ((ay * t + by) * t + cy) * t;
     const dx = (t) => (3 * ax * t + 2 * bx) * t + cx;
     return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
       let t = x;
       for (let i = 0; i < 8; i++) {
         const e = sx(t) - x;
@@ -327,16 +409,36 @@
       return sy(t);
     };
   };
-  motion.ease = {
-    standard: motion.bezier(0.2, 0, 0, 1),
-    decel: motion.bezier(0, 0, 0, 1),
-    emphDecel: motion.bezier(0.05, 0.7, 0.1, 1),
-    emphAccel: motion.bezier(0.3, 0, 0.8, 0.15),
-    overshoot: motion.bezier(0.34, 1.56, 0.64, 1),
-  };
 
-  motion.tween = function ({ duration = 400, ease = motion.ease.standard, onUpdate, onDone }) {
-    if (U.reducedMotion()) duration = 1;
+  /* Les mêmes 5 courbes que tokens.css — un seul système */
+  motion.ease = {
+    out: motion.bezier(0.23, 1, 0.32, 1),
+    in: motion.bezier(0.55, 0.055, 0.675, 0.19),
+    inOut: motion.bezier(0.645, 0.045, 0.355, 1),
+    drawer: motion.bezier(0.32, 0.72, 0, 1),
+    pop: motion.bezier(0.175, 0.885, 0.32, 1.275),
+    expo: motion.bezier(0.16, 1, 0.3, 1),
+  };
+  const supportsLinear = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('transition-timing-function', 'linear(0, 1)');
+  motion.css = {
+    out: 'cubic-bezier(0.23, 1, 0.32, 1)',
+    in: 'cubic-bezier(0.55, 0.055, 0.675, 0.19)',
+    inOut: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
+    drawer: 'cubic-bezier(0.32, 0.72, 0, 1)',
+    pop: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    settle: supportsLinear
+      ? 'linear(0, 0.157 4.6%, 0.508 10.6%, 0.784 16.7%, 0.932 22.7%, 1.006 29.4%, 1.026 35.6%, 1.019 43.5%, 1.003 57%, 0.999 72%, 1)'
+      : 'cubic-bezier(0.23, 1, 0.32, 1)',
+  };
+  motion.dur = { xs: 100, sm: 160, md: 240, lg: 360, xl: 560 };
+
+  /** Durée proportionnée à la distance (racine), plafonnée — cf. timing.rules */
+  motion.durationFor = (distancePx, { min = 160, max = 480 } = {}) =>
+    U.clamp(150 + 30 * Math.sqrt(Math.abs(distancePx) / 10), min, max);
+
+  /** Interpolation à durée fixe (pose à pose). Interruptible : renvoie stop(). */
+  motion.tween = function ({ duration = 240, ease = motion.ease.out, onUpdate, onDone }) {
+    if (motion.reduced()) duration = 1;
     const t0 = performance.now();
     let raf, stopped = false;
     const step = (now) => {
@@ -350,29 +452,127 @@
     return () => { stopped = true; cancelAnimationFrame(raf); };
   };
 
-  /** Éclat de particules (exagération / pic-fin) */
+  /** Ressort (Euler semi-implicite) — conserve la vélocité du geste, interruptible.
+      Préréglages : ui (ζ≈1), snappy (ζ≈0.8), drawer (ζ≈0.97). */
+  motion.springs = {
+    ui: { stiffness: 400, damping: 40 },
+    snappy: { stiffness: 500, damping: 36 },
+    drawer: { stiffness: 380, damping: 38 },
+    gentle: { stiffness: 170, damping: 26 },
+  };
+  motion.spring = function ({ from, to, velocity = 0, stiffness = 400, damping = 40, mass = 1, onUpdate, onDone }) {
+    if (motion.reduced()) { onUpdate(to); onDone && onDone(); return () => {}; }
+    let x = from, v = velocity * 1000; // px/ms → px/s
+    let last = performance.now(), raf, stopped = false;
+    const step = (now) => {
+      if (stopped) return;
+      let dt = Math.min(0.032, (now - last) / 1000);
+      last = now;
+      // sous-pas pour la stabilité
+      for (let i = 0; i < 4; i++) {
+        const h = dt / 4;
+        const f = -stiffness * (x - to) - damping * v;
+        v += (f / mass) * h;
+        x += v * h;
+      }
+      onUpdate(x);
+      if (Math.abs(v) < 2 && Math.abs(x - to) < 0.3) { onUpdate(to); onDone && onDone(); return; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => { stopped = true; cancelAnimationFrame(raf); };
+  };
+
+  /** Inertie (momentum) : la vitesse du geste se prolonge et décroît (decelerationRate ≈ 0.998/ms) */
+  motion.decay = function ({ velocity, rate = 0.995, onUpdate, onDone }) {
+    let vx = velocity.x, vy = velocity.y; // px/ms
+    if (motion.reduced() || Math.hypot(vx, vy) < 0.05) { onDone && onDone(); return () => {}; }
+    let last = performance.now(), raf, stopped = false;
+    const step = (now) => {
+      if (stopped) return;
+      const dt = Math.min(32, now - last);
+      last = now;
+      const k = Math.pow(rate, dt);
+      vx *= k; vy *= k;
+      onUpdate(vx * dt, vy * dt);
+      if (Math.hypot(vx, vy) < 0.02) { onDone && onDone(); return; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => { stopped = true; cancelAnimationFrame(raf); };
+  };
+
+  /** Mesure de vélocité sur les ~80 dernières ms d'un geste (px/ms) */
+  motion.velocity = function () {
+    let samples = [];
+    return {
+      reset() { samples = []; },
+      add(x, y) {
+        const t = performance.now();
+        samples.push({ x, y, t });
+        while (samples.length > 2 && t - samples[0].t > 80) samples.shift();
+      },
+      get() {
+        if (samples.length < 2) return { x: 0, y: 0 };
+        const a = samples[0], b = samples[samples.length - 1];
+        const dt = Math.max(1, b.t - a.t);
+        if (performance.now() - b.t > 100) return { x: 0, y: 0 }; // doigt immobile avant relâchement
+        return { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt };
+      },
+    };
+  };
+
+  /** Value change : compteur qui défile (chiffres tabulaires) */
+  motion.countUp = function (el, to, { duration = 900, from = 0, format = (n) => String(n) } = {}) {
+    if (motion.reduced() || to === from) { el.textContent = format(to); return; }
+    el.textContent = format(from);
+    motion.tween({
+      duration, ease: motion.ease.expo,
+      onUpdate: (p, e) => { el.textContent = format(Math.round(from + (to - from) * e(p))); },
+    });
+  };
+
+  /** Shake d'erreur : 0, −8, 8, −6, 6, −3, 0 px sur 400 ms, une seule fois */
+  motion.shake = function (el) {
+    if (motion.reduced() || !el.animate) return;
+    el.animate([{ translate: '0' }, { translate: '-8px' }, { translate: '8px' }, { translate: '-6px' }, { translate: '6px' }, { translate: '-3px' }, { translate: '0' }],
+      { duration: 400, easing: 'ease-out' });
+  };
+
+  /** Éclat de particules — réservé aux moments expressifs (maîtrise, fin de session) */
   motion.burst = function (x, y, { count = 14, spread = 70 } = {}) {
-    if (U.reducedMotion()) return;
+    if (motion.reduced()) return;
     const host = h('div.burst', { style: { left: x + 'px', top: y + 'px' } });
     for (let i = 0; i < count; i++) {
       const a = (Math.PI * 2 * i) / count + Math.random() * 0.4;
       const d = spread * (0.6 + Math.random() * 0.6);
-      const s = 4 + Math.random() * 6;
+      const s = 4 + Math.random() * 5;
       host.appendChild(h('span.burst-p', {
         style: {
           '--dx': Math.cos(a) * d + 'px', '--dy': Math.sin(a) * d + 'px', '--r': (Math.random() * 360) + 'deg',
-          width: s + 'px', height: s * (Math.random() > 0.5 ? 1 : 0.4) + 'px', animationDelay: Math.random() * 60 + 'ms',
+          width: s + 'px', height: s * (Math.random() > 0.5 ? 1 : 0.4) + 'px', animationDelay: Math.random() * 40 + 'ms',
         },
       }));
     }
     document.body.appendChild(host);
-    setTimeout(() => host.remove(), 1000);
+    setTimeout(() => host.remove(), 900);
   };
 
-  /** Entrée en cascade (continuité / chevauchement) */
-  motion.stagger = function (els, base = 0) {
-    els.forEach((el, i) => { el.style.setProperty('--i', base + i); el.classList.add('stagger'); });
+  /** Entrée en cascade : 40 ms par élément, plafonnée à 8 (total ≤ 320 ms) */
+  motion.stagger = function (els, base = 0, { step = 40, max = 8 } = {}) {
+    els.forEach((el, i) => {
+      el.style.setProperty('--i', Math.min(base + i, max));
+      el.style.setProperty('--step', step + 'ms');
+      el.classList.add('stagger');
+    });
   };
+
+  /** « Première fois » par clé et par session : l'intensité baisse avec la fréquence */
+  const seen = new Set();
+  motion.first = (key) => { if (seen.has(key)) return false; seen.add(key); return true; };
+
+  /** Retour haptique léger (Android) — feedback de seuil, jamais en continu */
+  motion.haptic = (ms = 8) => { if (!motion.reduced() && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) { /* ignore */ } };
 
   R.ui = ui;
   R.motion = motion;

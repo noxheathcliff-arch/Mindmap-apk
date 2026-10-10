@@ -54,7 +54,8 @@
 
       function updateProgress() {
         counter.textContent = `${Math.min(done + 1, total)} / ${total}`;
-        bar.querySelector('.progress-bar').style.setProperty('--p', Math.round((done / total) * 100) + '%');
+        // value change : la barre avance en transform (scaleX), 360 ms ease-out
+        bar.querySelector('.progress-bar').style.setProperty('--p', String(done / total));
       }
 
       function showCard(dir) {
@@ -90,12 +91,14 @@
           h('div.rcard-kicker', T.label),
           h('h2.rcard-title', node.title),
           h('p.rcard-prompt', prompt),
-          answer);
+          answer,
+          h('span.rate-stamp.left', { 'aria-hidden': 'true' }, 'À revoir'),
+          h('span.rate-stamp.right', { 'aria-hidden': 'true' }, 'Maîtrisé'));
 
         if (cardEl) {
           const old = cardEl;
           old.classList.add('leaving');
-          setTimeout(() => old.remove(), 420);
+          setTimeout(() => old.remove(), 260);
         }
         cardEl = card;
         stage.appendChild(card);
@@ -124,19 +127,21 @@
           };
           actions.appendChild(h('div.rate-row', mk('revoir', 'outlined', '1'), mk('compris', 'tonal', '2'), mk('maitrise', 'filled', '3')));
           actions.appendChild(h('p.review-hint.only-touch', 'Astuce : glisse la carte ← à revoir · → maîtrisé'));
+          // les notes arrivent après la réponse (overlap), en cascade courte : 30 ms
+          R.motion.stagger(Array.from(actions.querySelectorAll('.rate-btn')), 0, { step: 30 });
         }
-        R.motion.stagger(Array.from(actions.querySelectorAll('.rate-btn, .reveal-btn')));
       }
 
+      /* Révéler : feedback immédiat (pas d'anticipation, action répétée à chaque carte).
+         La réponse se déplie (280 ms) puis son contenu suit en cascade (40 ms). */
       function reveal() {
         if (revealed || busy) return;
         revealed = true;
-        cardEl.classList.add('anticipate');
-        setTimeout(() => { cardEl.classList.remove('anticipate'); cardEl.classList.add('revealed'); }, U.reducedMotion() ? 0 : 110);
+        cardEl.classList.add('revealed');
         paintActions();
       }
 
-      function rate(rating) {
+      function rate(rating, fling) {
         if (!revealed || busy) return;
         const cur = current();
         if (!cur) return;
@@ -144,48 +149,84 @@
         S.rate(cur.map, cur.node, rating);
         results[rating]++;
         if (rating === 'maitrise') {
+          // action secondaire discrète : vue à chaque carte maîtrisée, donc petite
           const r = cardEl.getBoundingClientRect();
-          motion.burst(r.left + r.width / 2, r.top + 40, { count: 10, spread: 60 });
+          motion.burst(r.left + r.width / 2, r.top + 40, { count: 8, spread: 48 });
         }
         if (rating === 'revoir' && !requeued.has(cur.node.id)) {
           requeued.add(cur.node.id);
           queue.push({ ...queue[idx] });
           total++;
         }
-        cardEl.classList.add(rating === 'revoir' ? 'out-left' : rating === 'maitrise' ? 'out-right' : 'out-up');
+        if (fling && cardEl.animate && !motion.reduced()) {
+          // la carte lancée garde sa vitesse : on prolonge le geste plutôt que de rejouer une sortie
+          const dir = Math.sign(fling.dx) || 1;
+          const dist = window.innerWidth * 0.9;
+          const ms = U.clamp((dist - Math.abs(fling.dx)) / Math.max(1.2, Math.abs(fling.v)), 120, 220);
+          cardEl.classList.add('leaving');
+          cardEl.animate([
+            { transform: `translateX(${fling.dx}px) rotate(${fling.dx / 24}deg)`, opacity: 1 },
+            { transform: `translateX(${dir * dist}px) translateY(20px) rotate(${dir * 10}deg)`, opacity: 0 },
+          ], { duration: ms, easing: motion.css.in, fill: 'forwards' });
+        } else {
+          cardEl.classList.add(rating === 'revoir' ? 'out-left' : rating === 'maitrise' ? 'out-right' : 'out-up');
+        }
         done++;
         idx++;
+        // chevauchement : la carte suivante entre quand la précédente est à mi-sortie
         setTimeout(() => {
           busy = false;
           if (idx >= queue.length) finish();
           else showCard(1);
-        }, U.reducedMotion() ? 0 : 220);
+        }, motion.reduced() ? 0 : 120);
       }
 
+      /* Glisser pour noter (manipulation directe) :
+         suivi 1:1 + rotation en arc ; les tampons « À revoir » / « Maîtrisé » apparaissent
+         avec la distance (parenting) ; au relâchement, un geste rapide suffit (vélocité),
+         sinon la carte revient en ressort, en conservant l'élan. */
       function swipe(card) {
-        let sx = 0, sy = 0, active = false, dx = 0;
+        let sx = 0, sy = 0, active = false, dx = 0, armed = 0, back = null;
+        const vt = motion.velocity();
+        const stampL = card.querySelector('.rate-stamp.left');
+        const stampR = card.querySelector('.rate-stamp.right');
+        const paint = (x) => {
+          card.style.transform = `translateX(${x}px) rotate(${x / 24}deg)`;
+          stampL.style.opacity = String(U.clamp((-x - 24) / 80, 0, 1));
+          stampR.style.opacity = String(U.clamp((x - 24) / 80, 0, 1));
+        };
         card.addEventListener('pointerdown', (e) => {
-          if (!revealed || e.pointerType === 'mouse' || e.target.closest('a, button')) return;
-          active = true; sx = e.clientX; sy = e.clientY; dx = 0;
+          if (!revealed || busy || e.pointerType === 'mouse' || e.target.closest('a, button')) return;
+          if (back) { back(); back = null; }
+          active = true; sx = e.clientX - dx; sy = e.clientY;
+          vt.reset(); vt.add(e.clientX, 0);
           card.classList.add('dragging');
+          card.style.animation = 'none';
           card.setPointerCapture(e.pointerId);
         });
         card.addEventListener('pointermove', (e) => {
           if (!active) return;
-          dx = e.clientX - sx;
-          const dy = e.clientY - sy;
-          if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dx) < 20) return;
-          card.style.transform = `translateX(${dx}px) rotate(${dx / 24}deg)`;
-          card.dataset.lean = dx > 60 ? 'right' : dx < -60 ? 'left' : '';
+          const ndx = e.clientX - sx;
+          if (Math.abs(e.clientY - sy) > Math.abs(ndx) * 1.5 && Math.abs(ndx) < 20) return;
+          dx = ndx;
+          vt.add(e.clientX, 0);
+          paint(dx);
+          const now = Math.abs(dx) > 110 ? Math.sign(dx) : 0;
+          if (now && now !== armed) motion.haptic(8); // seuil franchi
+          armed = now;
         });
         const end = () => {
           if (!active) return;
           active = false;
           card.classList.remove('dragging');
-          card.style.transform = '';
-          card.dataset.lean = '';
-          if (dx > 110) rate('maitrise');
-          else if (dx < -110) rate('revoir');
+          const v = vt.get().x;
+          const goes = Math.abs(dx) > 110 || (Math.abs(v) > 0.6 && Math.abs(dx) > 30 && Math.sign(v) === Math.sign(dx));
+          if (goes) { const x = dx; dx = 0; rate(x > 0 ? 'maitrise' : 'revoir', { dx: x, v }); return; }
+          back = motion.spring({
+            from: dx, to: 0, velocity: v, ...motion.springs.snappy,
+            onUpdate: (x) => { dx = x; paint(x); },
+            onDone: () => { back = null; dx = 0; card.style.transform = ''; stampL.style.opacity = '0'; stampR.style.opacity = '0'; },
+          });
         };
         card.addEventListener('pointerup', end);
         card.addEventListener('pointercancel', end);
@@ -198,40 +239,56 @@
         if (revealed && ['1', '2', '3'].includes(e.key)) { e.preventDefault(); rate(['revoir', 'compris', 'maitrise'][+e.key - 1]); }
       }
 
+      /* Fin de session — le seul moment vraiment expressif (pic-fin) :
+         chorégraphie en 4 temps, ≈ 1 s, jamais bloquante.
+         1) la flamme surgit (ease-pop) et sa série défile  2) le titre est surligné
+         3) le bilan arrive, chaque barre grandit en décalé  4) les actions. */
       function finish() {
         document.removeEventListener('keydown', onKey);
-        bar.querySelector('.progress-bar').style.setProperty('--p', '100%');
+        bar.querySelector('.progress-bar').style.setProperty('--p', '1');
         counter.textContent = `${total} / ${total}`;
         U.clear(actions);
-        if (cardEl) { cardEl.classList.add('leaving'); setTimeout(() => cardEl && cardEl.remove(), 400); }
+        if (cardEl) { cardEl.classList.add('leaving'); const c = cardEl; setTimeout(() => c.remove(), 260); }
         const streak = S.streak();
         const next = S.nextDueInfo(scope.courseId ? { courseId: scope.courseId } : {});
         const remaining = S.dueCount(scope);
         const sum = results.revoir + results.compris + results.maitrise || 1;
+        const counts = [];
         const dist = h('div.dist',
-          ['maitrise', 'compris', 'revoir'].map((k) => h('div.dist-row',
-            ui.mastery(k, 14),
-            h('span.dist-l', S.RATINGS[k].label),
-            h('span.dist-bar', h('span', { style: { '--w': (results[k] / sum) * 100 + '%' } })),
-            h('span.dist-n', String(results[k])))));
-        const end = h('section.review-end',
-          h('div.end-flame', { class: streak ? 'lit' : '' }, R.icon('flame', 40), h('span.end-streak', String(streak))),
+          ['maitrise', 'compris', 'revoir'].map((k, i) => {
+            const n = h('span.dist-n', '0');
+            counts.push([n, results[k], i]);
+            return h('div.dist-row',
+              ui.mastery(k, 14),
+              h('span.dist-l', S.RATINGS[k].label),
+              h('span.dist-bar', h('span', { style: { '--w': String(results[k] / sum), '--i': i } })),
+              n);
+          }));
+        const streakEl = h('span.end-streak', String(streak));
+        const doneEl = h('b', String(done));
+        const end = h('section.review-end.intro',
+          h('div.end-flame', { class: streak ? 'lit' : '' }, R.icon('flame', 40), streakEl),
           h('p.overline', streak > 1 ? `${streak} jours de suite` : 'Série lancée'),
           h('h2.end-title', h('span.hl-sweep', 'Session terminée')),
-          h('p.end-sub', `${U.plural(done, 'carte')} révisée${done > 1 ? 's' : ''}. ${results.maitrise ? 'Ce que tu maîtrises reviendra plus tard ; ' : ''}ce qui est à revoir reviendra demain.`),
+          h('p.end-sub', doneEl, ` ${done > 1 ? 'cartes révisées' : 'carte révisée'}. ${results.maitrise ? 'Ce que tu maîtrises reviendra plus tard ; ' : ''}ce qui est à revoir reviendra demain.`),
           dist,
           h('p.end-next', remaining ? `Encore ${U.plural(remaining, 'carte')} à réviser maintenant.` : next.tomorrow ? `Prochaine révision : demain · ${U.plural(next.tomorrow, 'carte')}.` : 'Rien d’autre à réviser pour l’instant.'),
           h('div.end-actions',
             ui.btn('Terminer', { variant: remaining ? 'outlined' : 'filled', onClick: () => R.app.go(exitHref) }),
             remaining ? ui.btn('Encore une série', { icon: 'play', variant: 'filled', onClick: () => R.app.go(location.hash.split('?')[0] + '?r=' + Date.now(), { replace: true }) }) : null));
         stage.appendChild(end);
-        R.motion.stagger(Array.from(end.children));
+        // la flamme a sa propre entrée (flame-pop) ; le reste suit en cascade de 70 ms
+        R.motion.stagger(Array.from(end.children).slice(1), 1, { step: 70, max: 8 });
+        motion.countUp(streakEl, streak, { from: Math.max(0, streak - 1), duration: 600 });
+        motion.countUp(doneEl, done, { duration: 700 });
+        counts.forEach(([el, n, i]) => setTimeout(() => motion.countUp(el, n, { duration: 560 }), motion.reduced() ? 0 : 360 + i * 60));
         setTimeout(() => {
           const f = end.querySelector('.end-flame');
-          if (!f) return;
+          if (!f || !f.isConnected) return;
           const r = f.getBoundingClientRect();
-          motion.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 22, spread: 110 });
-        }, 350);
+          motion.burst(r.left + r.width / 2, r.top + r.height / 2, { count: 18, spread: 96 });
+          motion.haptic(14);
+        }, 260);
       }
 
       function empty() {
