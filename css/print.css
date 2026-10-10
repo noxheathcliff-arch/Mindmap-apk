@@ -1,0 +1,13 @@
+/* Ratio — impression de la fiche (vue Plan) */
+@page { margin: 18mm 16mm; }
+html, body { height: auto !important; overflow: visible !important; background: #fff !important; color: #111 !important; }
+.app { display: block !important; height: auto !important; opacity: 1 !important; }
+.rail, .navbar, .topbar, .vtoolbar, .ctx-bar, .bottombar, .pane, .canvas, .ed-banner, .coach, .fab-float, .snack-host, #overlays, .no-print, .skip-link { display: none !important; }
+.view, .page-wrap, .page, .page-editor, .ed-body, .ed-stage, .plan-host { position: static !important; display: block !important; height: auto !important; overflow: visible !important; animation: none !important; transform: none !important; }
+.plan { max-width: none; padding: 0; }
+.plan * { animation: none !important; color: #111 !important; }
+.plan-sec { break-inside: avoid-page; }
+.plan-h { break-after: avoid; }
+.md mark { background: #ffe45c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.md blockquote { background: #f3f3f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.plan-sec.lvl-1, .plan-sec.lvl-2, .plan-sec.lvl-3, .plan-sec.lvl-4 { border-left-color: #ccc !important; }

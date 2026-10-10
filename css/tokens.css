@@ -1,0 +1,226 @@
+/* ==========================================================================
+   Ratio — Design tokens (Material Design 3, monochrome + surligneur)
+   60 % surfaces · 30 % encre / outline · 10 % primary (surligneur)
+   ========================================================================== */
+
+:root {
+  /* ---- Reference palette ------------------------------------------------ */
+  --ref-neutral-0: #000000;
+  --ref-neutral-4: #0c0c0b;
+  --ref-neutral-6: #121211;
+  --ref-neutral-10: #1b1b19;
+  --ref-neutral-12: #1f1f1d;
+  --ref-neutral-17: #292927;
+  --ref-neutral-22: #343432;
+  --ref-neutral-24: #393936;
+  --ref-neutral-30: #474744;
+  --ref-neutral-50: #787773;
+  --ref-neutral-60: #92918c;
+  --ref-neutral-80: #c9c8c2;
+  --ref-neutral-87: #dddcd6;
+  --ref-neutral-90: #e5e4de;
+  --ref-neutral-92: #ebeae5;
+  --ref-neutral-94: #f0efea;
+  --ref-neutral-96: #f6f5f1;
+  --ref-neutral-98: #fbfaf7;
+  --ref-neutral-100: #ffffff;
+  --ref-highlighter: #ffd60a;
+  --ref-highlighter-soft: #fff1a8;
+  --ref-highlighter-deep: #5c4b00;
+  --ref-error-40: #b3261e;
+  --ref-error-80: #f2b8b5;
+
+  /* ---- Typefaces (M3 brand / plain) ------------------------------------ */
+  --font-brand: "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --font-plain: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---- Type scale (size / line-height / weight / tracking) ------------- */
+  --display-l: 400 57px/64px var(--font-brand);
+  --display-m: 400 45px/52px var(--font-brand);
+  --display-s: 400 36px/44px var(--font-brand);
+  --headline-l: 400 32px/40px var(--font-brand);
+  --headline-m: 400 28px/36px var(--font-brand);
+  --headline-s: 400 24px/32px var(--font-brand);
+  --title-l: 500 22px/28px var(--font-plain);
+  --title-m: 500 16px/24px var(--font-plain);
+  --title-s: 500 14px/20px var(--font-plain);
+  --body-l: 400 16px/24px var(--font-plain);
+  --body-m: 400 14px/20px var(--font-plain);
+  --body-s: 400 12px/16px var(--font-plain);
+  --label-l: 500 14px/20px var(--font-plain);
+  --label-m: 500 12px/16px var(--font-plain);
+  --label-s: 500 11px/16px var(--font-plain);
+  --tracking-label: 0.01em;
+  --tracking-overline: 0.08em;
+
+  /* ---- Spacing — 4dp baseline grid ------------------------------------ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --margin: 16px;           /* window margin, compact */
+  --target: 48px;           /* minimum touch target */
+
+  /* ---- Shape scale ----------------------------------------------------- */
+  --shape-none: 0;
+  --shape-xs: 4px;
+  --shape-s: 8px;
+  --shape-m: 12px;
+  --shape-l: 16px;
+  --shape-xl: 28px;
+  --shape-full: 999px;
+
+  /* ---- Motion (M3 easing + duration) ---------------------------------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-standard-decel: cubic-bezier(0, 0, 0, 1);
+  --ease-standard-accel: cubic-bezier(0.3, 0, 1, 1);
+  --ease-emph-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-emph-accel: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1); /* squash & stretch settle */
+  --dur-short1: 50ms;
+  --dur-short2: 100ms;
+  --dur-short3: 150ms;
+  --dur-short4: 200ms;
+  --dur-medium1: 250ms;
+  --dur-medium2: 300ms;
+  --dur-medium3: 350ms;
+  --dur-medium4: 400ms;
+  --dur-long1: 450ms;
+  --dur-long2: 500ms;
+  --dur-long3: 550ms;
+  --dur-long4: 600ms;
+
+  /* ---- State layers ----------------------------------------------------- */
+  --state-hover: 0.08;
+  --state-focus: 0.1;
+  --state-pressed: 0.1;
+  --state-dragged: 0.16;
+
+  /* ---- Layout ----------------------------------------------------------- */
+  --rail-w: 88px;
+  --navbar-h: 80px;
+  --topbar-h: 64px;
+  --pane-w: 400px;
+
+  color-scheme: light;
+}
+
+/* ---- Light scheme (default) -------------------------------------------- */
+:root,
+:root[data-theme="light"] {
+  --primary: var(--ref-highlighter);
+  --on-primary: #1a1600;
+  --primary-container: var(--ref-highlighter-soft);
+  --on-primary-container: #221c00;
+  --primary-ink: var(--ref-highlighter-deep);
+  --inverse-primary: var(--ref-highlighter);
+
+  --surface: var(--ref-neutral-98);
+  --surface-dim: var(--ref-neutral-87);
+  --surface-bright: var(--ref-neutral-98);
+  --surface-container-lowest: var(--ref-neutral-100);
+  --surface-container-low: var(--ref-neutral-96);
+  --surface-container: var(--ref-neutral-94);
+  --surface-container-high: var(--ref-neutral-92);
+  --surface-container-highest: var(--ref-neutral-90);
+  --on-surface: var(--ref-neutral-10);
+  --on-surface-variant: var(--ref-neutral-30);
+  --outline: var(--ref-neutral-50);
+  --outline-variant: var(--ref-neutral-80);
+  --inverse-surface: var(--ref-neutral-17);
+  --inverse-on-surface: var(--ref-neutral-94);
+  --scrim: rgba(0, 0, 0, 0.32);
+  --error: var(--ref-error-40);
+  --on-error: #fff;
+  --canvas-dot: rgba(27, 27, 25, 0.13);
+
+  --shadow-color: 0 0 0;
+  --elev-1: 0 1px 2px rgba(var(--shadow-color), 0.18), 0 1px 3px 1px rgba(var(--shadow-color), 0.08);
+  --elev-2: 0 1px 2px rgba(var(--shadow-color), 0.18), 0 2px 6px 2px rgba(var(--shadow-color), 0.08);
+  --elev-3: 0 1px 3px rgba(var(--shadow-color), 0.18), 0 4px 8px 3px rgba(var(--shadow-color), 0.08);
+  --elev-4: 0 2px 3px rgba(var(--shadow-color), 0.18), 0 6px 10px 4px rgba(var(--shadow-color), 0.08);
+  --elev-5: 0 4px 4px rgba(var(--shadow-color), 0.18), 0 8px 12px 6px rgba(var(--shadow-color), 0.08);
+  color-scheme: light;
+}
+
+/* ---- Dark scheme ----------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: var(--ref-highlighter);
+    --on-primary: #1a1600;
+    --primary-container: #3d3300;
+    --on-primary-container: #fff1a8;
+    --primary-ink: var(--ref-highlighter);
+    --inverse-primary: var(--ref-highlighter-deep);
+
+    --surface: var(--ref-neutral-6);
+    --surface-dim: var(--ref-neutral-6);
+    --surface-bright: var(--ref-neutral-24);
+    --surface-container-lowest: var(--ref-neutral-4);
+    --surface-container-low: var(--ref-neutral-10);
+    --surface-container: var(--ref-neutral-12);
+    --surface-container-high: var(--ref-neutral-17);
+    --surface-container-highest: var(--ref-neutral-22);
+    --on-surface: var(--ref-neutral-90);
+    --on-surface-variant: var(--ref-neutral-80);
+    --outline: var(--ref-neutral-60);
+    --outline-variant: var(--ref-neutral-30);
+    --inverse-surface: var(--ref-neutral-90);
+    --inverse-on-surface: var(--ref-neutral-17);
+    --scrim: rgba(0, 0, 0, 0.6);
+    --error: var(--ref-error-80);
+    --on-error: #601410;
+    --canvas-dot: rgba(229, 228, 222, 0.1);
+    --shadow-color: 0 0 0;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --primary: var(--ref-highlighter);
+  --on-primary: #1a1600;
+  --primary-container: #3d3300;
+  --on-primary-container: #fff1a8;
+  --primary-ink: var(--ref-highlighter);
+  --inverse-primary: var(--ref-highlighter-deep);
+
+  --surface: var(--ref-neutral-6);
+  --surface-dim: var(--ref-neutral-6);
+  --surface-bright: var(--ref-neutral-24);
+  --surface-container-lowest: var(--ref-neutral-4);
+  --surface-container-low: var(--ref-neutral-10);
+  --surface-container: var(--ref-neutral-12);
+  --surface-container-high: var(--ref-neutral-17);
+  --surface-container-highest: var(--ref-neutral-22);
+  --on-surface: var(--ref-neutral-90);
+  --on-surface-variant: var(--ref-neutral-80);
+  --outline: var(--ref-neutral-60);
+  --outline-variant: var(--ref-neutral-30);
+  --inverse-surface: var(--ref-neutral-90);
+  --inverse-on-surface: var(--ref-neutral-17);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --error: var(--ref-error-80);
+  --on-error: #601410;
+  --canvas-dot: rgba(229, 228, 222, 0.1);
+  color-scheme: dark;
+}
+
+/* ---- Window size classes -------------------------------------------- */
+@media (min-width: 600px) {
+  :root { --margin: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-short1: 1ms; --dur-short2: 1ms; --dur-short3: 1ms; --dur-short4: 1ms;
+    --dur-medium1: 1ms; --dur-medium2: 1ms; --dur-medium3: 1ms; --dur-medium4: 1ms;
+    --dur-long1: 1ms; --dur-long2: 1ms; --dur-long3: 1ms; --dur-long4: 1ms;
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Ratio — cartes mentales pour le droit",
+  "short_name": "Ratio",
+  "description": "Décompose tes cours de droit en cartes mentales typées (définitions, conditions de fond et de forme, exceptions), prends tes notes et révise en rappel actif.",
+  "lang": "fr",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#fbfaf7",
+  "theme_color": "#fbfaf7",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Réviser", "short_name": "Réviser", "url": "./#/reviser", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

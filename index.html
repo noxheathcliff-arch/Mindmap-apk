@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Ratio — cartes mentales pour le droit</title>
+  <meta name="description" content="Décompose tes cours de droit en cartes mentales : définitions, conditions de fond et de forme, exceptions, notes — puis révise-les.">
+  <meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Ratio">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views.css">
+  <link rel="stylesheet" href="css/editor.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+
+  <script>
+    // Thème appliqué avant le premier rendu (pas de flash)
+    try {
+      var s = JSON.parse(localStorage.getItem('ratio.v1') || '{}').settings;
+      if (s && (s.theme === 'light' || s.theme === 'dark')) document.documentElement.setAttribute('data-theme', s.theme);
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#view">Aller au contenu</a>
+  <div id="app" class="app">
+    <nav id="rail" class="rail" aria-label="Navigation principale"></nav>
+    <main id="view" class="view" tabindex="-1"></main>
+    <nav id="navbar" class="navbar" aria-label="Navigation principale"></nav>
+  </div>
+  <div id="snack-host" class="snack-host" aria-live="polite"></div>
+  <div id="overlays"></div>
+
+  <noscript>Ratio a besoin de JavaScript pour fonctionner.</noscript>
+
+  <script src="js/util.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/markdown.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/seed.js"></script>
+  <script src="js/views/library.js"></script>
+  <script src="js/views/course.js"></script>
+  <script src="js/views/editor.js"></script>
+  <script src="js/views/outline.js"></script>
+  <script src="js/views/review.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
