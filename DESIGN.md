@@ -112,7 +112,7 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 |---|---|---|
 | Notion | — | plein inversé (encre), forme XL |
 | Définition | DÉFINITION | bordure pleine 1.5 px |
-| Condition de fond | FOND | bordure pleine, coin gauche marqué |
+| Condition de fond | FOND | bordure fine standard (le sur-titre suffit) |
 | Condition de forme | FORME | bordure double |
 | Effet / Régime | EFFET | fond `surface-container-high` |
 | Exception | EXCEPTION | bordure pointillée |

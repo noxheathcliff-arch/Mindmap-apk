@@ -869,16 +869,30 @@
         { label: kids ? 'Supprimer la branche' : 'Supprimer', icon: 'trash', danger: true, hint: 'Suppr', onClick: () => deleteNodes([n.id]) },
       ]);
     }
+    /** Libellés personnels déjà utilisés dans toutes les cartes, du plus fréquent au moins fréquent */
+    function customLabels() {
+      const count = new Map();
+      for (const m of S.data.maps) for (const x of m.edges) {
+        const l = (x.label || '').trim();
+        if (l && !EDGE_PRESETS.includes(l)) count.set(l, (count.get(l) || 0) + 1);
+      }
+      return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([l]) => l);
+    }
     function edgeLabelMenu(anchor, e) {
+      const mine = customLabels();
       ui.menu(anchor, [
-        { header: 'Libellé du lien' },
-        { label: 'Aucun', checked: !e.label, onClick: () => setEdgeLabel(e, '') },
-        ...EDGE_PRESETS.map((p) => ({ label: p, checked: e.label === p, onClick: () => setEdgeLabel(e, p) })),
-        { divider: true },
-        { label: 'Personnalisé…', icon: 'edit', onClick: async () => {
-          const v = await ui.form({ title: 'Libellé du lien', icon: 'link', ok: 'OK', fields: [{ key: 'l', label: 'Libellé', value: e.label, placeholder: 'Ex. sauf si, à défaut, renvoie à…' }] });
+        { label: 'Écrire un libellé…', icon: 'edit', onClick: async () => {
+          const v = await ui.form({
+            title: 'Libellé du lien', icon: 'link', ok: 'Valider',
+            fields: [{ key: 'l', label: 'Libellé (40 caractères max.)', value: e.label, maxlength: 40, placeholder: 'Ex. sauf si, à défaut, renvoie à…' }],
+          });
           if (v) setEdgeLabel(e, v.l.trim().slice(0, 40));
         } },
+        { label: 'Aucun', checked: !e.label, onClick: () => setEdgeLabel(e, '') },
+        mine.length ? { header: 'Mes libellés' } : null,
+        ...mine.map((l) => ({ label: l, checked: e.label === l, onClick: () => setEdgeLabel(e, l) })),
+        { header: 'Suggestions' },
+        ...EDGE_PRESETS.map((p) => ({ label: p, checked: e.label === p, onClick: () => setEdgeLabel(e, p) })),
       ], { align: 'start' });
     }
     function setEdgeLabel(e, l) { mutate(() => { e.label = l; }); }

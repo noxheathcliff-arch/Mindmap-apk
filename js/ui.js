@@ -216,7 +216,8 @@
     }
     layer().appendChild(el);
     const r = anchor.getBoundingClientRect();
-    const mr = el.getBoundingClientRect();
+    // taille réelle, hors animation d'ouverture (scaleY)
+    const mr = { width: el.offsetWidth, height: el.offsetHeight };
     let top = placement === 'top' ? r.top - mr.height - 4 : r.bottom + 4;
     if (top + mr.height > window.innerHeight - 8) top = Math.max(8, r.top - mr.height - 4);
     if (top < 8) top = 8;
