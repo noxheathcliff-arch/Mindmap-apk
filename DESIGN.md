@@ -31,7 +31,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 |---|---|---|
 | **Cours** | titre, description (ex. « M1 · S1 · Pr. X »), dates | Le « dossier unique » demandé. Un seul niveau : pas de sous-dossiers (loi de Tesler : on absorbe la complexité, l'utilisatrice n'a qu'un rangement à faire). |
 | **Carte** | titre, cours, nœuds, liens, vue (zoom/position), dates | Une carte = une notion ou un chapitre. |
-| **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 9 types (voir §4.4). |
+| **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 15 types (voir §4.4), dont 3 de structure. |
 | **Lien** | source, cible, **nature** (hiérarchique / renvoi), libellé, groupe | Hiérarchique = décomposition (trait plein). Renvoi = « voir aussi », « sauf », « implique » (pointillé + flèche). |
 | **Fourche** | liens partageant un `group` (même source, même nature, un libellé) | Un tronc, un libellé posé sur le point de séparation, une branche par élément. Chaque branche reste un lien ordinaire : hiérarchie, révision, plan et import n'en dépendent pas. Les enfants d'un nœud ET/OU sont dessinés en fourche implicite (« ET » une seule fois). |
 | **Carte de révision** | dérivée d'un nœud qui a une note ou des enfants | Boîte de Leitner 0→5, échéance. |
@@ -48,7 +48,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 - **Structure** : hiérarchie peu profonde (Bibliothèque → Cours → Carte → Nœud → Note) + **hypertexte** (liens de renvoi entre nœuds).
 
 ### 3.2 Système d'étiquetage
-Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Idée*. Logique : *cumulatives (ET)* / *alternatives (OU)*. Révision : *À revoir, Compris, Maîtrisé*. Les libellés d'action sont des verbes (« Nouvelle carte », « Réviser », « Relier »).
+Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée* ; structure : *Chapitre, Leçon, Section*. Logique : *cumulatives (ET)* / *alternatives (OU)*. Révision : *À revoir, Compris, Maîtrisé*. Les libellés d'action sont des verbes (« Nouvelle carte », « Réviser », « Relier »).
 
 ### 3.3 Systèmes de navigation
 | Type | Implémentation |
@@ -120,6 +120,24 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 | Jurisprudence | JURISPRUDENCE | italique serif |
 | Texte | TEXTE | chiffres en mono |
 | Idée | — | discret, sans bordure |
+| Doctrine | DOCTRINE | serif droit, coins alternés |
+| Exemple | EXEMPLE | bordure pointillée fine (points) |
+| À retenir | À RETENIR | fond surligneur pâle (`primary-container`) — seul type « accent », car c'est littéralement ce qu'on surligne |
+
+**Structure d'un cours** (`rank` 1 → 3) — la hiérarchie se lit au premier regard par la taille, la graisse et l'encre, toujours sans couleur :
+
+| Type | Sur-titre | Traitement |
+|---|---|---|
+| Chapitre | CHAPITRE *n* (pastille surligneur) | plein inversé, serif 26 px, angles 10 px, élévation 2 |
+| Leçon | LEÇON *n* | bordure encre 2,5 px, serif 21 px |
+| Section | SECTION *n* | bordure 2 px, sans-serif 16 px semi-gras |
+
+- **Numérotation automatique** : rang parmi les frères du même type (dans l'ordre vertical du plan) ; pas de numéro quand le type est seul à son niveau.
+- **Jauge de branche** : maîtrise de tout ce qui descend du nœud (barre de 4 px, `scaleX`, 360 ms).
+- **Liens « colonne vertébrale »** : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés (2,4 px).
+- **Zoom sémantique** : sous 45 %, le contenu s'estompe (opacité 0,5) et seuls les sur-titres de structure restent affichés.
+- **Mini-fonctions** : « Réviser ce chapitre / cette leçon » (révision limitée à la branche, route `#/reviser/carte/:id/:nœud`), « Isoler » (replie les autres nœuds du même type, cadre la branche), sommaire dans le panneau, enfant par défaut qui suit le plan (Chapitre → Leçon), raccourcis `Alt 1–3`.
+- **Plan** : la structure devient des intertitres et la numérotation I. A. 1. a) repart sous chacun ; « À retenir » est un encadré hors numérotation.
 
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).

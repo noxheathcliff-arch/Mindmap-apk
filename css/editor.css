@@ -55,8 +55,10 @@
 .edge { fill: none; stroke: var(--outline); stroke-width: 1.6; transition: stroke var(--dur-xs) var(--ease-out), stroke-width var(--dur-xs) var(--ease-out); pointer-events: none; }
 .edge-hit:hover + .edge { stroke: var(--on-surface-variant); stroke-width: 2.2; }
 .edge.k-link { stroke-dasharray: 6 5; }
+.edge.spine { stroke: var(--on-surface-variant); stroke-width: 2.4; }
 .edge.rel { stroke: var(--on-surface-variant); stroke-width: 2; }
 .edge.sel { stroke: var(--on-surface); stroke-width: 2.6; }
+.edge.spine.rel { stroke-width: 2.6; }
 .edge-hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
 .canvas.is-dragging .edge-hit, .canvas.is-masked .edge-hit { pointer-events: none; }
 .edges g.fade-in { animation: fade-in var(--dur-md) var(--ease-out); }
@@ -145,9 +147,44 @@
 .node.t-juris .node-title { font: italic 400 15px/21px var(--font-brand); }
 .node.t-texte .node-title { font: 500 13px/20px var(--font-mono); }
 .node.t-idee { background: var(--surface-container-low); border-color: transparent; }
+.node.t-doctrine { border-color: var(--outline); border-radius: 4px 16px 4px 16px; }
+.node.t-doctrine .node-title { font: 400 15px/21px var(--font-brand); }
+.node.t-exemple { border: 1.5px dotted var(--on-surface-variant); }
+.node.t-retenir { background: var(--primary-container); color: var(--on-primary-container); border-color: color-mix(in srgb, var(--primary) 60%, var(--on-surface)); }
+.node.t-retenir .node-top { color: color-mix(in srgb, var(--on-primary-container) 75%, transparent); }
+
+/* Structure du cours : Chapitre › Leçon › Section. La hiérarchie se lit au premier regard
+   (taille, graisse, encre), toujours sans couleur ; le sur-titre numéroté est surligné. */
+.node.struct .node-kicker { font: 700 11px/16px var(--font-plain); letter-spacing: .1em; }
+.node.t-chapitre {
+  background: var(--inverse-surface); color: var(--inverse-on-surface); border-color: transparent;
+  border-radius: 10px; padding: 14px 22px 16px; min-width: 200px; max-width: 340px;
+  font: 400 26px/32px var(--font-brand); box-shadow: var(--elev-2);
+}
+.node.t-chapitre .node-top { min-height: 20px; color: color-mix(in srgb, var(--inverse-on-surface) 70%, transparent); }
+.node.t-chapitre .node-kicker { padding: 2px 7px; border-radius: 4px; background: var(--primary); color: var(--on-primary); }
+.node.t-chapitre .mastery { color: var(--inverse-on-surface); }
+.node.t-chapitre.untitled .hl { color: color-mix(in srgb, var(--inverse-on-surface) 60%, transparent); }
+.node.t-lecon {
+  background: var(--surface-container-lowest); border: 2.5px solid var(--on-surface);
+  border-radius: 14px; padding: 12px 18px 13px; min-width: 160px; max-width: 320px;
+  font: 500 21px/28px var(--font-brand);
+}
+.node.t-lecon .node-kicker { color: var(--on-surface); }
+.node.t-section {
+  border: 2px solid var(--on-surface-variant); padding: 10px 15px 11px; min-width: 120px; max-width: 280px;
+  font: 600 16px/22px var(--font-plain);
+}
+/* jauge de maîtrise de la branche (value change : transform, 360 ms) */
+.node-meter { display: none; height: 4px; margin-top: 8px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, currentColor 16%, transparent); }
+.node.has-meter .node-meter { display: block; }
+.node-meter i { display: block; height: 100%; background: currentColor; transform: scaleX(var(--p, 0)); transform-origin: left; transition: transform var(--dur-lg) var(--ease-out); }
+.node.t-chapitre .node-meter i { background: var(--primary); }
+.node.masked .node-meter { visibility: hidden; }
 
 /* états */
 .node.selected { border-color: var(--on-surface); z-index: 2; }
+.node.t-chapitre.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
 .node.t-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
 .node:active:not(.editing):not(.dragging) { scale: .985; transition: scale var(--dur-xs) var(--ease-out); }
 /* prise en main : le nœud se soulève (scale 1.03 + ombre diffuse) */
@@ -217,6 +254,9 @@
 .node.collapsed .node-collapse { background: var(--on-surface); color: var(--surface); border-color: var(--on-surface); }
 .node-collapse:hover { color: var(--on-surface); border-color: var(--on-surface); }
 .canvas.far .node-top { display: none; }
+/* vue d'ensemble (zoom < 45 %) : la structure reste lisible, le détail s'efface */
+.canvas.far .node.struct .node-top { display: flex; }
+.canvas.far .node:not(.struct):not(.selected) { opacity: .5; }
 
 .marquee { position: absolute; border: 1.5px dashed var(--on-surface); background: color-mix(in srgb, var(--primary) 18%, transparent); border-radius: 4px; pointer-events: none; }
 
@@ -427,6 +467,20 @@
 .pane-stats { display: flex; gap: var(--sp-8); margin-top: var(--sp-2); }
 .pane-stats .stat-n { font-size: 24px; line-height: 32px; }
 .pane-cta { justify-self: start; }
+.pane-branch { gap: var(--sp-3); }
+.pane-branch .pane-stats { margin-top: 0; }
+.pane-branch-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.pane-toc { display: grid; gap: var(--sp-2); margin-top: var(--sp-2); }
+.toc-list { display: grid; gap: 2px; list-style: none; padding: 0; margin: 0 calc(-1 * var(--sp-2)); }
+.toc-list li { padding-left: calc(var(--d, 0) * var(--sp-4)); min-width: 0; }
+.toc-item { display: flex; align-items: baseline; gap: var(--sp-2); width: 100%; min-width: 0; min-height: 40px; padding: var(--sp-2); border-radius: var(--shape-s); text-align: left; color: var(--on-surface); }
+.toc-item:hover { background: var(--surface-container); }
+.toc-k { flex: none; font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); }
+.toc-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toc-item.rank-1 .toc-t { font: 500 17px/24px var(--font-brand); }
+.toc-item.rank-2 .toc-t { font: var(--title-s); }
+.toc-item.rank-3 .toc-t { font: var(--body-m); }
+.toc-p { flex: none; font: var(--label-m); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
 .pane-help { margin-top: var(--sp-4); padding: var(--sp-4) var(--sp-5); border-radius: var(--shape-l); background: var(--surface-container); display: grid; gap: var(--sp-3); }
 .help-list { display: grid; gap: var(--sp-2); padding-left: var(--sp-4); color: var(--on-surface-variant); }
 .help-list b { color: var(--on-surface); font-weight: 600; }
@@ -454,4 +508,5 @@
   @keyframes bar-in { from { opacity: 0; transform: translateY(6px); } }
   .coach { bottom: var(--sp-4); }
   .node { max-width: 220px; }
+  .node.struct { max-width: 280px; }
 }

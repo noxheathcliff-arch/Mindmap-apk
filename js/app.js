@@ -17,7 +17,7 @@
     if (p[0] === 'cours' && p[1]) return { name: 'course', id: p[1], q };
     if (p[0] === 'carte' && p[1]) return { name: 'editor', id: p[1], mode: p[2] === 'plan' ? 'plan' : 'map', q };
     if (p[0] === 'reviser') {
-      const scope = p[1] === 'cours' ? { courseId: p[2] } : p[1] === 'carte' ? { mapId: p[2] } : {};
+      const scope = p[1] === 'cours' ? { courseId: p[2] } : p[1] === 'carte' ? (p[3] ? { mapId: p[2], nodeId: p[3] } : { mapId: p[2] }) : {};
       return { name: 'review', scope, q };
     }
     return { name: 'library', q };
@@ -359,7 +359,7 @@
         ['Espace', 'Ouvrir la note'], ['Suppr', 'Supprimer'], ['← ↑ → ↓', 'Naviguer entre les nœuds'],
         ['L', 'Relier à un ou plusieurs nœuds (Entrée pour terminer)'], ['.', 'Replier / déplier'], [`${m} Z · ${m} ⇧ Z`, 'Annuler · Rétablir'],
         ['R', 'Ranger la carte'], ['F', 'Ajuster à l’écran'], ['+ / −', 'Zoom'], ['H', 'Mode masqué (révision)'],
-        ['1 … 9', 'Changer le type du nœud'], ['P', 'Basculer Carte / Plan'],
+        ['1 … 9', 'Changer le type du nœud'], ['Alt 1 · 2 · 3', 'Chapitre · Leçon · Section'], ['P', 'Basculer Carte / Plan'],
       ]],
       ['Révision', [['Espace', 'Afficher la réponse'], ['1 · 2 · 3', 'À revoir · Compris · Maîtrisé']]],
     ];

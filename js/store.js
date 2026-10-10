@@ -5,7 +5,8 @@
 
   const KEY = 'ratio.v1';
 
-  /** Taxonomie des nœuds — différenciés sans couleur (cf. DESIGN.md §4.4) */
+  /** Taxonomie des nœuds — différenciés sans couleur (cf. DESIGN.md §4.4).
+      `rank` : nœuds de structure d'un cours (Chapitre › Leçon › Section), numérotés automatiquement. */
   const TYPES = {
     notion:     { label: 'Notion',             kicker: '',              prompt: 'Décompose cette notion' },
     definition: { label: 'Définition',         kicker: 'Définition',    prompt: 'Donne la définition' },
@@ -16,8 +17,24 @@
     juris:      { label: 'Jurisprudence',      kicker: 'Jurisprudence', prompt: 'Que retient cette décision ?' },
     texte:      { label: 'Texte',              kicker: 'Texte',         prompt: 'Que prévoit ce texte ?' },
     idee:       { label: 'Idée',               kicker: '',              prompt: 'Développe cette idée' },
+    chapitre:   { label: 'Chapitre',           kicker: 'Chapitre',      prompt: 'Retrouve le plan de ce chapitre', rank: 1 },
+    lecon:      { label: 'Leçon',              kicker: 'Leçon',         prompt: 'Retrouve le plan de cette leçon', rank: 2 },
+    section:    { label: 'Section',            kicker: 'Section',       prompt: 'Retrouve le plan de cette section', rank: 3 },
+    doctrine:   { label: 'Doctrine',           kicker: 'Doctrine',      prompt: 'Quelle est cette position doctrinale ?' },
+    exemple:    { label: 'Exemple',            kicker: 'Exemple',       prompt: 'Qu’illustre cet exemple ?' },
+    retenir:    { label: 'À retenir',          kicker: 'À retenir',     prompt: 'Restitue l’essentiel' },
   };
-  const TYPE_ORDER = ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'juris', 'texte', 'idee'];
+  /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–3 */
+  const TYPE_ORDER = ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'juris', 'texte', 'idee', 'chapitre', 'lecon', 'section', 'doctrine', 'exemple', 'retenir'];
+  const STRUCT_ORDER = ['chapitre', 'lecon', 'section'];
+  /** Regroupement du menu « Type » (divulgation par familles) */
+  const TYPE_GROUPS = [
+    { label: 'Structure du cours', types: STRUCT_ORDER },
+    { label: 'Notion', types: ['notion', 'definition', 'fond', 'forme', 'effet', 'exception'] },
+    { label: 'Sources', types: ['texte', 'juris', 'doctrine'] },
+    { label: 'Compléments', types: ['exemple', 'retenir', 'idee'] },
+  ];
+  const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
 
   const RATINGS = {
     revoir:   { label: 'À revoir', fill: 1 },
@@ -27,6 +44,7 @@
   const INTERVALS = [0, 1, 3, 7, 15, 30]; // jours, boîtes de Leitner 0→5
 
   const listeners = new Set();
+  const branchCache = new WeakMap();
 
   function blank() {
     return {
@@ -118,7 +136,8 @@
   }
 
   const store = {
-    TYPES, TYPE_ORDER, RATINGS, INTERVALS,
+    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, RATINGS, INTERVALS,
+    isStruct,
     normalizeGroups,
     /** Branches d'une fourche (liens du même groupe) — [] si le lien n'est pas groupé */
     groupOf(map, e) { return e && e.group ? map.edges.filter((x) => x.group === e.group) : []; },
@@ -193,9 +212,9 @@
       return this.data.maps.filter((m) => m.courseId === courseId).sort((a, b) => b.updatedAt - a.updatedAt);
     },
     recentMaps(n = 6) { return [...this.data.maps].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, n); },
-    addMap(courseId, title) {
+    addMap(courseId, title, { rootType = 'notion' } = {}) {
       const t = (title || '').trim() || 'Nouvelle carte';
-      const root = this.newNode({ type: 'notion', title: t, x: 0, y: 0 });
+      const root = this.newNode({ type: TYPES[rootType] ? rootType : 'notion', title: t, x: 0, y: 0 });
       const m = { id: U.uid('m'), courseId, title: t, createdAt: Date.now(), updatedAt: Date.now(), viewport: null, nodes: [root], edges: [] };
       this.data.maps.push(m);
       const c = this.course(courseId);
@@ -281,6 +300,53 @@
       if (this.parentEdge(map, to)) return false;
       return !this.descendants(map, to).includes(from);
     },
+    /** Numéro automatique des nœuds de structure : rang parmi les frères de même type
+        (Leçon 1, Leçon 2… dans un chapitre). Pas de numéro quand le type est seul à ce niveau. */
+    structNumbers(map) {
+      const out = new Map();
+      if (!map.nodes.some((n) => isStruct(n.type))) return out;
+      const parent = new Map();
+      for (const e of map.edges) if (e.kind === 'tree') parent.set(e.to, e.from);
+      const groups = new Map();
+      for (const n of map.nodes) {
+        if (!isStruct(n.type)) continue;
+        const k = (parent.get(n.id) || '') + '|' + n.type;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(n);
+      }
+      for (const list of groups.values()) {
+        if (list.length < 2) continue;
+        list.sort((a, b) => a.y - b.y || a.x - b.x).forEach((n, i) => out.set(n.id, i + 1));
+      }
+      return out;
+    },
+    /** Sur-titre affiché : « Leçon 2 », « Définition »… */
+    kickerOf(map, n, nums) {
+      const k = TYPES[n.type].kicker;
+      const num = isStruct(n.type) ? (nums || this.structNumbers(map)).get(n.id) : null;
+      return num ? `${k} ${num}` : k;
+    },
+    /** Bilan d'une branche (le nœud et tout ce qui en descend) — mis en cache par état de la carte */
+    branchStats(map, id) {
+      const stamp = `${map.updatedAt}|${map.nodes.length}|${map.edges.length}`;
+      let cache = branchCache.get(map);
+      if (!cache || cache.stamp !== stamp) { cache = { stamp, by: new Map() }; branchCache.set(map, cache); }
+      if (cache.by.has(id)) return cache.by.get(id);
+      const ids = [id, ...this.descendants(map, id)];
+      const now = Date.now();
+      const s = { nodes: ids.length - 1, reviewable: 0, mastered: 0, understood: 0, due: 0, progress: 0 };
+      for (const nid of ids) {
+        const n = this.node(map, nid);
+        if (!n || !this.isReviewable(map, n)) continue;
+        s.reviewable++;
+        if (n.review.rating === 'maitrise') s.mastered++;
+        else if (n.review.rating === 'compris') s.understood++;
+        if (this.isDue(n, now)) s.due++;
+      }
+      s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
+      cache.by.set(id, s);
+      return s;
+    },
     hiddenSet(map) {
       const hidden = new Set();
       for (const n of map.nodes) if (n.collapsed) for (const d of this.descendants(map, n.id)) hidden.add(d);
@@ -315,14 +381,17 @@
       s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
       return s;
     },
-    /** Cartes de révision selon une portée : {all} | {courseId} | {mapId} */
+    /** Cartes de révision selon une portée : {all} | {courseId} | {mapId[, nodeId]} */
     reviewQueue(scope = {}, { all = false, limit = 20 } = {}) {
       const maps = scope.mapId ? [this.map(scope.mapId)].filter(Boolean)
         : scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
       const now = Date.now();
       const due = [], fresh = [];
+      // portée « branche » : un chapitre, une leçon… (le nœud et sa descendance)
+      const branch = scope.mapId && scope.nodeId && maps[0] ? new Set([scope.nodeId, ...this.descendants(maps[0], scope.nodeId)]) : null;
       for (const m of maps) {
         for (const n of m.nodes) {
+          if (branch && !branch.has(n.id)) continue;
           if (!this.isReviewable(m, n)) continue;
           if (all || this.isDue(n, now)) (n.review.last ? due : fresh).push({ mapId: m.id, nodeId: n.id, due: n.review.due });
         }

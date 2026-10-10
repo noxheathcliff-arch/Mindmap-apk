@@ -7,17 +7,25 @@
   const GAP_Y = 16;   // entre deux frères
   const GAP_ROOT = 64;
 
+  /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
+      reflètent editor.css ; les nœuds de structure sont plus grands (hiérarchie visuelle). */
+  const METRICS = {
+    chapitre: { cw: 12.2, pad: 48, lh: 32, base: 36, min: 200, max: 340, bar: 10 },
+    lecon:    { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
+    section:  { cw: 8.6,  pad: 35, lh: 22, base: 25, min: 120, max: 280, bar: 10 },
+    notion:   { cw: 8.4,  pad: 43, lh: 24, base: 27, min: 64,  max: 260, bar: 0 },
+  };
+  const BASE = { cw: 7.4, pad: 31, lh: 20, base: 22, min: 64, max: 260, bar: 0 };
+
   /** Estimation de taille hors DOM (seed, import) */
   function estimate(n) {
+    const M = METRICS[n.type] || BASE;
     const len = (n.title || 'Sans titre').length;
-    const notion = n.type === 'notion';
-    const cw = notion ? 8.4 : 7.4;
-    const pad = notion ? 43 : 31;
-    const w = Math.min(260, Math.max(64, len * cw + pad));
-    const perLine = Math.max(8, Math.floor((w - pad) / cw));
+    const w = Math.min(M.max, Math.max(M.min, len * M.cw + M.pad));
+    const perLine = Math.max(8, Math.floor((w - M.pad) / M.cw));
     const lines = Math.max(1, Math.ceil(len / perLine));
     const top = (R.store.TYPES[n.type].kicker || n.note || n.review.rating) ? 18 : 0;
-    const h = (notion ? 27 : 22) + top + lines * (notion ? 24 : 20);
+    const h = M.base + top + lines * M.lh + M.bar;
     return { w, h };
   }
 

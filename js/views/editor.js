@@ -249,8 +249,8 @@
       }
       return x0 === Infinity ? null : { x0, y0, x1, y1 };
     }
-    function fit(animate = true, maxK = 1.1) {
-      const b = bbox();
+    function fit(animate = true, maxK = 1.1, ids) {
+      const b = bbox(ids);
       if (!b) return;
       const r = visibleRect();
       const pad = U.isCompact() ? 32 : 72;
@@ -308,6 +308,7 @@
     function nodeEl(n) {
       const el = h('div.node', { dataset: { id: n.id }, role: 'treeitem', tabindex: '-1' });
       el.innerHTML = '<span class="node-top"><span class="node-kicker"></span><span class="node-meta"></span></span><span class="node-title"><span class="hl"></span></span>' +
+        '<span class="node-meter" aria-hidden="true"><i></i></span>' +
         '<button type="button" class="node-collapse" tabindex="-1" aria-label="Replier"></button>' +
         '<span class="node-handle" data-handle="1" aria-hidden="true" title="Glisser pour relier · cliquer pour ajouter un enfant"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>';
       return el;
@@ -315,11 +316,23 @@
 
     function paintNode(el, n, ctx) {
       const T = S.TYPES[n.type];
-      const sig = [n.type, n.title, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic].join('|');
-      if (el._type !== n.type) { if (el._type) el.classList.remove('t-' + el._type); el.classList.add('t-' + n.type); el._type = n.type; }
+      const bs = ctx.stats;
+      const sig = [n.type, n.title, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic, ctx.kicker,
+        bs ? `${bs.reviewable}/${Math.round(bs.progress * 100)}` : ''].join('|');
+      if (el._type !== n.type) {
+        if (el._type) el.classList.remove('t-' + el._type, 'rank-' + (S.TYPES[el._type].rank || 0));
+        el.classList.add('t-' + n.type);
+        el.classList.toggle('struct', !!T.rank);
+        if (T.rank) el.classList.add('rank-' + T.rank);
+        el._type = n.type;
+      }
       if (el._sig !== sig) {
         el._sig = sig;
-        el.querySelector('.node-kicker').textContent = T.kicker;
+        el.querySelector('.node-kicker').textContent = ctx.kicker;
+        // structure : jauge de maîtrise de toute la branche (chapitre, leçon, section)
+        const meter = el.querySelector('.node-meter');
+        el.classList.toggle('has-meter', !!(bs && bs.reviewable));
+        if (bs && bs.reviewable) meter.style.setProperty('--p', String(bs.progress));
         const hl = el.querySelector('.hl');
         if (st.editing !== n.id) hl.textContent = n.title || 'Sans titre';
         el.classList.toggle('untitled', !n.title);
@@ -344,7 +357,7 @@
       const masked = st.masked && ctx.isRoot === false && !st.revealed.has(n.id);
       el.classList.toggle('masked', masked);
       el.setAttribute('aria-selected', String(st.sel.has(n.id)));
-      el.setAttribute('aria-label', `${T.label} : ${n.title || 'Sans titre'}`);
+      el.setAttribute('aria-label', `${ctx.kicker && T.rank ? ctx.kicker : T.label} : ${n.title || 'Sans titre'}`);
       el.style.transform = `translate(${n.x}px, ${n.y}px)`;
     }
 
@@ -356,6 +369,7 @@
       for (const e of map.edges) if (e.kind === 'tree') childCount[e.from] = (childCount[e.from] || 0) + 1;
       const alive = new Set();
       const emerging = [];
+      const nums = S.structNumbers(map);
       for (const n of map.nodes) {
         if (hidden.has(n.id)) continue;
         alive.add(n.id);
@@ -375,6 +389,8 @@
           childCount: childCount[n.id] || 0,
           descCount: n.collapsed ? S.descendants(map, n.id).length : 0,
           isRoot: !parents.has(n.id),
+          kicker: S.kickerOf(map, n, nums),
+          stats: S.isStruct(n.type) ? S.branchStats(map, n.id) : null,
         });
       }
       st.fresh.clear();
@@ -577,6 +593,11 @@
       const bundles = computeBundles(visible);
       const bundleOf = new Map();
       for (const b of bundles.values()) for (const e of b.edges) bundleOf.set(e.id, b);
+      // colonne vertébrale du cours : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés
+      const spine = (from, kind) => {
+        const r = kind === 'tree' && S.TYPES[byId.get(from).type].rank;
+        return r && r < 3 ? ' spine' : '';
+      };
       const selEdgeObj = st.selEdge ? map.edges.find((x) => x.id === st.selEdge) : null;
       const selGroup = selEdgeObj && selEdgeObj.group;
 
@@ -610,7 +631,7 @@
         else { delete br.hit.dataset.edge; br.hit.style.pointerEvents = 'none'; }
         const sel = b.explicit && selGroup && b.edges[0].group === selGroup;
         const related = st.sel.has(b.from) || b.edges.some((e) => st.sel.has(e.to));
-        br.trunk.setAttribute('class', `edge trunk k-${b.kind}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        br.trunk.setAttribute('class', `edge trunk k-${b.kind}${spine(b.from, b.kind)}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
         const lbl = bundleLabel(b);
         setLabel(br.label, lbl, { sel, logic: !b.edges[0].label && !!lbl });
         if (b.explicit) { br.label.dataset.edge = b.edges[0].id; delete br.label.dataset.logicFrom; }
@@ -664,7 +685,7 @@
         }
         rec.path.setAttribute('d', c.d);
         rec.hit.setAttribute('d', c.d);
-        rec.path.setAttribute('class', `edge k-${e.kind}${bundle ? ' branch' : ''}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        rec.path.setAttribute('class', `edge k-${e.kind}${spine(e.from, e.kind)}${bundle ? ' branch' : ''}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
         if (e.kind === 'link') rec.path.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
         else rec.path.removeAttribute('marker-end');
         drawBorn(rec, e);
@@ -762,6 +783,12 @@
       return n;
     }
     function defaultChildType(p) {
+      // structure : on poursuit le plan (Chapitre → Leçon), ou on imite les frères déjà posés
+      if (S.isStruct(p.type)) {
+        const ch = S.childrenOf(map, p.id);
+        if (ch.length) return ch[ch.length - 1].type;
+        return p.type === 'chapitre' ? 'lecon' : 'notion';
+      }
       if (p.type === 'notion') return 'idee';
       if (p.type === 'fond' || p.type === 'forme') return 'idee';
       return 'idee';
@@ -817,6 +844,31 @@
     }
     function setLogic(id, logic) {
       mutate(() => { const n = S.node(map, id); if (n) n.logic = logic; });
+    }
+    /* Nœuds de structure (Chapitre, Leçon, Section) */
+    const STRUCT_THIS = { chapitre: 'ce chapitre', lecon: 'cette leçon', section: 'cette section' };
+    function reviewBranch(n) { R.app.go(`#/reviser/carte/${map.id}/${n.id}`); }
+    /** Rivaux repliables : les autres nœuds du même type qui ont une descendance */
+    function rivals(n) { return map.nodes.filter((o) => o.type === n.type && o.id !== n.id && S.childrenOf(map, o.id).length); }
+    /** Isoler : replie les autres chapitres (ou leçons…), déplie celui-ci, puis le cadre avec sa branche */
+    function isolate(n) {
+      const others = rivals(n).filter((o) => !o.collapsed);
+      const visibleBefore = new Set(st.els.keys());
+      for (const o of others) for (const d of S.descendants(map, o.id)) if (visibleBefore.has(d)) st.retract.set(d, o.id);
+      mutate(() => {
+        for (const o of others) o.collapsed = true;
+        for (const a of [...S.ancestors(map, n.id), n]) a.collapsed = false;
+      });
+      const ids = new Set([n.id, ...S.descendants(map, n.id)]);
+      setTimeout(() => fit(true, 1, ids), 60);
+    }
+    function structMenuItems(n) {
+      if (!S.isStruct(n.type)) return [];
+      const bs = S.branchStats(map, n.id);
+      return [
+        bs.reviewable ? { label: `Réviser ${STRUCT_THIS[n.type]}`, icon: 'cards', onClick: () => reviewBranch(n) } : null,
+        rivals(n).length ? { label: `Isoler ${STRUCT_THIS[n.type]}`, icon: 'target', onClick: () => isolate(n) } : null,
+      ].filter(Boolean);
     }
     function toggleCollapse(id) {
       const n = S.node(map, id);
@@ -987,6 +1039,8 @@
       return {
         notion: 'Notion…', definition: 'Définition…', fond: 'Condition de fond…', forme: 'Condition de forme…',
         effet: 'Effet…', exception: 'Exception…', juris: 'Cass. civ. …', texte: 'Art. …', idee: 'Idée…',
+        chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…',
+        doctrine: 'Auteur, position…', exemple: 'Exemple…', retenir: 'À retenir…',
       }[n.type];
     }
 
@@ -1007,11 +1061,13 @@
       }
       const kids = S.childrenOf(map, n.id).length;
       return [
-        { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9)' },
+        { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9, Alt 1–3 : structure)' },
         { icon: 'child', label: 'Enfant', act: () => addChild(n.id), tip: 'Décomposer', kbd: 'Tab' },
         { icon: 'note', label: 'Note', act: () => openPane(true), tip: 'Écrire la note', kbd: 'Espace', on: !!n.note.trim() },
         { icon: 'link', label: 'Relier', act: () => startLinking(n.id), tip: 'Relier à un ou plusieurs nœuds', kbd: 'L' },
-        { icon: 'logic', label: n.logic ? (n.logic === 'et' ? 'ET' : 'OU') : 'ET/OU', act: (b) => logicMenu(b, n), tip: 'Conditions cumulatives ou alternatives', on: !!n.logic },
+        S.isStruct(n.type)
+          ? (S.branchStats(map, n.id).reviewable ? { icon: 'cards', label: 'Réviser', act: () => reviewBranch(n), tip: `Réviser ${STRUCT_THIS[n.type]}` } : null)
+          : { icon: 'logic', label: n.logic ? (n.logic === 'et' ? 'ET' : 'OU') : 'ET/OU', act: (b) => logicMenu(b, n), tip: 'Conditions cumulatives ou alternatives', on: !!n.logic },
         kids ? { icon: n.collapsed ? 'expand' : 'collapse', label: n.collapsed ? 'Déplier' : 'Replier', act: () => toggleCollapse(n.id), tip: n.collapsed ? 'Déplier la branche' : 'Replier la branche', kbd: '.' } : null,
         { icon: 'more', label: 'Plus', act: (b) => nodeMenu(b, n) },
       ].filter(Boolean);
@@ -1099,9 +1155,18 @@
 
     function typeMenu(anchor, ids) {
       const cur = S.node(map, ids[0])?.type;
-      ui.menu(anchor, [{ header: 'Type de nœud' }, ...S.TYPE_ORDER.map((t, i) => ({
-        label: S.TYPES[t].label, checked: t === cur, hint: String(i + 1), onClick: () => setType(ids, t),
-      }))], { align: 'start' });
+      const hint = (t) => {
+        const i = S.TYPE_ORDER.indexOf(t);
+        if (i >= 0 && i < 9) return String(i + 1);
+        const j = S.STRUCT_ORDER.indexOf(t);
+        return j >= 0 && !U.isCompact() ? 'Alt ' + (j + 1) : null;
+      };
+      const items = [];
+      for (const g of S.TYPE_GROUPS) {
+        items.push({ header: g.label });
+        for (const t of g.types) items.push({ label: S.TYPES[t].label, checked: t === cur, hint: hint(t), onClick: () => setType(ids, t) });
+      }
+      ui.menu(anchor, items, { align: 'start', focusChecked: true });
     }
     function logicMenu(anchor, n) {
       ui.menu(anchor, [
@@ -1118,6 +1183,7 @@
         { label: 'Ajouter un frère', icon: 'sibling', hint: 'Entrée', onClick: () => addSibling(n.id) },
         { label: 'Dupliquer la branche', icon: 'copy', onClick: () => duplicateBranch(n.id) },
         { label: 'Centrer', icon: 'target', onClick: () => centerOn(n.id) },
+        ...structMenuItems(n),
         { label: 'Réviser cette carte', icon: 'cards', onClick: () => R.app.go('#/reviser/carte/' + map.id) },
         { divider: true },
         { label: kids ? 'Supprimer la branche' : 'Supprimer', icon: 'trash', danger: true, hint: 'Suppr', onClick: () => deleteNodes([n.id]) },
@@ -1325,7 +1391,8 @@
       ui.menu(anchor, [
         { label: 'Renommer', icon: 'edit', onClick: () => startEdit(n.id) },
         { label: 'Ajouter un frère', icon: 'sibling', onClick: () => addSibling(n.id) },
-        { label: n.logic === 'et' ? 'Cumulatifs (ET) ✓' : n.logic === 'ou' ? 'Alternatifs (OU) ✓' : 'Cumulatifs / alternatifs…', icon: 'logic', onClick: () => setTimeout(() => logicMenu(anchor, n), 160) },
+        ...structMenuItems(n),
+        S.isStruct(n.type) ? null : { label: n.logic === 'et' ? 'Cumulatifs (ET) ✓' : n.logic === 'ou' ? 'Alternatifs (OU) ✓' : 'Cumulatifs / alternatifs…', icon: 'logic', onClick: () => setTimeout(() => logicMenu(anchor, n), 160) },
         kids ? { label: n.collapsed ? 'Déplier' : 'Replier', icon: n.collapsed ? 'expand' : 'collapse', onClick: () => toggleCollapse(n.id) } : null,
         { label: 'Dupliquer la branche', icon: 'copy', onClick: () => duplicateBranch(n.id) },
         { label: 'Annuler', icon: 'undo', onClick: undo },
@@ -1815,6 +1882,12 @@
       if (mod && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
       if (mod && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if (mod && k.toLowerCase() === 'a' && st.mode === 'map') { e.preventDefault(); st.sel = new Set([...st.els.keys()]); st.primary = [...st.sel][0] || null; render(); renderPane(); return; }
+      if (e.altKey && !mod && /^Digit[1-3]$/.test(e.code) && st.mode === 'map' && !st.masked && primaryNode()) {
+        // Alt 1–3 : Chapitre, Leçon, Section (les chiffres seuls restent aux 9 types historiques)
+        e.preventDefault();
+        setType(st.sel.size ? [...st.sel] : [primaryNode().id], S.STRUCT_ORDER[+e.code.slice(5) - 1]);
+        return;
+      }
       if (mod || e.altKey) return;
       const a = document.activeElement;
       const inCanvas = !a || a === document.body || a.id === 'view' || a === canvas || canvas.contains(a);
@@ -1976,6 +2049,32 @@
       paneInner.appendChild(paneNode(n));
     }
 
+    /** Sommaire : les chapitres, leçons et sections de la carte, dans l'ordre du plan */
+    function paneToc() {
+      if (!map.nodes.some((n) => S.isStruct(n.type))) return null;
+      const nums = S.structNumbers(map);
+      const rows = [];
+      const seen = new Set();
+      const walk = (n, depth) => {
+        if (seen.has(n.id)) return;
+        seen.add(n.id);
+        const struct = S.isStruct(n.type);
+        if (struct) {
+          const bs = S.branchStats(map, n.id);
+          rows.push(h('li', { style: { '--d': depth } },
+            h('button.toc-item', { type: 'button', class: 'rank-' + S.TYPES[n.type].rank, onclick: () => {
+              if (S.hiddenSet(map).has(n.id)) isolate(n); else { select(n.id); centerOn(n.id); }
+            } },
+              h('span.toc-k', S.kickerOf(map, n, nums)),
+              h('span.toc-t', n.title || 'Sans titre'),
+              bs.reviewable ? h('span.toc-p', { title: 'Maîtrise de la branche' }, Math.round(bs.progress * 100) + ' %') : null)));
+        }
+        for (const c of S.childrenOf(map, n.id)) walk(c, depth + (struct ? 1 : 0));
+      };
+      for (const r of S.roots(map)) walk(r, 0);
+      return rows.length ? h('section.pane-toc', h('p.overline', 'Sommaire'), h('ol.toc-list', rows)) : null;
+    }
+
     function paneHeader(titleText, extra) {
       return h('div.pane-head',
         h('span.pane-overline', titleText),
@@ -1995,6 +2094,7 @@
           h('div.stat', h('span.stat-n', Math.round(ms.progress * 100) + ' %'), h('span.stat-l', 'maîtrise'))),
         ui.progress(ms.progress),
         ms.reviewable ? ui.btn('Réviser cette carte', { icon: 'cards', variant: 'tonal', cls: 'pane-cta', onClick: () => R.app.go('#/reviser/carte/' + map.id) }) : null,
+        paneToc(),
         h('div.pane-help',
           h('p.overline', 'Pour bien démarrer'),
           h('ul.help-list',
@@ -2119,12 +2219,14 @@
         }
         if (e.key === 'Escape') { e.stopPropagation(); addIn.blur(); }
       });
+      const struct = S.isStruct(n.type);
+      const nums = S.structNumbers(map);
       const decomp = h('section.pane-sec',
-        h('div.pane-sec-head', h('h3.pane-sec-title', 'Décomposition'), kids.length > 1 ? logicSeg : null),
+        h('div.pane-sec-head', h('h3.pane-sec-title', struct ? 'Plan' : 'Décomposition'), kids.length > 1 && !struct ? logicSeg : null),
         kids.length ? h('ol.decomp-list', kids.map((c) => h('li',
           h('button.decomp-item', { type: 'button', onclick: () => { select(c.id); ensureVisible(c.id); } },
             n.logic ? h('span.decomp-logic', n.logic === 'et' ? 'ET' : 'OU') : null,
-            S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.TYPES[c.type].kicker) : null,
+            S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
             h('span.decomp-t', c.title || 'Sans titre'),
             c.note.trim() ? R.icon('note', 14) : null)))) : null,
         h('label.decomp-add', R.icon('plus', 18), addIn));
@@ -2153,13 +2255,28 @@
             : 'Ajoute une note ou des éléments rattachés pour en faire une carte de révision.'));
 
       const typeRow = h('div.pane-type-row', typeChip,
-        kids.length <= 1 ? h('span.pane-hint', n.logic ? (n.logic === 'et' ? 'Cumulatifs (ET)' : 'Alternatifs (OU)') : '') : null);
+        kids.length <= 1 && !struct ? h('span.pane-hint', n.logic ? (n.logic === 'et' ? 'Cumulatifs (ET)' : 'Alternatifs (OU)') : '') : null);
+
+      // structure : bilan de toute la branche + raccourcis (réviser, isoler)
+      let branchSec = null;
+      if (struct) {
+        const bs = S.branchStats(map, n.id);
+        const acts = structMenuItems(n);
+        branchSec = h('section.pane-sec.pane-branch',
+          h('div.pane-stats',
+            h('div.stat', h('span.stat-n', String(bs.nodes)), h('span.stat-l', bs.nodes > 1 ? 'éléments' : 'élément')),
+            h('div.stat', h('span.stat-n', String(bs.due)), h('span.stat-l', 'à réviser')),
+            h('div.stat', h('span.stat-n', Math.round(bs.progress * 100) + ' %'), h('span.stat-l', 'maîtrise'))),
+          ui.progress(bs.progress),
+          acts.length ? h('div.pane-branch-actions', acts.map((a, i) => ui.btn(a.label, { icon: a.icon, variant: i ? 'text' : 'tonal', onClick: a.onClick }))) : null);
+      }
 
       return h('div.pane-body',
-        paneHeader(T.label, ui.iconBtn('target', { title: 'Centrer sur la carte', onClick: () => centerOn(n.id) })),
+        paneHeader(struct ? S.kickerOf(map, n, nums) : T.label, ui.iconBtn('target', { title: 'Centrer sur la carte', onClick: () => centerOn(n.id) })),
         crumbs,
         titleIn,
         typeRow,
+        branchSec,
         h('section.pane-sec.pane-note',
           h('div.pane-sec-head', h('h3.pane-sec-title', 'Note'), noteTabs),
           noteBody),

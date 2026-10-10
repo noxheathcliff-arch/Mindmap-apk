@@ -372,3 +372,23 @@
 .plan-refs { margin-top: var(--sp-2); font: var(--body-s); color: var(--on-surface-variant); }
 .plan-logic { margin-top: var(--sp-2); font: var(--body-s); color: var(--on-surface-variant); display: flex; gap: var(--sp-2); align-items: center; }
 .plan .mastery { align-self: center; }
+
+/* Plan : la structure du cours (Chapitre › Leçon › Section) en intertitres */
+.plan-struct-sec { margin-top: var(--sp-8); }
+.plan-struct-sec .plan-struct-sec { margin-top: var(--sp-6); }
+.plan-struct { display: grid; gap: var(--sp-1); }
+.plan-struct-k { justify-self: start; font: 700 11px/16px var(--font-plain); letter-spacing: .1em; text-transform: uppercase; color: var(--on-surface-variant); }
+.plan-struct.rank-1 { font: var(--headline-l); padding-bottom: var(--sp-3); border-bottom: 2px solid var(--on-surface); }
+.plan-struct.rank-1 .plan-struct-k { padding: 2px 7px; border-radius: 4px; background: var(--primary); color: var(--on-primary); }
+.plan-struct.rank-2 { font: var(--headline-m); }
+.plan-struct.rank-2 .plan-struct-k { color: var(--on-surface); }
+.plan-struct.rank-3 { font: 600 22px/30px var(--font-brand); }
+.plan-root .plan-struct-k { display: block; margin-bottom: var(--sp-1); }
+/* sous un intertitre de structure, le contenu descend d'un cran (la hiérarchie reste lisible) */
+.plan-struct-sec .plan-h.lvl-0 { font: 500 20px/28px var(--font-brand); }
+.plan-struct-sec .plan-h.lvl-1 { font: var(--title-m); }
+.plan-sec.t-retenir .plan-num:empty { display: none; }
+/* encadrés : « À retenir » surligné, exemples en retrait */
+.plan-sec.t-retenir { padding: var(--sp-3) var(--sp-4); border-radius: var(--shape-m); background: var(--primary-container); color: var(--on-primary-container); border-left: 0; }
+.plan-sec.t-retenir .plan-num, .plan-sec.t-retenir .plan-kicker { color: inherit; }
+.plan-sec.t-exemple .plan-note { font-style: italic; }

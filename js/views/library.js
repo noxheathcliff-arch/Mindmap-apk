@@ -30,9 +30,11 @@
     }
     for (const n of nodes) {
       const s = sz[n.id];
-      const fill = n.type === 'notion' ? 'var(--on-surface)' : 'var(--surface-container-lowest)';
-      const stroke = n.type === 'notion' ? 'none' : 'var(--outline-variant)';
-      svg += `<rect x="${n.x}" y="${n.y}" width="${s.w}" height="${s.h}" rx="${n.type === 'notion' ? s.h / 2 : 10}" style="fill:${fill};stroke:${stroke}" stroke-width="${Math.max(2, bw / 300)}"/>`;
+      const ink = n.type === 'notion' || n.type === 'chapitre';
+      const fill = ink ? 'var(--on-surface)' : 'var(--surface-container-lowest)';
+      const stroke = ink ? 'none' : n.type === 'lecon' || n.type === 'section' ? 'var(--on-surface)' : 'var(--outline-variant)';
+      const sw = Math.max(2, bw / 300) * (n.type === 'lecon' ? 2 : 1);
+      svg += `<rect x="${n.x}" y="${n.y}" width="${s.w}" height="${s.h}" rx="${n.type === 'notion' ? s.h / 2 : 10}" style="fill:${fill};stroke:${stroke}" stroke-width="${sw}"/>`;
       if (n.review.rating === 'maitrise') svg += `<rect x="${n.x + 10}" y="${n.y + s.h - 12}" width="${s.w - 20}" height="5" rx="2" style="fill:var(--primary)"/>`;
     }
     svg += '</svg>';
@@ -86,10 +88,16 @@
     }
     const v = await ui.form({
       title: 'Nouvelle carte', icon: 'map', ok: 'Créer',
-      fields: [{ key: 'title', label: 'Notion ou chapitre', placeholder: 'Ex. La formation du contrat', required: true }],
+      fields: [
+        { key: 'title', label: 'Notion ou chapitre', placeholder: 'Ex. La formation du contrat', required: true },
+        { key: 'root', label: 'Point de départ', choices: [
+          { value: 'notion', label: 'Une notion', text: 'Un concept à décomposer : définition, conditions, effets…' },
+          { value: 'chapitre', label: 'Un chapitre de cours', text: 'Leçons, sections, puis les notions de chacune.' },
+        ], onChange: (val, inputs) => { inputs.title.placeholder = val === 'chapitre' ? 'Ex. Les sources du droit' : 'Ex. La formation du contrat'; } },
+      ],
     });
     if (!v) return;
-    const m = S.addMap(courseId, v.title);
+    const m = S.addMap(courseId, v.title, { rootType: v.root });
     R.app.go('#/carte/' + m.id + '?new=1');
   };
 

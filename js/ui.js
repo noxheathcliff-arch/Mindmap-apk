@@ -172,13 +172,30 @@
     const inputs = {};
     const body = h('div.form');
     fields.forEach((f, i) => {
+      if (f.choices) { // choix exclusif : [{value, label, text}]
+        const state = { value: f.value ?? f.choices[0].value };
+        const list = h('div.choice-list.form-choice', { role: 'radiogroup', 'aria-label': f.label },
+          f.choices.map((c) => {
+            const b = h('button.list-item.choice', { type: 'button', role: 'radio', 'aria-checked': String(c.value === state.value) },
+              h('span.choice-l', h('b', c.label), c.text ? h('span.choice-sub', c.text) : null), h('span.choice-check', R.icon('check', 20)));
+            b.addEventListener('click', () => {
+              state.value = c.value;
+              U.$$('.choice', list).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+              if (f.onChange) f.onChange(c.value, inputs);
+            });
+            return b;
+          }));
+        inputs[f.key] = state;
+        body.appendChild(h('div.field', h('span.field-label', f.label), list));
+        return;
+      }
       const fld = ui.field({ ...f, autofocus: i === 0 });
       inputs[f.key] = fld.input;
       body.appendChild(fld.wrap);
     });
     const validate = () => {
       for (const f of fields) {
-        if (f.required && !inputs[f.key].value.trim()) {
+        if (f.required && !String(inputs[f.key].value).trim()) {
           const fld = inputs[f.key].closest('.field');
           fld.classList.add('invalid');
           inputs[f.key].focus();
@@ -206,7 +223,7 @@
   let openMenu = null;
   ui.closeMenu = () => { if (openMenu) { openMenu(); openMenu = null; } };
 
-  ui.menu = function (anchor, items, { align = 'end', placement = 'bottom' } = {}) {
+  ui.menu = function (anchor, items, { align = 'end', placement = 'bottom', focusChecked = false } = {}) {
     ui.closeMenu();
     ui.hideTip();
     const el = h('div.menu', { role: 'menu' });
@@ -236,7 +253,10 @@
     el.style.left = left + 'px';
     el.style.transformOrigin = `${r.left + r.width / 2 - left}px ${top > r.top ? 0 : mr.height}px`;
     requestAnimationFrame(() => el.classList.add('in'));
-    const firstItem = el.querySelector('.menu-item');
+    // menu long (types) : on ouvre sur l'élément coché, déjà visible
+    const checked = focusChecked && el.querySelector('.menu-item.checked');
+    if (checked && el.scrollHeight > el.clientHeight) el.scrollTop = Math.max(0, checked.offsetTop - el.clientHeight / 2 + checked.offsetHeight / 2);
+    const firstItem = checked || el.querySelector('.menu-item');
     if (firstItem) firstItem.focus({ preventScroll: true });
 
     const onDown = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };

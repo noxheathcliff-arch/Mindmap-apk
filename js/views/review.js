@@ -18,8 +18,11 @@
     mount(el, route) {
       const scope = route.scope || {};
       const all = route.q && route.q.all === '1';
-      const scopeName = scope.mapId ? (S.map(scope.mapId) || {}).title : scope.courseId ? (S.course(scope.courseId) || {}).title : 'Tous les cours';
-      const exitHref = scope.mapId ? '#/carte/' + scope.mapId : scope.courseId ? '#/cours/' + scope.courseId : '#/';
+      const scopeMap = scope.mapId && S.map(scope.mapId);
+      const scopeNode = scopeMap && scope.nodeId && S.node(scopeMap, scope.nodeId);
+      const scopeName = scopeNode ? [S.kickerOf(scopeMap, scopeNode), scopeNode.title].filter(Boolean).join(' · ')
+        : scope.mapId ? (scopeMap || {}).title : scope.courseId ? (S.course(scope.courseId) || {}).title : 'Tous les cours';
+      const exitHref = scopeNode ? `#/carte/${scope.mapId}?n=${scope.nodeId}` : scope.mapId ? '#/carte/' + scope.mapId : scope.courseId ? '#/cours/' + scope.courseId : '#/';
 
       const queue = S.reviewQueue(scope, { all });
       const results = { revoir: 0, compris: 0, maitrise: 0 };
@@ -69,6 +72,7 @@
         const kids = S.childrenOf(map, node.id);
         const anc = S.ancestors(map, node.id);
         const course = S.course(map.courseId);
+        const nums = S.structNumbers(map);
 
         const prompt = kids.length
           ? (node.logic ? `${T.prompt} — ${kids.length} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver` : `${T.prompt} — ${kids.length} élément${kids.length > 1 ? 's' : ''} à retrouver`)
@@ -80,7 +84,7 @@
               h('p.overline', node.logic === 'et' ? 'Éléments cumulatifs (ET)' : node.logic === 'ou' ? 'Éléments alternatifs (OU)' : 'Décomposition'),
               h('ol.answer-list', kids.map((c) => h('li',
                 node.logic ? h('span.decomp-logic', node.logic === 'et' ? 'ET' : 'OU') : null,
-                S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.TYPES[c.type].kicker) : null,
+                S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
                 h('span', c.title || 'Sans titre'))))) : null,
             node.note.trim() ? h('div.answer-block', h('p.overline', 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null,
             h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Ouvrir dans la carte')));
@@ -88,7 +92,7 @@
         const card = h('article.rcard', { class: dir < 0 ? 'from-left' : 'from-right' },
           h('div.rcard-ctx', [course ? course.title : null, map.title].filter(Boolean).join(' › ')),
           anc.length && !(anc.length === 1 && U.norm(anc[0].title) === U.norm(map.title)) ? h('div.rcard-path', anc.map((a, i) => [i ? ' › ' : '', a.title])) : null,
-          h('div.rcard-kicker', T.label),
+          h('div.rcard-kicker', S.isStruct(node.type) ? S.kickerOf(map, node, nums) : T.label),
           h('h2.rcard-title', node.title),
           h('p.rcard-prompt', prompt),
           answer,
