@@ -73,7 +73,8 @@
     const labelsLayer = h('div.edge-labels');
     // étiquettes de fourche au-dessus des nœuds : le libellé commun ne doit jamais être masqué
     const junctionLayer = h('div.edge-labels.junctions');
-    const world = h('div.world', svg, labelsLayer, nodesLayer, junctionLayer);
+    // libellés au-dessus des nœuds : un libellé masqué par un nœud est une information perdue
+    const world = h('div.world', svg, nodesLayer, labelsLayer, junctionLayer);
     const marquee = h('div.marquee', { hidden: true });
     const grid = h('div.grid', { 'aria-hidden': 'true' });
     const canvas = h('div.canvas', { tabindex: '0', role: 'application', 'aria-label': 'Carte mentale — ' + map.title, dataset: { hero: 'map:' + map.id + ':thumb' } }, grid, world, marquee);
