@@ -77,6 +77,10 @@
 @keyframes label-pop { from { scale: .8; opacity: 0; } }
 .edge-label.logic { background: var(--on-surface); color: var(--surface); border-color: transparent; font-weight: 600; letter-spacing: .04em; padding: 0 6px; }
 .edge-label.sel { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+/* Fourche : un tronc, une étiquette posée sur le point de séparation, puis les branches */
+.edge.trunk { stroke-linecap: round; }
+.edge-label.junction { box-shadow: 0 0 0 3px var(--surface); }
+.edge-label.junction:not(.logic):not(.sel) { color: var(--on-surface); border-color: var(--outline); }
 .canvas.is-masked .edge-label:not(.logic) { filter: blur(4px); }
 
 /* ---- Nœuds ------------------------------------------------------------- */
@@ -157,6 +161,9 @@
 .node.drop-target { scale: 1.04; border-color: var(--on-surface); box-shadow: 0 0 0 3px var(--primary); transition: scale var(--dur-sm) var(--ease-out); }
 /* nœud source d'une liaison : anneau qui respire (attente), sur pseudo-élément */
 .node.link-source::after { box-shadow: 0 0 0 3px var(--primary); opacity: 1; animation: ring 1.6s var(--ease-in-out) infinite; }
+/* éléments choisis pendant « Relier » (sélection multiple) */
+.node.link-pick { box-shadow: 0 0 0 3px var(--primary); scale: 1.02; }
+.node.link-pick .node-meta::after { content: "✓"; font: 700 12px/1 var(--font-plain); color: var(--on-surface); }
 @keyframes ring { 50% { opacity: .35; transform: scale(1.04); } }
 /* confirmation d'une liaison réussie (action secondaire) */
 .node.linked { animation: linked var(--dur-md) var(--ease-out); }
@@ -278,6 +285,8 @@
 }
 .ed-banner.in { transform: translate(-50%, 0); opacity: 1; transition: transform var(--dur-md) var(--ease-out), opacity var(--dur-sm) var(--ease-out); }
 .ed-banner .btn-text { color: var(--inverse-primary); font-weight: 600; }
+.ed-banner .banner-done:not(:disabled) { background: var(--primary); color: var(--on-primary); }
+.ed-banner .banner-done:disabled { color: color-mix(in srgb, var(--inverse-on-surface) 45%, transparent); }
 .ed-banner > span:not(.ic) { overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 599.98px) { .ed-banner { border-radius: var(--shape-l); flex-wrap: wrap; padding: 8px 8px 4px 14px; width: calc(100% - 24px); } .ed-banner > span:not(.ic) { flex: 1; min-width: 60%; } }
 

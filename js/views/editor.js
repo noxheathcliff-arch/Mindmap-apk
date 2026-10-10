@@ -37,6 +37,7 @@
       els: new Map(),        // id → élément nœud
       sizes: new Map(),      // id → {w,h}
       edgeEls: new Map(),    // id → {g, path, hit, label}
+      bundleEls: new Map(),  // fourche → {g, trunk, hit, label}
       editing: null,
       linking: null,
       masked: false,
@@ -70,7 +71,9 @@
 
     const nodesLayer = h('div.nodes');
     const labelsLayer = h('div.edge-labels');
-    const world = h('div.world', svg, labelsLayer, nodesLayer);
+    // étiquettes de fourche au-dessus des nœuds : le libellé commun ne doit jamais être masqué
+    const junctionLayer = h('div.edge-labels.junctions');
+    const world = h('div.world', svg, labelsLayer, nodesLayer, junctionLayer);
     const marquee = h('div.marquee', { hidden: true });
     const grid = h('div.grid', { 'aria-hidden': 'true' });
     const canvas = h('div.canvas', { tabindex: '0', role: 'application', 'aria-label': 'Carte mentale — ' + map.title, dataset: { hero: 'map:' + map.id + ':thumb' } }, grid, world, marquee);
@@ -133,6 +136,8 @@
       st.coalesce = coalesce || null;
       st.coalesceAt = now;
       const r = fn();
+      // les fourches restent cohérentes après toute modification (suppression, nature…)
+      S.normalizeGroups(map.edges);
       S.touchMap(map, type);
       render();
       if (refreshPane) renderPane(true);
@@ -333,7 +338,8 @@
       el.classList.toggle('selected', st.sel.has(n.id));
       el.classList.toggle('primary', st.primary === n.id);
       el.classList.toggle('editing', st.editing === n.id);
-      el.classList.toggle('link-source', st.linking === n.id);
+      el.classList.toggle('link-source', !!st.linking && st.linking.from === n.id);
+      el.classList.toggle('link-pick', !!st.linking && st.linking.picked.includes(n.id));
       const masked = st.masked && ctx.isRoot === false && !st.revealed.has(n.id);
       el.classList.toggle('masked', masked);
       el.setAttribute('aria-selected', String(st.sel.has(n.id)));
@@ -391,6 +397,7 @@
       positionCtx();
       renderBottomBar();
       updateBanner();
+      paintLinkPreview();
       canvas.classList.toggle('is-masked', st.masked);
       canvas.classList.toggle('is-linking', !!st.linking);
     }
@@ -475,12 +482,150 @@
       return '';
     }
 
+    /* ---- Fourches ---------------------------------------------------------
+       Une fourche = un tronc depuis la source, un point de séparation, puis une
+       branche par élément. Deux origines :
+        - explicite : liens partageant un `group` (libellé commun, choisi par l'utilisateur) ;
+        - implicite : enfants d'un nœud ET/OU sans libellé propre → « ET » affiché une fois. */
+    function computeBundles(visible) {
+      const bundles = new Map();
+      const add = (key, e, explicit) => {
+        if (!bundles.has(key)) bundles.set(key, { key, explicit, from: e.from, kind: e.kind, edges: [] });
+        bundles.get(key).edges.push(e);
+      };
+      for (const e of visible) {
+        if (e.group) add('g:' + e.group, e, true);
+        else if (e.kind === 'tree' && !e.label) {
+          const p = S.node(map, e.from);
+          if (p && p.logic) add('l:' + e.from, e, false);
+        }
+      }
+      for (const [k, b] of bundles) if (b.edges.length < 2) bundles.delete(k);
+      return bundles;
+    }
+    function bundleLabel(b) {
+      const e = b.edges[0];
+      if (e.label) return e.label;
+      if (b.kind === 'tree') { const p = S.node(map, b.from); if (p && p.logic) return p.logic === 'et' ? 'ET' : 'OU'; }
+      return '';
+    }
+    /** Géométrie : côté de sortie vers le barycentre des cibles, jonction à ~42 % de l'écart */
+    function bundleGeometry(b, byId) {
+      const a = byId.get(b.from);
+      const sa = size(a);
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const e of b.edges) {
+        const t = byId.get(e.to), st2 = size(t);
+        x0 = Math.min(x0, t.x); y0 = Math.min(y0, t.y); x1 = Math.max(x1, t.x + st2.w); y1 = Math.max(y1, t.y + st2.h);
+      }
+      // côté de sortie : direction dominante entre le centre de la source et celui des cibles
+      const dx = (x0 + x1) / 2 - (a.x + sa.w / 2), dy = (y0 + y1) / 2 - (a.y + sa.h / 2);
+      let p1, d1;
+      if (Math.abs(dx) >= Math.abs(dy) * 0.6) {
+        d1 = [Math.sign(dx) || 1, 0];
+        p1 = [d1[0] > 0 ? a.x + sa.w : a.x, a.y + sa.h / 2];
+      } else {
+        d1 = [0, Math.sign(dy) || 1];
+        p1 = [a.x + sa.w / 2, d1[1] > 0 ? a.y + sa.h : a.y];
+      }
+      // écart entre la source et la cible la plus proche, mesuré dans la direction de sortie
+      let gap;
+      if (d1[0] > 0) gap = x0 - p1[0]; else if (d1[0] < 0) gap = p1[0] - x1;
+      else if (d1[1] > 0) gap = y0 - p1[1]; else gap = p1[1] - y1;
+      const reach = U.clamp(gap * 0.42, 24, 120);
+      const J = [p1[0] + d1[0] * reach, p1[1] + d1[1] * reach];
+      return { p1, d1, J };
+    }
+    function branchCurve(J, d1, t) {
+      const pt = { x: J[0], y: J[1] };
+      const { p2, d2 } = anchors(pt, { w: 0, h: 0 }, t, size(t));
+      return curve(J, d1, p2, d2);
+    }
+    function drawBorn(rec, e) {
+      if (!rec.born) return;
+      rec.born = false;
+      if (U.reducedMotion()) return;
+      if (e.kind === 'tree') {
+        const len = rec.path.getTotalLength();
+        rec.path.style.strokeDasharray = len;
+        rec.path.style.strokeDashoffset = len;
+        rec.path.getBoundingClientRect();
+        rec.path.style.transition = 'stroke-dashoffset 240ms var(--ease-out)';
+        rec.path.style.strokeDashoffset = '0';
+        setTimeout(() => { rec.path.style.strokeDasharray = ''; rec.path.style.strokeDashoffset = ''; rec.path.style.transition = ''; }, 300);
+      } else rec.g.classList.add('fade-in');
+    }
+    function setLabel(el, text, { sel, logic }) {
+      if (el.textContent !== text && text && el._ready && !motion.reduced()) {
+        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+      }
+      el._ready = true;
+      el.textContent = text;
+      el.hidden = !text;
+      el.classList.toggle('sel', !!sel);
+      el.classList.toggle('logic', !!logic);
+    }
+
     function renderEdges(hidden = S.hiddenSet(map)) {
       const alive = new Set();
       const byId = new Map(map.nodes.map((n) => [n.id, n]));
-      for (const e of map.edges) {
+      const visible = map.edges.filter((e) => {
         const a = byId.get(e.from), b = byId.get(e.to);
-        if (!a || !b || hidden.has(a.id) || hidden.has(b.id)) continue;
+        return a && b && !hidden.has(a.id) && !hidden.has(b.id);
+      });
+      const bundles = computeBundles(visible);
+      const bundleOf = new Map();
+      for (const b of bundles.values()) for (const e of b.edges) bundleOf.set(e.id, b);
+      const selEdgeObj = st.selEdge ? map.edges.find((x) => x.id === st.selEdge) : null;
+      const selGroup = selEdgeObj && selEdgeObj.group;
+
+      // 1) troncs + étiquette unique des fourches
+      const aliveB = new Set();
+      const geo = new Map();
+      for (const b of bundles.values()) {
+        aliveB.add(b.key);
+        let br = st.bundleEls.get(b.key);
+        if (!br) {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          const trunk = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          trunk.setAttribute('class', 'edge trunk');
+          hit.setAttribute('class', 'edge-hit');
+          g.append(hit, trunk);
+          edgesG.appendChild(g);
+          const label = h('button.edge-label.junction', { type: 'button', tabindex: '-1' });
+          junctionLayer.appendChild(label);
+          br = { g, trunk, hit, label };
+          st.bundleEls.set(b.key, br);
+          if (st.ready && b.edges.some((e) => ed._newEdges.has(e.id) || st.origin.has(e.to))) g.classList.add('fade-in');
+        }
+        const gm = bundleGeometry(b, byId);
+        geo.set(b.key, gm);
+        const d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
+        br.trunk.setAttribute('d', d);
+        br.hit.setAttribute('d', d);
+        // tronc d'une fourche explicite : cliquable (sélectionne la fourche) ; implicite : non
+        if (b.explicit) { br.hit.dataset.edge = b.edges[0].id; br.hit.style.pointerEvents = ''; }
+        else { delete br.hit.dataset.edge; br.hit.style.pointerEvents = 'none'; }
+        const sel = b.explicit && selGroup && b.edges[0].group === selGroup;
+        const related = st.sel.has(b.from) || b.edges.some((e) => st.sel.has(e.to));
+        br.trunk.setAttribute('class', `edge trunk k-${b.kind}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        const lbl = bundleLabel(b);
+        setLabel(br.label, lbl, { sel, logic: !b.edges[0].label && !!lbl });
+        if (b.explicit) { br.label.dataset.edge = b.edges[0].id; delete br.label.dataset.logicFrom; }
+        else { br.label.dataset.logicFrom = b.from; delete br.label.dataset.edge; }
+        br.label.setAttribute('aria-label', b.explicit ? `Fourche « ${lbl || 'sans libellé'} » (${b.edges.length} branches)` : `Logique ${lbl} — changer`);
+        br.label.style.transform = `translate(${gm.J[0]}px, ${gm.J[1]}px) translate(-50%, -50%)`;
+      }
+      for (const [k, br] of st.bundleEls) {
+        if (aliveB.has(k)) continue;
+        br.g.remove(); br.label.remove();
+        st.bundleEls.delete(k);
+      }
+
+      // 2) liens : simples, ou branches d'une fourche (depuis la jonction)
+      for (const e of visible) {
+        const a = byId.get(e.from), b = byId.get(e.to);
         alive.add(e.id);
         let rec = st.edgeEls.get(e.id);
         if (!rec) {
@@ -498,43 +643,30 @@
           rec = { g, path, hit, label, born: ed._newEdges?.has(e.id) || (st.ready && st.origin.has(e.to)) };
           st.edgeEls.set(e.id, rec);
         }
-        const { p1, p2, d1, d2 } = anchors(a, size(a), b, size(b));
-        // ET / OU : l'étiquette se place près de l'enfant pour ne pas s'empiler au départ
-        const c = curve(p1, d1, p2, d2, !e.label && e.kind === 'tree' ? 0.78 : 0.5);
+        const bundle = bundleOf.get(e.id);
+        const sel = st.selEdge === e.id || (selGroup && e.group === selGroup);
+        const related = st.sel.has(e.from) || st.sel.has(e.to);
+        let c;
+        if (bundle) {
+          const gm = geo.get(bundle.key);
+          c = branchCurve(gm.J, gm.d1, b);
+          rec.mid = gm.J;
+          setLabel(rec.label, '', {});
+        } else {
+          const { p1, p2, d1, d2 } = anchors(a, size(a), b, size(b));
+          // ET / OU sur un lien isolé : l'étiquette se place près de l'enfant
+          c = curve(p1, d1, p2, d2, !e.label && e.kind === 'tree' ? 0.78 : 0.5);
+          rec.mid = c.mid;
+          const lbl = edgeLabel(e);
+          setLabel(rec.label, lbl, { sel, logic: !e.label && !!lbl });
+          rec.label.style.transform = `translate(${c.mid[0]}px, ${c.mid[1]}px) translate(-50%, -50%)`;
+        }
         rec.path.setAttribute('d', c.d);
         rec.hit.setAttribute('d', c.d);
-        const sel = st.selEdge === e.id;
-        const related = st.sel.has(e.from) || st.sel.has(e.to);
-        rec.path.setAttribute('class', `edge k-${e.kind}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        rec.path.setAttribute('class', `edge k-${e.kind}${bundle ? ' branch' : ''}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
         if (e.kind === 'link') rec.path.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
         else rec.path.removeAttribute('marker-end');
-        const lbl = edgeLabel(e);
-        if (rec.label.textContent !== lbl && lbl && rec.lblReady && !motion.reduced()) {
-          rec.label.classList.remove('pop'); void rec.label.offsetWidth; rec.label.classList.add('pop');
-        }
-        rec.lblReady = true;
-        rec.label.textContent = lbl;
-        rec.label.hidden = !lbl;
-        rec.label.classList.toggle('sel', sel);
-        rec.label.classList.toggle('logic', !e.label && !!lbl);
-        rec.label.style.transform = `translate(${c.mid[0]}px, ${c.mid[1]}px) translate(-50%, -50%)`;
-        rec.mid = c.mid;
-        if (rec.born) {
-          rec.born = false;
-          if (!U.reducedMotion()) {
-            const len = rec.path.getTotalLength();
-            if (e.kind === 'tree') {
-              rec.path.style.strokeDasharray = len;
-              rec.path.style.strokeDashoffset = len;
-              rec.path.getBoundingClientRect();
-              rec.path.style.transition = 'stroke-dashoffset 240ms var(--ease-out)';
-              rec.path.style.strokeDashoffset = '0';
-              setTimeout(() => { rec.path.style.strokeDasharray = ''; rec.path.style.strokeDashoffset = ''; rec.path.style.transition = ''; }, 300);
-            } else {
-              rec.g.classList.add('fade-in');
-            }
-          }
-        }
+        drawBorn(rec, e);
       }
       if (ed._newEdges) ed._newEdges.clear();
       for (const [id, rec] of st.edgeEls) {
@@ -710,8 +842,12 @@
           c.id = U.uid('n'); idMap[i] = c.id; c.y += dy; c.review = { box: 0, due: 0, last: 0, rating: null };
           map.nodes.push(c); st.origin.set(c.id, i);
         }
+        const groupMap = {};
         for (const e of map.edges.filter((x) => ids.includes(x.from) && ids.includes(x.to))) {
-          map.edges.push({ ...e, id: U.uid('e'), from: idMap[e.from], to: idMap[e.to] });
+          const copy = { ...e, id: U.uid('e'), from: idMap[e.from], to: idMap[e.to] };
+          // une fourche dupliquée devient une fourche indépendante
+          if (e.group) copy.group = groupMap[e.group] || (groupMap[e.group] = U.uid('g'));
+          map.edges.push(copy);
         }
         const pe = S.parentEdge(map, id);
         if (pe) map.edges.push({ id: U.uid('e'), from: pe.from, to: idMap[id], kind: 'tree', label: '' });
@@ -840,6 +976,7 @@
       }
       map.nodes = map.nodes.filter((n) => n.id !== id);
       map.edges = map.edges.filter((e) => e.from !== id && e.to !== id);
+      S.normalizeGroups(map.edges);
       st.sel.delete(id);
       if (st.primary === id) st.primary = null;
       S.touchMap(map, 'edit');
@@ -872,7 +1009,7 @@
         { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9)' },
         { icon: 'child', label: 'Enfant', act: () => addChild(n.id), tip: 'Décomposer', kbd: 'Tab' },
         { icon: 'note', label: 'Note', act: () => openPane(true), tip: 'Écrire la note', kbd: 'Espace', on: !!n.note.trim() },
-        { icon: 'link', label: 'Relier', act: () => startLinking(n.id), tip: 'Relier à un autre nœud', kbd: 'L' },
+        { icon: 'link', label: 'Relier', act: () => startLinking(n.id), tip: 'Relier à un ou plusieurs nœuds', kbd: 'L' },
         { icon: 'logic', label: n.logic ? (n.logic === 'et' ? 'ET' : 'OU') : 'ET/OU', act: (b) => logicMenu(b, n), tip: 'Conditions cumulatives ou alternatives', on: !!n.logic },
         kids ? { icon: n.collapsed ? 'expand' : 'collapse', label: n.collapsed ? 'Déplier' : 'Replier', act: () => toggleCollapse(n.id), tip: n.collapsed ? 'Déplier la branche' : 'Replier la branche', kbd: '.' } : null,
         { icon: 'more', label: 'Plus', act: (b) => nodeMenu(b, n) },
@@ -881,11 +1018,34 @@
     function edgeItems() {
       const e = map.edges.find((x) => x.id === st.selEdge);
       if (!e) return null;
+      const id = e.id;
+      // la barre est mise en cache : chaque action retrouve le lien courant (annuler remplace les objets)
+      const cur = () => map.edges.find((x) => x.id === id);
+      const run = (fn) => (b) => { const x = cur(); if (x) fn(x, b); };
+      const grp = S.groupOf(map, e);
+      const menu = edgeMenuItems(e);
       return [
-        { chip: true, label: e.label || 'Libellé', act: (b) => edgeLabelMenu(b, e), tip: 'Libellé du lien' },
-        { icon: 'swap', label: e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi', act: () => toggleEdgeKind(e), tip: e.kind === 'tree' ? 'Transformer en renvoi (pointillé)' : 'Transformer en lien hiérarchique' },
-        { icon: 'trash', label: 'Supprimer', act: () => deleteEdge(e.id), danger: true, kbd: 'Suppr' },
-      ];
+        { chip: true, label: e.label || 'Libellé', act: run((x, b) => edgeLabelMenu(b, x)), tip: grp.length ? `Libellé commun aux ${grp.length} branches` : 'Libellé du lien', v: `${e.group || ''}|${grp.length}` },
+        { icon: 'fork', label: 'Branche', act: run((x) => startLinking(x.from, { extend: x.id })), tip: grp.length ? 'Ajouter une branche à la fourche' : 'Ajouter une branche (même libellé)' },
+        { icon: 'swap', label: e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi', act: run((x) => toggleEdgeKind(x)), tip: e.kind === 'tree' ? 'Transformer en renvoi (pointillé)' : 'Transformer en lien hiérarchique' },
+        menu.length ? { icon: 'more', label: 'Plus', act: run((x, b) => ui.menu(b, edgeMenuItems(x))), v: menu.map((m) => m.label).join('/') } : null,
+        { icon: 'trash', label: 'Supprimer', act: run((x) => deleteEdge(x.id)), danger: true, kbd: 'Suppr', tip: grp.length ? 'Supprimer cette branche' : 'Supprimer le lien' },
+      ].filter(Boolean);
+    }
+    /** Options secondaires d'un lien (divulgation progressive) */
+    function edgeMenuItems(e) {
+      const grp = S.groupOf(map, e);
+      const src = S.node(map, e.from);
+      const siblings = map.edges.filter((x) => x.from === e.from && x.kind === e.kind && x.id !== e.id && (!e.group || x.group !== e.group));
+      const items = [];
+      if (siblings.length) items.push({ label: `Regrouper les liens de « ${(src && src.title) || 'Sans titre'} »`, icon: 'fork', onClick: () => regroup(e) });
+      if (grp.length) {
+        items.push({ label: 'Détacher cette branche', icon: 'link', onClick: () => detachBranch(e) });
+        items.push({ label: 'Séparer la fourche', icon: 'swap', onClick: () => ungroup(e) });
+        items.push({ divider: true });
+        items.push({ label: `Supprimer toute la fourche (${grp.length})`, icon: 'trash', danger: true, onClick: () => deleteFork(e) });
+      }
+      return items;
     }
     function buildBar(host, items, { labels = false } = {}) {
       U.clear(host);
@@ -913,7 +1073,7 @@
       if (U.isCompact() || st.mode !== 'map' || st.masked || st.linking || gesture?.moved || st.editing) { ctxBar.classList.remove('in'); return; }
       const items = ctxItems();
       if (!items) { ctxBar.classList.remove('in'); ctxKey = ''; return; }
-      const key = JSON.stringify(items.map((i) => [i.label, i.on, i.icon]));
+      const key = JSON.stringify([st.selEdge, items.map((i) => [i.label, i.on, i.icon, i.v, i.tip])]);
       if (key !== ctxKey) { buildBar(ctxBar, items); ctxKey = key; }
       let ax, ay, ah;
       if (st.selEdge) {
@@ -973,7 +1133,9 @@
     }
     function edgeLabelMenu(anchor, e) {
       const mine = customLabels();
+      const grp = S.groupOf(map, e);
       ui.menu(anchor, [
+        grp.length ? { header: `Libellé commun · ${grp.length} branches` } : null,
         { label: 'Écrire un libellé…', icon: 'edit', onClick: async () => {
           const v = await ui.form({
             title: 'Libellé du lien', icon: 'link', ok: 'Valider',
@@ -988,15 +1150,97 @@
         ...EDGE_PRESETS.map((p) => ({ label: p, checked: e.label === p, onClick: () => setEdgeLabel(e, p) })),
       ], { align: 'start' });
     }
-    function setEdgeLabel(e, l) { mutate(() => { e.label = l; }); }
+    function setEdgeLabel(e, l) {
+      const members = S.groupOf(map, e);
+      mutate(() => { for (const x of (members.length ? members : [e])) x.label = l; });
+    }
+    /** La nature (hiérarchie / renvoi) s'applique à toute la fourche */
     function toggleEdgeKind(e) {
+      const members = S.groupOf(map, e).length ? S.groupOf(map, e) : [e];
       if (e.kind === 'link') {
-        if (S.parentEdge(map, e.to) || S.descendants(map, e.to).includes(e.from)) {
-          ui.snack('Impossible : ce nœud a déjà un parent (ou cela créerait une boucle).');
+        const blocked = members.filter((x) => S.parentEdge(map, x.to) || S.descendants(map, x.to).includes(x.from));
+        if (blocked.length) {
+          ui.snack(members.length > 1
+            ? `Impossible : ${blocked.length > 1 ? 'des éléments ont' : 'un élément a'} déjà un parent (ou cela créerait une boucle).`
+            : 'Impossible : ce nœud a déjà un parent (ou cela créerait une boucle).');
           return;
         }
-        mutate(() => { e.kind = 'tree'; });
-      } else mutate(() => { e.kind = 'link'; });
+        mutate(() => { for (const x of members) x.kind = 'tree'; });
+      } else mutate(() => { for (const x of members) x.kind = 'link'; });
+    }
+    /** Créer une fourche : un lien unique qui se sépare vers plusieurs éléments */
+    function createFork(from, targets) {
+      targets = targets.filter((t) => t !== from && !map.edges.some((x) => (x.from === from && x.to === t) || (x.from === t && x.to === from)));
+      if (!targets.length) { ui.snack('Ces éléments sont déjà reliés'); return null; }
+      if (targets.length === 1) { connect(from, targets[0]); return null; }
+      // décomposition si tous les éléments peuvent devenir enfants, sinon renvoi
+      const tree = targets.every((t) => S.canTree(map, from, t));
+      const group = U.uid('g');
+      const made = targets.map((t) => ({ id: U.uid('e'), from, to: t, kind: tree ? 'tree' : 'link', label: '', group }));
+      mutate(() => { for (const x of made) { map.edges.push(x); ed._newEdges.add(x.id); } });
+      for (const t of targets) {
+        const tel = st.els.get(t);
+        if (tel && !motion.reduced()) { tel.classList.remove('linked'); void tel.offsetWidth; tel.classList.add('linked'); setTimeout(() => tel.classList.remove('linked'), 300); }
+      }
+      motion.haptic(10);
+      selectEdge(made[0].id);
+      ui.snack(`Fourche créée vers ${targets.length} éléments${tree ? '' : ' (renvoi)'}`, { action: 'Libellé', onAction: () => openForkLabel(made[0]) });
+      return made[0];
+    }
+    /** Ajouter des branches à un lien (il devient une fourche) — même nature, même libellé */
+    function addBranches(e, targets) {
+      targets = targets.filter((t) => t !== e.from && !map.edges.some((x) => (x.from === e.from && x.to === t) || (x.from === t && x.to === e.from)));
+      if (!targets.length) { ui.snack('Ces éléments sont déjà reliés'); return; }
+      const ok = e.kind === 'tree' ? targets.filter((t) => S.canTree(map, e.from, t)) : targets;
+      const skipped = targets.length - ok.length;
+      if (!ok.length) { ui.snack('Impossible : ces éléments ont déjà un parent (ou cela créerait une boucle).'); return; }
+      const group = e.group || U.uid('g');
+      mutate(() => {
+        e.group = group;
+        for (const t of ok) { const x = { id: U.uid('e'), from: e.from, to: t, kind: e.kind, label: e.label, group }; map.edges.push(x); ed._newEdges.add(x.id); }
+      });
+      motion.haptic(10);
+      selectEdge(e.id);
+      ui.snack(`${ok.length > 1 ? ok.length + ' branches ajoutées' : 'Branche ajoutée'}${skipped ? ` · ${skipped} ignorée${skipped > 1 ? 's' : ''} (déjà rattachée)` : ''}`);
+    }
+    /** Regrouper tous les liens de même nature qui partent de la même source */
+    async function regroup(e) {
+      const members = map.edges.filter((x) => x.from === e.from && x.kind === e.kind);
+      if (members.length < 2) return;
+      const others = [...new Set(members.map((x) => x.label).filter((l) => l && l !== e.label))];
+      if (others.length) {
+        const ok = await ui.confirm('Regrouper ces liens ?', `Ils partageront le libellé « ${e.label || 'aucun'} ». ${others.length > 1 ? 'Les libellés' : 'Le libellé'} « ${others.join(' », « ')} » ${others.length > 1 ? 'seront remplacés' : 'sera remplacé'}.`, { ok: 'Regrouper', icon: 'fork' });
+        if (!ok) return;
+      }
+      const group = e.group || U.uid('g');
+      mutate(() => { for (const x of members) { x.group = group; x.label = e.label; } });
+      selectEdge(e.id);
+      ui.snack(`Fourche de ${members.length} branches`, { action: 'Annuler', onAction: undo });
+    }
+    function detachBranch(e) {
+      mutate(() => { delete e.group; });
+      selectEdge(e.id);
+      ui.snack('Branche détachée (elle garde son libellé)', { action: 'Annuler', onAction: undo });
+    }
+    function ungroup(e) {
+      const members = S.groupOf(map, e);
+      mutate(() => { for (const x of members) delete x.group; });
+      selectEdge(e.id);
+      ui.snack(`Fourche séparée en ${members.length} liens`, { action: 'Annuler', onAction: undo });
+    }
+    function deleteFork(e) {
+      const ids = new Set(S.groupOf(map, e).map((x) => x.id));
+      mutate(() => { map.edges = map.edges.filter((x) => !ids.has(x.id)); st.selEdge = null; });
+      ui.snack(`Fourche supprimée (${ids.size} branches)`, { action: 'Annuler', onAction: undo });
+    }
+    /** Ouvre le menu de libellé sur l'élément visible le plus proche (barre flottante ou barre basse) */
+    function openForkLabel(e) {
+      if (!map.edges.includes(e)) return;
+      if (st.selEdge !== e.id) selectEdge(e.id);
+      requestAnimationFrame(() => {
+        const anchor = (!U.isCompact() && ctxBar.querySelector('.chip')) || bottomBar.querySelector('.ctx-btn') || (st.edgeEls.get(e.id) || {}).label;
+        if (anchor) edgeLabelMenu(anchor, e);
+      });
     }
 
     /* ------------------------------------------------------------------ */
@@ -1032,7 +1276,10 @@
       let items;
       const n = primaryNode();
       if (st.mode === 'plan') items = [];
-      else if (st.linking) items = [{ icon: 'close', label: 'Annuler', act: stopLinking }];
+      else if (st.linking) items = [
+        { icon: 'close', label: 'Annuler', act: stopLinking },
+        { icon: 'check', label: st.linking.picked.length ? `Terminer (${st.linking.picked.length})` : 'Terminer', act: finishLinking, on: !!st.linking.picked.length },
+      ];
       else if (st.masked) items = [
         { icon: 'eye', label: 'Tout révéler', act: revealAll },
         { icon: 'fit', label: 'Ajuster', act: () => fit() },
@@ -1062,7 +1309,7 @@
           { icon: 'undo', label: 'Annuler', act: undo, id: 'undo' },
         ];
       }
-      const key = JSON.stringify(items.map((i) => [i.label, i.on, i.icon]));
+      const key = JSON.stringify([st.selEdge, items.map((i) => [i.label, i.on, i.icon, i.v, i.tip])]);
       if (key === bbKey) return;
       bbKey = key;
       U.clear(bottomBar);
@@ -1092,9 +1339,16 @@
     function updateBanner() {
       let content = null;
       if (st.linking) {
-        const n = S.node(map, st.linking);
-        content = [R.icon('link', 18), h('span', 'Touche le nœud à relier à « ', h('b', (n && n.title) || 'Sans titre'), ' »'),
-          ui.btn('Annuler', { variant: 'text', onClick: stopLinking })];
+        const L = st.linking;
+        const n = S.node(map, L.from);
+        const k = L.picked.length;
+        const ext = L.extend && map.edges.find((x) => x.id === L.extend);
+        const what = ext ? 'Ajoute des branches' + (ext.label ? ` « ${ext.label} »` : '') + ' : touche les éléments' : 'Relier « ';
+        content = [R.icon(ext ? 'fork' : 'link', 18),
+          ext ? h('span', what, k ? [' · ', h('b', String(k))] : null)
+            : h('span', what, h('b', (n && n.title) || 'Sans titre'), ' » à : ', k ? h('b', `${k} élément${k > 1 ? 's' : ''}`) : 'touche un ou plusieurs éléments'),
+          ui.btn('Annuler', { variant: 'text', onClick: stopLinking }),
+          ui.btn(k > 1 && !ext ? 'Créer la fourche' : 'Terminer', { variant: 'text', cls: 'banner-done', disabled: !k, onClick: finishLinking })];
       } else if (st.masked) {
         const total = map.nodes.length - S.roots(map).length;
         const shown = [...st.revealed].filter((id) => S.node(map, id)).length;
@@ -1107,8 +1361,55 @@
       banner.hidden = false;
       requestAnimationFrame(() => banner.classList.add('in'));
     }
-    function startLinking(id) { flushEdit(); st.linking = id; render(); }
+    /* Relier : on touche un ou plusieurs éléments, puis « Terminer ».
+       1 élément → lien simple (comme avant) ; plusieurs → fourche ;
+       extend → les éléments deviennent de nouvelles branches du lien sélectionné. */
+    function startLinking(id, { extend = null } = {}) {
+      flushEdit();
+      st.linking = { from: id, picked: [], extend };
+      select(null);
+      render();
+    }
     function stopLinking() { st.linking = null; tempEdge.setAttribute('d', ''); render(); }
+    function togglePick(id) {
+      const L = st.linking;
+      if (!L || id === L.from) return;
+      const i = L.picked.indexOf(id);
+      if (i >= 0) L.picked.splice(i, 1); else { L.picked.push(id); motion.haptic(6); }
+      render();
+    }
+    function finishLinking() {
+      const L = st.linking;
+      if (!L) return;
+      stopLinking();
+      if (!L.picked.length) return;
+      if (L.extend) {
+        const e = map.edges.find((x) => x.id === L.extend);
+        if (e) addBranches(e, L.picked);
+        return;
+      }
+      if (L.picked.length === 1) { connect(L.from, L.picked[0]); select(L.picked[0]); return; }
+      createFork(L.from, L.picked);
+    }
+    /** Aperçu en pointillé des liens à créer pendant la sélection des cibles */
+    function paintLinkPreview() {
+      const L = st.linking;
+      if (!L || !L.picked.length) { if (!gesture || gesture.type !== 'connect') tempEdge.setAttribute('d', ''); return; }
+      const src = S.node(map, L.from);
+      if (!src) return;
+      const targets = L.picked.map((t) => S.node(map, t)).filter(Boolean);
+      const byId = new Map(map.nodes.map((n) => [n.id, n]));
+      let d = '';
+      if (targets.length > 1) {
+        const gm = bundleGeometry({ from: L.from, edges: targets.map((t) => ({ to: t.id })) }, byId);
+        d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]} ` + targets.map((t) => branchCurve(gm.J, gm.d1, t).d).join(' ');
+      } else {
+        const t = targets[0];
+        const { p1, p2, d1, d2 } = anchors(src, size(src), t, size(t));
+        d = curve(p1, d1, p2, d2).d;
+      }
+      tempEdge.setAttribute('d', d);
+    }
     function toggleMask() {
       flushEdit();
       st.masked = !st.masked;
@@ -1177,6 +1478,11 @@
       const handle = e.target.closest('[data-handle]');
       const collapseBtn = e.target.closest('.node-collapse');
       const edgeId = e.target.dataset?.edge || e.target.closest('.edge-label')?.dataset.edge;
+      const logicFrom = e.target.closest('.edge-label')?.dataset.logicFrom;
+      if (logicFrom && !nodeId) {
+        gesture = { type: 'logic', from: logicFrom, anchor: e.target.closest('.edge-label'), start: { x: e.clientX, y: e.clientY }, id: e.pointerId };
+        return;
+      }
       const start = { x: e.clientX, y: e.clientY };
 
       if (handle && nodeId) {
@@ -1386,6 +1692,10 @@
       } else if (g.type === 'edge') {
         if (st.linking || st.masked) return;
         selectEdge(g.edgeId);
+      } else if (g.type === 'logic') {
+        if (st.linking || st.masked) return;
+        const p = S.node(map, g.from);
+        if (p) { select(p.id); logicMenu(g.anchor, p); }
       } else if (g.type === 'marquee') {
         marquee.hidden = true;
         render(); renderPane();
@@ -1451,7 +1761,7 @@
       const dbl = st.lastTap && st.lastTap.id === id && now - st.lastTap.t < 350;
       st.lastTap = { id, t: now };
       if (st.masked) { reveal(id); return; }
-      if (st.linking) { const from = st.linking; stopLinking(); connect(from, id); select(id); return; }
+      if (st.linking) { togglePick(id); return; }
       if (g.shift) { select(id, { toggle: true }); return; }
       if (dbl) { st.lastTap = null; select(id); startEdit(id); return; }
       select(id);
@@ -1460,7 +1770,7 @@
       const now = Date.now();
       const dbl = st.lastTap && st.lastTap.id === '__bg' && now - st.lastTap.t < 350 && Math.hypot(e.clientX - st.lastTap.x, e.clientY - st.lastTap.y) < 30;
       st.lastTap = { id: '__bg', t: now, x: e.clientX, y: e.clientY };
-      if (st.linking) { stopLinking(); return; }
+      if (st.linking) return; // en sélection multiple, un toucher dans le vide n'annule pas
       if (dbl && !st.masked) {
         st.lastTap = null;
         const p = toWorld(e.clientX, e.clientY);
@@ -1510,6 +1820,7 @@
       if (!inCanvas && (k === 'Tab' || k === 'Enter' || k === ' ' || k.startsWith('Arrow'))) return;
       if (k === 'p' || k === 'P') { e.preventDefault(); setMode(st.mode === 'map' ? 'plan' : 'map'); return; }
       if (st.mode !== 'map') return;
+      if (st.linking && k === 'Enter') { e.preventDefault(); finishLinking(); return; }
       if (k === 'Escape') {
         if (st.linking) stopLinking();
         else if (st.masked) toggleMask();

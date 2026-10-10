@@ -35,6 +35,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | **Nœud** | Un élément typé : Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Idée. |
 | **Note** | Le bloc-notes de chaque nœud (Markdown), avec aperçu. |
 | **Lien** | Hiérarchique (décomposition, trait plein) ou renvoi (« voir », « sauf », « implique »… en pointillé fléché). |
+| **Fourche** | Un seul lien, avec un seul libellé, qui se sépare vers plusieurs éléments. Changer le libellé le change pour toutes les branches. |
 | **ET / OU** | Indique si les éléments rattachés sont cumulatifs ou alternatifs. Affiché sur les liens, dans le plan et en révision. |
 
 ### Dans une carte
@@ -46,6 +47,8 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | `F2` · double-clic | Renommer |
 | `Espace` | Ouvrir la note |
 | Glisser la poignée **+** sur un nœud | Relier (renvoi) — dans le vide : crée un enfant à cet endroit |
+| `L` · **Relier**, puis toucher plusieurs nœuds, `Entrée` | Créer une **fourche** (un lien, un libellé, plusieurs branches) |
+| Lien sélectionné → **Branche** | Ajouter une branche (même libellé) ; **⋯** : regrouper, détacher, séparer, supprimer la fourche |
 | Glisser un nœud | Le déplacer avec sa branche (`Alt` : seul) |
 | `Maj` + glisser dans le vide | Sélection multiple |
 | Double-clic dans le vide | Nœud libre |

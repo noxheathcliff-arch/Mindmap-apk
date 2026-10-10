@@ -23,6 +23,26 @@
     return S.roots(map).map(build);
   }
 
+  /** Relations sortantes d'un nœud, une fourche = une seule relation vers plusieurs éléments.
+      kind 'link' → renvois ; kind 'tree' → seulement les fourches de décomposition qui ont un libellé. */
+  function relations(map, id, kind) {
+    const out = [];
+    const seen = new Map();
+    for (const e of map.edges) {
+      if (e.from !== id || e.kind !== kind) continue;
+      if (kind === 'tree' && !(e.group && e.label)) continue;
+      const to = S.node(map, e.to);
+      if (!to) continue;
+      if (e.group && seen.has(e.group)) { seen.get(e.group).targets.push(to); continue; }
+      const r = { label: e.label, targets: [to] };
+      if (e.group) seen.set(e.group, r);
+      out.push(r);
+    }
+    for (const r of out) r.targets.sort((a, b) => a.y - b.y);
+    return out;
+  }
+  const names = (ts) => ts.map((t) => t.title || 'Sans titre');
+
   function logicText(n, count) {
     if (!n.logic || count < 2) return '';
     return n.logic === 'et' ? 'cumulatifs' : 'alternatifs';
@@ -50,7 +70,14 @@
       return;
     }
 
-    const linksOf = (id) => map.edges.filter((e) => e.kind === 'link' && e.from === id).map((e) => ({ e, to: S.node(map, e.to) })).filter((x) => x.to);
+    const refsEl = (id) => {
+      const rs = relations(map, id, 'link');
+      if (!rs.length) return null;
+      return h('p.plan-refs', rs.map((r, i) => [i ? ' · ' : '', '→ ', r.label ? h('em', r.label + ' ') : 'voir ',
+        names(r.targets).map((t, k) => [k ? ', ' : '', h('b', t)])]));
+    };
+    const forksEl = (id) => relations(map, id, 'tree').map((r) =>
+      h('p.plan-logic', h('span.chip-mini', r.label), ` ${names(r.targets).join(' · ')}`));
 
     const section = (item, level, idx) => {
       const n = item.node;
@@ -65,10 +92,11 @@
         n.review.rating ? ui.mastery(n.review.rating, 10) : null);
       const sec = h('section.plan-sec', { class: 'lvl-' + Math.min(level, 4) }, head);
       if (n.note.trim()) sec.appendChild(h('div.plan-note.md', { html: R.md.render(n.note) }));
-      const ls = linksOf(n.id);
-      if (ls.length) sec.appendChild(h('p.plan-refs', ls.map((x, i) => [i ? ' · ' : '', '→ ', x.e.label ? h('em', x.e.label + ' ') : 'voir ', h('b', x.to.title || 'Sans titre')])));
+      const refs = refsEl(n.id);
+      if (refs) sec.appendChild(refs);
       if (item.children.length) {
         if (lt) sec.appendChild(h('p.plan-logic', h('span.chip-mini', n.logic === 'et' ? 'ET' : 'OU'), ` Les ${item.children.length} éléments suivants sont ${lt}.`));
+        for (const f of forksEl(n.id)) sec.appendChild(f);
         item.children.forEach((ch, i) => sec.appendChild(section(ch, level + 1, i)));
       }
       return sec;
@@ -80,6 +108,9 @@
       if (r0.node.note.trim()) doc.appendChild(h('div.plan-intro.md', { html: R.md.render(r0.node.note) }));
       const lt = logicText(r0.node, r0.children.length);
       if (lt) doc.appendChild(h('p.plan-logic', h('span.chip-mini', r0.node.logic === 'et' ? 'ET' : 'OU'), ` Les ${r0.children.length} éléments suivants sont ${lt}.`));
+      const rr = refsEl(r0.node.id);
+      if (rr) doc.appendChild(rr);
+      for (const f of forksEl(r0.node.id)) doc.appendChild(f);
       r0.children.forEach((ch, i) => doc.appendChild(section(ch, 0, i)));
     } else {
       roots.forEach((r, i) => doc.appendChild(section(r, 0, i)));
@@ -106,12 +137,10 @@
       if (level < 4) out.push(`${hashes} ${num(level, idx)} ${kicker}${n.title || 'Sans titre'}`, '');
       else out.push(`${'  '.repeat(level - 4)}- ${kicker}**${n.title || 'Sans titre'}**`, '');
       if (n.note.trim()) out.push(n.note.trim(), '');
-      for (const e of map.edges.filter((x) => x.kind === 'link' && x.from === n.id)) {
-        const t = S.node(map, e.to);
-        if (t) out.push(`→ ${e.label || 'voir'} : **${t.title}**`, '');
-      }
+      for (const r of relations(map, n.id, 'link')) out.push(`→ ${r.label || 'voir'} : ${names(r.targets).map((t) => `**${t}**`).join(', ')}`, '');
       const lt = logicText(n, item.children.length);
       if (lt) out.push(`> Éléments ${lt} (${n.logic === 'et' ? 'ET' : 'OU'})`, '');
+      for (const r of relations(map, n.id, 'tree')) out.push(`> ${r.label} : ${names(r.targets).join(', ')}`, '');
       item.children.forEach((ch, i) => walk(ch, level + 1, i));
     };
     if (single) {

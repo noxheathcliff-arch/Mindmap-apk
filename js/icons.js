@@ -59,6 +59,7 @@
     print: '<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v6H7z"/>',
     panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M14.5 4.5v15"/>',
     dot: '<circle cx="12" cy="12" r="3" />',
+    fork: '<path d="M3 12h6"/><path d="M9 12c3 0 4.5-6 10-6M9 12c3 0 4.5 6 10 6M9 12h10"/><circle cx="9" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
     pause: '<rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/>',
     swap: '<path d="M7 4L3.5 7.5 7 11M3.5 7.5H17M17 13l3.5 3.5L17 20M20.5 16.5H7"/>',
   };

@@ -37,6 +37,32 @@
     };
   }
 
+  /**
+   * Fourches (liens groupés) : plusieurs liens qui partent du même nœud, de même nature,
+   * et partagent un seul libellé. Chaque branche reste un lien ordinaire (from → to),
+   * le champ `group` ne fait que les réunir. Invariants garantis ici :
+   *  - même source et même nature dans un groupe (sinon la branche est détachée) ;
+   *  - un seul libellé (le premier non vide) ;
+   *  - au moins deux branches (sinon le groupe disparaît).
+   */
+  function normalizeGroups(edges) {
+    const groups = new Map();
+    for (const e of edges) {
+      if (!e.group) continue;
+      if (!groups.has(e.group)) groups.set(e.group, []);
+      groups.get(e.group).push(e);
+    }
+    for (const members of groups.values()) {
+      const base = members[0];
+      const ok = members.filter((e) => e.from === base.from && e.kind === base.kind);
+      for (const e of members) if (!ok.includes(e)) delete e.group;
+      if (ok.length < 2) { for (const e of ok) delete e.group; continue; }
+      const label = (ok.find((e) => e.label) || base).label || '';
+      for (const e of ok) e.label = label;
+    }
+    return edges;
+  }
+
   function sanitize(d) {
     const out = blank();
     if (!d || typeof d !== 'object') return out;
@@ -62,13 +88,17 @@
       })) : [];
       const ids = new Set(nodes.map((n) => n.id));
       const edges = Array.isArray(m.edges) ? m.edges.filter((e) => e && ids.has(e.from) && ids.has(e.to) && e.from !== e.to)
-        .map((e) => ({ id: String(e.id || U.uid('e')), from: e.from, to: e.to, kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || '') })) : [];
+        .map((e) => ({
+          id: String(e.id || U.uid('e')), from: e.from, to: e.to, kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || ''),
+          ...(e.group ? { group: String(e.group) } : {}),
+        })) : [];
       // une seule arête hiérarchique entrante par nœud
       const seen = new Set();
       for (const e of edges) {
         if (e.kind !== 'tree') continue;
         if (seen.has(e.to)) e.kind = 'link'; else seen.add(e.to);
       }
+      normalizeGroups(edges);
       return {
         id: String(m.id), courseId: String(m.courseId || ''), title: String(m.title || 'Sans titre'),
         createdAt: +m.createdAt || Date.now(), updatedAt: +m.updatedAt || Date.now(),
@@ -89,6 +119,9 @@
 
   const store = {
     TYPES, TYPE_ORDER, RATINGS, INTERVALS,
+    normalizeGroups,
+    /** Branches d'une fourche (liens du même groupe) — [] si le lien n'est pas groupé */
+    groupOf(map, e) { return e && e.group ? map.edges.filter((x) => x.group === e.group) : []; },
     data: blank(),
     fresh: false,
     saveError: null,
