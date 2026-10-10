@@ -296,6 +296,7 @@
 .search-group { padding: var(--sp-4) var(--sp-3) var(--sp-2); font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); }
 .search-item { min-height: 56px; }
 .search-item[aria-selected="true"]::before { opacity: .08; }
+.search-item[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--on-surface); }
 .si-ic { display: grid; place-items: center; width: 32px; color: var(--on-surface-variant); flex: none; }
 .si-body { display: grid; gap: 2px; min-width: 0; flex: 1; }
 .si-title { font: var(--body-l); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
