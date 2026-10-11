@@ -10,6 +10,7 @@
   --ref-neutral-6: #121211;
   --ref-neutral-10: #1b1b19;
   --ref-neutral-12: #1f1f1d;
+  --ref-neutral-14: #242422;
   --ref-neutral-17: #292927;
   --ref-neutral-22: #343432;
   --ref-neutral-24: #393936;
@@ -17,6 +18,7 @@
   --ref-neutral-50: #787773;
   --ref-neutral-60: #92918c;
   --ref-neutral-80: #c9c8c2;
+  --ref-neutral-82: #cfcec8;
   --ref-neutral-87: #dddcd6;
   --ref-neutral-90: #e5e4de;
   --ref-neutral-92: #ebeae5;
@@ -137,6 +139,10 @@
   --error: var(--ref-error-40);
   --on-error: #fff;
   --canvas-dot: rgba(27, 27, 25, 0.13);
+  /* trait de surligneur sous un titre : large et derrière le texte en clair */
+  --hl-band: var(--ref-highlighter);
+  --hl-size: 32%;
+  --hl-pos: 92%;
 
   --shadow-color: 0 0 0;
   --elev-1: 0 1px 2px rgba(var(--shadow-color), 0.18), 0 1px 3px 1px rgba(var(--shadow-color), 0.08);
@@ -160,17 +166,25 @@
     --surface: var(--ref-neutral-6);
     --surface-dim: var(--ref-neutral-6);
     --surface-bright: var(--ref-neutral-24);
-    --surface-container-lowest: var(--ref-neutral-4);
-    --surface-container-low: var(--ref-neutral-10);
-    --surface-container: var(--ref-neutral-12);
+    /* élévation tonale : en sombre, ce qui est « posé dessus » (cartes, nœuds, champs)
+       est plus CLAIR que la page — jamais plus foncé (sinon il paraît creusé) */
+    --surface-container-lowest: var(--ref-neutral-10);
+    --surface-container-low: var(--ref-neutral-12);
+    --surface-container: var(--ref-neutral-14);
     --surface-container-high: var(--ref-neutral-17);
     --surface-container-highest: var(--ref-neutral-22);
     --on-surface: var(--ref-neutral-90);
     --on-surface-variant: var(--ref-neutral-80);
     --outline: var(--ref-neutral-60);
     --outline-variant: var(--ref-neutral-30);
-    --inverse-surface: var(--ref-neutral-90);
-    --inverse-on-surface: var(--ref-neutral-17);
+    /* encre inversée adoucie : pas de blocs presque blancs qui éblouissent la nuit */
+    --inverse-surface: var(--ref-neutral-82);
+    --inverse-on-surface: var(--ref-neutral-12);
+    /* en sombre : même jaune vif, mais un trait fin sous la ligne de base — un texte clair
+       posé sur du jaune devient illisible, un jaune assombri devient kaki */
+    --hl-band: var(--ref-highlighter);
+    --hl-size: 9%;
+    --hl-pos: 100%;
     --scrim: rgba(0, 0, 0, 0.6);
     --error: var(--ref-error-80);
     --on-error: #601410;
@@ -191,17 +205,23 @@
   --surface: var(--ref-neutral-6);
   --surface-dim: var(--ref-neutral-6);
   --surface-bright: var(--ref-neutral-24);
-  --surface-container-lowest: var(--ref-neutral-4);
-  --surface-container-low: var(--ref-neutral-10);
-  --surface-container: var(--ref-neutral-12);
+  /* élévation tonale : en sombre, ce qui est « posé dessus » (cartes, nœuds, champs)
+     est plus CLAIR que la page — jamais plus foncé (sinon il paraît creusé) */
+  --surface-container-lowest: var(--ref-neutral-10);
+  --surface-container-low: var(--ref-neutral-12);
+  --surface-container: var(--ref-neutral-14);
   --surface-container-high: var(--ref-neutral-17);
   --surface-container-highest: var(--ref-neutral-22);
   --on-surface: var(--ref-neutral-90);
   --on-surface-variant: var(--ref-neutral-80);
   --outline: var(--ref-neutral-60);
   --outline-variant: var(--ref-neutral-30);
-  --inverse-surface: var(--ref-neutral-90);
-  --inverse-on-surface: var(--ref-neutral-17);
+  /* encre inversée adoucie : pas de blocs presque blancs qui éblouissent la nuit */
+  --inverse-surface: var(--ref-neutral-82);
+  --inverse-on-surface: var(--ref-neutral-12);
+  --hl-band: var(--ref-highlighter);
+  --hl-size: 9%;
+  --hl-pos: 100%;
   --scrim: rgba(0, 0, 0, 0.6);
   --error: var(--ref-error-80);
   --on-error: #601410;

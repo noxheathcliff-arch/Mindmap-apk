@@ -90,6 +90,13 @@ Le jaune est un **surligneur** : le geste même de l'étudiant en droit. Il n'es
 
 Les types de nœuds et les états de révision sont différenciés **sans couleur** : forme, bordure (pleine / pointillée / double), sur-titre typographique et pastilles de remplissage (○ ◔ ◑ ●) — accessible aux daltoniens et fidèle au monochrome.
 
+**Thème sombre — règles vérifiées** (audit automatisé de chaque texte, icône et contour de contrôle, 13 écrans × mobile/desktop × clair/sombre : 0 défaut WCAG restant) :
+- **Élévation tonale** : en sombre, ce qui est posé dessus (cartes, nœuds, champs : `surface-container-lowest`) est *plus clair* que la page (`#1b1b19` sur `#121211`), puis les conteneurs montent (`#1f1f1d` → `#343432`). Jamais plus foncé : un élément plus sombre que son fond paraît creusé, et les ombres ne se voient pas la nuit.
+- **Encre inversée adoucie** (`inverse-surface` `#cfcec8` au lieu de `#e5e4de`) : nœuds « Notion », infobulles, snackbar n'éblouissent plus.
+- **Surligneur sous un titre** : en clair, bande large derrière le texte encre ; en sombre, **même jaune vif en trait fin sous la ligne de base** (`--hl-size` / `--hl-pos`). Un texte clair sur du jaune est illisible, et un jaune assombri ou translucide devient kaki.
+- **États sélectionnés** (élément coché d'un menu, case active d'un tableau) : `primary-container` / `on-primary-container` (ambre profond + texte jaune pâle en sombre), jamais un jaune translucide.
+- **Contours de contrôles** (chips) en `outline` ≥ 3:1 (WCAG 1.4.11).
+
 ### 4.2 Typographie — échelle M3 (taille / interlignage)
 Deux familles comme le prévoit M3 (*brand* / *plain*) :
 - **Brand** : *Source Serif 4* → Display & Headline (registre éditorial / juridique).

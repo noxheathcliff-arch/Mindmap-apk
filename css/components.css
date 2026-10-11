@@ -98,7 +98,7 @@
   display: inline-flex; align-items: center; gap: var(--sp-1);
   height: 32px; padding: 0 var(--sp-2) 0 var(--sp-3);
   border-radius: var(--shape-s);
-  border: 1px solid var(--outline-variant);
+  border: 1px solid var(--outline); /* contour de contrôle ≥ 3:1 (WCAG 1.4.11) */
   font: var(--label-l);
   color: var(--on-surface);
   white-space: nowrap;
@@ -205,7 +205,10 @@
 .menu.in .menu-item { opacity: 1; transform: none; }
 .menu-item .ic { color: var(--on-surface-variant); }
 .menu-item.danger .ic { color: var(--error); }
-.menu-item.checked { background: color-mix(in srgb, var(--primary) 35%, transparent); }
+/* élément coché : le conteneur « surligneur » du thème (pâle en clair, ambre profond en sombre),
+   jamais un jaune translucide qui devient olive sur fond noir */
+.menu-item.checked { background: var(--primary-container); color: var(--on-primary-container); }
+.menu-item.checked .ic, .menu-item.checked .menu-hint { color: inherit; opacity: .78; }
 .menu-check { width: 20px; display: inline-flex; }
 .menu-label { flex: 1; }
 .menu-hint { font: var(--label-m); color: var(--on-surface-variant); }
@@ -389,7 +392,7 @@
 .tbl-grid tr:last-child td { border-bottom: 0; }
 .tbl-cell { display: block; width: 100%; min-width: 132px; height: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--on-surface); font: var(--body-m); outline: none; }
 .tbl-head .tbl-cell { font-weight: 600; background: var(--surface-container); }
-.tbl-cell:focus { box-shadow: inset 0 0 0 2px var(--on-surface); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.tbl-cell:focus { box-shadow: inset 0 0 0 2px var(--on-surface); background: var(--primary-container); color: var(--on-primary-container); }
 .tbl-cell::placeholder { color: var(--on-surface-variant); opacity: .6; font-weight: 400; }
 .tbl-hint { font: var(--body-s); color: var(--on-surface-variant); }
 

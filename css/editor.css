@@ -514,7 +514,7 @@
 /* icône de note sur le nœud : raccourci vers la note (cible élargie) */
 .node-has-note { position: relative; cursor: pointer; }
 .node-has-note::after { content: ""; position: absolute; inset: -10px; }
-@media (hover: hover) { .node-has-note:hover { color: var(--on-surface); } }
+@media (hover: hover) { .node-has-note:hover { opacity: .7; } }
 
 /* Sources de la note */
 .pane-sources .btn { height: 32px; }

@@ -58,19 +58,20 @@ kbd {
 
 /* Signature : le trait de surligneur qui balaie un titre */
 .hl-sweep {
-  background-image: linear-gradient(var(--primary), var(--primary));
+  /* en sombre, le trait est translucide : le texte clair qui passe dessus reste lisible */
+  background-image: linear-gradient(var(--hl-band), var(--hl-band));
   background-repeat: no-repeat;
-  background-position: 0 92%;
-  background-size: 0% 32%;
+  background-position: 0 var(--hl-pos);
+  background-size: 0% var(--hl-size);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
   padding: 0 .06em;
-  background-size: 100% 32%;
+  background-size: 100% var(--hl-size);
 }
 /* Le balayage ne se joue que la première fois (classe .intro posée par la vue) :
    ce qui est vu souvent doit rester calme. */
 .intro .hl-sweep { animation: sweep var(--dur-xl) var(--ease-out) 160ms both; }
-@keyframes sweep { from { background-size: 0% 32%; } }
+@keyframes sweep { from { background-size: 0% var(--hl-size); } }
 
 /* ==========================================================================
    Coque — classes de fenêtre M3
