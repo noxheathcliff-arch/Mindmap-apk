@@ -105,7 +105,12 @@
       }
 
       function updateProgress() {
-        counter.textContent = `${Math.min(done + 1, total)} / ${total}`;
+        const txt = `${Math.min(done + 1, total)} / ${total}`;
+        if (counter.textContent && counter.textContent !== txt && !motion.reduced()) {
+          // value change : le compteur « tique » (4 px, 160 ms) quand il change
+          counter.classList.remove('tick'); void counter.offsetWidth; counter.classList.add('tick');
+        }
+        counter.textContent = txt;
         // value change : la barre avance en transform (scaleX), 360 ms ease-out
         bar.querySelector('.progress-bar').style.setProperty('--p', String(done / total));
         undoBtn.disabled = !history.length;
@@ -115,9 +120,12 @@
       function paintStack() {
         const left = total - done - 1;
         const want = left >= 2 ? 2 : left;
-        const have = U.$$('.rdeck-under', deck);
-        for (let i = have.length; i < want; i++) deck.prepend(h('div.rdeck-under', { class: 'u' + (i + 1), 'aria-hidden': 'true' }));
-        have.slice(want).forEach((u) => { u.classList.add('gone'); setTimeout(() => u.remove(), 240); });
+        // u1 juste sous la fiche, u2 au fond (avant dans le DOM = peint dessous) ; on retire par le fond
+        for (const i of [1, 2]) {
+          const u = deck.querySelector(`.rdeck-under.u${i}:not(.gone)`);
+          if (i <= want && !u) deck.prepend(h('div.rdeck-under', { class: 'u' + i, 'aria-hidden': 'true' }));
+          if (i > want && u) { u.classList.add('gone'); setTimeout(() => u.remove(), 240); }
+        }
       }
 
       /**
@@ -153,12 +161,18 @@
             node.note.trim() ? h('div.answer-block', h('p.overline', 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null,
             h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Ouvrir dans la carte')));
 
-        const band = h('header.rcard-band',
-          course ? R.courseArt.mark(course, { size: 'xs' }) : null,
+        // élément partagé : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la
+        // fiche ; le bloc « Commencer » devient la première fiche d'une session tous cours
+        const band = h('header.rcard-band', { dataset: scope.courseId ? { hero: 'course:' + scope.courseId + ':band' } : {} },
+          course ? (() => { const mk = R.courseArt.mark(course, { size: 'xs' }); if (scope.courseId) mk.dataset.hero = 'course:' + scope.courseId + ':mono'; return mk; })() : null,
           h('span.rcard-ctx', [course ? course.title : null, map.title].filter(Boolean).join(' › ')),
           cardState(node));
-        const enterCls = shared ? '' : open ? 'enter-' + enter : enter === 'stack' ? 'from-stack' : 'enter-' + enter;
-        const card = h('article.rcard', { class: enterCls + (open ? ' revealed' : ''), dataset: shared ? { hero: `fiche:${node.id}:card` } : {} },
+        // pendant une transition de page (View Transitions), la première fiche est portée par
+        // l'élément partagé : pas d'entrée propre qui doublerait le mouvement
+        const viaVT = done === 0 && !history.length && !!document.documentElement.dataset.vt;
+        const enterCls = shared || viaVT ? '' : open ? 'enter-' + enter : enter === 'stack' ? 'from-stack' : 'enter-' + enter;
+        const hero = shared ? `fiche:${node.id}:card` : !scope.courseId && !scope.mapId && done === 0 && !history.length ? 'session:all:card' : null;
+        const card = h('article.rcard', { class: enterCls + (open ? ' revealed' : ''), dataset: hero ? { hero } : {} },
           band,
           h('div.rcard-body',
             anc.length && !(anc.length === 1 && U.norm(anc[0].title) === U.norm(map.title)) ? h('div.rcard-path', anc.map((a, i) => [i ? ' › ' : '', a.title])) : null,
@@ -184,18 +198,24 @@
         stage.scrollTop = 0;
       }
 
+      /* Actions : l'ancien jeu sort (100 ms, ease-in, −4 px), le nouveau entre avec 50 % de
+         chevauchement (rise 240 ms) — jamais deux jeux lisibles en même temps. */
       function paintActions() {
-        U.clear(actions);
+        const old = [...actions.children].filter((x) => !x.classList.contains('leaving'));
+        old.forEach((x) => { x.classList.add('leaving'); setTimeout(() => x.remove(), motion.reduced() ? 0 : 110); });
+        const set = h('div.act-set', { class: old.length && !revealed ? 'enter' : '' }); // les notes ont leur propre cascade
+        actions.appendChild(set);
         const cur = current();
         if (!cur) return;
+        const put = (x) => set.appendChild(x);
         if (!revealed) {
           const b = ui.btn('Afficher la réponse', { variant: 'filled', cls: 'reveal-btn', onClick: reveal });
           b.appendChild(h('kbd.btn-kbd', 'Espace'));
           const canHint = !hinted && (S.childrenOf(cur.map, cur.node.id).length || cur.node.note.trim());
-          actions.appendChild(h('div.reveal-row',
+          put(h('div.reveal-row',
             canHint ? (() => { const x = ui.btn('Indice', { icon: 'sparkle', variant: 'text', cls: 'hint-btn', onClick: hint }); x.appendChild(h('kbd.btn-kbd', 'H')); return x; })() : null,
             b));
-          actions.appendChild(h('p.review-hint', hinted ? 'Avec l’indice, essaie de retrouver le reste avant de vérifier.' : 'Formule ta réponse dans ta tête (ou à voix haute) avant de la découvrir.'));
+          put(h('p.review-hint', hinted ? 'Avec l’indice, essaie de retrouver le reste avant de vérifier.' : 'Formule ta réponse dans ta tête (ou à voix haute) avant de la découvrir.'));
           setTimeout(() => b.focus({ preventScroll: true }), 50);
         } else {
           const mk = (rating, variant, key) => h('button.rate-btn', { type: 'button', class: 'rate-' + rating + ' btn-' + variant, onclick: () => rate(rating) },
@@ -203,10 +223,10 @@
             h('span.rate-l', S.RATINGS[rating].label),
             h('span.rate-next', nextLabel(cur.node, rating)),
             h('kbd.rate-kbd', key));
-          actions.appendChild(h('div.rate-row', mk('revoir', 'outlined', '1'), mk('compris', 'tonal', '2'), mk('maitrise', 'filled', '3')));
-          actions.appendChild(h('p.review-hint.only-touch', 'Astuce : glisse la fiche ← à revoir · → maîtrisé'));
+          put(h('div.rate-row', mk('revoir', 'outlined', '1'), mk('compris', 'tonal', '2'), mk('maitrise', 'filled', '3')));
+          put(h('p.review-hint.only-touch', 'Astuce : glisse la fiche ← à revoir · → maîtrisé'));
           // les notes arrivent après la réponse (overlap), en cascade courte : 30 ms
-          R.motion.stagger(Array.from(actions.querySelectorAll('.rate-btn')), 0, { step: 30 });
+          R.motion.stagger(Array.from(set.querySelectorAll('.rate-btn')), 0, { step: 30 });
         }
       }
 
@@ -231,6 +251,14 @@
         revealed = true;
         cardEl.classList.add('revealed');
         paintActions();
+        // petit écran : si la réponse commence sous la ligne de flottaison, on l'y amène
+        // (défilement doux, après le dépliage — l'œil suit la réponse, pas un saut)
+        setTimeout(() => {
+          const a = cardEl && cardEl.querySelector('.answer');
+          if (!a || !a.isConnected) return;
+          const top = a.getBoundingClientRect().top - stage.getBoundingClientRect().top;
+          if (top > stage.clientHeight * 0.55) stage.scrollTo({ top: stage.scrollTop + top - 96, behavior: motion.reduced() ? 'auto' : 'smooth' });
+        }, motion.reduced() ? 0 : 200);
       }
 
       function rate(rating, fling) {

@@ -51,8 +51,8 @@
   function courseRow(c) {
     const st = S.courseStats(c.id);
     const due = st.due;
-    const row = h('a.hub-course', { href: sessionHref('#/reviser/cours/' + c.id, { all: !due }), class: due ? '' : 'is-done' },
-      R.courseArt.mark(c, { size: 'sm' }),
+    const row = h('a.hub-course', { href: sessionHref('#/reviser/cours/' + c.id, { all: !due }), class: due ? '' : 'is-done', dataset: { hero: 'course:' + c.id + ':band' } },
+      R.courseArt.mark(c, { size: 'sm', hero: true }),
       h('span.hub-course-body',
         h('span.hub-course-t', c.title),
         h('span.hub-course-s', due ? `${minutes(Math.min(due, S.data.settings.sessionSize || due))} · maîtrise ${Math.round(st.progress * 100)} %` : `À jour · maîtrise ${Math.round(st.progress * 100)} %`),
@@ -102,34 +102,53 @@
             action: ui.btn('Aller à mes cours', { icon: 'library', variant: 'filled', onClick: () => R.app.go('#/') }),
           }));
         } else {
-          // durée de session : un choix mémorisé (10 · 20 · toutes), appliqué partout
-          const seg = h('div.segmented.hub-size', { role: 'radiogroup', 'aria-label': 'Taille de la session' },
-            SIZES.map(([v, l]) => {
-              const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(size === v), dataset: { v } }, l);
-              b.addEventListener('click', () => { S.data.settings.sessionSize = v; S.save(); draw(); });
-              return b;
-            }));
-          ui.segIndicator(seg, 'hub-size');
-          const cta = due
-            ? ui.btn(`Commencer · ${take} carte${take > 1 ? 's' : ''}`, { icon: 'play', variant: 'filled', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout')) })
-            : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) });
           const due0 = due - fresh;
           const courses = S.coursesSorted().filter((c) => S.courseStats(c.id).reviewable)
             .sort((a, b) => S.courseStats(b.id).due - S.courseStats(a.id).due);
+          const metaFor = (n) => (due
+            ? [h('b', minutes(n)), ` pour cette session · ${[due0 ? `${due0} déjà vue${due0 > 1 ? 's' : ''}` : null, fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : null].filter(Boolean).join(' · ')}`]
+            : ['Rien n’est dû aujourd’hui. Une série d’entraînement ne change pas tes échéances… sauf ce que tu notes.']);
+          const ctaFor = (n) => (due
+            ? ui.btn(`Commencer · ${n} carte${n > 1 ? 's' : ''}`, { icon: 'play', variant: 'filled', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout')) })
+            : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) }));
+          const meta = h('p.hub-meta', metaFor(take));
+          let cta = ctaFor(take);
+          const coursesBox = courses.length ? h('div.hub-courses', courses.map(courseRow)) : null;
+          /* durée de session : un choix mémorisé (10 · 20 · toutes), appliqué partout.
+             Mise à jour sur place (l'indicateur glisse, le libellé tique) : la page ne se reconstruit
+             pas, le défilement et le regard restent où ils sont. */
+          const seg = h('div.segmented.hub-size', { role: 'radiogroup', 'aria-label': 'Taille de la session' },
+            SIZES.map(([v, l]) => {
+              const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(size === v), dataset: { v } }, l);
+              b.addEventListener('click', () => {
+                if (S.data.settings.sessionSize === v) return;
+                S.data.settings.sessionSize = v;
+                S.save();
+                U.$$('.seg-btn', seg).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+                seg._place();
+                const n = v ? Math.min(v, due) : due;
+                U.clear(meta); U.append(meta, metaFor(n));
+                const next = ctaFor(n);
+                if (!motion.reduced()) next.classList.add('tick');
+                cta.replaceWith(next); cta = next;
+                if (coursesBox) { U.clear(coursesBox); courses.forEach((c) => coursesBox.appendChild(courseRow(c))); }
+              });
+              return b;
+            }));
+          ui.segIndicator(seg, 'hub-size');
           main = h('div.hub-main',
             h('div.hero.hub-hero',
               h('p.overline.hero-date', new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })),
               h('h1.hero-title', due ? [h('span.hl-sweep', h('span.hub-num', String(due))), due > 1 ? ' cartes à réviser' : ' carte à réviser'] : h('span.hl-sweep', 'Tout est à jour.'))),
-            h('section.hub-start',
-              h('p.hub-meta', due
-                ? [h('b', minutes(take)), ` pour cette session · ${[due0 ? `${due0} déjà vue${due0 > 1 ? "s" : ""}` : null, fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : null].filter(Boolean).join(' · ')}`]
-                : 'Rien n’est dû aujourd’hui. Une série d’entraînement ne change pas tes échéances… sauf ce que tu notes.'),
+            // le bloc « Commencer » devient la première fiche de la session (élément partagé)
+            h('section.hub-start', { dataset: { hero: 'session:all:card' } },
+              meta,
               h('div.hub-size-row', h('span.hub-size-l', 'Session'), seg),
               cta),
             h('div.hub-side.only-narrow', streakCard(), forecastCard(intro)),
             courses.length ? h('section.lib-sec',
               h('div.sec-head', h('h2.sec-title', 'Par cours'), h('span.sec-count', String(courses.length))),
-              h('div.hub-courses', courses.map(courseRow))) : null,
+              coursesBox) : null,
             weakList());
         }
         const aside = anyReviewable ? h('aside.hub-side.only-wide', streakCard(), forecastCard(intro)) : null;

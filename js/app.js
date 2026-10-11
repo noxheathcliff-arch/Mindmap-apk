@@ -59,6 +59,10 @@
     if (r.name === 'editor') return 'map:' + r.id;
     // révision lancée depuis la fiche d'un cours : la fiche devient la carte de révision
     if (r.name === 'review' && r.q && r.q.start) return 'fiche:' + String(r.q.start).split('.')[1];
+    // session d'un cours : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la fiche
+    if (r.name === 'review' && r.scope && r.scope.courseId) return 'course:' + r.scope.courseId;
+    // session tous cours : le bloc « Commencer » devient la première fiche
+    if (r.name === 'review' && r.scope && !r.scope.mapId) return 'session:all';
     return null;
   };
 

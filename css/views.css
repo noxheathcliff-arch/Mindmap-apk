@@ -338,10 +338,12 @@
 .rdeck-under {
   border-radius: var(--shape-xl); background: var(--surface-container-lowest); border: 1px solid var(--outline-variant);
   transform: translateY(7px) scaleX(.96); transform-origin: 50% 100%;
-  transition: opacity var(--dur-sm) var(--ease-out);
+  transition: opacity var(--dur-sm) var(--ease-out), transform var(--dur-md) var(--ease-out);
   animation: under-in var(--dur-md) var(--ease-out) both;
 }
 .rdeck-under.u2 { transform: translateY(14px) scaleX(.92); background: var(--surface-container-low); }
+/* quand le paquet s'amincit, la dernière feuille remonte d'un cran avant de s'effacer */
+.rdeck-under.gone { transform: translateY(7px) scaleX(.96); }
 .rdeck-under.gone { opacity: 0; }
 @keyframes under-in { from { opacity: 0; } }
 
@@ -353,9 +355,11 @@
   box-shadow: var(--elev-1);
   touch-action: pan-y;
 }
-/* la fiche suivante monte du paquet (spatialement : elle était dessous) */
-.rcard.from-stack { animation: card-rise 320ms var(--ease-out) both; }
-@keyframes card-rise { from { opacity: 0; transform: translateY(14px) scale(.96); } }
+/* la fiche suivante EST la première feuille du paquet : elle part exactement de sa géométrie
+   (7 px plus bas, 96 % de large, sans ombre) et se pose ; son contenu suit (+80 ms, fondu) */
+.rcard.from-stack { animation: card-rise var(--dur-md) var(--ease-out) both; }
+.rcard.from-stack > .rcard-band, .rcard.from-stack > .rcard-body { animation: fade-in var(--dur-md) var(--ease-out) 80ms both; }
+@keyframes card-rise { from { transform: translateY(7px) scaleX(.96); box-shadow: none; } }
 /* retour après Annuler : du côté où elle était partie */
 .rcard.enter-left { animation: card-back 300ms var(--ease-out) both; --from: -70%; }
 .rcard.enter-right { animation: card-back 300ms var(--ease-out) both; --from: 70%; }
@@ -443,6 +447,14 @@
 @media (min-width: 840px) and (min-height: 640px) {
   .review-actions { position: static; margin-top: var(--sp-4); background: none; padding-bottom: var(--sp-10); }
 }
+/* jeux d'actions superposés : l'ancien sort (100 ms in), le nouveau entre (240 ms out) */
+.review-actions > .act-set { grid-area: 1 / 1; display: grid; justify-items: center; gap: var(--sp-3); width: 100%; }
+.act-set.enter { animation: act-in var(--dur-md) var(--ease-out) 50ms both; }
+.act-set.leaving { pointer-events: none; animation: act-out 100ms var(--ease-in) forwards; }
+@keyframes act-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes act-out { to { opacity: 0; transform: translateY(-4px); } }
+.review-count.tick, .hub-cta.tick { animation: tick var(--dur-sm) var(--ease-out); }
+@keyframes tick { from { opacity: .35; transform: translateY(4px); } }
 .reveal-row { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); width: min(640px, 100%); }
 .reveal-btn { height: 56px; padding: 0 var(--sp-8); flex: 1; max-width: 400px; font: var(--title-m); }
 .hint-btn { height: 56px; flex: none; }
@@ -464,7 +476,10 @@
 .rate-kbd { position: absolute; top: 6px; right: 8px; font-size: 10px; line-height: 14px; padding: 0 4px; background: transparent; border-color: color-mix(in srgb, currentColor 35%, transparent); color: inherit; }
 @media (hover: none) { .rate-kbd, .btn-kbd { display: none; } }
 .review-stage.is-end .review-actions { display: none; }
-:root[data-motion="reduce"] .rcard, :root[data-motion="reduce"] .rdeck-under, :root[data-motion="reduce"] .rcard-hint { animation-name: rm-fade !important; }
+:root[data-motion="reduce"] .rcard, :root[data-motion="reduce"] .rdeck-under, :root[data-motion="reduce"] .rcard-hint,
+:root[data-motion="reduce"] .act-set.enter { animation-name: rm-fade !important; }
+:root[data-motion="reduce"] .act-set.leaving { animation: none; opacity: 0; }
+:root[data-motion="reduce"] .rcard.from-stack > * { animation: none; }
 :root[data-motion="reduce"] .rcard.leaving { animation-name: rm-fade-out !important; }
 
 .review-end { grid-area: 1 / 1; width: min(520px, 100%); justify-self: center; text-align: center; display: grid; justify-items: center; gap: var(--sp-3); padding: var(--sp-8) 0; }
