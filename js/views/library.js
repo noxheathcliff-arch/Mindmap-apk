@@ -255,7 +255,7 @@
         const grid = h('div.course-grid');
         courses.forEach((c) => grid.appendChild(courseCard(c, draw, { draw: intro })));
         const add = h('button.course-card.course-add.ripple', { type: 'button', onclick: R.actions.newCourse },
-          h('span.add-ic', R.icon('plus', 24)), h('span.add-l', 'Nouveau cours'));
+          h('span.add-ic', R.icon('plus', 20)), h('span.add-txt', h('span.add-l', 'Nouveau cours'), h('span.add-s', 'Un dossier par matière')));
         grid.appendChild(add);
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
 

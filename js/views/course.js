@@ -93,7 +93,7 @@
         const grid = h('div.map-grid');
         maps.forEach((m) => grid.appendChild(mapCard(m, draw)));
         grid.appendChild(h('button.map-card.map-add.ripple', { type: 'button', onclick: () => R.actions.newMap(course.id) },
-          h('span.add-ic', R.icon('plus', 24)), h('span.add-l', 'Nouvelle carte')));
+          h('span.add-ic', R.icon('plus', 20)), h('span.add-txt', h('span.add-l', 'Nouvelle carte'), h('span.add-s', 'Une notion ou un chapitre'))));
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
         const header = h('div.course-head',
@@ -102,7 +102,7 @@
             R.courseArt.mark(course, { size: 'lg', hero: true }), // pas de tracé ici : l'empreinte arrive déjà de la fiche (élément partagé)
             h('div.course-band-id',
               h('p.overline', 'Cours'),
-              h('h1.course-title', h('span.hl-sweep', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
+              h('h1.course-title', h('span', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
               course.description ? h('p.course-desc', course.description) : null)), course),
           h('div.course-stats',
             stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),

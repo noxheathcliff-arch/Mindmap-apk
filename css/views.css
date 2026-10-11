@@ -179,15 +179,30 @@
 }
 .course-card:active, .map-card:active { transform: scale(.985); transition-duration: var(--dur-xs); }
 .card-more { margin: -8px -8px 0 0; }
-.course-add, .map-add {
-  align-items: center; justify-content: center; gap: var(--sp-2);
-  background: transparent; border: 1.5px dashed var(--outline-variant);
-  color: var(--on-surface-variant); font: var(--label-l);
+.course-card.course-add, .map-card.map-add {
+  /* l'emplacement de la prochaine feuille : un tracé en pointillés, sans fond ni ombre
+     (sélecteurs doublés : passent devant .course-card / .map-card, définis plus bas) */
+  flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
+  background: transparent; border: 1.5px dashed color-mix(in srgb, var(--on-surface) 26%, transparent);
+  color: var(--on-surface); text-align: center;
+  transition: background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out), transform var(--dur-sm) var(--ease-out);
 }
-.course-add:hover, .map-add:hover { border-color: var(--on-surface); color: var(--on-surface); }
-.add-ic { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--surface-container-high); transition: transform var(--dur-md) var(--ease-out), background-color var(--dur-sm) var(--ease-out); }
-.course-add:hover .add-ic, .map-add:hover .add-ic { transform: rotate(90deg); background: var(--primary); color: var(--on-primary); }
-@media (max-width: 599.98px) { .course-add { min-height: 96px; flex-direction: row; } }
+.add-ic {
+  display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%;
+  border: 1.5px solid currentColor;
+  transition: transform var(--dur-md) var(--ease-out), background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
+}
+.add-txt { display: grid; gap: 2px; }
+.add-l { font: var(--title-s); }
+.add-s { font: var(--body-s); color: var(--on-surface-variant); }
+@media (hover: hover) {
+  .course-card.course-add:hover, .map-card.map-add:hover { background: var(--surface-container-low); border-color: color-mix(in srgb, var(--on-surface) 48%, transparent); }
+  .course-add:hover .add-ic, .map-add:hover .add-ic { transform: rotate(90deg); background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+}
+.course-card.course-add:active, .map-card.map-add:active { transform: scale(.985); transition-duration: var(--dur-xs); }
+@media (max-width: 599.98px) {
+  .course-card.course-add, .map-card.map-add { min-height: 76px; flex-direction: row; justify-content: flex-start; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); text-align: left; }
+}
 
 /* Lignes de cartes récentes */
 .map-list { display: grid; gap: var(--sp-1); }
@@ -203,7 +218,7 @@
 .course-head { display: grid; gap: var(--sp-6); margin-bottom: var(--sp-10); }
 .course-head-main { display: flex; gap: var(--sp-5); align-items: flex-start; }
 /* en-tête du cours : la bande papier de la fiche, agrandie (même teinte, même empreinte) */
-.course-band { align-items: center; padding: var(--sp-5) var(--sp-6); border-radius: var(--shape-xl); background: var(--paper); color: var(--paper-ink); border: 1px solid var(--paper-line); }
+.course-band { align-items: center; padding: var(--sp-5) var(--sp-6); border-radius: var(--shape-xl); background: var(--paper); color: var(--paper-ink); }
 .course-band .overline, .course-band .course-desc { color: var(--paper-sub); }
 .course-band-id { min-width: 0; }
 .course-title { font: var(--headline-m); margin-top: var(--sp-1); overflow-wrap: anywhere; }
@@ -249,7 +264,6 @@
 .mc-foot { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); padding-right: var(--sp-1); }
 .mc-due { font: var(--label-m); color: var(--on-surface-variant); white-space: nowrap; }
 .map-add { min-height: 220px; }
-@media (max-width: 599.98px) { .map-add { min-height: 96px; flex-direction: row; } }
 
 /* ---- Révision --------------------------------------------------------- */
 .page-review { background: var(--surface); }

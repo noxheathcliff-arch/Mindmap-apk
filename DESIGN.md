@@ -176,6 +176,8 @@ Une carte de cours n'est pas un dossier décoratif : c'est **la prochaine fiche 
 - **Empreinte** (`js/mark.js`) : sceau génératif dessiné depuis la vraie structure : une branche par carte mentale (plus longue quand elle grossit), des points pour ses nœuds, et **au surligneur la branche qui a le plus de fiches dues**. La silhouette ne dépend que des identifiants : stable d'une visite à l'autre, elle se densifie avec le cours. SVG en `currentColor`, aucun asset. Tailles xs 28 / sm 32 / md 44 / lg 72 (recherche, déplacement, carte, en-tête du cours).
 - **Corps réglé** (marge rouge pâle, lignes tous les 28 px) : la question de la prochaine fiche (`store.nextCard` : la plus en retard, sinon la première nouvelle de la plus ancienne carte). « Réviser » ouvre la révision **sur cette fiche-là** (`?start=carte.nœud`).
 - **Quatre états** : *Prochaine fiche* (question + Réviser + nombre dû) · *À jour* (prochaine échéance, maîtrise) · *À compléter* (des cartes, aucune note) · *Fiche blanche* (aucune carte → Nouvelle carte).
+- **En-tête du cours** : la bande papier seule, sans contour ni surligneur sur le titre (la teinte et l'empreinte suffisent à identifier le cours ; le jaune sur une teinte pastel brouillait la lecture).
+- **Emplacement « Nouveau cours / Nouvelle carte »** : la place de la prochaine feuille, en pointillés, sans fond ; pastille + cerclée, libellé et une ligne d'aide. Au survol, la pastille se remplit en jaune et tourne de 90°.
 - **Accessibilité** : un seul lien (le titre, étiré sur toute la fiche) ; Options et Réviser restent au-dessus et atteignables au clavier ; anneau de focus sur la feuille.
 
 ---
