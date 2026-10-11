@@ -26,7 +26,12 @@
   const DEPTH = { library: 0, course: 1, review: 1, editor: 2 };
   const IMMERSIVE = new Set(['editor', 'review']);
 
-  app.go = (hash, { replace } = {}) => {
+  /* from : élément hors de la page (ex. une ligne de la recherche) qui porte les héros de
+     départ ; swap(viaVT) : appelé au moment de l'échange de page, pour retirer cet élément
+     de la capture « après » (viaVT = true) ou le fermer normalement (false). */
+  let pendingNav = null;
+  app.go = (hash, { replace, from, swap } = {}) => {
+    pendingNav = from || swap ? { from, swap } : null;
     if (replace) { history.replaceState(null, '', hash); render(); }
     else if (location.hash === hash) render();
     else location.hash = hash;
@@ -60,7 +65,10 @@
     if (!container || !key) return [];
     const named = [];
     const used = new Set();
-    for (const el of U.$$(`[data-hero^="${key}:"]`, container)) {
+    const sel = `[data-hero^="${key}:"]`;
+    const els = U.$$(sel, container);
+    if (container.matches && container.matches(sel)) els.unshift(container); // le conteneur peut être lui-même un héros
+    for (const el of els) {
       const part = el.dataset.hero.split(':')[2];
       if (used.has(part) || !el.getClientRects().length) continue;
       used.add(part);
@@ -73,10 +81,14 @@
   function render() {
     const route = parse();
     const prev = app.route;
+    const nav = pendingNav;
+    pendingNav = null;
+    const swap = (viaVT) => { if (nav && nav.swap) nav.swap(viaVT); };
     ui.closeMenu();
     ui.hideTip();
     // même vue, autre paramètre (ex. Carte ↔ Plan) : mise à jour sans remonter
     if (prev && app.current && prev.name === route.name && route.id && prev.id === route.id && app.current.update) {
+      swap(false);
       app.route = route;
       app.current.update(route);
       updateNav(route);
@@ -86,17 +98,18 @@
     const host = U.$('#view');
     const useVT = !!prev && supportsVT && !U.reducedMotion() && !document.hidden;
 
-    if (!useVT) { mountRoute(route, prev, dir, false); return; }
+    if (!useVT) { swap(false); mountRoute(route, prev, dir, false); return; }
 
     if (vtRunning) { try { vtRunning.skipTransition(); } catch (e) { /* ignore */ } }
     const root = document.documentElement;
     root.dataset.vt = dir > 0 ? 'forward' : dir < 0 ? 'back' : 'peer';
     // en avançant, le héros est la destination ; en reculant, ce que l'on quitte
     const key = dir >= 0 ? entityOf(route) : entityOf(prev);
-    const oldNamed = nameHeroes(host.querySelector('.page-wrap'), key);
+    const oldNamed = nameHeroes((nav && nav.from && nav.from.isConnected) ? nav.from : host.querySelector('.page-wrap'), key);
     let newNamed = [];
     const vt = document.startViewTransition(() => {
       oldNamed.forEach((el) => { el.style.viewTransitionName = ''; });
+      swap(true);
       const page = mountRoute(route, prev, dir, true);
       // ne garder que les paires présentes des deux côtés
       newNamed = nameHeroes(page, key);
@@ -139,7 +152,7 @@
   const DESTS = [
     { key: 'library', label: 'Cours', icon: 'library', href: '#/' },
     { key: 'review', label: 'Réviser', icon: 'cards', href: '#/reviser' },
-    { key: 'search', label: 'Rechercher', icon: 'search', action: () => R.search.open(), kbd: `${U.mod} K` },
+    { key: 'search', label: 'Rechercher', icon: 'search', action: (e) => R.search.open('', { from: e.currentTarget }), kbd: `${U.mod} K` },
   ];
 
   function buildNav() {

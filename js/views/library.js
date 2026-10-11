@@ -250,7 +250,7 @@
         const topbar = h('header.topbar.topbar-lib',
           h('a.topbar-brand', { href: '#/' }, R.app.logo(), h('span.brand-name', 'Ratio')),
           h('div.topbar-actions',
-            ui.iconBtn('search', { title: 'Rechercher', onClick: () => R.search.open() }),
+            ui.iconBtn('search', { title: 'Rechercher', onClick: (e) => R.search.open('', { from: e.currentTarget }) }),
             ui.iconBtn('settings', { title: 'Réglages', onClick: () => R.app.openSettings() })));
 
         const grid = h('div.course-grid');

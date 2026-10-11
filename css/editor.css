@@ -20,7 +20,7 @@
 .page-editor[data-pane="docked"] .only-docked { display: inline-grid; }
 @media (max-width: 839.98px) { .save-state { display: none; } }
 @media (max-width: 599.98px) {
-  .ed-crumbs .crumb, .crumb-sep, .only-wide-ed { display: none; }
+  .ed-crumbs .crumb, .crumb-sep, .only-wide-ed, .ed-search { display: none; }
   .mode-seg .seg-l { display: none; }
   .mode-seg .seg-btn { padding: 0 var(--sp-3); }
   .ed-topbar { gap: 0; }

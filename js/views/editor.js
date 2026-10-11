@@ -117,7 +117,7 @@
       h('div.ed-crumbs', crumbCourse, h('span.crumb-sep', R.icon('chevronRight', 16)), titleBtn),
       modeSeg,
       h('div.topbar-actions', saveState, h('span.only-wide-ed', undoBtn, redoBtn),
-        ui.iconBtn('search', { title: 'Rechercher', cls: 'only-wide-ed', onClick: () => R.search.open() }), paneBtn, moreBtn));
+        ui.iconBtn('search', { title: 'Rechercher', cls: 'ed-search', onClick: (e) => R.search.open('', { from: e.currentTarget }) }), paneBtn, moreBtn));
 
     const body = h('div.ed-body', stage, pane);
     const page = h('div.page.page-editor', topbar, body, bottomBar);
@@ -2665,6 +2665,10 @@
         select(route.q.n);
         centerOn(route.q.n, { animate: false, minK: 0.9 });
         openPane(false);
+        // héros de la transition : la ligne de recherche choisie devient ce nœud. Le routeur le
+        // nomme dans la foulée ; l'attribut est retiré ensuite pour ne pas servir au retour.
+        const el = st.els.get(route.q.n);
+        if (el) { el.dataset.hero = 'map:' + map.id + ':node'; requestAnimationFrame(() => { delete el.dataset.hero; }); }
       }
       if (route.q.new) {
         const r0 = S.roots(map)[0];

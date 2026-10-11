@@ -60,7 +60,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | `H` | Mode masqué : tout est flouté, touche pour révéler (rappel actif) |
 | `P` | Basculer Carte / **Plan** (fiche I. A. 1. a. imprimable) |
 | `Ctrl/⌘ Z` · `Ctrl/⌘ ⇧ Z` | Annuler · Rétablir |
-| `Ctrl/⌘ K` | Recherche plein texte |
+| `Ctrl/⌘ K` | Recherche plein texte (filtres Cours / Cartes / Notions, numéro d'article → Légifrance) |
 | `?` | Tous les raccourcis |
 
 Sur mobile : toucher pour sélectionner, la barre du bas devient contextuelle (Enfant, Note, Relier, Type, Plus) ; pincer pour zoomer ; appui long pour le menu.
