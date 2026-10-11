@@ -168,7 +168,7 @@
     /* ------------------------------------------------------------------ */
     /* Historique                                                         */
     /* ------------------------------------------------------------------ */
-    const snapshot = () => JSON.stringify({ nodes: map.nodes, edges: map.edges });
+    const snapshot = () => JSON.stringify({ nodes: map.nodes, edges: map.edges, layout: map.layout || null, layoutPick: map.layoutPick || null });
     /* view : changement d'affichage (replier, isoler), permis en lecture seule */
     function mutate(fn, { coalesce, pane: refreshPane = true, type = 'edit', view = false } = {}) {
       if (!view && guard()) return undefined;
@@ -192,6 +192,9 @@
     function restoreSnap(s) {
       const d = JSON.parse(s);
       map.nodes = d.nodes; map.edges = d.edges;
+      // la disposition fait partie de l'état (elle fixe l'ordre de lecture)
+      if ('layout' in d) { if (d.layout) map.layout = d.layout; else delete map.layout; }
+      if ('layoutPick' in d) { if (d.layoutPick) map.layoutPick = d.layoutPick; else delete map.layoutPick; }
       for (const id of [...st.sel]) if (!S.node(map, id)) st.sel.delete(id);
       if (st.primary && !S.node(map, st.primary)) st.primary = [...st.sel][0] || null;
       if (st.selEdge && !map.edges.find((e) => e.id === st.selEdge)) st.selEdge = null;
@@ -314,7 +317,10 @@
       const s = size(root);
       const kk = U.isCompact() ? 0.8 : 0.85;
       const left = U.isCompact() ? 24 : 112;
-      Object.assign(st.view, { k: kk, x: left - root.x * kk, y: r.h / 2 - (root.y + s.h / 2) * kk });
+      // on ouvre sur la racine, là où commence la lecture : à gauche (droite), au centre (centrée), en haut (pyramide)
+      if (map.layout === 'balanced') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + r.h / 2 - (root.y + s.h / 2) * kk });
+      else if (map.layout === 'down') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + 24 - root.y * kk });
+      else Object.assign(st.view, { k: kk, x: left - root.x * kk, y: r.h / 2 - (root.y + s.h / 2) * kk });
       applyView();
     }
     function centerOn(id, { minK, animate = true } = {}) {
@@ -468,7 +474,9 @@
     function anchorOf(id) {
       const p = S.node(map, id);
       const s = size(p);
-      return { x: p.x + s.w, y: p.y + s.h / 2 };
+      const f = R.layout.flow(map, p);
+      if (f.child === 'down') return { x: p.x + s.w / 2, y: p.y + s.h };
+      return { x: f.child === 'left' ? p.x : p.x + s.w, y: p.y + s.h / 2 };
     }
     function playEmerge(list) {
       if (!list.length) return;
@@ -537,6 +545,13 @@
       const b = (i) => u * u * u * p1[i] + 3 * u * u * t * c1[i] + 3 * u * t * t * c2[i] + t * t * t * p2[i];
       return { d: `M${p1[0]},${p1[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}`, mid: [b(0), b(1)] };
     }
+    /** Point d'une courbe « M… C… » produite par curve() (pour échantillonner les branches) */
+    function bez(c, t) {
+      const n = c.d.match(/-?[\d.]+(?:e-?\d+)?/g).map(Number);
+      const u = 1 - t;
+      const f = (i) => u * u * u * n[i] + 3 * u * u * t * n[i + 2] + 3 * u * t * t * n[i + 4] + t * t * t * n[i + 6];
+      return [f(0), f(1)];
+    }
     function edgeLabel(e) {
       if (e.label) return e.label;
       if (e.kind === 'tree') {
@@ -574,9 +589,33 @@
       return '';
     }
     /** Géométrie : côté de sortie vers le barycentre des cibles, jonction à ~42 % de l'écart */
-    function bundleGeometry(b, byId) {
+    function bundleGeometry(b, byId, rects, busy = new Map()) {
       const a = byId.get(b.from);
       const sa = size(a);
+      if (b.kind === 'link' && rects && !st.fastEdges) {
+        // fourche de renvois : le côté de sortie dont le tronc et les branches ne traversent aucun nœud
+        let best = null;
+        for (const side of 'rlbt') {
+          const d1 = R.layout.sidePoint ? ({ r: [1, 0], l: [-1, 0], b: [0, 1], t: [0, -1] })[side] : null;
+          const p1 = R.layout.sidePoint(a, sa, side);
+          const J = [p1[0] + d1[0] * 40, p1[1] + d1[1] * 40];
+          const trunk = [p1, [(p1[0] + J[0]) / 2, (p1[1] + J[1]) / 2], J];
+          let flaws = rects.some((r) => r.id !== a.id && trunk.some((p) => p[0] > r.x - 4 && p[0] < r.x + r.w + 4 && p[1] > r.y - 4 && p[1] < r.y + r.h + 4)) ? 1 : 0;
+          if ((busy.get(a.id) || '').includes(side)) flaws++;
+          let cost = 0;
+          for (const e of b.edges) {
+            const t = byId.get(e.to);
+            const rt = R.layout.route({ id: a.id, x: J[0], y: J[1] }, { w: 0, h: 0 }, { id: t.id, x: t.x, y: t.y }, size(t), { rects, fast: true, side, busy, fromJ: true });
+            flaws += rt.hits + (rt.cost >= 240 ? 1 : 0);
+            cost += rt.len;
+          }
+          cost += flaws * 1000;
+          if (!best || cost < best.cost) best = { cost, flaws, p1, d1, J };
+        }
+        // propre = ni nœud traversé, ni sortie ou arrivée par le côté de la hiérarchie
+        best.bad = best.flaws > 0;
+        return best;
+      }
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       for (const e of b.edges) {
         const t = byId.get(e.to), st2 = size(t);
@@ -585,7 +624,18 @@
       // côté de sortie : direction dominante entre le centre de la source et celui des cibles
       const dx = (x0 + x1) / 2 - (a.x + sa.w / 2), dy = (y0 + y1) / 2 - (a.y + sa.h / 2);
       let p1, d1;
-      if (Math.abs(dx) >= Math.abs(dy) * 0.6) {
+      if (b.kind === 'tree' && map.layout === 'down' && b.edges.every((e) => R.layout.stacked(a, sa, byId.get(e.to)))) {
+        // pyramide, liste en colonne : la jonction est en haut de l'épine
+        const x = a.x + R.layout.STACK.spine;
+        return { p1: [x, a.y + sa.h], d1: [0, 1], J: [x, a.y + sa.h + 9], stack: true };
+      }
+      if (b.kind === 'tree' && map.layout === 'down') {
+        // pyramide : la jonction est sur le bus, à mi-chemin entre le parent et ses enfants
+        d1 = [0, Math.sign(dy) || 1];
+        p1 = [a.x + sa.w / 2, d1[1] > 0 ? a.y + sa.h : a.y];
+        const gapY = d1[1] > 0 ? y0 - p1[1] : p1[1] - y1;
+        return { p1, d1, J: [p1[0], p1[1] + d1[1] * Math.max(12, gapY / 2)] };
+      } else if (Math.abs(dx) >= Math.abs(dy) * 0.6) {
         d1 = [Math.sign(dx) || 1, 0];
         p1 = [d1[0] > 0 ? a.x + sa.w : a.x, a.y + sa.h / 2];
       } else {
@@ -600,8 +650,16 @@
       const J = [p1[0] + d1[0] * reach, p1[1] + d1[1] * reach];
       return { p1, d1, J };
     }
-    function branchCurve(J, d1, t) {
+    function branchCurve(J, d1, t, kind) {
       const pt = { x: J[0], y: J[1] };
+      if (kind === 'tree' && map.layout === 'down' && t.x <= J[0] + R.layout.STACK.indent + 8 && t.x > J[0] - R.layout.STACK.spine) {
+        const st2 = size(t), y = t.y + st2.h / 2;
+        return R.layout.elbow([J, [J[0], y], [t.x, y]], 8);
+      }
+      if (kind === 'tree' && map.layout === 'down') {
+        const st2 = size(t), below = d1[1] >= 0;
+        return R.layout.busDown(J, [t.x + st2.w / 2, below ? t.y : t.y + st2.h], J[1]);
+      }
       const { p2, d2 } = anchors(pt, { w: 0, h: 0 }, t, size(t));
       return curve(J, d1, p2, d2);
     }
@@ -638,8 +696,6 @@
         return a && b && !hidden.has(a.id) && !hidden.has(b.id);
       });
       const bundles = computeBundles(visible);
-      const bundleOf = new Map();
-      for (const b of bundles.values()) for (const e of b.edges) bundleOf.set(e.id, b);
       // colonne vertébrale du cours : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés
       const spine = (from, kind) => {
         const r = kind === 'tree' && S.TYPES[byId.get(from).type].rank;
@@ -648,6 +704,19 @@
       const selEdgeObj = st.selEdge ? map.edges.find((x) => x.id === st.selEdge) : null;
       const selGroup = selEdgeObj && selEdgeObj.group;
 
+      const rects = [];
+      for (const n of map.nodes) if (!hidden.has(n.id)) { const s2 = size(n); rects.push({ id: n.id, x: n.x, y: n.y, w: s2.w, h: s2.h }); }
+      const rectAt = new Map(rects.map((r) => [r.id, r]));
+      const busy = R.layout.busySides({ edges: visible }, map.layout, rectAt, (r) => r);
+      // fourche de renvois sans tracé propre (cibles trop éloignées) : on la dessine en renvois
+      // séparés plutôt qu'un tronc qui traverserait la carte — elle reste une fourche dans les données
+      const geoPre = new Map();
+      for (const [k, b] of bundles) {
+        const gm = bundleGeometry(b, byId, rects, busy);
+        if (gm.bad && !st.fastEdges) bundles.delete(k); else geoPre.set(k, gm);
+      }
+      const bundleOf = new Map();
+      for (const b of bundles.values()) for (const e of b.edges) bundleOf.set(e.id, b);
       // 1) troncs + étiquette unique des fourches
       const aliveB = new Set();
       const geo = new Map();
@@ -668,7 +737,7 @@
           st.bundleEls.set(b.key, br);
           if (st.ready && b.edges.some((e) => ed._newEdges.has(e.id) || st.origin.has(e.to))) g.classList.add('fade-in');
         }
-        const gm = bundleGeometry(b, byId);
+        const gm = geoPre.get(b.key) || bundleGeometry(b, byId, rects, busy);
         geo.set(b.key, gm);
         const d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
         br.trunk.setAttribute('d', d);
@@ -685,6 +754,8 @@
         else { br.label.dataset.logicFrom = b.from; delete br.label.dataset.edge; }
         br.label.setAttribute('aria-label', b.explicit ? `Fourche « ${lbl || 'sans libellé'} » (${b.edges.length} branches)` : `Logique ${lbl} — changer`);
         br.label.style.transform = `translate(${gm.J[0]}px, ${gm.J[1]}px) translate(-50%, -50%)`;
+        if (lbl) { const w = br.label.offsetWidth || 28, hh = br.label.offsetHeight || 19; br.label._box = { x: gm.J[0] - w / 2, y: gm.J[1] - hh / 2, w, h: hh }; }
+        else br.label._box = null;
       }
       for (const [k, br] of st.bundleEls) {
         if (aliveB.has(k)) continue;
@@ -692,8 +763,14 @@
         st.bundleEls.delete(k);
       }
 
-      // 2) liens : simples, ou branches d'une fourche (depuis la jonction)
-      for (const e of visible) {
+      // 2) liens : simples, ou branches d'une fourche (depuis la jonction).
+      //    L'arbre d'abord, puis les renvois : chacun choisit le trajet qui ne traverse aucun
+      //    nœud et croise le moins de liens ; les libellés se posent là où ils ne cachent rien.
+      const polys = [];
+      const placed = [];
+      for (const br of st.bundleEls.values()) if (!br.label.hidden && br.label._box) placed.push(br.label._box);
+      const ordered = visible.filter((e) => e.kind === 'tree').concat(visible.filter((e) => e.kind !== 'tree'));
+      for (const e of ordered) {
         const a = byId.get(e.from), b = byId.get(e.to);
         alive.add(e.id);
         let rec = st.edgeEls.get(e.id);
@@ -718,17 +795,36 @@
         let c;
         if (bundle) {
           const gm = geo.get(bundle.key);
-          c = branchCurve(gm.J, gm.d1, b);
+          if (e.kind === 'link') {
+            // branche de fourche : depuis la jonction, trajet qui évite les nœuds (sortie dans l'axe du tronc)
+            const side = gm.d1[0] > 0 ? 'r' : gm.d1[0] < 0 ? 'l' : gm.d1[1] > 0 ? 'b' : 't';
+            const cv = R.layout.route({ id: bundle.from, x: gm.J[0], y: gm.J[1] }, { w: 0, h: 0 }, { id: b.id, x: b.x, y: b.y }, size(b), { rects, polys, busy, fromJ: true, fast: !!st.fastEdges, side });
+            c = { d: cv.d, at: cv.at };
+            polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
+          } else c = branchCurve(gm.J, gm.d1, b, e.kind);
           rec.mid = gm.J;
           setLabel(rec.label, '', {});
+          if (e.kind === 'tree') polys.push({ pts: R.layout.sample(c.at ? c : { at: (t) => bez(c, t) }, 6), ends: new Set([e.from, e.to]) });
         } else {
-          const { p1, p2, d1, d2 } = anchors(a, size(a), b, size(b));
-          // ET / OU sur un lien isolé : l'étiquette se place près de l'enfant
-          c = curve(p1, d1, p2, d2, !e.label && e.kind === 'tree' ? 0.78 : 0.5);
-          rec.mid = c.mid;
+          let cv;
+          if (e.kind === 'tree') {
+            cv = R.layout.treeCurve(map.layout, a, size(a), b, size(b));
+          } else {
+            const sa = size(a), sb = size(b);
+            const lb = edgeLabel(e);
+            cv = R.layout.route({ id: a.id, x: a.x, y: a.y }, sa, { id: b.id, x: b.x, y: b.y }, sb, { rects, polys, placed, busy, fast: !!st.fastEdges, label: lb ? { w: rec.label.offsetWidth || R.layout.labelSize(lb).w, h: rec.label.offsetHeight || 19 } : null });
+          }
+          c = { d: cv.d };
+          polys.push({ pts: R.layout.sample(cv, e.kind === 'tree' ? 6 : 14), ends: new Set([e.from, e.to]) });
           const lbl = edgeLabel(e);
           setLabel(rec.label, lbl, { sel, logic: !e.label && !!lbl });
-          rec.label.style.transform = `translate(${c.mid[0]}px, ${c.mid[1]}px) translate(-50%, -50%)`;
+          if (lbl) {
+            // ET / OU sur un lien isolé : près de l'enfant ; libellé : là où il ne cache rien
+            const sz = { w: rec.label.offsetWidth || R.layout.labelSize(lbl).w, h: rec.label.offsetHeight || 19 };
+            const spot = R.layout.placeLabel(cv, sz, rects, placed, { prefer: !e.label && e.kind === 'tree' ? 0.78 : 0.5 });
+            rec.mid = [spot.x, spot.y];
+            rec.label.style.transform = `translate(${spot.x}px, ${spot.y}px) translate(-50%, -50%)`;
+          } else rec.mid = cv.at(0.5);
         }
         rec.path.setAttribute('d', c.d);
         rec.hit.setAttribute('d', c.d);
@@ -813,11 +909,12 @@
       const sibs = S.childrenOf(map, p.id);
       const idx = sibs.findIndex((s) => s.id === id);
       const next = sibs[idx + 1];
-      let at = { x: cur.x, y: cur.y + cs.h + R.layout.GAP_Y };
+      const across = map.layout === 'down'; // pyramide : les frères se suivent de gauche à droite
+      let at = across ? { x: cur.x + cs.w + R.layout.P.downSibGap, y: cur.y } : { x: cur.x, y: cur.y + cs.h + R.layout.GAP_Y };
       const n = addChild(p.id, { type: cur.type, at, edit: true });
-      if (n && next) { // pousse les frères suivants vers le bas
-        const shift = size(n).h + R.layout.GAP_Y;
-        for (const s of sibs.slice(idx + 1)) { moveBranch(s.id, 0, shift); }
+      if (n && next) { // pousse les frères suivants
+        const shift = across ? size(n).w + R.layout.P.downSibGap : size(n).h + R.layout.GAP_Y;
+        for (const s of sibs.slice(idx + 1)) { if (across) moveBranch(s.id, shift, 0); else moveBranch(s.id, 0, shift); }
         render();
       }
       return n;
@@ -965,18 +1062,57 @@
       ensureVisible(idMap[id]);
     }
 
-    /** Ranger : pose à pose, trajectoires en arc */
+    /** Disposition : automatique (le moteur compare et garde la plus lisible) ou imposée */
+    const LAYOUT_CHOICES = [
+      ['auto', 'Automatique (conseillé)', 'Ratio compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
+        '<rect x="2.5" y="9.5" width="7" height="5" rx="1.2"/><path d="M9.5 12h3"/><path d="M17 3.5l1.1 2.6 2.6 1.1-2.6 1.1L17 10.9l-1.1-2.6-2.6-1.1 2.6-1.1z"/><path d="M17.5 14.5v5M15 17h5"/>'],
+      ['right', 'Vers la droite', 'La lecture la plus familière : de gauche à droite, de haut en bas.',
+        '<rect x="2" y="9.5" width="6" height="5" rx="1.2"/><rect x="15" y="3.5" width="7" height="4" rx="1.2"/><rect x="15" y="10" width="7" height="4" rx="1.2"/><rect x="15" y="16.5" width="7" height="4" rx="1.2"/><path d="M8 12h3.5M11.5 5.5v13M11.5 5.5H15M11.5 12H15M11.5 18.5H15"/>'],
+      ['balanced', 'Centrée', 'Le sujet au centre, les branches de chaque côté, dans le sens des aiguilles d’une montre.',
+        '<rect x="9" y="9.5" width="6" height="5" rx="1.2"/><rect x="1.5" y="4" width="5" height="4" rx="1.2"/><rect x="1.5" y="16" width="5" height="4" rx="1.2"/><rect x="17.5" y="4" width="5" height="4" rx="1.2"/><rect x="17.5" y="16" width="5" height="4" rx="1.2"/><path d="M9 12H6.5M6.5 6v12M15 12h2.5M17.5 6v12"/>'],
+      ['down', 'Pyramide', 'De haut en bas : pour une petite hiérarchie large et peu profonde.',
+        '<rect x="9" y="2.5" width="6" height="5" rx="1.2"/><rect x="2" y="16" width="5" height="5" rx="1.2"/><rect x="9.5" y="16" width="5" height="5" rx="1.2"/><rect x="17" y="16" width="5" height="5" rx="1.2"/><path d="M12 7.5v4.5M4.5 12h15M4.5 12v4M12 12v4M19.5 12v4"/>'],
+    ];
+    function chooseLayout() {
+      if (guard()) return;
+      const cur = map.layoutPick || 'auto';
+      let closeFn = null;
+      const list = h('div.choice-list.form-choice.layout-choices', { role: 'radiogroup', 'aria-label': 'Disposition de la carte' },
+        LAYOUT_CHOICES.map(([v, title, text, icon]) => {
+          const b = h('button.list-item.choice', { type: 'button', role: 'radio', 'aria-checked': String(v === cur) },
+            h('span.layout-ic', { html: `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>` }),
+            h('span.choice-l', h('b', title), h('span.choice-sub', v === 'auto' && map.layout ? `${text} Actuellement : ${LAYOUT_CHOICES.find((c) => c[0] === map.layout)[1].toLowerCase()}.` : text)),
+            h('span.choice-check', R.icon('check', 20)));
+          b.addEventListener('click', () => { closeFn && closeFn(); setTimeout(() => tidy(v), 160); });
+          return b;
+        }));
+      ui.dialog({ title: 'Disposition', icon: 'tidy', body: list, cls: 'dialog-layout', onOpen: (_, close) => { closeFn = close; } });
+    }
+    R.actions.chooseLayout = chooseLayout;
+
+    /** Ranger : pose à pose, trajectoires en arc. mode : disposition choisie (sinon celle de
+        l'utilisateur, sinon automatique — le moteur compare droite, centrée et pyramide). */
     let tidyStop = null;
-    function tidy() {
+    function viewportSize() { const r = canvas.getBoundingClientRect(); return { w: r.width || innerWidth, h: r.height || innerHeight }; }
+    function tidy(mode) {
+      if (typeof mode !== 'string') mode = null; // appelé depuis un bouton : l'argument est l'élément
       if (guard()) return;
       flushEdit();
       measure();
-      const target = R.layout.tidy(map, sizeFn);
+      const pick = mode ? (mode === 'auto' ? null : mode) : map.layoutPick || null;
+      const res = R.layout.arrange(map, sizeFn, { mode: pick || 'auto', viewport: viewportSize() });
+      const target = res.pos;
+      const modeChanged = res.mode !== (map.layout || 'right');
       const from = {};
       for (const n of map.nodes) from[n.id] = { x: n.x, y: n.y };
       const moved = map.nodes.some((n) => target[n.id] && (Math.abs(target[n.id].x - n.x) > 1 || Math.abs(target[n.id].y - n.y) > 1));
-      if (!moved) { fit(); return; }
+      const pickChanged = (pick || null) !== (map.layoutPick || null);
+      if (!moved && !modeChanged && !pickChanged) { fit(); return; }
       st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+      // l'ordre de lecture suit la disposition : on la fixe avant l'animation (rien ne se renumérote en route)
+      map.layout = res.mode;
+      if (pick) map.layoutPick = pick; else delete map.layoutPick;
+      if (!moved) { S.touchMap(map, 'edit'); render(); fit(); return; }
       if (tidyStop) tidyStop();
       /* Overlapping action : chaque niveau de profondeur démarre 24 ms après son
          parent (plafond 120 ms). Arcs : x et y suivent des courbes différentes. */
@@ -997,7 +1133,7 @@
             const el = st.els.get(n.id);
             if (el) el.style.transform = `translate(${n.x}px, ${n.y}px)`;
           }
-          renderEdges();
+          st.fastEdges = true; renderEdges(); st.fastEdges = false;
           positionCtx();
         },
         onDone: () => {
@@ -1740,7 +1876,7 @@
           const el = st.els.get(id);
           if (el) el.style.transform = `translate(${n.x}px, ${n.y}px)`;
         }
-        renderEdges();
+        st.fastEdges = true; renderEdges(); st.fastEdges = false;
         autoPan(e);
       } else if (gesture.type === 'connect') {
         const from = S.node(map, gesture.from);
@@ -2763,8 +2899,10 @@
       if (!U.$('.dialog') && st.mode === 'map') canvas.focus({ preventScroll: true });
       measure();
       if (map.needsLayout) {
-        const pos = R.layout.tidy(map, sizeFn);
-        for (const n of map.nodes) if (pos[n.id]) Object.assign(n, pos[n.id]);
+        // première ouverture d'une carte importée : tailles réelles, même disposition que la vignette
+        const res = R.layout.arrange(map, sizeFn, { mode: map.layoutPick || 'auto', viewport: viewportSize() });
+        for (const n of map.nodes) if (res.pos[n.id]) Object.assign(n, res.pos[n.id]);
+        map.layout = res.mode;
         delete map.needsLayout;
         S.save();
         render();
@@ -2802,6 +2940,7 @@
     this.unmount = () => {
       flushEdit();
       st.destroyed = true;
+      if (R.actions.chooseLayout === chooseLayout) R.actions.chooseLayout = null;
       offStore();
       saveViewport.flush();
       document.removeEventListener('keydown', onKey);

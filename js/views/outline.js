@@ -38,7 +38,7 @@
       if (e.group) seen.set(e.group, r);
       out.push(r);
     }
-    for (const r of out) r.targets.sort((a, b) => a.y - b.y);
+    for (const r of out) r.targets.sort(map.layout === 'down' ? (a, b) => a.x - b.x || a.y - b.y : (a, b) => a.y - b.y || a.x - b.x);
     return out;
   }
   const names = (ts) => ts.map((t) => t.title || 'Sans titre');

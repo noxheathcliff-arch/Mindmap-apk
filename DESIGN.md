@@ -277,7 +277,7 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Suppression | scale + opacité | 1 → 0.92 | 160 | in | pas d'anticipation (fréquent) |
 | Sélection | trait de surligneur | 0 → 100 % | 200 (0 au clavier) | out | signature |
 | Prise / dépôt d'un nœud | élévation (ombre du pseudo-élément), **taille fixe** | ombre 0 → 1 | 160 | out | les liens restent accrochés au bord (M3 : un élément déplacé s'élève, il ne grossit pas) |
-| Ranger | x, y | pose → pose, +24 ms par niveau | 440 (+120) | x out, y in-out | **arcs**, overlap |
+| Ranger (et changement de disposition) | x, y | pose → pose, +24 ms par niveau | 440 (+120) | x out, y in-out | **arcs**, overlap |
 | Caméra (ajuster, centrer) | transform | durée ∝ √distance | 200–480 | in-out | — |
 | Pan relâché | transform | inertie | — | décroissance | momentum |
 | Panneau docké | contenu translate + opacité | 24 px → 0 / → 32 px | 240 / 160 | out / in | interruptible (reverse) |
@@ -320,6 +320,8 @@ Réglage *Animations : Système / Réduites / Complètes*. En mode réduit, dép
 | Hick | Barre principale ≤ 5 actions ; le reste par divulgation progressive (barre contextuelle, menu ⋯). |
 | Miller / chunking | La décomposition elle-même ; sessions de révision limitées à 20 cartes. |
 | Tesler | « Ranger » calcule la mise en page ; la sauvegarde est automatique. |
+| Lisibilité des diagrammes (Purchase 1997 ; Ware et al. 2002 ; Purchase et al. 2010) | Le moteur de rangement minimise d'abord les liens qui traversent un nœud et les libellés qui cachent un texte, puis les croisements et la longueur des renvois ; colonnes alignées par niveau ; l'ordre du cours n'est jamais permuté. Trois dispositions (droite · centrée · pyramide) notées sur l'écran réel, choix automatique ou imposé. |
+| Similarité / continuité (Gestalt) | Hiérarchie = courbes pleines qui arrivent sur un côté ; renvois = pointillés orthogonaux à coins arrondis qui arrivent par un autre côté : deux canaux visuels qu'on ne confond pas. |
 | Doherty | Réponse < 100 ms à chaque geste, indicateur « Enregistré ». |
 | Zeigarnik / Goal-gradient | Barre de progression de maîtrise par carte/cours ; barre de session qui s'accélère vers la fin. |
 | Pic-fin | Écran de fin de session soigné (bilan + série + éclat). |

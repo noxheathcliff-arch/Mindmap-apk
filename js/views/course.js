@@ -46,6 +46,7 @@
       { label: 'Exporter (JSON)', icon: 'download', onClick: () => U.download(`${U.slug(m.title)}.json`, JSON.stringify(m, null, 2)) },
       inEditor ? { label: 'Imprimer la fiche', icon: 'print', onClick: () => R.app.go('#/carte/' + m.id + '/plan?print=1') } : null,
       inEditor ? { divider: true } : null,
+      inEditor && !m.readOnly && R.actions.chooseLayout ? { label: 'Disposition…', icon: 'tidy', onClick: () => R.actions.chooseLayout() } : null,
       inEditor ? { label: 'Couleurs des nœuds…', icon: 'palette', onClick: () => R.colors.openDialog() } : null,
       inEditor && (R.colors.settings().mode !== 'off' || R.colors.settings().last)
         ? { label: R.colors.settings().mode === 'off' ? 'Afficher les couleurs' : 'Masquer les couleurs', icon: R.colors.settings().mode === 'off' ? 'eye' : 'eyeOff', onClick: () => R.colors.toggle() } : null,

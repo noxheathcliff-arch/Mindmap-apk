@@ -21,12 +21,15 @@
     const bw = x1 - x0 + pad * 2, bh = y1 - y0 + pad * 2;
     const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
     let svg = `<svg viewBox="${x0 - pad} ${y0 - pad} ${bw} ${bh}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">`;
+    // mêmes trajets que dans l'éditeur (disposition, renvois qui contournent les nœuds)
+    const rects = nodes.map((n) => ({ id: n.id, x: n.x, y: n.y, w: sz[n.id].w, h: sz[n.id].h }));
     for (const e of map.edges) {
       const a = byId[e.from], b = byId[e.to];
       if (!a || !b) continue;
-      const ax = a.x + sz[a.id].w, ay = a.y + sz[a.id].h / 2, bx = b.x, by = b.y + sz[b.id].h / 2;
-      const mx = (ax + bx) / 2;
-      svg += `<path d="M${ax},${ay} C${mx},${ay} ${mx},${by} ${bx},${by}" style="fill:none;stroke:var(--outline)" stroke-width="${Math.max(2, bw / 220)}" ${e.kind === 'link' ? `stroke-dasharray="${bw / 90}"` : ''}/>`;
+      const cv = e.kind === 'link'
+        ? R.layout.route(a, sz[a.id], b, sz[b.id], { rects, fast: true })
+        : R.layout.treeCurve(map.layout, a, sz[a.id], b, sz[b.id]);
+      svg += `<path d="${cv.d}" style="fill:none;stroke:var(--outline)" stroke-width="${Math.max(2, bw / 220)}" ${e.kind === 'link' ? `stroke-dasharray="${bw / 90}"` : ''}/>`;
     }
     for (const n of nodes) {
       const s = sz[n.id];

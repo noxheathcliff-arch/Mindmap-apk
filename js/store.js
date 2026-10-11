@@ -121,6 +121,8 @@
     { label: 'Compléments', types: ['exemple', 'retenir', 'idee'] },
   ];
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
+  /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
+  const LAYOUTS = ['right', 'balanced', 'down'];
 
   const RATINGS = {
     revoir:   { label: 'À revoir', fill: 1 },
@@ -228,6 +230,9 @@
         nodes, edges,
         ...(m.needsLayout || (rep && stacked) ? { needsLayout: true } : {}),
         ...(m.readOnly ? { readOnly: true } : {}),
+        // disposition : celle en place (layout) et celle choisie par l'utilisateur (layoutPick, sinon automatique)
+        ...(LAYOUTS.includes(m.layout) ? { layout: m.layout } : {}),
+        ...(LAYOUTS.includes(m.layoutPick) ? { layoutPick: m.layoutPick } : {}),
       };
     }).filter((m) => {
       if (courseIds.has(m.courseId)) return true;
@@ -309,6 +314,10 @@
       if (db && ls && (ls.legacy || ls.savedAt > db.savedAt)) pick = ls;
       if (pick) {
         try { this.data = sanitize(pick.data); } catch (e) { this.data = blank(); }
+        // cartes importées jamais ouvertes (positions empilées) : rangées tout de suite (vignettes justes)
+        let laid = false;
+        for (const m of this.data.maps) { try { laid = this.prelayout(m) || laid; } catch (e) { /* rangement impossible : l'éditeur s'en chargera */ } }
+        if (laid) setTimeout(() => this.save(), 0);
         // migration (ou rattrapage) : la base principale reçoit tout de suite la bonne copie
         if (idb.ok && pick !== db) this._save();
       } else {
@@ -469,13 +478,27 @@
     node(map, id) { return map.nodes.find((n) => n.id === id); },
     parentEdge(map, id) { return map.edges.find((e) => e.kind === 'tree' && e.to === id); },
     parentOf(map, id) { const e = this.parentEdge(map, id); return e ? this.node(map, e.from) : null; },
+    /** Enfants dans l'ordre de lecture, qui dépend de la disposition :
+        droite → haut en bas ; pyramide → gauche à droite ; centrée → sens horaire autour de la
+        racine (côté droit de haut en bas, puis côté gauche de bas en haut), haut en bas ensuite. */
     childrenOf(map, id) {
-      const ids = map.edges.filter((e) => e.kind === 'tree' && e.from === id).map((e) => e.to);
-      return map.nodes.filter((n) => ids.includes(n.id)).sort((a, b) => a.y - b.y || a.x - b.x);
+      const ids = new Set(map.edges.filter((e) => e.kind === 'tree' && e.from === id).map((e) => e.to));
+      const list = map.nodes.filter((n) => ids.has(n.id));
+      if (map.layout === 'down') return list.sort((a, b) => a.x - b.x || a.y - b.y);
+      if (map.layout === 'balanced') {
+        const p = this.node(map, id);
+        if (p && !this.parentEdge(map, id)) {
+          const right = list.filter((n) => n.x >= p.x).sort((a, b) => a.y - b.y || a.x - b.x);
+          const left = list.filter((n) => n.x < p.x).sort((a, b) => b.y - a.y || a.x - b.x);
+          return right.concat(left);
+        }
+      }
+      return list.sort((a, b) => a.y - b.y || a.x - b.x);
     },
     roots(map) {
       const has = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
-      return map.nodes.filter((n) => !has.has(n.id)).sort((a, b) => a.y - b.y || a.x - b.x);
+      const list = map.nodes.filter((n) => !has.has(n.id));
+      return map.layout === 'down' ? list.sort((a, b) => a.x - b.x || a.y - b.y) : list.sort((a, b) => a.y - b.y || a.x - b.x);
     },
     descendants(map, id) {
       const out = [];
@@ -509,18 +532,18 @@
     structNumbers(map) {
       const out = new Map();
       if (!map.nodes.some((n) => isStruct(n.type))) return out;
-      const parent = new Map();
-      for (const e of map.edges) if (e.kind === 'tree') parent.set(e.to, e.from);
-      const groups = new Map();
-      for (const n of map.nodes) {
-        if (!isStruct(n.type)) continue;
-        const k = (parent.get(n.id) || '') + '|' + n.type;
-        if (!groups.has(k)) groups.set(k, []);
-        groups.get(k).push(n);
-      }
-      for (const list of groups.values()) {
-        if (list.length < 2) continue;
-        list.sort((a, b) => a.y - b.y || a.x - b.x).forEach((n, i) => out.set(n.id, i + 1));
+      // rang dans l'ordre de lecture (childrenOf), qui suit la disposition de la carte
+      const parents = new Set();
+      for (const e of map.edges) if (e.kind === 'tree') parents.add(e.from);
+      const lists = [this.roots(map), ...[...parents].map((id) => this.childrenOf(map, id))];
+      for (const sibs of lists) {
+        const byType = new Map();
+        for (const n of sibs) {
+          if (!isStruct(n.type)) continue;
+          if (!byType.has(n.type)) byType.set(n.type, []);
+          byType.get(n.type).push(n);
+        }
+        for (const list of byType.values()) if (list.length > 1) list.forEach((n, i) => out.set(n.id, i + 1));
       }
       return out;
     },
@@ -829,8 +852,24 @@
         const log = this.data.settings.reviewLog;
         for (const [k, v] of Object.entries(inc.settings.reviewLog || {})) log[k] = Math.max(log[k] || 0, v);
       }
+      for (const m of this.data.maps) if (inc.maps.some((x) => x.id === m.id)) this.prelayout(m);
       this.changed('import');
       return { snapshot, courses: inc.courses.map((c) => c.id), maps: inc.maps.length };
+    },
+    /**
+     * Carte à ranger (import d'IA, positions absentes) : on la range tout de suite avec des tailles
+     * estimées — vignettes, plan et révision sont justes avant même la première ouverture. Le
+     * drapeau needsLayout reste : l'éditeur affinera avec les tailles réelles, dans la même disposition.
+     */
+    prelayout(m, force = false) {
+      if (!R.layout || !m.needsLayout || !m.nodes.length) return false;
+      const stacked = m.nodes.every((n) => n.x === m.nodes[0].x && n.y === m.nodes[0].y);
+      if (!stacked && !force) return false;
+      const vp = typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight - 64 } : undefined;
+      const r = R.layout.arrange(m, R.layout.estimate, { mode: m.layoutPick || m.layout || 'auto', viewport: vp });
+      for (const n of m.nodes) if (r.pos[n.id]) Object.assign(n, r.pos[n.id]);
+      m.layout = r.mode;
+      return true;
     },
     restoreSnapshot(snapshot) {
       this.data = sanitize(JSON.parse(snapshot));

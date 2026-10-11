@@ -69,6 +69,18 @@ Sur mobile : toucher pour sélectionner, la barre du bas devient contextuelle (E
 
 Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapitre, `Tab` y ajoute des **Leçons**, puis les notions de chacune (une Section se pose avec `Alt 3`). Les leçons et sections sont numérotées toutes seules dans l'ordre du plan ; chacune affiche une jauge de maîtrise de sa branche. Sans rien sélectionner, le panneau affiche le **sommaire** du chapitre. Sur une leçon : **Réviser cette leçon** (seulement ses cartes) et **Isoler** (replie les autres leçons). En vue **Plan**, la structure devient des intertitres (*Leçon 1 — …*) et la numérotation I. A. 1. repart sous chacun ; « À retenir » devient un encadré. Au zoom éloigné, le détail s'estompe et la structure reste lisible.
 
+### Ranger une carte (disposition)
+
+`R` (ou *Ranger*) range toute la carte en comparant trois dispositions et garde la plus lisible pour cette carte et cet écran : **vers la droite** (la plus familière), **centrée** (le sujet au milieu, les branches de chaque côté dans le sens des aiguilles d'une montre) ou **pyramide** (de haut en bas, les listes en colonne sous leur parent). On peut en imposer une : ⋮ → *Disposition…*. Le moteur garantit :
+
+- l'ordre du cours n'est jamais permuté (numérotation des leçons et ordre de révision inchangés) ;
+- les nœuds d'un même niveau sont alignés en colonnes, les groupes séparés par l'espace ;
+- les **renvois** (pointillés) suivent des couloirs libres à angles arrondis : ils ne traversent aucun nœud et n'arrivent jamais par le côté où arrive la hiérarchie (on ne les prend pas pour un parent) ;
+- les **libellés** se posent là où ils ne cachent aucun texte ;
+- une fourche dont les cibles sont trop éloignées est dessinée en renvois séparés.
+
+Une carte importée sans positions est rangée dès l'import (vignettes justes avant même la première ouverture), puis affinée avec les tailles réelles à l'ouverture.
+
 ### Lecture seule
 Le cadenas de la barre (ou *Lecture seule* dans le menu ⋮ d'une carte) protège une carte terminée : on peut toujours la parcourir, ouvrir les notes, replier, isoler, passer en Plan, le mode masqué et la réviser, mais plus rien ne s'ajoute, ne se supprime ni ne se déplace (glisser un nœud fait défiler la carte, double-cliquer ouvre la note). Le réglage est mémorisé et la carte porte un badge *Lecture seule* ; une copie (*Dupliquer*) naît modifiable.
 
@@ -105,7 +117,7 @@ Un import s'annule depuis la barre qui suit (*Annuler*).
 
 ### Transformer un livre en cours (skill pour IA)
 
-Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.1.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.2.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
 
 ## Structure
 
@@ -119,7 +131,7 @@ css/components.css      boutons, chips, segmentés, dialogues, menus, snackbar�
 css/views.css           bibliothèque, cours, révision, recherche, plan
 css/editor.css          canvas, nœuds, liens, panneau de note, barres d'outils
 js/store.js             modèle de données, persistance (IndexedDB + miroir), répétition espacée
-js/layout.js            mise en page automatique (« Ranger »)
+js/layout.js            moteur de rangement : dispositions, contours, trajets des renvois, libellés, note de lisibilité
 js/colors.js            couleurs des nœuds par type (OKLCH, contraste garanti)
 js/mark.js              identité d'un cours : empreinte générative (SVG) + teinte papier
 js/markdown.js          rendu des notes

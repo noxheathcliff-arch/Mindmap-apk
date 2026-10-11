@@ -584,3 +584,8 @@
 .is-ro .pane-title-input { cursor: default; }
 .is-ro .pane-title-input:focus { outline: none; }
 :root[data-motion="reduce"] .ed-lock-ic.swap, :root[data-motion="reduce"] .ed-lock-l, :root[data-motion="reduce"] .ed-lock.nudge { animation: none !important; }
+
+/* Disposition de la carte : vignette schématique de chaque choix */
+.layout-choices .choice { align-items: center; gap: 14px; }
+.layout-ic { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--shape-m, 12px); background: var(--surface-container); color: var(--on-surface-variant); }
+.layout-choices .choice[aria-checked="true"] .layout-ic { background: var(--primary-container, var(--surface-container-high)); color: var(--on-surface); }
