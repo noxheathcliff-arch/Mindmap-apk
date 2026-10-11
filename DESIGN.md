@@ -21,7 +21,9 @@ En master de droit, une notion (ex. *le contrat*) se décompose en **définition
 | H5 | Proposer la carte en **plan juridique** (I. A. 1. a.) | de produire directement des fiches | la vue Plan est imprimée / exportée |
 
 ### MVP — ce qui est livré
-Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, pas de collaboration. Les données restent **sur l'appareil** (localStorage) avec **sauvegarde/import JSON** et export Markdown. Application installable (PWA) sur Android et desktop, fonctionne hors-ligne.
+Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, pas de collaboration. Les données restent **sur l'appareil** avec **sauvegarde/import JSON** et export Markdown.
+
+**Persistance.** IndexedDB est la base principale : une carte = un enregistrement, seules les cartes modifiées sont réécrites, dans une transaction atomique ; un magasin `media` est prêt pour les images et l'audio. Une **copie miroir** synchrone en localStorage (même format qu'avant, plus `savedAt`) est écrite à chaque sauvegarde tant qu'elle tient sous ~4,5 Mo : elle garantit l'enregistrement si la page est fermée en pleine écriture et reste lisible par les anciennes versions. Au chargement, la copie la plus récente gagne (`savedAt` ; un miroir sans `savedAt` vient d'une ancienne version, donc plus récent). Au-delà de la limite, le miroir est retiré plutôt que laissé périmé. Si IndexedDB est indisponible ou bloqué (délai de garde 2,5 s), l'app retombe sur localStorage seul, comme avant. Le stockage est demandé « persistant » (`navigator.storage.persist`). Une erreur n'est signalée que si aucune copie n'a pu être écrite. Application installable (PWA) sur Android et desktop, fonctionne hors-ligne.
 
 ---
 

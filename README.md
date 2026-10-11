@@ -2,7 +2,7 @@
 
 Décompose tes cours de droit en cartes mentales **typées** (définition, conditions de fond et de forme, effets, exceptions, jurisprudence, textes), écris une note dans chaque nœud, range tout par **cours**, puis **révise** en rappel actif avec répétition espacée.
 
-- Aucun compte, aucun serveur : les données restent sur l'appareil (stockage local) avec sauvegarde / import JSON.
+- Aucun compte, aucun serveur : les données restent sur l'appareil (base IndexedDB du navigateur, sans la limite de 5 Mo, avec une copie de secours) et s'exportent / s'importent en JSON.
 - Fonctionne **hors-ligne** et s'**installe** comme une application (PWA) sur Android, iOS et desktop.
 - Composition propre à chaque écran : barre basse et bottom sheet sur mobile, rail et feuille latérale sur tablette, panneau de note docké sur desktop.
 
@@ -91,7 +91,7 @@ css/base.css            coque : rail, barre de navigation, pages, transitions
 css/components.css      boutons, chips, segmentés, dialogues, menus, snackbar…
 css/views.css           bibliothèque, cours, révision, recherche, plan
 css/editor.css          canvas, nœuds, liens, panneau de note, barres d'outils
-js/store.js             modèle de données, persistance, répétition espacée
+js/store.js             modèle de données, persistance (IndexedDB + miroir), répétition espacée
 js/layout.js            mise en page automatique (« Ranger »)
 js/markdown.js          rendu des notes
 js/ui.js                composants et moteur de motion

@@ -304,8 +304,12 @@
       }
     });
 
-    const used = (() => { try { return (localStorage.getItem('ratio.v1') || '').length; } catch (e) { return 0; } })();
-    const kb = Math.max(1, Math.round(used / 1024));
+    const usageP = h('p.settings-p', 'Tout est enregistré sur cet appareil. Exporte régulièrement une sauvegarde.');
+    S.usage().then((u) => {
+      const size = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
+      const where = u.backend === 'indexeddb' ? 'base locale du navigateur' : 'stockage local (limité à ~5 Mo)';
+      usageP.textContent = `Tout est enregistré sur cet appareil : ${size(u.bytes)} dans la ${where}${u.quota ? ` · ${size(u.quota)} disponibles` : ''}. Exporte régulièrement une sauvegarde.`;
+    });
 
     const body = h('div.settings',
       h('section.settings-sec',
@@ -317,7 +321,7 @@
         h('p.settings-p', '« Réduites » remplace les déplacements et zooms par des fondus courts.')),
       h('section.settings-sec',
         h('h3.settings-h', 'Données'),
-        h('p.settings-p', `Tout est enregistré sur cet appareil (${kb} Ko). Exporte régulièrement une sauvegarde.`),
+        usageP,
         h('div.settings-row',
           ui.btn('Exporter la sauvegarde', { icon: 'download', variant: 'tonal', onClick: () => {
             U.download(`ratio-sauvegarde-${U.dayKey()}.json`, S.exportAll());
@@ -450,8 +454,8 @@
   /* ------------------------------------------------------------------ */
   /* Démarrage                                                          */
   /* ------------------------------------------------------------------ */
-  app.start = function () {
-    S.load();
+  app.start = async function () {
+    try { await S.load(); } catch (e) { /* stockage illisible : l'app démarre quand même (données vides) */ }
     applyTheme();
     applyMotion();
     if (S.fresh) R.seed();

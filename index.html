@@ -29,8 +29,9 @@
   <script>
     // Thème appliqué avant le premier rendu (pas de flash)
     try {
-      var s = JSON.parse(localStorage.getItem('ratio.v1') || '{}').settings;
-      if (s && (s.theme === 'light' || s.theme === 'dark')) document.documentElement.setAttribute('data-theme', s.theme);
+      var t = localStorage.getItem('ratio.theme');
+      if (t == null) { var s = JSON.parse(localStorage.getItem('ratio.v1') || '{}').settings; t = s && s.theme; }
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
 </head>

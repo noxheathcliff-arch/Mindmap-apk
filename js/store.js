@@ -3,7 +3,93 @@
   'use strict';
   const { U } = R;
 
-  const KEY = 'ratio.v1';
+  const KEY = 'ratio.v1';          // copie miroir synchrone (localStorage)
+  const THEME_KEY = 'ratio.theme'; // lu avant le premier rendu (index.html)
+
+  /* ------------------------------------------------------------------ */
+  /* Persistance : IndexedDB (principal) + miroir localStorage            */
+  /* ------------------------------------------------------------------ */
+  /*
+   * - IndexedDB : sans la limite de ~5 Mo ; une carte = un enregistrement, seules les
+   *   cartes modifiées sont réécrites, dans une transaction atomique. Magasin « media »
+   *   prêt pour les images et l'audio.
+   * - localStorage : copie miroir écrite de façon synchrone à chaque sauvegarde tant
+   *   qu'elle tient. Elle garantit l'enregistrement quand la page est fermée en plein
+   *   vol (pagehide) et garde la compatibilité avec les anciennes versions de l'app.
+   * - Au chargement, la copie la plus récente gagne (horodatage `savedAt`).
+   *   Une copie miroir sans horodatage a forcément été écrite par une ancienne version
+   *   après la dernière sauvegarde de celle-ci : elle est donc la plus récente.
+   */
+  const DB_NAME = 'ratio';
+  const MIRROR_MAX = 4500000; // caractères ; au-delà, le miroir est retiré (jamais de copie périmée)
+  const idb = {
+    db: null,
+    ok: false,
+    written: new Map(), // id de carte → JSON déjà écrit
+    metaWritten: '',
+    open(timeout = 2500) {
+      return new Promise((resolve) => {
+        if (!window.indexedDB) { resolve(null); return; }
+        let done = false;
+        const finish = (db) => { if (done) { if (db) db.close(); return; } done = true; resolve(db); };
+        setTimeout(() => finish(null), timeout); // certains navigateurs bloquent l'ouverture (navigation privée)
+        let req;
+        try { req = indexedDB.open(DB_NAME, 1); } catch (e) { finish(null); return; }
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta');
+          if (!db.objectStoreNames.contains('maps')) db.createObjectStore('maps');
+          if (!db.objectStoreNames.contains('media')) db.createObjectStore('media');
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          db.onversionchange = () => { db.close(); idb.db = null; idb.ok = false; };
+          finish(db);
+        };
+        req.onerror = () => finish(null);
+        req.onblocked = () => finish(null);
+      });
+    },
+    /** Lit tout : { root, maps: [json…] } | null */
+    readAll() {
+      return new Promise((resolve) => {
+        try {
+          const tx = this.db.transaction(['meta', 'maps'], 'readonly');
+          const out = { root: null, maps: [] };
+          tx.objectStore('meta').get('root').onsuccess = (e) => { out.root = e.target.result || null; };
+          const cur = tx.objectStore('maps').openCursor();
+          cur.onsuccess = (e) => { const c = e.target.result; if (c) { out.maps.push({ id: c.key, json: c.value }); c.continue(); } };
+          tx.oncomplete = () => resolve(out);
+          tx.onerror = tx.onabort = () => resolve(null);
+        } catch (e) { resolve(null); }
+      });
+    },
+    /** Écrit seulement ce qui a changé, en une transaction (tout ou rien) */
+    write(meta, mapJson) {
+      return new Promise((resolve) => {
+        if (!this.db) { resolve(false); return; }
+        const metaStr = JSON.stringify(meta);
+        const puts = [], dels = [];
+        for (const [id, json] of mapJson) if (this.written.get(id) !== json) puts.push([id, json]);
+        for (const id of this.written.keys()) if (!mapJson.has(id)) dels.push(id);
+        if (!puts.length && !dels.length && metaStr === this.metaWritten) { resolve(true); return; }
+        try {
+          const tx = this.db.transaction(['meta', 'maps'], 'readwrite');
+          const ms = tx.objectStore('maps');
+          for (const [id, json] of puts) ms.put(json, id);
+          for (const id of dels) ms.delete(id);
+          tx.objectStore('meta').put(meta, 'root');
+          tx.oncomplete = () => {
+            for (const [id, json] of puts) this.written.set(id, json);
+            for (const id of dels) this.written.delete(id);
+            this.metaWritten = metaStr;
+            resolve(true);
+          };
+          tx.onerror = tx.onabort = () => resolve(false);
+        } catch (e) { resolve(false); }
+      });
+    },
+  };
 
   /** Taxonomie des nœuds — différenciés sans couleur (cf. DESIGN.md §4.4).
       `rank` : nœuds de structure d'un cours (Chapitre › Leçon › Section), numérotés automatiquement. */
@@ -145,11 +231,39 @@
     fresh: false,
     saveError: null,
 
-    load() {
-      let raw = null;
-      try { raw = localStorage.getItem(KEY); } catch (e) { /* stockage indisponible */ }
-      if (raw) {
-        try { this.data = sanitize(JSON.parse(raw)); } catch (e) { this.data = blank(); }
+    /** 'indexeddb' | 'localstorage' — où vivent les données */
+    backend: 'localstorage',
+
+    async load() {
+      // 1. copie miroir (synchrone, toujours lisible)
+      let ls = null;
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) { const p = JSON.parse(raw); ls = { data: p, savedAt: +p.savedAt || 0, legacy: !p.savedAt }; }
+      } catch (e) { ls = null; }
+      // 2. base principale
+      let db = null;
+      idb.db = await idb.open();
+      idb.ok = !!idb.db;
+      if (idb.ok) {
+        const all = await idb.readAll();
+        if (all && all.root) {
+          const maps = [];
+          for (const m of all.maps) {
+            try { maps.push(JSON.parse(m.json)); idb.written.set(m.id, m.json); } catch (e) { /* enregistrement illisible : ignoré */ }
+          }
+          db = { data: { ...all.root, maps }, savedAt: +all.root.savedAt || 0 };
+          idb.metaWritten = JSON.stringify(all.root);
+        } else if (!all) idb.ok = false;
+      }
+      this.backend = idb.ok ? 'indexeddb' : 'localstorage';
+      // 3. la copie la plus récente gagne
+      let pick = db || ls;
+      if (db && ls && (ls.legacy || ls.savedAt > db.savedAt)) pick = ls;
+      if (pick) {
+        try { this.data = sanitize(pick.data); } catch (e) { this.data = blank(); }
+        // migration (ou rattrapage) : la base principale reçoit tout de suite la bonne copie
+        if (idb.ok && pick !== db) this._save();
       } else {
         this.data = blank();
         this.fresh = true;
@@ -157,14 +271,49 @@
       if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     },
 
+    /**
+     * Sauvegarde : miroir synchrone d'abord (survit à une fermeture brutale), puis
+     * IndexedDB (seulement les cartes modifiées). Erreur seulement si AUCUNE copie
+     * n'a pu être écrite.
+     */
     _save() {
+      const savedAt = Date.now();
+      const d = this.data;
+      const mapJson = new Map();
+      for (const m of d.maps) mapJson.set(m.id, JSON.stringify(m));
+      const meta = { version: d.version, courses: d.courses, settings: d.settings, savedAt };
+      // miroir : même format qu'avant (+ savedAt), lisible par les anciennes versions
+      let mirrorOk = false;
       try {
-        localStorage.setItem(KEY, JSON.stringify(this.data));
-        this.saveError = null;
+        localStorage.setItem(THEME_KEY, d.settings.theme);
+        const head = JSON.stringify({ version: d.version, courses: d.courses, settings: d.settings, savedAt });
+        const json = head.slice(0, -1) + ',"maps":[' + [...mapJson.values()].join(',') + ']}';
+        if (json.length < MIRROR_MAX || !idb.ok) { localStorage.setItem(KEY, json); mirrorOk = true; }
+        else localStorage.removeItem(KEY);
       } catch (e) {
-        this.saveError = e;
+        // plein : on retire la copie plutôt que de laisser une version périmée
+        try { if (idb.ok) localStorage.removeItem(KEY); } catch (_) { /* ignore */ }
       }
-      this.emit('saved');
+      if (!idb.ok) {
+        this.saveError = mirrorOk ? null : new Error('quota');
+        this.emit('saved');
+        return Promise.resolve(mirrorOk);
+      }
+      // écritures IndexedDB à la file (jamais deux transactions concurrentes)
+      this._chain = (this._chain || Promise.resolve()).then(() => idb.write(meta, mapJson)).then((ok) => {
+        this.saveError = ok || mirrorOk ? null : new Error('idb');
+        this.emit('saved');
+        return ok || mirrorOk;
+      });
+      return this._chain;
+    },
+
+    /** Place occupée (octets approximatifs) et quota du navigateur */
+    async usage() {
+      const bytes = JSON.stringify(this.data).length;
+      let quota = 0;
+      try { if (navigator.storage && navigator.storage.estimate) quota = (await navigator.storage.estimate()).quota || 0; } catch (e) { /* ignore */ }
+      return { bytes, quota, backend: this.backend };
     },
 
     save: null, // défini plus bas (debounce)
