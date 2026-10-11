@@ -70,7 +70,7 @@ window.R = window.R || {};
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   /** Normalisation pour la recherche : minuscules, sans accents. */
-  U.norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  U.norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[‘’ʼ]/g, "'").toLowerCase();
 
   U.dayKey = (d = new Date()) => {
     const z = (n) => String(n).padStart(2, '0');

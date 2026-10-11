@@ -3,9 +3,8 @@
   "type": "portable_ai_skill_specification",
   "id": "ratio_book_to_course_compiler",
   "name": "Ratio — Compilateur Livre → Cours",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "language": "fr",
-
   "purpose": {
     "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio complet, prêt à importer : un fichier JSON unique contenant un cours, ses cartes mentales, leurs nœuds typés, leurs notes rédigées en Markdown, leurs liens hiérarchiques et transversaux étiquetés.",
     "secondary": [
@@ -20,21 +19,51 @@
       "Recopier le livre phrase par phrase dans les notes."
     ]
   },
-
   "design_principles": {
     "core_thesis": "Un cours Ratio n'est pas un résumé : c'est un plan de rappel. Le titre d'un nœud est un indice de rappel (ce que l'on doit retrouver), la note et les enfants sont la réponse. Un bon cours se reconnaît à ce qu'on peut le réviser en cachant les notes.",
     "principles": [
-      {"id": "DP1", "name": "Fidélité", "rule": "Tout contenu vient du document. Une précision ajoutée par l'IA (définition manquante, contexte) est marquée *(complément)* en fin de note et reste rare."},
-      {"id": "DP2", "name": "Structure avant prose", "rule": "Une énumération du livre devient des nœuds enfants, pas une liste dans une note. Une note développe ; la carte structure."},
-      {"id": "DP3", "name": "Un nœud = une idée rappelable", "rule": "Si un titre contient deux idées reliées par « et », c'est deux nœuds."},
-      {"id": "DP4", "name": "Le type porte la question", "rule": "Le type choisi détermine la question posée en révision (voir node_types.review_prompt). Choisir le type qui produit la bonne question."},
-      {"id": "DP5", "name": "Densité utile", "rule": "Ni carte squelette (titres sans notes), ni carte encyclopédie (notes de 40 lignes). Viser des notes de 2 à 10 lignes, une idée-force surlignée."},
-      {"id": "DP6", "name": "Le livre a une thèse", "rule": "Chaque carte commence par sa racine-chapitre dont la note dit en 1 à 3 phrases ce que le chapitre veut démontrer ou apprendre."},
-      {"id": "DP7", "name": "Relier, pas seulement ranger", "rule": "L'arbre range ; les renvois étiquetés expliquent. Les relations causales, d'opposition, d'exception et de renvoi entre branches deviennent des liens (kind: link) avec un libellé."},
-      {"id": "DP8", "name": "Valide d'abord", "rule": "Un JSON qui ne s'importe pas vaut zéro. Valider le schéma avant de livrer (quality_gates.G1)."}
+      {
+        "id": "DP1",
+        "name": "Fidélité",
+        "rule": "Tout contenu vient du document. Une précision ajoutée par l'IA (définition manquante, contexte) est marquée *(complément)* en fin de note et reste rare."
+      },
+      {
+        "id": "DP2",
+        "name": "Structure avant prose",
+        "rule": "Une énumération du livre devient des nœuds enfants, pas une liste dans une note. Une note développe ; la carte structure."
+      },
+      {
+        "id": "DP3",
+        "name": "Un nœud = une idée rappelable",
+        "rule": "Si un titre contient deux idées reliées par « et », c'est deux nœuds."
+      },
+      {
+        "id": "DP4",
+        "name": "Le type porte la question",
+        "rule": "Le type choisi détermine la question posée en révision (voir node_types.review_prompt). Choisir le type qui produit la bonne question."
+      },
+      {
+        "id": "DP5",
+        "name": "Densité utile",
+        "rule": "Ni carte squelette (titres sans notes), ni carte encyclopédie (notes de 40 lignes). Viser des notes de 2 à 10 lignes, une idée-force surlignée."
+      },
+      {
+        "id": "DP6",
+        "name": "Le livre a une thèse",
+        "rule": "Chaque carte commence par sa racine-chapitre dont la note dit en 1 à 3 phrases ce que le chapitre veut démontrer ou apprendre."
+      },
+      {
+        "id": "DP7",
+        "name": "Relier, pas seulement ranger",
+        "rule": "L'arbre range ; les renvois étiquetés expliquent. Les relations causales, d'opposition, d'exception et de renvoi entre branches deviennent des liens (kind: link) avec un libellé."
+      },
+      {
+        "id": "DP8",
+        "name": "Valide d'abord",
+        "rule": "Un JSON qui ne s'importe pas vaut zéro. Valider le schéma avant de livrer (quality_gates.G1)."
+      }
     ]
   },
-
   "operating_contract": {
     "input": {
       "required": "Le document source (PDF, EPUB, DOCX, texte collé, notes de cours, transcription).",
@@ -60,7 +89,6 @@
       "long_documents": "Si le cours entier ne tient pas dans une réponse, livrer en PARTIES (long_document_strategy) : chaque partie est un JSON complet et valide, toutes les parties partagent le même identifiant de cours."
     }
   },
-
   "target_format": {
     "description": "Format d'import accepté par Ratio (fichier .json importé via Réglages › Données › Importer, ou JSON collé dans la boîte d'import).",
     "envelope": {
@@ -82,7 +110,14 @@
       "needsLayout": "true (obligatoire) : l'application range la carte automatiquement à l'ouverture",
       "nodes": "tableau de nœuds, dans l'ORDRE DE LECTURE (parcours en profondeur : parent, puis ses enfants dans l'ordre du livre). Cet ordre devient l'ordre d'affichage et la numérotation des Leçons/Sections.",
       "edges": "tableau d'arêtes",
-      "omit": ["x", "y", "viewport", "createdAt", "updatedAt", "readOnly"]
+      "omit": [
+        "x",
+        "y",
+        "viewport",
+        "createdAt",
+        "updatedAt",
+        "readOnly"
+      ]
     },
     "node": {
       "id": "chaîne unique DANS LA CARTE (ex. \"n1\", \"n2\"…)",
@@ -90,7 +125,12 @@
       "title": "indice de rappel, ≤ 80 caractères (idéalement ≤ 50)",
       "note": "Markdown (markdown_spec), \"\" si aucune",
       "logic": "\"et\" (enfants cumulatifs), \"ou\" (enfants alternatifs) ou null",
-      "omit": ["x", "y", "collapsed", "review"]
+      "omit": [
+        "x",
+        "y",
+        "collapsed",
+        "review"
+      ]
     },
     "edge": {
       "id": "chaîne unique DANS LA CARTE (ex. \"e1\")",
@@ -112,7 +152,13 @@
       "format": "ratio",
       "version": 2,
       "kind": "course",
-      "courses": [{"id": "c-exemple", "title": "Titre du cours", "description": "D'après Auteur, Titre (éditeur, année)"}],
+      "courses": [
+        {
+          "id": "c-exemple",
+          "title": "Titre du cours",
+          "description": "D'après Auteur, Titre (éditeur, année)"
+        }
+      ],
       "maps": [
         {
           "id": "m-exemple-01",
@@ -120,35 +166,142 @@
           "title": "Titre du chapitre",
           "needsLayout": true,
           "nodes": [
-            {"id": "n1", "type": "chapitre", "title": "Titre du chapitre", "note": "Thèse du chapitre en 1–3 phrases.", "logic": null},
-            {"id": "n2", "type": "definition", "title": "Terme défini", "note": "Définition.", "logic": null}
+            {
+              "id": "n1",
+              "type": "chapitre",
+              "title": "Titre du chapitre",
+              "note": "Thèse du chapitre en 1–3 phrases.",
+              "logic": null
+            },
+            {
+              "id": "n2",
+              "type": "definition",
+              "title": "Terme défini",
+              "note": "Définition.",
+              "logic": null
+            }
           ],
           "edges": [
-            {"id": "e1", "from": "n1", "to": "n2", "kind": "tree", "label": ""}
+            {
+              "id": "e1",
+              "from": "n1",
+              "to": "n2",
+              "kind": "tree",
+              "label": ""
+            }
           ]
         }
       ]
     }
   },
-
   "node_types": {
     "principle": "Le type est un signal visuel (sur-titre) ET la question posée en révision. Prompt affiché = review_prompt, suivi de « — N éléments (cumulatifs|alternatifs) à retrouver » si le nœud a des enfants et une logique. Un nœud n'est révisable que s'il a un titre ET (une note OU des enfants).",
     "types": [
-      {"type": "chapitre", "label": "Chapitre", "review_prompt": "Retrouve le plan de ce chapitre", "use": "Racine de chaque carte. Titre = titre du chapitre, sans numéro (l'application numérote).", "family": "structure"},
-      {"type": "lecon", "label": "Leçon", "review_prompt": "Retrouve le plan de cette leçon", "use": "Grande partie d'un chapitre (I, II…). Numérotée automatiquement entre sœurs.", "family": "structure"},
-      {"type": "section", "label": "Section", "review_prompt": "Retrouve le plan de cette section", "use": "Sous-partie (A, B…) ou section du livre. Numérotée automatiquement entre sœurs.", "family": "structure"},
-      {"type": "notion", "label": "Notion", "review_prompt": "Décompose cette notion", "use": "Concept central qui se décompose en éléments (enfants). Le nœud-pivot d'une branche.", "family": "notion"},
-      {"type": "definition", "label": "Définition", "review_prompt": "Donne la définition", "use": "Titre = le terme ; note = la définition (fidèle, citée si le livre la formule).", "family": "notion"},
-      {"type": "fond", "label": "Condition de fond", "review_prompt": "Explique cette condition de fond", "use": "Droit : condition de fond. Hors droit : condition nécessaire, prérequis, cause, facteur, critère.", "family": "notion"},
-      {"type": "forme", "label": "Condition de forme", "review_prompt": "Explique cette condition de forme", "use": "Droit : formalité, procédure, délai. Hors droit : modalité pratique, étape d'une méthode, manière de faire.", "family": "notion"},
-      {"type": "effet", "label": "Effet / Régime", "review_prompt": "Quels sont les effets ?", "use": "Conséquences, résultats, sanctions, bénéfices, coûts, symptômes.", "family": "notion"},
-      {"type": "exception", "label": "Exception", "review_prompt": "Explique cette exception", "use": "Exception, limite, nuance, piège, contre-exemple, erreur fréquente à éviter.", "family": "notion"},
-      {"type": "texte", "label": "Texte", "review_prompt": "Que prévoit ce texte ?", "use": "Article de loi, règlement, ou source primaire / citation-clé à connaître (note = le texte en citation >).", "family": "sources"},
-      {"type": "juris", "label": "Jurisprudence", "review_prompt": "Que retient cette décision ?", "use": "Droit : arrêt (titre « Cass. 1re civ., 3 mai 2000, Baldus »). Hors droit : étude, expérience, enquête, cas réel documenté (titre = auteur + objet).", "family": "sources"},
-      {"type": "doctrine", "label": "Doctrine", "review_prompt": "Quelle est cette position doctrinale ?", "use": "Position d'un auteur, d'une école, d'une théorie nommée (titre = « Auteur — idée »).", "family": "sources"},
-      {"type": "exemple", "label": "Exemple", "review_prompt": "Qu'illustre cet exemple ?", "use": "Cas, histoire, anecdote, exercice corrigé, dialogue type. Titre = l'exemple ; note = ce qu'il illustre.", "family": "compléments"},
-      {"type": "retenir", "label": "À retenir", "review_prompt": "Restitue l'essentiel", "use": "Synthèse d'une branche ou du chapitre, formule à mémoriser, méthode en une ligne. 1 à 3 par carte, pas plus.", "family": "compléments"},
-      {"type": "idee", "label": "Idée", "review_prompt": "Développe cette idée", "use": "Élément d'une énumération, argument, conseil, étape sans autre type plus précis. Type par défaut.", "family": "compléments"}
+      {
+        "type": "chapitre",
+        "label": "Chapitre",
+        "review_prompt": "Retrouve le plan de ce chapitre",
+        "use": "Racine de chaque carte. Titre = titre du chapitre, sans numéro (l'application numérote).",
+        "family": "structure"
+      },
+      {
+        "type": "lecon",
+        "label": "Leçon",
+        "review_prompt": "Retrouve le plan de cette leçon",
+        "use": "Grande partie d'un chapitre (I, II…). Numérotée automatiquement entre sœurs.",
+        "family": "structure"
+      },
+      {
+        "type": "section",
+        "label": "Section",
+        "review_prompt": "Retrouve le plan de cette section",
+        "use": "Sous-partie (A, B…) ou section du livre. Numérotée automatiquement entre sœurs.",
+        "family": "structure"
+      },
+      {
+        "type": "notion",
+        "label": "Notion",
+        "review_prompt": "Décompose cette notion",
+        "use": "Concept central qui se décompose en éléments (enfants). Le nœud-pivot d'une branche.",
+        "family": "notion"
+      },
+      {
+        "type": "definition",
+        "label": "Définition",
+        "review_prompt": "Donne la définition",
+        "use": "Titre = le terme ; note = la définition (fidèle, citée si le livre la formule).",
+        "family": "notion"
+      },
+      {
+        "type": "fond",
+        "label": "Condition de fond",
+        "review_prompt": "Explique cette condition de fond",
+        "use": "Droit : condition de fond. Hors droit : condition nécessaire, prérequis, cause, facteur, critère.",
+        "family": "notion"
+      },
+      {
+        "type": "forme",
+        "label": "Condition de forme",
+        "review_prompt": "Explique cette condition de forme",
+        "use": "Droit : formalité, procédure, délai. Hors droit : modalité pratique, étape d'une méthode, manière de faire.",
+        "family": "notion"
+      },
+      {
+        "type": "effet",
+        "label": "Effet / Régime",
+        "review_prompt": "Quels sont les effets ?",
+        "use": "Conséquences, résultats, sanctions, bénéfices, coûts, symptômes.",
+        "family": "notion"
+      },
+      {
+        "type": "exception",
+        "label": "Exception",
+        "review_prompt": "Explique cette exception",
+        "use": "Exception, limite, nuance, piège, contre-exemple, erreur fréquente à éviter.",
+        "family": "notion"
+      },
+      {
+        "type": "texte",
+        "label": "Texte",
+        "review_prompt": "Que prévoit ce texte ?",
+        "use": "Article de loi, règlement, ou source primaire / citation-clé à connaître (note = le texte en citation >).",
+        "family": "sources"
+      },
+      {
+        "type": "juris",
+        "label": "Jurisprudence",
+        "review_prompt": "Que retient cette décision ?",
+        "use": "Droit : arrêt (titre « Cass. 1re civ., 3 mai 2000, Baldus »). Hors droit : étude, expérience, enquête, cas réel documenté (titre = auteur + objet).",
+        "family": "sources"
+      },
+      {
+        "type": "doctrine",
+        "label": "Doctrine",
+        "review_prompt": "Quelle est cette position doctrinale ?",
+        "use": "Position d'un auteur, d'une école, d'une théorie nommée (titre = « Auteur — idée »).",
+        "family": "sources"
+      },
+      {
+        "type": "exemple",
+        "label": "Exemple",
+        "review_prompt": "Qu'illustre cet exemple ?",
+        "use": "Cas, histoire, anecdote, exercice corrigé, dialogue type. Titre = l'exemple ; note = ce qu'il illustre.",
+        "family": "compléments"
+      },
+      {
+        "type": "retenir",
+        "label": "À retenir",
+        "review_prompt": "Restitue l'essentiel",
+        "use": "Synthèse d'une branche ou du chapitre, formule à mémoriser, méthode en une ligne. 1 à 3 par carte, pas plus.",
+        "family": "compléments"
+      },
+      {
+        "type": "idee",
+        "label": "Idée",
+        "review_prompt": "Développe cette idée",
+        "use": "Élément d'une énumération, argument, conseil, étape sans autre type plus précis. Type par défaut.",
+        "family": "compléments"
+      }
     ],
     "selection_heuristic": [
       "Le livre définit un terme → definition.",
@@ -163,7 +316,6 @@
     ],
     "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance."
   },
-
   "markdown_spec": {
     "inline": {
       "**gras**": "mots-clés, termes techniques à retenir (2 à 5 par note maximum)",
@@ -184,9 +336,8 @@
       "---": "séparateur entre la réponse et un complément",
       "```": "bloc de code (cours d'informatique)"
     },
-    "escaping": "Dans le JSON, les retours à la ligne s'écrivent \\n, les guillemets \\\" ; préférer les guillemets français « » et l'apostrophe typographique ’ dans le texte pour éviter les échappements."
+    "escaping": "Dans le JSON, les retours à la ligne s'écrivent \\n, les guillemets \\\" ; préférer les guillemets français « » et l'apostrophe typographique ’ dans le texte pour éviter les échappements. Apostrophes droites ' et typographiques ’ sont équivalentes pour Ratio (liens [[…]], recherche) : choisir l'une ou l'autre, mais de façon constante."
   },
-
   "pipeline": {
     "principle": "Lire tout, comprendre la thèse, puis seulement modéliser. Ne jamais construire les cartes au fil d'une première lecture.",
     "phases": [
@@ -258,7 +409,8 @@
         "do": [
           "Passer TOUTES les quality_gates. Si un environnement d'exécution de code est disponible, exécuter self_check.validator_python sur le JSON et corriger jusqu'à zéro erreur.",
           "Relire 5 nœuds au hasard en mode « révision » : la question (review_prompt + titre) a-t-elle une réponse claire dans la note/les enfants ?",
-          "Vérifier la couverture : chaque chapitre/section du plan P1 apparaît quelque part ; chaque énumération a son cardinal."
+          "Vérifier la couverture : chaque chapitre/section du plan P1 apparaît quelque part ; chaque énumération a son cardinal.",
+          "Le rapport signale aussi les défauts du livre rencontrés (modeling_patterns.defective_sources)."
         ]
       },
       {
@@ -271,20 +423,37 @@
       }
     ]
   },
-
   "granularity_rules": {
-    "map_size": {"min_nodes": 12, "target_nodes": "20–45", "max_nodes": 70},
-    "children_per_node": {"target": "2–7", "max": 12, "rule": "Au-delà de 7 enfants, regrouper en sous-catégories (section ou notion intermédiaire) si le livre le permet ; sinon garder l'énumération du livre telle quelle."},
-    "depth": {"target": "3–4 niveaux sous la racine", "max": 6},
-    "title_length": {"target": "≤ 50 caractères", "max": 80},
-    "note_length": {"target": "2–10 lignes", "max": "25 lignes (tableau compris)"},
+    "map_size": {
+      "min_nodes": 12,
+      "target_nodes": "20–45",
+      "max_nodes": 70
+    },
+    "children_per_node": {
+      "target": "2–7",
+      "max": 12,
+      "rule": "Au-delà de 7 enfants, regrouper en sous-catégories (section ou notion intermédiaire) si le livre le permet ; sinon garder l'énumération du livre telle quelle."
+    },
+    "depth": {
+      "target": "3–4 niveaux sous la racine",
+      "max": 6
+    },
+    "title_length": {
+      "target": "≤ 50 caractères",
+      "max": 80
+    },
+    "note_length": {
+      "target": "2–10 lignes",
+      "max": "25 lignes (tableau compris)",
+      "unit": "lignes du source Markdown (une ligne de tableau = une ligne)"
+    },
     "presets": {
       "fiche": "8–15 nœuds par carte, notes courtes, seulement l'essentiel et les définitions.",
       "standard": "20–45 nœuds par carte (défaut).",
       "exhaustif": "jusqu'à 70 nœuds par carte, tous les exemples et sources."
-    }
+    },
+    "delivery_size": "Aucune limite côté Ratio (plusieurs Mo s'importent sans peine). Le découpage en parties ne sert qu'à respecter la longueur de réponse de l'IA : si tu écris dans un fichier, livre tout en un JSON."
   },
-
   "title_rules": [
     "Le titre est un INDICE, pas la réponse : « Les 4 étapes de la CNV » (les étapes sont les enfants), pas « Observation, sentiment, besoin, demande ».",
     "Pour une définition : le terme seul (« Assertivité »), jamais « Définition de l'assertivité ».",
@@ -295,7 +464,6 @@
     "Pas de ponctuation finale, pas de MAJUSCULES, pas d'emoji.",
     "Titres uniques dans une carte (nécessaire aux liens [[…]] et à la clarté en révision)."
   ],
-
   "note_rules": [
     "La note RÉPOND à la question du type (review_prompt) pour ce titre. Commencer par la réponse, détailler ensuite.",
     "Une note de parent ne répète pas ses enfants : elle donne le chapeau (pourquoi cette notion, comment s'articulent les éléments) en 1 à 3 lignes, ou reste vide si les enfants suffisent.",
@@ -310,13 +478,31 @@
     "Un nœud de type exemple dit ce qu'il illustre en première ligne (« Illustre : … »), puis raconte en 2–5 lignes.",
     "Un nœud structurel (chapitre/lecon/section) peut porter une note d'introduction ; ses enfants portent le contenu."
   ],
-
   "edge_rules": {
     "tree": "Relation « se décompose en / fait partie de / est illustré par / a pour source ». label: \"\". Un seul parent par nœud.",
     "link": "Relation transversale entre deux nœuds de branches différentes, toujours étiquetée.",
     "labels": {
-      "presets": ["ET", "OU", "sauf", "implique", "voir", "car", "donc"],
-      "custom_examples": ["s'oppose à", "cause", "aggrave", "remédie à", "s'applique à", "illustre", "nuance", "précède", "prolonge", "sous réserve de"],
+      "presets": [
+        "ET",
+        "OU",
+        "sauf",
+        "implique",
+        "voir",
+        "car",
+        "donc"
+      ],
+      "custom_examples": [
+        "s'oppose à",
+        "cause",
+        "aggrave",
+        "remédie à",
+        "s'applique à",
+        "illustre",
+        "nuance",
+        "précède",
+        "prolonge",
+        "sous réserve de"
+      ],
       "rule": "1 à 3 mots, minuscules (sauf ET/OU), au présent, se lisant « source — libellé → cible »."
     },
     "when_to_link": [
@@ -329,9 +515,30 @@
     ],
     "groups": "Fourche : ≥ 2 liens qui partent du MÊME nœud, de même kind, avec la même valeur group (ex. \"g1\") et le même label. À réserver aux relations « une source → plusieurs cibles » réellement parallèles.",
     "budget": "2 à 8 liens par carte. Zéro lien = carte en silos ; plus de 12 = plat de spaghettis.",
-    "forbidden": ["link qui double une arête tree existante", "link sans libellé", "link entre nœuds parent/enfant directs"]
+    "forbidden": [
+      "link qui double une arête tree existante",
+      "link sans libellé",
+      "link entre nœuds parent/enfant directs"
+    ]
   },
-
+  "modeling_patterns": {
+    "enumerations": [
+      "Énumération STRUCTURANTE (le livre l'annonce, la développe ou on doit la restituer) → nœud parent titré avec le cardinal + un enfant par élément ; chaque enfant porte au moins une ligne de note tirée du livre (explication, reformulation, phrase-type).",
+      "Énumération SECONDAIRE sans aucun développement dans le livre (liste nue en passant) → liste à puces dans la note du parent, pas de nœuds.",
+      "logic : \"et\" si tous les éléments sont requis/cumulés, \"ou\" s'ils sont alternatifs ; null pour une liste de conseils ou d'exemples indépendants — dans ce cas le TITRE porte le cardinal (« 4 astuces pour… »), car la question de révision n'annonce le nombre d'éléments que si logic est posée."
+    ],
+    "examples": "Un exemple n'est JAMAIS un enfant d'un nœud-énumération (il serait compté parmi les « N éléments à retrouver ») : le rattacher à l'élément précis qu'il illustre, ou en frère du nœud-énumération relié par un lien « illustre ».",
+    "parent_table_exception": "Exception à « la note d'un parent ne répète pas ses enfants » : un tableau qui COMPARE les enfants entre eux (critères en colonnes) a sa place dans la note du parent ; les enfants gardent alors leur propre définition/explication.",
+    "questionnaires": "Test / questionnaire / quiz du livre → un nœud section « Test : … » (note : consigne + barème en tableau) ; une question = un nœud idee (note : réponses et points en tableau) ; chaque profil de résultat = un nœud effet (titre : « 11–18 points : … »).",
+    "methods": "Méthode en étapes → nœud notion ou forme avec logic \"et\" ; une étape = un enfant forme dans l'ordre ; le titre de l'étape est un verbe d'action (« Identifier les parties »).",
+    "structure_levels": "La racine chapitre peut avoir directement des section (sans lecon) si le chapitre n'a qu'un niveau de parties. N'utiliser lecon que s'il existe deux niveaux.",
+    "defective_sources": [
+      "Erreur manifeste de traduction ou coquille gênante : reformuler fidèlement au sens et ajouter *(sic)* ou *(complément : …)* ; ne jamais corriger silencieusement un fait.",
+      "Contradiction interne du livre : modéliser les deux positions (souvent deux nœuds exception ou idee) reliées par « s'oppose à », et la signaler dans le rapport.",
+      "Section annoncée mais absente du texte : ne rien inventer ; la signaler dans le rapport (« Laissé de côté / manquant »).",
+      "Passage répété mot pour mot : ne le modéliser qu'une fois."
+    ]
+  },
   "long_document_strategy": {
     "trigger": "Le JSON complet dépasserait la longueur de réponse disponible (repère : plus de ~8 cartes standard, ou plus de ~60 000 caractères).",
     "procedure": [
@@ -342,17 +549,50 @@
     ],
     "import_instructions_for_user": "Importer la partie 1 (« Ajouter en copie »), puis chaque partie suivante : Ratio reconnaît le même cours et propose « Compléter « Titre du cours » » (choix conseillé)."
   },
-
   "quality_gates": [
-    {"id": "G1", "name": "Validité du schéma", "check": "format/version/kind présents ; 1 cours ; chaque carte a id unique, courseId = id du cours, needsLayout true ; ids de nœuds et d'arêtes uniques par carte ; types ∈ 15 types ; from/to existent ; ≤ 1 parent tree par nœud ; 1 seule racine par carte ; aucun nœud isolé ; pas de cycle.", "blocking": true},
-    {"id": "G2", "name": "Couverture", "check": "Chaque chapitre/section du plan réel est représenté ; chaque énumération du livre a son cardinal exact ; chaque définition explicite du livre a un nœud definition.", "blocking": true},
-    {"id": "G3", "name": "Révisabilité", "check": "≥ 85 % des nœuds non structurels ont une note ou des enfants ; aucun nœud structurel sans enfant ; chaque carte a un nœud retenir ou une racine dont la note donne la thèse.", "blocking": true},
-    {"id": "G4", "name": "Fidélité", "check": "Aucun fait, chiffre, auteur, citation ou référence absent du livre (hors *(complément)* signalé).", "blocking": true},
-    {"id": "G5", "name": "Richesse d'expression", "check": "Sur l'ensemble du cours : au moins 1 tableau par tranche de 4 cartes quand le livre compare ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes, jamais plus d'un (deux) par note ; logic posée sur toutes les énumérations cumulatives/alternatives.", "blocking": false},
-    {"id": "G6", "name": "Maillage", "check": "Chaque carte de plus de 15 nœuds a 2–8 liens étiquetés ; libellés variés et justes.", "blocking": false},
-    {"id": "G7", "name": "Lisibilité", "check": "Titres ≤ 80 caractères (médiane ≤ 50), uniques dans la carte ; notes ≤ 25 lignes ; profondeur ≤ 6.", "blocking": false}
+    {
+      "id": "G1",
+      "name": "Validité du schéma",
+      "check": "format/version/kind présents ; 1 cours ; chaque carte a id unique, courseId = id du cours, needsLayout true ; ids de nœuds et d'arêtes uniques par carte ; types ∈ 15 types ; from/to existent ; ≤ 1 parent tree par nœud ; 1 seule racine par carte ; aucun nœud isolé ; pas de cycle.",
+      "blocking": true
+    },
+    {
+      "id": "G2",
+      "name": "Couverture",
+      "check": "Chaque chapitre/section du plan réel est représenté ; chaque énumération du livre a son cardinal exact ; chaque définition explicite du livre a un nœud definition.",
+      "blocking": true
+    },
+    {
+      "id": "G3",
+      "name": "Révisabilité",
+      "check": "≥ 85 % des nœuds non structurels ont une note ou des enfants ; aucun nœud structurel sans enfant ; chaque carte a un nœud retenir ou une racine dont la note donne la thèse. Mesuré PAR CARTE (chaque carte ≥ 85 %).",
+      "blocking": true
+    },
+    {
+      "id": "G4",
+      "name": "Fidélité",
+      "check": "Aucun fait, chiffre, auteur, citation ou référence absent du livre (hors *(complément)* signalé).",
+      "blocking": true
+    },
+    {
+      "id": "G5",
+      "name": "Richesse d'expression",
+      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes (une carte isolée peut descendre à 20 %), jamais plus d'un (deux) par note ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds.",
+      "blocking": false
+    },
+    {
+      "id": "G6",
+      "name": "Maillage",
+      "check": "Chaque carte de plus de 15 nœuds a 2–8 liens étiquetés ; libellés variés et justes.",
+      "blocking": false
+    },
+    {
+      "id": "G7",
+      "name": "Lisibilité",
+      "check": "Titres ≤ 80 caractères (médiane ≤ 50), uniques dans la carte ; notes ≤ 25 lignes ; profondeur ≤ 6.",
+      "blocking": false
+    }
   ],
-
   "self_check": {
     "manual_checklist": [
       "JSON.parse passe ? (pas de virgule finale, pas de commentaire, guillemets droits autour des clés)",
@@ -363,31 +603,105 @@
     ],
     "validator_python": "import json,sys\nT={'notion','definition','fond','forme','effet','exception','juris','texte','idee','chapitre','lecon','section','doctrine','exemple','retenir'}\nd=json.load(open(sys.argv[1]));E=[]\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
   },
-
   "anti_patterns": [
-    {"id": "AP01", "name": "résumé_déguisé", "description": "Une racine avec 4 enfants dont les notes font 30 lignes de prose.", "correction": "Éclater chaque note en nœuds selon les énumérations et notions qu'elle contient."},
-    {"id": "AP02", "name": "squelette", "description": "Des dizaines de titres sans notes : on ne peut rien réviser.", "correction": "Chaque feuille porte une note qui répond à sa question."},
-    {"id": "AP03", "name": "titre_réponse", "description": "Le titre contient déjà toute la réponse (« L'assertivité, c'est exprimer ses besoins sans agresser »).", "correction": "Titre = « Assertivité » ; la définition va dans la note."},
-    {"id": "AP04", "name": "type_unique", "description": "Tout en idee ou tout en notion.", "correction": "Appliquer node_types.selection_heuristic ; viser au moins 5 types différents par carte non triviale."},
-    {"id": "AP05", "name": "surlignage_fluo", "description": "==…== partout, ou des paragraphes entiers surlignés.", "correction": "Une idée-force par note, ≤ 15 mots."},
-    {"id": "AP06", "name": "liste_au_lieu_de_nœuds", "description": "Les « 7 causes » du livre deviennent une liste à puces dans une note.", "correction": "Un nœud parent « 7 causes de … » (logic selon le cas) + 7 enfants avec notes."},
-    {"id": "AP07", "name": "structure_vide", "description": "Leçon > Section > Notion avec un seul enfant à chaque niveau.", "correction": "Supprimer les niveaux qui n'apportent pas de choix ; remonter le contenu."},
-    {"id": "AP08", "name": "liens_décoratifs", "description": "Des renvois « voir » partout, sans sens.", "correction": "Chaque lien dit une relation précise (implique, s'oppose à, remédie à…)."},
-    {"id": "AP09", "name": "invention", "description": "Ajouter des auteurs, études, chiffres, articles de loi ou URL absents du livre.", "correction": "Supprimer, ou signaler *(complément)* si indispensable à la compréhension."},
-    {"id": "AP10", "name": "ids_génériques_réutilisés", "description": "Réutiliser n1, e1 entre cartes n'est PAS une erreur ; réutiliser un id de carte ou de cours l'est.", "correction": "ids de nœuds/arêtes uniques par carte, ids de cartes uniques dans le cours."},
-    {"id": "AP11", "name": "positions_inventées", "description": "Fournir x/y arbitraires : la carte s'affiche en vrac.", "correction": "Omettre x, y ; mettre needsLayout: true."},
-    {"id": "AP12", "name": "json_tronqué", "description": "Réponse coupée au milieu du JSON.", "correction": "long_document_strategy : livrer en parties complètes."},
-    {"id": "AP13", "name": "histoire_racontée_sans_morale", "description": "Un exemple narratif sans dire ce qu'il illustre.", "correction": "Première ligne de la note : « Illustre : … »."},
-    {"id": "AP14", "name": "énumération_tronquée", "description": "Le livre donne 10 signes, la carte en garde 6.", "correction": "Cardinal exact (G2)."}
+    {
+      "id": "AP01",
+      "name": "résumé_déguisé",
+      "description": "Une racine avec 4 enfants dont les notes font 30 lignes de prose.",
+      "correction": "Éclater chaque note en nœuds selon les énumérations et notions qu'elle contient."
+    },
+    {
+      "id": "AP02",
+      "name": "squelette",
+      "description": "Des dizaines de titres sans notes : on ne peut rien réviser.",
+      "correction": "Chaque feuille porte une note qui répond à sa question."
+    },
+    {
+      "id": "AP03",
+      "name": "titre_réponse",
+      "description": "Le titre contient déjà toute la réponse (« L'assertivité, c'est exprimer ses besoins sans agresser »).",
+      "correction": "Titre = « Assertivité » ; la définition va dans la note."
+    },
+    {
+      "id": "AP04",
+      "name": "type_unique",
+      "description": "Tout en idee ou tout en notion.",
+      "correction": "Appliquer node_types.selection_heuristic ; viser au moins 5 types différents par carte non triviale."
+    },
+    {
+      "id": "AP05",
+      "name": "surlignage_fluo",
+      "description": "==…== partout, ou des paragraphes entiers surlignés.",
+      "correction": "Une idée-force par note, ≤ 15 mots."
+    },
+    {
+      "id": "AP06",
+      "name": "liste_au_lieu_de_nœuds",
+      "description": "Les « 7 causes » du livre deviennent une liste à puces dans une note.",
+      "correction": "Un nœud parent « 7 causes de … » (logic selon le cas) + 7 enfants avec notes."
+    },
+    {
+      "id": "AP07",
+      "name": "structure_vide",
+      "description": "Leçon > Section > Notion avec un seul enfant à chaque niveau.",
+      "correction": "Supprimer les niveaux qui n'apportent pas de choix ; remonter le contenu."
+    },
+    {
+      "id": "AP08",
+      "name": "liens_décoratifs",
+      "description": "Des renvois « voir » partout, sans sens.",
+      "correction": "Chaque lien dit une relation précise (implique, s'oppose à, remédie à…)."
+    },
+    {
+      "id": "AP09",
+      "name": "invention",
+      "description": "Ajouter des auteurs, études, chiffres, articles de loi ou URL absents du livre.",
+      "correction": "Supprimer, ou signaler *(complément)* si indispensable à la compréhension."
+    },
+    {
+      "id": "AP10",
+      "name": "ids_génériques_réutilisés",
+      "description": "Réutiliser n1, e1 entre cartes n'est PAS une erreur ; réutiliser un id de carte ou de cours l'est.",
+      "correction": "ids de nœuds/arêtes uniques par carte, ids de cartes uniques dans le cours."
+    },
+    {
+      "id": "AP11",
+      "name": "positions_inventées",
+      "description": "Fournir x/y arbitraires : la carte s'affiche en vrac.",
+      "correction": "Omettre x, y ; mettre needsLayout: true."
+    },
+    {
+      "id": "AP12",
+      "name": "json_tronqué",
+      "description": "Réponse coupée au milieu du JSON.",
+      "correction": "long_document_strategy : livrer en parties complètes."
+    },
+    {
+      "id": "AP13",
+      "name": "histoire_racontée_sans_morale",
+      "description": "Un exemple narratif sans dire ce qu'il illustre.",
+      "correction": "Première ligne de la note : « Illustre : … »."
+    },
+    {
+      "id": "AP14",
+      "name": "énumération_tronquée",
+      "description": "Le livre donne 10 signes, la carte en garde 6.",
+      "correction": "Cardinal exact (G2)."
+    }
   ],
-
   "example": {
     "description": "Mini-cours (une carte) tiré d'un manuel de droit des contrats — montre types, logic, notes riches, tableau, citation, liens étiquetés et fourche.",
     "json": {
       "format": "ratio",
       "version": 2,
       "kind": "course",
-      "courses": [{"id": "c-contrats", "title": "Droit des contrats", "description": "D'après le manuel de L2 — formation du contrat"}],
+      "courses": [
+        {
+          "id": "c-contrats",
+          "title": "Droit des contrats",
+          "description": "D'après le manuel de L2 — formation du contrat"
+        }
+      ],
       "maps": [
         {
           "id": "m-contrats-01",
@@ -395,31 +709,172 @@
           "title": "Les vices du consentement",
           "needsLayout": true,
           "nodes": [
-            {"id": "n1", "type": "chapitre", "title": "Les vices du consentement", "note": "Le consentement doit exister **et** être intègre. ==Un seul vice déterminant suffit à faire annuler le contrat.==", "logic": null},
-            {"id": "n2", "type": "texte", "title": "Art. 1130 C. civ.", "note": "> L'erreur, le dol et la violence vicient le consentement lorsqu'ils sont de telle nature que, sans eux, l'une des parties n'aurait pas contracté ou aurait contracté à des conditions substantiellement différentes.", "logic": null},
-            {"id": "n3", "type": "notion", "title": "Les 3 vices", "note": "| Vice | Élément matériel | Élément psychologique |\n| --- | --- | --- |\n| Erreur | fausse représentation | spontanée |\n| Dol | manœuvres, mensonge, réticence | provoquée, intentionnelle |\n| Violence | contrainte | crainte d'un mal considérable |", "logic": "ou"},
-            {"id": "n4", "type": "fond", "title": "Erreur", "note": "Porte sur les **qualités essentielles** de la prestation ou du cocontractant (art. 1132).", "logic": null},
-            {"id": "n5", "type": "exception", "title": "Erreur inexcusable", "note": "==L'erreur inexcusable n'est pas une cause de nullité== (art. 1132), sauf si elle a été provoquée par un dol (art. 1139).", "logic": null},
-            {"id": "n6", "type": "fond", "title": "Dol", "note": "Manœuvres, mensonges ou **dissimulation intentionnelle** d'une information déterminante (art. 1137).", "logic": null},
-            {"id": "n7", "type": "juris", "title": "Cass. 1re civ., 3 mai 2000, Baldus", "note": "L'acheteur n'est tenu d'aucune obligation d'information **sur la valeur** de la chose.", "logic": null},
-            {"id": "n8", "type": "fond", "title": "Violence", "note": "Contrainte inspirant la crainte d'exposer sa personne ou ses biens à un mal considérable (art. 1140).", "logic": null},
-            {"id": "n9", "type": "effet", "title": "Sanction des vices", "note": "**Nullité relative** (art. 1131), invocable par la seule victime ; prescription de 5 ans.", "logic": null},
-            {"id": "n10", "type": "retenir", "title": "Méthode du cas pratique", "note": "1. Identifier le vice\n2. Vérifier son caractère **déterminant**\n3. Conclure à la nullité relative (+ dommages et intérêts si dol)", "logic": null}
+            {
+              "id": "n1",
+              "type": "chapitre",
+              "title": "Les vices du consentement",
+              "note": "Le consentement doit exister **et** être intègre. ==Un seul vice déterminant suffit à faire annuler le contrat.==",
+              "logic": null
+            },
+            {
+              "id": "n2",
+              "type": "texte",
+              "title": "Art. 1130 C. civ.",
+              "note": "> L'erreur, le dol et la violence vicient le consentement lorsqu'ils sont de telle nature que, sans eux, l'une des parties n'aurait pas contracté ou aurait contracté à des conditions substantiellement différentes.",
+              "logic": null
+            },
+            {
+              "id": "n3",
+              "type": "notion",
+              "title": "Les 3 vices",
+              "note": "| Vice | Élément matériel | Élément psychologique |\n| --- | --- | --- |\n| Erreur | fausse représentation | spontanée |\n| Dol | manœuvres, mensonge, réticence | provoquée, intentionnelle |\n| Violence | contrainte | crainte d'un mal considérable |",
+              "logic": "ou"
+            },
+            {
+              "id": "n4",
+              "type": "fond",
+              "title": "Erreur",
+              "note": "Porte sur les **qualités essentielles** de la prestation ou du cocontractant (art. 1132).",
+              "logic": null
+            },
+            {
+              "id": "n5",
+              "type": "exception",
+              "title": "Erreur inexcusable",
+              "note": "==L'erreur inexcusable n'est pas une cause de nullité== (art. 1132), sauf si elle a été provoquée par un dol (art. 1139).",
+              "logic": null
+            },
+            {
+              "id": "n6",
+              "type": "fond",
+              "title": "Dol",
+              "note": "Manœuvres, mensonges ou **dissimulation intentionnelle** d'une information déterminante (art. 1137).",
+              "logic": null
+            },
+            {
+              "id": "n7",
+              "type": "juris",
+              "title": "Cass. 1re civ., 3 mai 2000, Baldus",
+              "note": "L'acheteur n'est tenu d'aucune obligation d'information **sur la valeur** de la chose.",
+              "logic": null
+            },
+            {
+              "id": "n8",
+              "type": "fond",
+              "title": "Violence",
+              "note": "Contrainte inspirant la crainte d'exposer sa personne ou ses biens à un mal considérable (art. 1140).",
+              "logic": null
+            },
+            {
+              "id": "n9",
+              "type": "effet",
+              "title": "Sanction des vices",
+              "note": "**Nullité relative** (art. 1131), invocable par la seule victime ; prescription de 5 ans.",
+              "logic": null
+            },
+            {
+              "id": "n10",
+              "type": "retenir",
+              "title": "Méthode du cas pratique",
+              "note": "1. Identifier le vice\n2. Vérifier son caractère **déterminant**\n3. Conclure à la nullité relative (+ dommages et intérêts si dol)",
+              "logic": null
+            }
           ],
           "edges": [
-            {"id": "e1", "from": "n1", "to": "n2", "kind": "tree", "label": ""},
-            {"id": "e2", "from": "n1", "to": "n3", "kind": "tree", "label": ""},
-            {"id": "e3", "from": "n3", "to": "n4", "kind": "tree", "label": ""},
-            {"id": "e4", "from": "n4", "to": "n5", "kind": "tree", "label": ""},
-            {"id": "e5", "from": "n3", "to": "n6", "kind": "tree", "label": ""},
-            {"id": "e6", "from": "n6", "to": "n7", "kind": "tree", "label": ""},
-            {"id": "e7", "from": "n3", "to": "n8", "kind": "tree", "label": ""},
-            {"id": "e8", "from": "n1", "to": "n9", "kind": "tree", "label": ""},
-            {"id": "e9", "from": "n1", "to": "n10", "kind": "tree", "label": ""},
-            {"id": "e10", "from": "n5", "to": "n6", "kind": "link", "label": "sauf"},
-            {"id": "e11", "from": "n9", "to": "n4", "kind": "link", "label": "s'applique à", "group": "g1"},
-            {"id": "e12", "from": "n9", "to": "n6", "kind": "link", "label": "s'applique à", "group": "g1"},
-            {"id": "e13", "from": "n9", "to": "n8", "kind": "link", "label": "s'applique à", "group": "g1"}
+            {
+              "id": "e1",
+              "from": "n1",
+              "to": "n2",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e2",
+              "from": "n1",
+              "to": "n3",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e3",
+              "from": "n3",
+              "to": "n4",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e4",
+              "from": "n4",
+              "to": "n5",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e5",
+              "from": "n3",
+              "to": "n6",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e6",
+              "from": "n6",
+              "to": "n7",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e7",
+              "from": "n3",
+              "to": "n8",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e8",
+              "from": "n1",
+              "to": "n9",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e9",
+              "from": "n1",
+              "to": "n10",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e10",
+              "from": "n5",
+              "to": "n6",
+              "kind": "link",
+              "label": "sauf"
+            },
+            {
+              "id": "e11",
+              "from": "n9",
+              "to": "n4",
+              "kind": "link",
+              "label": "s'applique à",
+              "group": "g1"
+            },
+            {
+              "id": "e12",
+              "from": "n9",
+              "to": "n6",
+              "kind": "link",
+              "label": "s'applique à",
+              "group": "g1"
+            },
+            {
+              "id": "e13",
+              "from": "n9",
+              "to": "n8",
+              "kind": "link",
+              "label": "s'applique à",
+              "group": "g1"
+            }
           ]
         }
       ]
@@ -431,7 +886,6 @@
       "La fourche g1 (« Sanction des vices — s'applique à → Erreur / Dol / Violence ») montre qu'une même source mène, par la même relation, à trois cibles éloignées."
     ]
   },
-
   "report_template": {
     "sections": [
       "Plan du cours : liste numérotée des cartes (titre — nombre de nœuds — idée centrale).",
@@ -441,7 +895,6 @@
       "Importer : Réglages › Données › Importer (ou glisser le fichier) ; parties suivantes → « Compléter le cours »."
     ]
   },
-
   "activation": {
     "auto_trigger_when": [
       "l'utilisateur fournit un livre, un PDF de cours, un polycopié, des notes, et demande des cartes, des fiches, un cours Ratio, un JSON Ratio",
@@ -452,7 +905,6 @@
       "demande de résumé en prose sans mention de Ratio ou de cartes"
     ]
   },
-
   "execution_algorithm": {
     "pseudo_sequence": [
       "FRAME(document, user_goals)                    # P0",
@@ -469,10 +921,10 @@
       "  DELIVER(json, report)                         # P7"
     ]
   },
-
   "implementation_notes": {
     "format_note": "Spécification JSON portable, dans le même esprit que universal_problem_solving_invention_engine. Pour Claude (Skills natifs), le fichier SKILL.md voisin sert de point d'entrée et renvoie à ce JSON. Pour ChatGPT, Gemini, Mistral… : joindre ce fichier au début de la conversation avec le document et écrire « Applique ce skill à ce livre ».",
-    "app_compatibility": "Format vérifié avec Ratio ≥ 2.4 (import tolérant : balises ```json, virgules finales et guillemets typographiques sont corrigés automatiquement, mais ne pas compter dessus).",
-    "privacy": "Le JSON ne contient que le cours : aucun historique de révision, aucun réglage."
+    "app_compatibility": "Format vérifié avec Ratio ≥ 2.4.0 (import tolérant : balises ```json, virgules finales et guillemets typographiques sont corrigés automatiquement, mais ne pas compter dessus).",
+    "privacy": "Le JSON ne contient que le cours : aucun historique de révision, aucun réglage.",
+    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux)."
   }
 }
