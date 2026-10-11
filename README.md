@@ -85,7 +85,11 @@ Par défaut tout reste monochrome. **Réglages → Couleurs des nœuds** (ou ⋮
 
 ### Révision
 
-Chaque nœud qui a une note ou des éléments rattachés devient une carte de révision : la question (« Explique cette condition de fond — 3 éléments cumulatifs à retrouver »), puis la réponse. Tu notes **À revoir / Compris / Maîtrisé** (touches `1` `2` `3`, ou glisser la carte ← / → sur mobile) ; la répétition espacée (boîtes de Leitner : 1, 3, 7, 15, 30 jours) la représente au bon moment. La série de jours et la maîtrise par carte et par cours s'affichent sur l'accueil.
+Chaque nœud qui a une note ou des éléments rattachés devient une carte de révision : la question (« Explique cette condition de fond — 3 éléments cumulatifs à retrouver »), puis la réponse. Tu notes **À revoir / Compris / Maîtrisé** (touches `1` `2` `3`, ou glisser la fiche ← / → sur mobile) ; la répétition espacée (boîtes de Leitner : 1, 3, 7, 15, 30 jours) la représente au bon moment.
+
+- **Onglet Réviser** : combien de cartes sont dues et le temps estimé, la **taille de session** (10 · 20 · toutes, mémorisée), chaque cours avec ce qu'il a de dû, ta régularité, la **charge des 7 prochains jours** et les dernières cartes **à retravailler**.
+- **Pendant la session** : chaque fiche porte la teinte et l'empreinte de son cours, son état (*Nouvelle*, ou vue il y a… avec sa boîte 1–5), et le paquet dessous dit ce qu'il reste. **Indice** (`H`) : la forme de la réponse sans la réponse (nombre d'éléments, leur nature, l'initiale). **Annuler** (`Z`) reprend la dernière note, même depuis l'écran de fin.
+- **Fin de session** : le bilan, la série, et la liste des fiches restées « À revoir » avec un lien vers la carte.
 
 ## Structure
 

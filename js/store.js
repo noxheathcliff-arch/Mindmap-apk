@@ -137,7 +137,7 @@
       version: 1,
       courses: [],
       maps: [],
-      settings: { theme: 'system', motion: 'system', onboarded: false, reviewLog: {}, paneOpen: true },
+      settings: { theme: 'system', motion: 'system', onboarded: false, reviewLog: {}, paneOpen: true, sessionSize: 20 },
     };
   }
 
@@ -232,6 +232,7 @@
         };
       }
       out.settings.reviewLog = d.settings.reviewLog && typeof d.settings.reviewLog === 'object' ? { ...d.settings.reviewLog } : {};
+      out.settings.sessionSize = [10, 20, 0].includes(+d.settings.sessionSize) ? +d.settings.sessionSize : 20; // 0 = toutes
     }
     return out;
   }
@@ -605,6 +606,38 @@
       return queue.slice(0, limit);
     },
     dueCount(scope = {}) { return this.reviewQueue(scope, { limit: 1e9 }).length; },
+    /** Annule une note (révision) : remet l'état d'avant et retire la carte du journal du jour */
+    unrate(map, node, before, day) {
+      node.review = { ...before };
+      const log = this.data.settings.reviewLog;
+      if (log[day] > 1) log[day]--; else delete log[day];
+      this.changed('review');
+    },
+    /**
+     * Charge à venir : nombre de cartes à réviser par jour, sur `days` jours à partir d'aujourd'hui
+     * (aujourd'hui = cartes dues + cartes nouvelles ; les jours suivants = échéances qui tombent ce jour-là).
+     */
+    forecast(days = 7, scope = {}) {
+      const maps = scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
+      const t0 = U.startOfDay();
+      const out = Array.from({ length: days }, (_, i) => ({ day: t0 + i * U.DAY, n: 0 }));
+      const now = Date.now();
+      for (const m of maps) for (const n of m.nodes) {
+        if (!this.isReviewable(m, n)) continue;
+        if (this.isDue(n, now)) { out[0].n++; continue; }
+        const i = Math.floor((U.startOfDay(n.review.due) - t0) / U.DAY);
+        if (i > 0 && i < days) out[i].n++;
+      }
+      return out;
+    },
+    /** Cartes dont la dernière note est « À revoir », les plus récentes d'abord */
+    weakCards(limit = 6) {
+      const list = [];
+      for (const m of this.data.maps) for (const n of m.nodes) {
+        if (n.review.rating === 'revoir' && this.isReviewable(m, n)) list.push({ map: m, node: n });
+      }
+      return list.sort((a, b) => b.node.review.last - a.node.review.last).slice(0, limit);
+    },
     rate(map, node, rating) {
       const r = node.review;
       const now = Date.now();

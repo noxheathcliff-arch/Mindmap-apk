@@ -115,11 +115,8 @@
     ]);
   };
 
-  /* ---------------- Carte « Aujourd'hui » --------------------------- */
-  function todayCard() {
-    const due = S.dueCount();
-    const streak = S.streak();
-    const today = S.reviewedToday();
+  /** Les 7 derniers jours : une pastille pleine par jour de révision (partagé avec Réviser) */
+  R.weekDots = function () {
     const log = S.data.settings.reviewLog;
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -128,6 +125,14 @@
       days.push(h('span.week-day', { class: n ? 'on' : '', title: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' }) + ` · ${n} carte${n > 1 ? 's' : ''}` },
         h('span.week-dot'), h('span.week-l', d.toLocaleDateString('fr-FR', { weekday: 'narrow' }))));
     }
+    return h('span.week', days);
+  };
+
+  /* ---------------- Carte « Aujourd'hui » --------------------------- */
+  function todayCard() {
+    const due = S.dueCount();
+    const streak = S.streak();
+    const today = S.reviewedToday();
     const next = S.nextDueInfo();
     const card = h('section.today', { 'aria-label': 'Aujourd’hui' },
       h('p.overline', 'Aujourd’hui'),
@@ -140,9 +145,9 @@
       h('div.today-streak', { class: streak ? 'lit' : '' },
         h('span.flame', R.icon('flame', 20)),
         h('span', streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Lance ta série aujourd’hui'),
-        h('span.week', days)),
-      due ? ui.btn('Réviser maintenant', { icon: 'play', variant: 'filled', cls: 'today-cta', onClick: () => R.app.go('#/reviser') })
-        : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'today-cta', onClick: () => R.app.go('#/reviser?all=1') }));
+        R.weekDots()),
+      due ? ui.btn('Réviser maintenant', { icon: 'play', variant: 'filled', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout') })
+        : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') }));
     return card;
   }
 

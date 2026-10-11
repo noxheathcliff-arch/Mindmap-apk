@@ -17,13 +17,15 @@
     if (p[0] === 'cours' && p[1]) return { name: 'course', id: p[1], q };
     if (p[0] === 'carte' && p[1]) return { name: 'editor', id: p[1], mode: p[2] === 'plan' ? 'plan' : 'map', q };
     if (p[0] === 'reviser') {
+      // #/reviser : le tableau de bord (onglet) ; #/reviser/tout : une session tous cours
+      if (!p[1] && !q.all) return { name: 'reviewHub', q };
       const scope = p[1] === 'cours' ? { courseId: p[2] } : p[1] === 'carte' ? (p[3] ? { mapId: p[2], nodeId: p[3] } : { mapId: p[2] }) : {};
       return { name: 'review', scope, q };
     }
     return { name: 'library', q };
   }
 
-  const DEPTH = { library: 0, course: 1, review: 1, editor: 2 };
+  const DEPTH = { library: 0, reviewHub: 0, course: 1, review: 1, editor: 2 };
   const IMMERSIVE = new Set(['editor', 'review']);
 
   /* from : élément hors de la page (ex. une ligne de la recherche) qui porte les héros de
@@ -185,7 +187,7 @@
 
   function updateNav(route = app.route) {
     if (!route) return;
-    const active = route.name === 'review' ? 'review' : route.name === 'library' || route.name === 'course' ? 'library' : '';
+    const active = route.name === 'review' || route.name === 'reviewHub' ? 'review' : route.name === 'library' || route.name === 'course' ? 'library' : '';
     for (const el of U.$$('.nav-item')) {
       const on = el.dataset.key === active;
       el.classList.toggle('active', on);

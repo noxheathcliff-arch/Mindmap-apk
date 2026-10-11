@@ -225,7 +225,7 @@
           setTimeout(R.actions.newCourse, 250);
         }, { cls: 'si-action' }));
         const due = S.dueCount();
-        list.appendChild(item(R.icon('cards', 20), 'Réviser maintenant', due ? '' : 'Tout est à jour', (b) => go('#/reviser', b),
+        list.appendChild(item(R.icon('cards', 20), 'Réviser maintenant', due ? '' : 'Tout est à jour', (b) => go(due ? '#/reviser/tout' : '#/reviser', b),
           { cls: 'si-action', end: due ? h('span.si-badge', String(due)) : null }));
         list.appendChild(h('p.search-hint', 'Astuce : tape un numéro d’article (ex. ', h('b', '1128'), ') pour le retrouver dans tes notes et sur Légifrance.'));
         finish();
