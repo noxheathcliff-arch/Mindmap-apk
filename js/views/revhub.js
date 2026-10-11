@@ -32,16 +32,37 @@
     const total = days.slice(1).reduce((a, d) => a + d.n, 0);
     const order = S.coursesSorted().slice().sort((a, b) => a.createdAt - b.createdAt);
     const used = order.filter((c) => days.some((d) => d.by[c.id]));
-    const seg = (c, n) => R.courseArt.tint(h('span.fc-seg', { style: { flexGrow: String(n) }, title: `${c.title} · ${U.plural(n, 'carte')}` }), c);
-    return h('section.hub-card', { 'aria-label': 'À venir' },
+    // k : rang du segment dans sa pile (0 = en bas) — les fiches se posent l'une sur l'autre
+    const seg = (c, n, k) => R.courseArt.tint(h('span.fc-seg', { style: { flexGrow: String(n), '--k': k }, dataset: { c: c.id }, title: `${c.title} · ${U.plural(n, 'carte')}` }), c);
+    const card = h('section.hub-card', { 'aria-label': 'À venir' },
       h('div.hub-card-head', h('h2.hub-card-title', 'Échéancier'), h('span.hub-card-sub', total ? `${U.plural(total, 'fiche')} sur 6 jours` : 'Rien de prévu')),
       h('div.fc', { role: 'img', 'aria-label': days.map((d, i) => `${fmt(d.day, i)} : ${d.n}` + (used.length > 1 && d.n ? ` (${used.filter((c) => d.by[c.id]).map((c) => `${c.title} ${d.by[c.id]}`).join(', ')})` : '')).join(' ; ') },
         days.map((d, i) => h('div.fc-col', { class: (i === 0 ? 'is-today ' : '') + (d.n ? '' : 'zero'), title: `${new Date(d.day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' })} · ${U.plural(d.n, 'carte')}` },
           h('span.fc-n', d.n ? String(d.n) : ''),
           h('span.fc-track', h('span.fc-bar', { style: { '--h': String(d.n / max), '--i': i }, class: intro ? 'grow' : '' },
-            used.filter((c) => d.by[c.id]).map((c) => seg(c, d.by[c.id])))),
+            used.filter((c) => d.by[c.id]).map((c, k) => seg(c, d.by[c.id], k)))),
           h('span.fc-l', fmt(d.day, i))))),
-      used.length > 1 ? h('div.fc-legend', used.map((c) => R.courseArt.tint(h('span.fc-key', h('i'), h('span', c.title)), c))) : null);
+      used.length > 1 ? h('div.fc-legend', used.map((c) => R.courseArt.tint(h('button.fc-key', { type: 'button', dataset: { c: c.id }, 'aria-pressed': 'false' }, h('i'), h('span', c.title)), c))) : null);
+    /* légende ↔ données : survoler (ou toucher) un cours éclaire ses segments dans toutes les
+       piles et estompe les autres (opacité, 160 ms) ; survoler un segment éclaire sa légende */
+    const focus = (id) => {
+      card.classList.toggle('fc-focus', !!id);
+      for (const x of U.$$('[data-c]', card)) x.classList.toggle('on', x.dataset.c === id);
+      for (const k of U.$$('.fc-key', card)) k.setAttribute('aria-pressed', String(k.dataset.c === id));
+    };
+    let pinned = null;
+    for (const k of U.$$('.fc-key', card)) {
+      k.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && !pinned) focus(k.dataset.c); });
+      k.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !pinned) focus(null); });
+      k.addEventListener('click', () => { pinned = pinned === k.dataset.c ? null : k.dataset.c; focus(pinned); });
+      k.addEventListener('focus', () => { if (!pinned) focus(k.dataset.c); });
+      k.addEventListener('blur', () => { if (!pinned) focus(null); });
+    }
+    for (const sg of U.$$('.fc-seg', card)) {
+      sg.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && !pinned) focus(sg.dataset.c); });
+      sg.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !pinned) focus(null); });
+    }
+    return card;
   }
 
   /* Carte de régularité : une case par jour, un tampon encré quand on a révisé ce jour-là
@@ -133,7 +154,7 @@
     const time = due ? h('span.dd-time', minutes(take)) : null;
     // répartition par cours : un trait par cours, à l'encre du cours, long comme sa part du dû
     const mix = due && tinted.length > 1 ? h('span.dd-mix', { 'aria-hidden': 'true' },
-      tinted.map((c) => R.courseArt.tint(h('i', { style: { flexGrow: String(S.courseStats(c.id).due) }, title: c.title }), c))) : null;
+      tinted.map((c, k) => R.courseArt.tint(h('i', { style: { flexGrow: String(S.courseStats(c.id).due), '--k': k }, title: c.title }), c))) : null;
     const top = h('span.dd-top', { dataset: { hero: 'session:all:card' } },
       h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'), num, unit, mix, time);
     const deck = h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${take} cartes` : 'Réviser quand même', onclick: start });
