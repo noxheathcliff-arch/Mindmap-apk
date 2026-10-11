@@ -231,7 +231,7 @@
     if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     else document.documentElement.removeAttribute('data-theme');
     const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#121211' : '#fbfaf7');
+    for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#121211' : '#f5f4ef');
   }
   app.setTheme = (t, origin) => {
     const apply = () => { S.data.settings.theme = t; S.changed('settings'); applyTheme(); };

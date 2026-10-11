@@ -121,22 +121,26 @@
   --primary-ink: var(--ref-highlighter-deep);
   --inverse-primary: var(--ref-highlighter);
 
-  --surface: var(--ref-neutral-98);
+  /* Échelle des surfaces (OKLCH, même teinte et même saturation que les gris d'origine) :
+     page L .966 → cartes/nœuds blancs L 1 (décollement ×2 : ils « respirent »)
+     → conteneurs à paliers réguliers (~.014) : .953 · .940 · .925 · .906 */
+  --surface: #f5f4ef;
   --surface-dim: var(--ref-neutral-87);
-  --surface-bright: var(--ref-neutral-98);
+  --surface-bright: #f5f4ef;
   --surface-container-lowest: var(--ref-neutral-100);
-  --surface-container-low: var(--ref-neutral-96);
-  --surface-container: var(--ref-neutral-94);
-  --surface-container-high: var(--ref-neutral-92);
-  --surface-container-highest: var(--ref-neutral-90);
+  --surface-container-low: #f0efea;
+  --surface-container: #ecebe6;
+  --surface-container-high: #e7e6e1;
+  --surface-container-highest: #e1e0db;
   --on-surface: var(--ref-neutral-10);
-  --on-surface-variant: var(--ref-neutral-30);
+  /* texte secondaire un cran plus encré : APCA Lc ≥ 80 jusque sur les dialogues */
+  --on-surface-variant: #3c3c39;
   --outline: var(--ref-neutral-50);
   --outline-variant: var(--ref-neutral-80);
   --inverse-surface: var(--ref-neutral-17);
   --inverse-on-surface: var(--ref-neutral-94);
   --scrim: rgba(0, 0, 0, 0.32);
-  --error: var(--ref-error-40);
+  --error: #9e1f18; /* rouge un peu plus profond : Lc ≥ 72 sur les fonds gris (était 67) */
   --on-error: #fff;
   --canvas-dot: rgba(27, 27, 25, 0.13);
   /* trait de surligneur sous un titre : large et derrière le texte en clair */

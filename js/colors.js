@@ -143,7 +143,7 @@
         fg = oklchToHex({ L: 0.95, C: 0.015, h });
         sub = oklchToHex({ L: 0.82, C: Math.min(C * 0.5, 0.09), h });
       } else {
-        bg = oklchToHex({ L: 0.955, C: Math.min(C * 0.4, 0.05), h });
+        bg = oklchToHex({ L: 0.978, C: Math.min(C * 0.45, 0.045), h }); // plus clair que la page : le nœud reste « posé dessus »
         line = oklchToHex({ L: 0.62, C: Math.min(C, 0.15), h });
         fg = oklchToHex({ L: 0.24, C: Math.min(C * 0.3, 0.04), h });
         sub = oklchToHex({ L: 0.45, C: Math.min(C * 0.6, 0.11), h });

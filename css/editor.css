@@ -146,7 +146,7 @@
 .node.t-exception { border-style: dashed; border-color: var(--on-surface-variant); }
 .node.t-juris .node-title { font: italic 400 15px/21px var(--font-brand); }
 .node.t-texte .node-title { font: 500 13px/20px var(--font-mono); }
-.node.t-idee { background: var(--surface-container-low); border-color: transparent; }
+.node.t-idee { background: var(--surface-container); border-color: transparent; }
 .node.t-doctrine { border-color: var(--outline); border-radius: 4px 16px 4px 16px; }
 .node.t-doctrine .node-title { font: 400 15px/21px var(--font-brand); }
 .node.t-exemple { border: 1.5px dotted var(--on-surface-variant); }

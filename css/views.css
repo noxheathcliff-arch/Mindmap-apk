@@ -249,8 +249,8 @@
 .rate-btn.btn-filled { background: var(--primary); color: var(--on-primary); }
 .rate-btn.btn-filled .mastery { color: var(--on-primary); }
 .rate-l { font: var(--title-s); }
-.rate-next { font: var(--label-s); opacity: .75; }
-.rate-kbd { position: absolute; top: 6px; right: 8px; font-size: 10px; line-height: 14px; padding: 0 4px; background: transparent; border-color: color-mix(in srgb, currentColor 35%, transparent); color: inherit; opacity: .82; }
+.rate-next { font: var(--label-s); }
+.rate-kbd { position: absolute; top: 6px; right: 8px; font-size: 10px; line-height: 14px; padding: 0 4px; background: transparent; border-color: color-mix(in srgb, currentColor 35%, transparent); color: inherit; }
 @media (hover: none) { .rate-kbd, .btn-kbd { display: none; } }
 
 .review-end { grid-area: 1 / 1; width: min(520px, 100%); text-align: center; display: grid; justify-items: center; gap: var(--sp-3); padding: var(--sp-8) 0; }

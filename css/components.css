@@ -51,6 +51,8 @@
 .btn-text:has(> .ic) { padding-left: var(--sp-3); }
 .btn.danger, .menu-item.danger, .ctx-btn.danger { color: var(--error); }
 .btn-kbd { margin-left: var(--sp-1); background: transparent; border-color: color-mix(in srgb, currentColor 30%, transparent); color: inherit; opacity: .7; }
+/* sur le jaune, pas de transparence (elle vire au brun-olive) : texte plein, plus fin */
+.btn-filled .btn-kbd, .rate-btn.btn-filled .rate-next, .rate-btn.btn-filled .rate-kbd { opacity: 1; font-weight: 400; }
 
 .icon-btn {
   display: inline-grid; place-items: center;

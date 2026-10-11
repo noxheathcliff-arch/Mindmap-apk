@@ -90,6 +90,14 @@ Le jaune est un **surligneur** : le geste même de l'étudiant en droit. Il n'es
 
 Les types de nœuds et les états de révision sont différenciés **sans couleur** : forme, bordure (pleine / pointillée / double), sur-titre typographique et pastilles de remplissage (○ ◔ ◑ ●) — accessible aux daltoniens et fidèle au monochrome.
 
+**Thème clair — échelle des surfaces et contraste perceptuel** (mesures OKLCH + APCA, la méthode perceptuelle de la future WCAG 3 ; 0 défaut WCAG 2) :
+- **Décollement des cartes** : la page passe de L 0,985 à 0,966 (`#f5f4ef`), les cartes et nœuds restent blancs. L'écart page/carte double (0,015 → 0,034) : les éléments se détachent sans ombre lourde ni bordure plus épaisse. Même teinte et même saturation que les gris d'origine : l'identité ne change pas.
+- **Paliers réguliers** des conteneurs (~0,014 de luminance) : `#f0efea` · `#ecebe6` · `#e7e6e1` · `#e1e0db`. Les nœuds « Idée » (sans bordure) passent sur le palier `container` pour rester visibles sur le canevas.
+- **Texte secondaire** `#3c3c39` : APCA Lc ≥ 80 jusque dans les dialogues (petits sur-titres 11–12 px), sans écraser la hiérarchie avec le texte principal (`#1b1b19`, Lc ≈ 99).
+- **Rouge d'action destructrice** `#9e1f18` : Lc 72–74 sur fonds gris (était 67).
+- **Sur le jaune**, aucun texte en transparence (il vire au brun-olive) : texte plein, graisse plus légère pour la hiérarchie.
+- Les nœuds colorés en intensité douce ont un fond plus clair que la page (L 0,978) : ils restent « posés dessus ».
+
 **Thème sombre — règles vérifiées** (audit automatisé de chaque texte, icône et contour de contrôle, 13 écrans × mobile/desktop × clair/sombre : 0 défaut WCAG restant) :
 - **Élévation tonale** : en sombre, ce qui est posé dessus (cartes, nœuds, champs : `surface-container-lowest`) est *plus clair* que la page (`#1b1b19` sur `#121211`), puis les conteneurs montent (`#1f1f1d` → `#343432`). Jamais plus foncé : un élément plus sombre que son fond paraît creusé, et les ombres ne se voient pas la nuit.
 - **Encre inversée adoucie** (`inverse-surface` `#cfcec8` au lieu de `#e5e4de`) : nœuds « Notion », infobulles, snackbar n'éblouissent plus.
