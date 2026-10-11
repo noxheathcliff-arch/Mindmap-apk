@@ -91,7 +91,8 @@
         "« … » ou « etc. » pour abréger un tableau de nœuds",
         "valeurs inventées pour review, x, y, viewport"
       ],
-      "long_documents": "Si le cours entier ne tient pas dans une réponse, livrer en PARTIES (long_document_strategy) : chaque partie est un JSON complet et valide, toutes les parties partagent le même identifiant de cours."
+      "long_documents": "Si le cours entier ne tient pas dans une réponse, livrer en PARTIES (long_document_strategy) : chaque partie est un JSON complet et valide, toutes les parties partagent le même identifiant de cours.",
+      "when_writing_files": "Si tu peux écrire des fichiers : le JSON dans un fichier .json (sans balises) et le rapport dans un fichier .md à côté ; ta réponse donne les chemins et un résumé."
     }
   },
   "target_format": {
@@ -326,7 +327,7 @@
     "inline": {
       "**gras**": "mots-clés, termes techniques à retenir (2 à 5 par note maximum)",
       "*italique*": "nuance, terme étranger, titre d'œuvre",
-      "==surligné==": "LA phrase ou l'idée-force de la note. Au plus 1 par note (2 si note longue). Jamais une phrase entière de plus de ~15 mots.",
+      "==surligné==": "LA phrase ou l'idée-force de la note : un seul par note (deux seulement si la note dépasse 12 lignes), ≤ 15 mots.",
       "~~barré~~": "idée reçue réfutée par le livre, ancienne règle abandonnée",
       "`code`": "formule, mot exact à prononcer, script de phrase (« `Je choisis…` »)",
       "[[Titre d'un nœud]]": "renvoi cliquable vers un autre nœud DE LA MÊME CARTE ; le texte doit être identique au titre visé (casse et accents ignorés)",
@@ -396,7 +397,7 @@
           "Niveau 1 : les grandes parties du chapitre (lecon) ou directement les notions si le chapitre est court ; niveau 2 : section si besoin. Ne pas créer de structure vide (une lecon avec un seul enfant est suspecte).",
           "Sous la structure : notions, définitions, conditions, effets, exceptions, sources, exemples (node_types.selection_heuristic).",
           "Poser logic: \"et\" quand les enfants sont cumulatifs (toutes les conditions, toutes les étapes d'une méthode), \"ou\" quand ils sont alternatifs (plusieurs voies, plusieurs profils au choix), null sinon (liste d'exemples, de conseils indépendants).",
-          "Ajouter les renvois transversaux (edge_rules) : 2 à 8 par carte, chacun avec un libellé qui dit la relation.",
+          "Ajouter les renvois transversaux (edge_rules) : 0 à 4 par carte, entre nœuds proches (readability_rules.R5), chacun avec un libellé qui dit la relation ; une relation lointaine s'écrit [[Titre]] dans la note.",
           "Utiliser une fourche (group) quand un même nœud mène, avec la même relation, à plusieurs nœuds éloignés (ex. une cause « implique » trois effets situés dans d'autres branches)."
         ]
       },
@@ -455,8 +456,8 @@
     },
     "presets": {
       "fiche": "8–15 nœuds par carte, notes courtes, seulement l'essentiel et les définitions.",
-      "standard": "20–45 nœuds par carte (défaut).",
-      "exhaustif": "jusqu'à 70 nœuds par carte, tous les exemples et sources."
+      "standard": "15–35 nœuds par carte, 45 au maximum (défaut).",
+      "exhaustif": "jusqu'à 45 nœuds par carte ; au-delà, scinder la carte."
     },
     "delivery_size": "Aucune limite côté Ratio (plusieurs Mo s'importent sans peine). Le découpage en parties ne sert qu'à respecter la longueur de réponse de l'IA : si tu écris dans un fichier, livre tout en un JSON."
   },
@@ -467,7 +468,7 @@
     "Pour un élément d'énumération : un intitulé autonome et court (« Peur du rejet »), compréhensible hors contexte.",
     "Pour un exemple : ce qui se passe (« Le collègue qui demande un remplacement le vendredi »), pas « Exemple 2 ».",
     "Pas de numéro de chapitre/section dans le titre d'un nœud de structure (l'application numérote).",
-    "Pas de ponctuation finale, pas de MAJUSCULES, pas d'emoji.",
+    "Pas de point final, pas de MAJUSCULES, pas d'emoji ; « ? » permis pour une vraie question, guillemets permis.",
     "Titres uniques dans une carte (nécessaire aux liens [[…]] et à la clarté en révision)."
   ],
   "note_rules": [
@@ -531,11 +532,11 @@
     "enumerations": [
       "Énumération STRUCTURANTE (le livre l'annonce, la développe ou on doit la restituer) → nœud parent titré avec le cardinal + un enfant par élément ; chaque enfant porte au moins une ligne de note tirée du livre (explication, reformulation, phrase-type).",
       "Énumération SECONDAIRE sans aucun développement dans le livre (liste nue en passant) → liste à puces dans la note du parent, pas de nœuds.",
-      "logic : \"et\" si tous les éléments sont requis/cumulés, \"ou\" s'ils sont alternatifs ; null pour une liste de conseils ou d'exemples indépendants — dans ce cas le TITRE porte le cardinal (« 4 astuces pour… »), car la question de révision n'annonce le nombre d'éléments que si logic est posée."
+      "logic : \"et\" seulement si tous les éléments sont requis ensemble (conditions cumulatives, étapes d'une méthode) ; \"ou\" si un seul suffit ou s'il faut choisir (voies alternatives, options) ; null pour une liste de signes, conséquences, regrets, conseils, causes possibles ou exemples — dans ce cas le TITRE porte le cardinal (« 9 conséquences de… »), car la question de révision n'annonce le nombre d'éléments que si logic est posée."
     ],
-    "examples": "Un exemple n'est JAMAIS un enfant d'un nœud-énumération (il serait compté parmi les « N éléments à retrouver ») : le rattacher à l'élément précis qu'il illustre, ou en frère du nœud-énumération relié par un lien « illustre ».",
+    "examples": "Un exemple n'est JAMAIS un enfant d'un nœud-énumération ni d'un nœud ET/OU (il serait compté parmi les « N éléments à retrouver ») : le rattacher comme enfant de l'élément précis qu'il illustre. S'il illustre l'énumération entière, le placer comme frère juste APRÈS elle, sans renvoi (la proximité suffit — R5 interdit les renvois « illustre » entre voisins).",
     "parent_table_exception": "Exception à « la note d'un parent ne répète pas ses enfants » : un tableau qui COMPARE les enfants entre eux (critères en colonnes) a sa place dans la note du parent ; les enfants gardent alors leur propre définition/explication.",
-    "questionnaires": "Test / questionnaire / quiz du livre → un nœud section « Test : … » (note : consigne + barème en tableau) ; une question = un nœud idee (note : réponses et points en tableau) ; chaque profil de résultat = un nœud effet (titre : « 11–18 points : … »).",
+    "questionnaires": "Test / questionnaire du livre → si c'est une partie d'une carte : un nœud section « Test : … » ; si c'est toute une carte : racine chapitre « Test : … ». Consigne et barème en tableau dans la note du nœud « Test ». Une question = un nœud idee (note : réponses et points en tableau). Plus de 7 questions : les regrouper en sections de 3 à 6 (« Questions 1 à 6 », « Questions 7 à 11 ») pour respecter R1. Chaque profil de résultat = un nœud effet (« 11–18 points : … ») sous une section « Résultats ».",
     "methods": "Méthode en étapes → nœud notion ou forme avec logic \"et\" ; une étape = un enfant forme dans l'ordre ; le titre de l'étape est un verbe d'action (« Identifier les parties »).",
     "structure_levels": "La racine chapitre peut avoir directement des section (sans lecon) si le chapitre n'a qu'un niveau de parties. N'utiliser lecon que s'il existe deux niveaux.",
     "defective_sources": [
@@ -586,7 +587,7 @@
       {
         "id": "R7",
         "name": "Titres courts",
-        "rule": "Titres de 15 à 40 caractères de préférence (80 maximum) : un nœud court se lit d'un coup d'œil et la carte tient à l'écran, y compris sur téléphone. Le détail va dans la note."
+        "rule": "Titres de 15 à 40 caractères de préférence (80 maximum) : un nœud court se lit d'un coup d'œil et la carte tient à l'écran, y compris sur téléphone. Le détail va dans la note. Un titre peut finir par « ? » s'il s'agit d'une vraie question du livre ; pas de point final."
       },
       {
         "id": "R8",
@@ -596,7 +597,7 @@
       {
         "id": "R9",
         "name": "Taille d'une carte",
-        "rule": "15 à 35 nœuds par carte (45 maximum en granularité standard). Au-delà, scinder en deux cartes : une carte qui ne tient pas sur un écran de téléphone se lit mal."
+        "rule": "15 à 35 nœuds par carte (12 minimum, 45 maximum). Au-delà de 45, scinder en deux cartes : une carte qui ne tient pas sur un écran de téléphone se lit mal."
       },
       {
         "id": "R10",
@@ -643,13 +644,13 @@
     {
       "id": "G5",
       "name": "Richesse d'expression",
-      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes (une carte isolée peut descendre à 20 %), jamais plus d'un (deux) par note ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds.",
+      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds NON structurels (une carte isolée peut descendre à 20 %) ; un seul par note, deux seulement si la note dépasse 12 lignes ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds.",
       "blocking": false
     },
     {
       "id": "G6",
       "name": "Maillage",
-      "check": "Chaque carte de plus de 15 nœuds a 2–8 liens étiquetés ; libellés variés et justes.",
+      "check": "Chaque carte a 0 à 4 renvois étiquetés (6 au maximum au-delà de 30 nœuds), tous entre nœuds proches (R5) ; libellés variés et justes.",
       "blocking": false
     },
     {
@@ -661,7 +662,7 @@
     {
       "id": "G8",
       "name": "Lisibilité de la carte",
-      "check": "Pour chaque carte : racine avec 3 à 7 enfants ; aucun exemple ni arrêt enfant direct de la racine ; renvois ≤ 4 (≤ 6 si > 30 nœuds) ; chaque renvoi relie deux nœuds d'une même branche de premier niveau ou de deux branches voisines ; aucun renvoi parent ↔ enfant ; libellés ≤ 14 caractères ; titres médians ≤ 40 caractères ; 15–45 nœuds.",
+      "check": "Pour chaque carte : racine avec 3 à 7 enfants ; aucun exemple ni arrêt enfant direct de la racine ; renvois ≤ 4 (≤ 6 si > 30 nœuds) ; chaque renvoi relie deux nœuds d'une même branche de premier niveau ou de deux branches voisines ; aucun renvoi parent ↔ enfant ; libellés ≤ 14 caractères ; titres médians ≤ 40 caractères ; 12–45 nœuds (cible 15–35).",
       "blocking": true
     }
   ],

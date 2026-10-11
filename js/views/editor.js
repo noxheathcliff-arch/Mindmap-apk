@@ -2898,14 +2898,33 @@
       if (st.destroyed) return;
       if (!U.$('.dialog') && st.mode === 'map') canvas.focus({ preventScroll: true });
       measure();
+      let laidOut = false;
       if (map.needsLayout) {
-        // première ouverture d'une carte importée : tailles réelles, même disposition que la vignette
+        // première ouverture d'une carte importée : rangement avec les tailles réelles
         const res = R.layout.arrange(map, sizeFn, { mode: map.layoutPick || 'auto', viewport: viewportSize() });
         for (const n of map.nodes) if (res.pos[n.id]) Object.assign(n, res.pos[n.id]);
         map.layout = res.mode;
         delete map.needsLayout;
+        laidOut = true;
         S.save();
         render();
+      }
+      // polices pas encore chargées : les tailles mesurées sont provisoires — on remesure
+      // (et on range à nouveau, dans la même disposition, si la carte vient d'être rangée)
+      if (document.fonts && document.fonts.status !== 'loaded') {
+        document.fonts.ready.then(() => {
+          if (st.destroyed) return;
+          for (const el of st.els.values()) el.dataset.sized = '';
+          st.sizes.clear();
+          measure();
+          if (laidOut) {
+            const res = R.layout.arrange(map, sizeFn, { mode: map.layout, viewport: viewportSize() });
+            for (const n of map.nodes) if (res.pos[n.id]) Object.assign(n, res.pos[n.id]);
+            S.save();
+            render();
+            initialView();
+          } else renderEdges();
+        });
       }
       renderEdges();
       if (map.viewport && !route.q.n) { Object.assign(st.view, map.viewport); applyView(); }

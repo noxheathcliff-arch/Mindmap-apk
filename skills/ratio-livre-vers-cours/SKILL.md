@@ -14,7 +14,7 @@ La spécification complète est dans `ratio_book_to_course_compiler_v1.2.json` (
 - **Un nœud = une idée rappelable.** Le titre est l'indice ; la note et les enfants sont la réponse. Le type choisit la question posée en révision (`node_types`).
 - **Énumérations du livre → nœuds enfants**, avec le cardinal exact, et `logic: "et"` (cumulatifs) ou `"ou"` (alternatifs).
 - **Notes** : réponse d'abord, 2–10 lignes, une seule idée en `==surligné==`, `**gras**` pour 2–5 mots-clés, `>` pour les citations exactes, tableaux pour les comparaisons, `- [ ]` pour les exercices, `[[Titre]]` pour renvoyer à un nœud de la même carte.
-- **Renvois** : 2–8 liens `kind:"link"` par carte, toujours étiquetés (`implique`, `s'oppose à`, `remédie à`, `sauf`, `voir`…), fourches avec `group`.
+- **Renvois** : 0–4 liens `kind:"link"` par carte (6 max au-delà de 30 nœuds), entre parties voisines, toujours étiquetés (`implique`, `s'oppose à`, `remédie à`, `sauf`, `voir`…), fourches avec `group`.
 - **Omettre** `x`, `y`, `review`, `viewport` ; mettre `"needsLayout": true` sur chaque carte ; nœuds dans l'ordre de lecture.
 - **Fidélité** : rien d'inventé ; un complément indispensable est marqué *(complément)*.
 - **Valider** avec `self_check.validator_python` si tu peux exécuter du code, sinon avec `self_check.manual_checklist`, jusqu'à zéro erreur.
