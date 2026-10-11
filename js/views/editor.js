@@ -319,7 +319,14 @@
       const fb = bbox(first);
       if (fb) {
         const kf = Math.min((r.w - pad * 2) / (fb.x1 - fb.x0), (r.h - pad * 2) / (fb.y1 - fb.y0));
-        if (kf >= 0.55) { fit(false, 0.95, first); return; }
+        if (kf >= 0.55) {
+          // cadrée à gauche (droite) / au centre (centrée) : la suite de la lecture reste en vue
+          const kk2 = Math.min(0.95, kf);
+          const x = map.layout === 'balanced' ? r.x + r.w / 2 - ((fb.x0 + fb.x1) / 2) * kk2 : r.x + pad - fb.x0 * kk2;
+          Object.assign(st.view, { k: kk2, x, y: r.y + r.h / 2 - ((fb.y0 + fb.y1) / 2) * kk2 });
+          applyView();
+          return;
+        }
       }
       const s = size(root);
       const kk = U.isCompact() ? 0.8 : 0.85;
@@ -628,7 +635,9 @@
         const left = kids[0].x < a.x;
         const col = left ? Math.max(...kids.map((k) => k.x + size(k).w)) : Math.min(...kids.map((k) => k.x));
         const p1 = [left ? a.x : a.x + sa.w, a.y + sa.h / 2];
-        const x = left ? Math.max(col + 14, p1[0] - Math.max(18, (p1[0] - col) * 0.5)) : Math.min(col - 14, p1[0] + Math.max(18, (col - p1[0]) * 0.5));
+        // épine dans le couloir libre juste avant la colonne des enfants (un frère plus large du
+        // parent peut occuper la moitié du couloir : on se cale sur la colonne, pas sur le parent)
+        const x = left ? Math.min(p1[0] - 14, col + 30) : Math.max(p1[0] + 14, col - 30);
         return { p1, d1: [left ? -1 : 1, 0], J: [x, p1[1]], comb: true };
       }
       if (b.kind === 'link' && rects && !st.fastEdges) {

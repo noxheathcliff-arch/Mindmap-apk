@@ -190,7 +190,7 @@
     const left = b.x < a.x;
     const col = left ? Math.max(...kids.map((k) => k.x + k.w)) : Math.min(...kids.map((k) => k.x));
     const p1 = [left ? a.x : a.x + a.w, a.y + a.h / 2];
-    const x = left ? Math.max(col + 14, p1[0] - Math.max(18, (p1[0] - col) * 0.5)) : Math.min(col - 14, p1[0] + Math.max(18, (col - p1[0]) * 0.5));
+    const x = left ? Math.min(p1[0] - 14, col + 30) : Math.max(p1[0] + 14, col - 30);
     const y = b.y + b.h / 2;
     const tx = left ? b.x + b.w : b.x;
     return elbow(Math.abs(y - p1[1]) < 1 ? [p1, [tx, y]] : [p1, [x, p1[1]], [x, y], [tx, y]], 12);
@@ -312,8 +312,102 @@
       }
       best = cands.slice(0, 10).sort((x, y) => x.cost2 - y.cost2)[0];
     }
+    // dernier recours : aucun tracé candidat n'est propre → recherche de chemin orthogonal (A*)
+    // sur une grille fine, nœuds interdits, coudes pénalisés : s'il existe un passage, on le trouve
+    if (best.hits && !ctx.fast) {
+      const g = gridRoute(a, sa, b, sb, rects, skip, ctx.busy);
+      if (g) return { ...g.cv, pts: g.pts, hits: 0, len: g.len, cross: 0, cost: 0 };
+    }
     // cost - len : pénalités seules (côtés de la hiérarchie, détours…)
     return { ...best.cv, pts: best.pts, hits: best.hits, len: best.len, cross: best.cross || 0, cost: best.cost - best.len };
+  }
+
+  /** Routage orthogonal par A* (cellules de 12 px, coût = longueur + 6 cellules par coude) */
+  function gridRoute(a, sa, b, sb, rects, skip, busy) {
+    const C = 12, M = 160;
+    let x0 = Math.min(a.x, b.x), y0 = Math.min(a.y, b.y), x1 = Math.max(a.x + sa.w, b.x + sb.w), y1 = Math.max(a.y + sa.h, b.y + sb.h);
+    for (const r of rects) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
+    x0 -= M; y0 -= M; x1 += M; y1 += M;
+    const W = Math.ceil((x1 - x0) / C), H = Math.ceil((y1 - y0) / C);
+    if (W * H > 250000) return null;
+    const blocked = new Uint8Array(W * H);
+    const block = (r, pad) => {
+      const i0 = Math.max(0, Math.floor((r.x - pad - x0) / C)), i1 = Math.min(W - 1, Math.floor((r.x + r.w + pad - x0) / C));
+      const j0 = Math.max(0, Math.floor((r.y - pad - y0) / C)), j1 = Math.min(H - 1, Math.floor((r.y + r.h + pad - y0) / C));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) blocked[j * W + i] = 1;
+    };
+    for (const r of rects) if (!skip.has(r.id)) block(r, 8);
+    const cell = (p) => [Math.max(0, Math.min(W - 1, Math.floor((p[0] - x0) / C))), Math.max(0, Math.min(H - 1, Math.floor((p[1] - y0) / C)))];
+    // départs / arrivées possibles : un point juste hors de chaque côté libre
+    const ends = (n, s, id) => 'rlbt'.split('').filter((sd) => !(busy && (busy.get(id) || '').includes(sd))).map((sd) => {
+      const p = sidePoint(n, s, sd), d = DIRS[sd];
+      return { sd, p, q: [p[0] + d[0] * (C + 6), p[1] + d[1] * (C + 6)] };
+    });
+    const starts = ends(a, sa, a.id), goals = ends(b, sb, b.id);
+    if (!starts.length || !goals.length) return null;
+    const goalAt = new Map();
+    for (const gl of goals) { const [i, j] = cell(gl.q); if (!blocked[j * W + i]) goalAt.set(j * W + i, gl); }
+    if (!goalAt.size) return null;
+    const dist = new Float64Array(W * H * 4).fill(Infinity);
+    const prev = new Int32Array(W * H * 4).fill(-1);
+    // tas binaire minimal
+    const heap = [];
+    const push = (k, f) => { heap.push([f, k]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+    const pop = () => { const top = heap[0]; const last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+    const gs = [...goalAt.keys()].map((k) => [k % W, Math.floor(k / W)]);
+    const hfun = (i, j) => Math.min(...gs.map(([gi, gj]) => Math.abs(gi - i) + Math.abs(gj - j)));
+    const DV = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const startOf = new Map();
+    for (const st of starts) {
+      const [i, j] = cell(st.q);
+      if (blocked[j * W + i]) continue;
+      const dir = 'rlbt'.indexOf(st.sd);
+      const k = (j * W + i) * 4 + dir;
+      dist[k] = 0; startOf.set(k, st); push(k, hfun(i, j));
+    }
+    let found = -1, n = 0;
+    while (heap.length && n++ < 200000) {
+      const [, k] = pop();
+      const c = k >> 2, dir = k & 3, i = c % W, j = Math.floor(c / W);
+      if (goalAt.has(c)) { found = k; break; }
+      for (let nd = 0; nd < 4; nd++) {
+        const ni = i + DV[nd][0], nj = j + DV[nd][1];
+        if (ni < 0 || nj < 0 || ni >= W || nj >= H || blocked[nj * W + ni]) continue;
+        const nk = (nj * W + ni) * 4 + nd;
+        const cost = dist[k] + 1 + (nd !== dir ? 6 : 0);
+        if (cost < dist[nk]) { dist[nk] = cost; prev[nk] = k; push(nk, cost + hfun(ni, nj)); }
+      }
+    }
+    if (found < 0) return null;
+    // remonte le chemin, garde les coudes
+    const cells = [];
+    for (let k = found; k >= 0; k = prev[k]) { const c = k >> 2; cells.push([x0 + (c % W) * C + C / 2, y0 + Math.floor(c / W) * C + C / 2]); if (startOf.has(k)) break; }
+    cells.reverse();
+    let first = null;
+    for (const [k, st] of startOf) { const c = k >> 2; if (Math.abs(x0 + (c % W) * C + C / 2 - cells[0][0]) < 1 && Math.abs(y0 + Math.floor(c / W) * C + C / 2 - cells[0][1]) < 1) first = st; }
+    const gl = goalAt.get(cell(cells[cells.length - 1])[1] * W + cell(cells[cells.length - 1])[0]);
+    if (!first || !gl) return null;
+    // aligne le premier et le dernier segment sur les points d'attache
+    const raw = [first.p, ...cells, gl.p];
+    if (first.sd === 'r' || first.sd === 'l') raw[1] = [raw[1][0], first.p[1]]; else raw[1] = [first.p[0], raw[1][1]];
+    const L = raw.length;
+    if (gl.sd === 'r' || gl.sd === 'l') raw[L - 2] = [raw[L - 2][0], gl.p[1]]; else raw[L - 2] = [gl.p[0], raw[L - 2][1]];
+    const pts = [raw[0]];
+    for (let i = 1; i < raw.length - 1; i++) {
+      const p = pts[pts.length - 1], q = raw[i], r = raw[i + 1];
+      const colinear = (Math.abs(p[0] - q[0]) < 0.5 && Math.abs(q[0] - r[0]) < 0.5) || (Math.abs(p[1] - q[1]) < 0.5 && Math.abs(q[1] - r[1]) < 0.5);
+      if (!colinear) pts.push(q);
+    }
+    pts.push(raw[L - 1]);
+    // remet d'équerre (les points d'attache peuvent décaler d'une demi-cellule)
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i - 1], q = pts[i];
+      if (Math.abs(p[0] - q[0]) > 0.5 && Math.abs(p[1] - q[1]) > 0.5) pts.splice(i, 0, [q[0], p[1]]);
+    }
+    if (orthHits(pts, rects, skip, 2)) return null;
+    const cv = elbow(pts, 10);
+    cv.pts = pts;
+    return { cv, pts: sample(cv, 24), len: polyLen(pts) };
   }
   /** Couloir libre : première ligne (verticale si horiz, sinon horizontale) au-delà de base, du
       côté sgn, qui ne coupe aucun nœud sur la bande [lo, hi] */
