@@ -527,15 +527,16 @@
   -webkit-mask: radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px) 0 0 / 12px 51% repeat-x, radial-gradient(circle at 6px 100%, transparent 5px, #000 5.5px) 0 100% / 12px 51% repeat-x;
           mask: radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px) 0 0 / 12px 51% repeat-x, radial-gradient(circle at 6px 100%, transparent 5px, #000 5.5px) 0 100% / 12px 51% repeat-x;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .06));
-  transform-origin: 50% 0; animation: receipt-out var(--dur-lg) var(--ease-drawer) 200ms both;
+  animation: receipt-print 520ms var(--ease-out) 200ms both;
 }
-@keyframes receipt-out { from { opacity: 0; transform: translateY(-14px) scaleY(.92); } }
+/* impression : le ticket sort de la fente (clip de haut en bas + 10 px), le texte n'est jamais déformé */
+@keyframes receipt-print { from { clip-path: inset(0 0 100% 0); transform: translateY(-10px); } to { clip-path: inset(0 0 0 0); transform: none; } }
 .rc-head { display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px dashed var(--outline); font: 600 11px/16px var(--font-plain); letter-spacing: .1em; text-transform: uppercase; color: var(--on-surface-variant); }
 .rc-row, .rc-total { display: grid; grid-template-columns: auto auto minmax(12px, 1fr) 72px 28px; align-items: center; gap: 10px; font: var(--label-l); }
 .rc-dots { height: 1px; align-self: end; margin-bottom: 5px; background: radial-gradient(circle, var(--outline) 1px, transparent 1.3px) 0 0 / 5px 2px repeat-x; }
 .rc-n { text-align: right; font-variant-numeric: tabular-nums; }
 .rc-bar { height: 6px; border-radius: 3px; background: var(--surface-container-highest); overflow: hidden; }
-.rc-bar > span { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(var(--w)); background: var(--on-surface); animation: grow var(--dur-xl) var(--ease-out) calc(520ms + var(--i, 0) * 60ms) both; }
+.rc-bar > span { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(var(--w)); background: var(--on-surface); animation: grow var(--dur-xl) var(--ease-out) calc(420ms + var(--i, 0) * 90ms) both; }
 .rc-total { grid-template-columns: auto minmax(12px, 1fr) 28px; padding-top: 10px; border-top: 1px dashed var(--outline); font: var(--title-s); }
 .rc-stamp {
   position: absolute; right: 66px; bottom: 16px; padding: 3px 10px; border: 2px solid var(--on-surface); border-radius: 4px;
@@ -582,9 +583,14 @@
 .daydeck > * { grid-area: 1 / 1; }
 .dd-sheet {
   border-radius: var(--shape-l); background: var(--paper, var(--surface-container-high)); border: 1px solid var(--paper-line, var(--outline-variant));
-  transform-origin: 30% 100%; transition: transform var(--dur-md) var(--ease-out);
-  animation: fade-in var(--dur-md) var(--ease-out) both;
+  transform-origin: 30% 100%; transition: transform var(--dur-md) var(--ease-out), opacity var(--dur-sm) var(--ease-out);
 }
+/* une feuille ajoutée glisse depuis sous la fiche jusqu'à sa place ; retirée, elle s'y range */
+.dd-sheet.in { animation: sheet-in var(--dur-md) var(--ease-out) both; }
+@keyframes sheet-in { from { opacity: 0; transform: none; } }
+.dd-sheet.out { opacity: 0; transform: none !important; transition: transform var(--dur-sm) var(--ease-in), opacity var(--dur-sm) var(--ease-in); }
+/* follow-through : au survol, les feuilles suivent la fiche avec un léger retard (20 ms par feuille) */
+.dd-sheet.s2 { transition-delay: 20ms; } .dd-sheet.s3 { transition-delay: 40ms; }
 .dd-sheet.s1 { transform: translate(6px, -6px) rotate(3deg); }
 .dd-sheet.s2 { transform: translate(12px, -11px) rotate(6deg); }
 .dd-sheet.s3 { transform: translate(17px, -15px) rotate(9deg); }
@@ -613,7 +619,6 @@
 .daydeck:active .dd-top { transform: scale(.98); transition-duration: var(--dur-xs); }
 .daydeck:focus-visible { outline: none; }
 .daydeck:focus-visible .dd-top { outline: 2px solid var(--on-surface); outline-offset: 3px; }
-.daydeck.swap .dd-n { animation: tick var(--dur-sm) var(--ease-out); }
 .intro .daydeck .dd-sheet { animation: deck-fan var(--dur-lg) var(--ease-out) both; animation-delay: calc(160ms + var(--k, 0) * 40ms); }
 .daydeck .dd-sheet.s1 { --k: 2; } .daydeck .dd-sheet.s2 { --k: 1; } .daydeck .dd-sheet.s3 { --k: 0; }
 @keyframes deck-fan { from { opacity: 0; transform: none; } }
@@ -649,26 +654,26 @@
 }
 .ly-cell.is-today .ly-stamp { border-color: var(--on-surface); background: var(--hl-band); opacity: 1; }
 .ly-stamp b { font: 700 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; }
-.ly-stamp.slam { animation: slam var(--dur-md) var(--ease-out) 500ms both; }
+.ly-stamp.slam { animation: slam var(--dur-md) var(--ease-out) calc(320ms + var(--i, 0) * 45ms) both; }
 @keyframes slam { from { opacity: 0; transform: rotate(var(--r, -8deg)) scale(1.5); } 60% { opacity: 1; } }
 /* 7 jours à venir : barres en scaleY, aujourd'hui au surligneur */
 .fc { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--sp-2); align-items: end; height: 112px; }
 .fc-col { display: grid; grid-template-rows: 16px 1fr 16px; justify-items: center; gap: 4px; height: 100%; }
 .fc-n { font: 600 11px/16px var(--font-plain); font-variant-numeric: tabular-nums; color: var(--on-surface-variant); }
-.fc-track { position: relative; width: 100%; max-width: 28px; display: flex; align-items: flex-end; }
+.fc-track { position: relative; width: 100%; max-width: 28px; height: 100%; display: flex; align-items: flex-end; overflow: hidden; border-radius: 3px 3px 2px 2px; }
 /* chaque jour est une pile de fiches vue de profil : une tranche tous les 4 px */
 .fc-bar {
-  display: block; width: 100%; height: 100%; border-radius: 3px 3px 2px 2px;
+  display: block; width: 100%; height: max(calc(var(--h) * 100%), 4px); border-radius: 3px 3px 2px 2px;
   background: repeating-linear-gradient(to top, var(--surface-container-highest) 0 3px, var(--outline) 3px 4px);
-  border: 1px solid var(--outline); transform-origin: 50% 100%; transform: scaleY(max(var(--h), .04));
+  border: 1px solid var(--outline);
 }
 .fc-col.zero .fc-bar { background: none; border-style: dashed; border-color: var(--outline-variant); }
 .fc-col.is-today .fc-bar { background: repeating-linear-gradient(to top, var(--primary) 0 3px, color-mix(in srgb, var(--on-primary) 45%, var(--primary)) 3px 4px); border-color: color-mix(in srgb, var(--on-primary) 45%, var(--primary)); }
 .fc-col.is-today .fc-n { color: var(--on-surface); }
 .fc-l { font: 500 11px/16px var(--font-plain); color: var(--on-surface-variant); text-transform: capitalize; }
 .fc-col.is-today .fc-l { color: var(--on-surface); font-weight: 600; }
-.fc-bar.grow { animation: fc-grow var(--dur-xl) var(--ease-out) calc(200ms + var(--i, 0) * 30ms) both; }
-@keyframes fc-grow { from { transform: scaleY(0); } }
+.fc-bar.grow { animation: fc-grow var(--dur-lg) var(--ease-out) calc(220ms + var(--i, 0) * 35ms) both; }
+@keyframes fc-grow { from { transform: translateY(100%); } }
 /* cours : une ligne teintée (bande papier), empreinte, maîtrise, nombre dû */
 .hub-courses { display: grid; gap: var(--sp-2); }
 .hub-course {
@@ -700,6 +705,8 @@
 .due-stamp span { font: 600 8px/1.2 var(--font-plain); letter-spacing: .08em; text-transform: uppercase; }
 @media (hover: hover) { .hub-course:hover .due-stamp { transform: rotate(-3deg) scale(1.04); } }
 .due-stamp { transition: transform var(--dur-sm) var(--ease-out); }
+.intro .due-stamp { animation: due-slam var(--dur-md) var(--ease-out) calc(380ms + var(--i, 0) * 40ms) both; }
+@keyframes due-slam { from { opacity: 0; transform: rotate(-8deg) scale(1.5); } 60% { opacity: 1; } }
 .hub-course-ok { display: grid; place-items: center; width: 32px; height: 32px; color: var(--paper-sub); }
 .hub-course.is-done .hub-course-t { opacity: .85; }
 .hub-hint { margin: calc(-1 * var(--sp-2)) 0 var(--sp-3); font: var(--body-s); color: var(--on-surface-variant); }
@@ -720,7 +727,7 @@
 .dog-t { font: var(--title-s); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .dog-s { font: var(--body-s); color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dog-stamp { position: absolute; left: 12px; bottom: 10px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 3px; font: 700 9px/15px var(--font-plain); letter-spacing: .08em; text-transform: uppercase; color: var(--on-surface-variant); transform: rotate(-5deg); }
-@media (hover: hover) { .dog:hover { transform: translateY(-3px); } }
+@media (hover: hover) { .dog:hover { transform: translateY(-3px) rotate(-.8deg); } }
 .dog:active { transform: scale(.98); transition-duration: var(--dur-xs); }
 .dog:focus-visible { outline: 2px solid var(--on-surface); outline-offset: 2px; }
 .hub-weak { display: grid; border: 1px solid var(--outline-variant); border-radius: var(--shape-l); overflow: hidden; background: var(--surface-container-lowest); }
@@ -732,7 +739,8 @@
 .hub-weak-s { font: var(--body-s); color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hub-weak-row > .ic:last-child { color: var(--on-surface-variant); }
 :root[data-motion="reduce"] .fc-bar.grow, :root[data-motion="reduce"] .mr-val, :root[data-motion="reduce"] .ly-stamp.slam,
-:root[data-motion="reduce"] .daydeck .dd-sheet, :root[data-motion="reduce"] .dd-n::after { animation: none !important; }
+:root[data-motion="reduce"] .daydeck .dd-sheet, :root[data-motion="reduce"] .dd-n::after, :root[data-motion="reduce"] .due-stamp { animation: none !important; }
+:root[data-motion="reduce"] .dd-sheet, :root[data-motion="reduce"] .dog { transition: none; }
 
 /* ---- Recherche -------------------------------------------------------- */
 /* Panneau « index » : barre, filtres, résultats rangés par carte, légende clavier.

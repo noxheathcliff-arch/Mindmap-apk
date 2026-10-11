@@ -453,7 +453,8 @@
           dist,
           weak.length ? h('div.end-weak',
             h('p.overline', 'À retravailler'),
-            h('div.end-weak-list', weak.slice(0, 5).map(({ map, node }) => h('a.end-weak-row', { href: `#/carte/${map.id}?n=${node.id}` },
+            h('div.end-weak-list', weak.slice(0, 5).map(({ map, node }) => h('a.end-weak-row', { href: `#/carte/${map.id}?n=${node.id}`, dataset: { hero: `map:${map.id}:node` },
+              onclick: (e) => { e.preventDefault(); R.app.go(e.currentTarget.getAttribute('href'), { from: e.currentTarget }); } },
               ui.mastery('revoir', 14), h('span', node.title), R.icon('chevronRight', 16))))) : null,
           h('p.end-next', remaining ? `Encore ${U.plural(remaining, 'carte')} à réviser maintenant.` : fc[1].n ? `Demain : ${U.plural(fc[1].n, 'carte')}.` : 'Rien d’autre à réviser pour l’instant.'),
           h('div.end-actions',
@@ -466,7 +467,8 @@
         R.motion.stagger(Array.from(end.children).slice(1), 1, { step: 70, max: 8 });
         motion.countUp(streakEl, streak, { from: Math.max(0, streak - 1), duration: 600 });
         motion.countUp(doneEl, done, { duration: 700 });
-        counts.forEach(([n, v, i]) => setTimeout(() => motion.countUp(n, v, { duration: 560 }), motion.reduced() ? 0 : 360 + i * 60));
+        // chaque ligne compte quand l'impression la découvre (ticket : 200 → 720 ms)
+        counts.forEach(([n, v, i]) => setTimeout(() => motion.countUp(n, v, { duration: 560 }), motion.reduced() ? 0 : 420 + i * 90));
         setTimeout(() => {
           const f = end.querySelector('.end-flame');
           if (!f || !f.isConnected) return;

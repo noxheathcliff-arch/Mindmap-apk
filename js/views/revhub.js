@@ -53,7 +53,7 @@
       cells.push(h('div.ly-cell', { class: (n ? 'on ' : '') + (i === 0 ? 'is-today' : ''), title: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' }) + (n ? ` · ${U.plural(n, 'fiche')}` : ' · rien') },
         h('span.ly-d', d.toLocaleDateString('fr-FR', { weekday: 'narrow' })),
         h('span.ly-slot',
-          n ? h('span.ly-stamp', { class: intro && i === 0 ? 'slam' : '', style: { '--r': tilt + 'deg' } }, h('b', String(n))) : i === 0 ? h('span.ly-wait', 'auj.') : h('span.ly-num', String(d.getDate()))),
+          n ? h('span.ly-stamp', { class: intro ? 'slam' : '', style: { '--r': tilt + 'deg', '--i': 6 - i } }, h('b', String(n))) : i === 0 ? h('span.ly-wait', 'auj.') : h('span.ly-num', String(d.getDate()))),
       ));
     }
     return h('section.hub-card.loyal', { 'aria-label': 'Régularité' },
@@ -94,36 +94,70 @@
       h('p.hub-hint', 'Les dernières fiches notées « À revoir ». Elles reviennent dès demain ; un détour par la carte aide à comprendre ce qui coince.'),
       h('div.dogs', list.map(({ map, node }) => {
         const c = S.course(map.courseId);
-        const card = h('a.dog', { href: `#/carte/${map.id}?n=${node.id}` },
+        const card = h('a.dog', { href: `#/carte/${map.id}?n=${node.id}`, dataset: { hero: `map:${map.id}:node` } },
           h('span.dog-band'),
           h('span.dog-k', S.isStruct(node.type) ? S.kickerOf(map, node) : S.TYPES[node.type].label),
           h('span.dog-t', node.title),
           h('span.dog-s', map.title),
           h('span.dog-stamp', 'À revoir'));
         if (c) R.courseArt.tint(card, c);
+        // la transition part de CETTE fiche (plusieurs fiches peuvent venir de la même carte)
+        card.addEventListener('click', (e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); R.app.go(card.getAttribute('href'), { from: card }); });
         return card;
       })));
   }
 
   /* Le paquet du jour : la session à venir, en vrai paquet. Les feuilles du dessous prennent la
      teinte des cours les plus chargés ; leur nombre suit la taille de session (10 · 20 · toutes).
-     La fiche du dessus porte le compte et devient la première fiche de la session. */
+     La fiche du dessus porte le compte et devient la première fiche de la session.
+     Changer la taille met le paquet à jour SUR PLACE : une feuille se glisse dessous (ou s'y
+     range), le compte défile — rien n'est reconstruit, rien ne clignote. */
   function dayDeck(take, due, size, start) {
     const tinted = S.coursesSorted().map((c) => ({ c, d: S.courseStats(c.id).due })).filter((x) => x.d).sort((a, b) => b.d - a.d).map((x) => x.c);
-    const layers = due ? Math.min(size === 10 ? 1 : size === 20 ? 2 : 3, Math.max(0, take - 1)) : 1;
-    const sheets = [];
-    for (let i = layers; i >= 1; i--) {
+    const layersFor = (n, sz) => (due ? Math.min(sz === 10 ? 1 : sz === 20 ? 2 : 3, Math.max(0, n - 1)) : 1);
+    const sheet = (i) => {
       const sh = h('span.dd-sheet', { class: 's' + i, 'aria-hidden': 'true' });
       const c = tinted[(i - 1) % Math.max(1, tinted.length)];
       if (c) R.courseArt.tint(sh, c);
-      sheets.push(sh);
-    }
+      return sh;
+    };
+    const num = due ? h('span.dd-n', String(take)) : h('span.dd-n.dd-ok', R.icon('check', 36));
+    const unit = h('span.dd-u', due ? (take > 1 ? 'cartes' : 'carte') : 'tout est à jour');
+    const time = due ? h('span.dd-time', minutes(take)) : null;
     const top = h('span.dd-top', { dataset: { hero: 'session:all:card' } },
-      h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'),
-      due ? h('span.dd-n', String(take)) : h('span.dd-n.dd-ok', R.icon('check', 36)),
-      h('span.dd-u', due ? (take > 1 ? 'cartes' : 'carte') : 'tout est à jour'),
-      due ? h('span.dd-time', minutes(take)) : null);
-    return h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${take} fiches` : 'Réviser quand même', onclick: start }, sheets, top);
+      h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'), num, unit, time);
+    const deck = h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${take} cartes` : 'Réviser quand même', onclick: start });
+    for (let i = layersFor(take, size); i >= 1; i--) deck.appendChild(sheet(i));
+    deck.appendChild(top);
+
+    let shown = take, token = 0;
+    deck.update = (n, sz) => {
+      if (!due) return;
+      // feuilles : on ajoute par-dessous (glisse depuis sous la fiche), on retire par le fond (se range)
+      const want = layersFor(n, sz);
+      for (let i = 1; i <= 3; i++) {
+        const cur = deck.querySelector(`.dd-sheet.s${i}:not(.out)`);
+        if (i <= want && !cur) {
+          const sh = sheet(i);
+          if (!motion.reduced()) sh.classList.add('in');
+          // ordre du DOM : s3, s2, s1, puis la fiche (le plus loin est peint dessous)
+          const after = [...deck.querySelectorAll('.dd-sheet:not(.out)')].find((x) => +x.className.match(/s(\d)/)[1] < i);
+          deck.insertBefore(sh, after || top);
+        } else if (i > want && cur) {
+          if (motion.reduced()) cur.remove();
+          else { cur.classList.add('out'); setTimeout(() => cur.remove(), 200); }
+        }
+      }
+      // le compte défile de l'ancienne valeur à la nouvelle (interruptible : seul le dernier écrit)
+      const from = shown, my = ++token;
+      shown = n;
+      unit.textContent = n > 1 ? 'cartes' : 'carte';
+      if (time) time.textContent = minutes(n);
+      deck.setAttribute('aria-label', `Commencer : ${n} cartes`);
+      if (motion.reduced() || from === n) { num.textContent = String(n); return; }
+      motion.tween({ duration: 320, ease: motion.ease.expo, onUpdate: (p, e) => { if (my === token) num.textContent = String(Math.round(from + (n - from) * e(p))); } });
+    };
+    return deck;
   }
 
   R.views.reviewHub = {
@@ -163,7 +197,7 @@
           const meta = h('p.hub-meta', metaFor(take));
           let cta = ctaFor(take);
           const start = () => R.app.go(sessionHref('#/reviser/tout', { all: !due }));
-          let deck = dayDeck(take, due, size, start);
+          const deck = dayDeck(take, due, size, start);
           const coursesBox = courses.length ? h('div.hub-courses', courses.map(courseRow)) : null;
           /* durée de session : un choix mémorisé (10 · 20 · toutes), appliqué partout.
              Mise à jour sur place (l'indicateur glisse, le libellé tique) : la page ne se reconstruit
@@ -182,10 +216,8 @@
                 const next = ctaFor(n);
                 if (!motion.reduced()) next.classList.add('tick');
                 cta.replaceWith(next); cta = next;
-                // le paquet s'épaissit ou s'amincit (feuilles en fondu), le compte tique
-                const nd = dayDeck(n, due, v, start);
-                if (!motion.reduced()) nd.classList.add('swap');
-                deck.replaceWith(nd); deck = nd;
+                // le paquet s'épaissit ou s'amincit sur place, le compte défile
+                deck.update(n, v);
                 if (coursesBox) { U.clear(coursesBox); courses.forEach((c) => coursesBox.appendChild(courseRow(c))); }
               });
               return b;
