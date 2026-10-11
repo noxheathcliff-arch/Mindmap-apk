@@ -32,6 +32,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 | **Cours** | titre, description (ex. « M1 · S1 · Pr. X »), dates | Le « dossier unique » demandé. Un seul niveau : pas de sous-dossiers (loi de Tesler : on absorbe la complexité, l'utilisatrice n'a qu'un rangement à faire). |
 | **Carte** | titre, cours, nœuds, liens, vue (zoom/position), dates | Une carte = une notion ou un chapitre. |
 | **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 15 types (voir §4.4), dont 3 de structure. |
+| **Tableau, source** | vivent **dans la note** (Markdown : `| a | b |`, `[titre](https://…)`) | Aucun champ nouveau : export, import, plan, recherche et révision les reçoivent tels quels. Saisie en grille (Loi de Tesler : la syntaxe reste cachée) ; rubrique « Sources » = liens de la note extraits à l'affichage. |
 | **Lien** | source, cible, **nature** (hiérarchique / renvoi), libellé, groupe | Hiérarchique = décomposition (trait plein). Renvoi = « voir aussi », « sauf », « implique » (pointillé + flèche). |
 | **Fourche** | liens partageant un `group` (même source, même nature, un libellé) | Un tronc, un libellé posé sur le point de séparation, une branche par élément. Chaque branche reste un lien ordinaire : hiérarchie, révision, plan et import n'en dépendent pas. Les enfants d'un nœud ET/OU sont dessinés en fourche implicite (« ET » une seule fois). |
 | **Carte de révision** | dérivée d'un nœud qui a une note ou des enfants | Boîte de Leitner 0→5, échéance. |

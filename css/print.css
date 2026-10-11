@@ -14,3 +14,7 @@ html, body { height: auto !important; overflow: visible !important; background: 
 .plan-struct-sec { break-inside: auto; }
 .plan-struct { break-after: avoid; }
 .plan-struct-k, .plan-sec.t-retenir { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.md .md-table { overflow: visible !important; border-color: #bbb !important; }
+.md th, .md td { border-color: #bbb !important; }
+.md thead th { background: #f0f0ec !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.md a.md-art { text-decoration: none !important; }

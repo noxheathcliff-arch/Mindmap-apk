@@ -46,7 +46,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | `Tab` · poignée **+** | Ajouter un enfant (décomposer) |
 | `Entrée` | Ajouter un frère |
 | `F2` · double-clic | Renommer |
-| `Espace` | Ouvrir la note |
+| `Espace` · toucher à nouveau le nœud sélectionné · toucher l'icône note | Ouvrir la note (en Aperçu si elle existe) |
 | Glisser la poignée **+** sur un nœud | Relier (renvoi) — dans le vide : crée un enfant à cet endroit |
 | `L` · **Relier**, puis toucher plusieurs nœuds, `Entrée` | Créer une **fourche** (un lien, un libellé, plusieurs branches) |
 | Lien sélectionné → **Branche** | Ajouter une branche (même libellé) ; **⋯** : regrouper, détacher, séparer, supprimer la fourche |
@@ -71,7 +71,10 @@ Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapit
 
 ### Notes (Markdown)
 
-`**gras**`, `*italique*`, `==surligné==`, `- liste`, `1. liste`, `- [ ] case`, `> citation` (textes de loi), `## intertitre`, `[[Titre d'un autre nœud]]` (lien cliquable). Les références d'articles (« art. 1128 », « art. L. 132-1 ») sont repérées automatiquement.
+`**gras**`, `*italique*`, `==surligné==`, `- liste`, `1. liste`, `- [ ] case`, `> citation` (textes de loi), `## intertitre`, `[[Titre d'un autre nœud]]` (lien cliquable), `| tableau |`. Les références d'articles (« art. 1128 », « art. L. 132-1 ») sont repérées automatiquement et ouvrent la recherche **Légifrance**.
+
+- **Tableaux** : bouton *Tableau* de la barre de mise en forme → une grille à remplir (1re ligne = en-têtes, + / − lignes et colonnes, Entrée = case du dessous). Toucher un tableau dans l'Aperçu le rouvre dans la grille. Ils apparaissent dans le Plan, l'impression, la révision et la recherche.
+- **Sources** : bouton *Source* → adresse + titre (ex. un arrêt sur Légifrance). Tous les liens de la note sont rassemblés dans la rubrique **Sources** du panneau.
 
 ### Révision
 

@@ -361,4 +361,34 @@
 .md a.md-wiki { text-decoration: none; border-bottom: 1.5px solid var(--primary); font-weight: 500; }
 .md a.md-wiki.missing { border-bottom-style: dashed; border-bottom-color: var(--outline); color: var(--on-surface-variant); }
 .md .md-art { font-family: var(--font-mono); font-size: .86em; white-space: nowrap; padding: 0 4px; border-radius: var(--shape-xs); border: 1px solid var(--outline-variant); }
+/* article → Légifrance : même étiquette, cliquable */
+.md a.md-art { color: inherit; text-decoration: none; transition: border-color var(--dur-xs) var(--ease-out), background-color var(--dur-xs) var(--ease-out); }
+@media (hover: hover) { .md a.md-art:hover { border-color: var(--on-surface); background: var(--surface-container); } }
+/* tableaux : défilement horizontal propre au tableau (jamais la page) */
+.md .md-table { margin: var(--sp-3) 0; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--outline-variant); border-radius: var(--shape-s); }
+.md table { border-collapse: collapse; min-width: 100%; font: var(--body-m); }
+.md th, .md td { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--outline-variant); min-width: 96px; }
+.md th + th, .md td + td { border-left: 1px solid var(--outline-variant); }
+.md thead th { font-weight: 600; background: var(--surface-container); border-bottom-color: var(--outline); }
+.md tbody tr:last-child td { border-bottom: 0; }
 .md strong { font-weight: 600; }
+
+/* ---- Éditeur de tableau (grille) -------------------------------------- */
+.dialog-table .dialog-icon + .dialog-title { margin-bottom: var(--sp-3); }
+.dialog-table .dialog-actions .danger { margin-right: auto; }
+.tbl-ed { display: grid; gap: var(--sp-3); min-width: 0; }
+.tbl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
+.tbl-tool { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 10px 0 8px; border-radius: var(--shape-full); border: 1px solid var(--outline-variant); font: var(--label-l); color: var(--on-surface); background: var(--surface-container-lowest); transition: background-color var(--dur-xs) var(--ease-out), border-color var(--dur-xs) var(--ease-out); }
+@media (hover: hover) { .tbl-tool:hover { border-color: var(--on-surface); } }
+.tbl-tool:active { background: var(--surface-container); }
+.tbl-count { margin-left: auto; font: var(--label-m); color: var(--on-surface-variant); }
+.tbl-scroll { max-width: 100%; max-height: min(52dvh, 420px); overflow: auto; border: 1px solid var(--outline-variant); border-radius: var(--shape-s); background: var(--surface-container-lowest); overscroll-behavior: contain; }
+.tbl-grid { border-collapse: collapse; }
+.tbl-grid th, .tbl-grid td { padding: 0; border-bottom: 1px solid var(--outline-variant); }
+.tbl-grid th + th, .tbl-grid td + td { border-left: 1px solid var(--outline-variant); }
+.tbl-grid tr:last-child td { border-bottom: 0; }
+.tbl-cell { display: block; width: 100%; min-width: 132px; height: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--on-surface); font: var(--body-m); outline: none; }
+.tbl-head .tbl-cell { font-weight: 600; background: var(--surface-container); }
+.tbl-cell:focus { box-shadow: inset 0 0 0 2px var(--on-surface); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.tbl-cell::placeholder { color: var(--on-surface-variant); opacity: .6; font-weight: 400; }
+.tbl-hint { font: var(--body-s); color: var(--on-surface-variant); }

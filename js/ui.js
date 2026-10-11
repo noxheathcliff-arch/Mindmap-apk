@@ -217,6 +217,94 @@
     });
   };
 
+  /**
+   * Éditeur de tableau en grille (Loi de Tesler : la syntaxe Markdown reste cachée).
+   * Résout { rows, align } | { remove: true } | null (annulé). La 1re ligne = en-têtes.
+   */
+  ui.tableEditor = function ({ rows, align, isNew = true } = {}) {
+    const data = (rows && rows.length ? rows : [['', ''], ['', ''], ['', '']]).map((r) => r.slice());
+    const al = (align || []).slice();
+    const width = () => Math.max(1, ...data.map((r) => r.length));
+    const norm = () => { const w = width(); for (const r of data) while (r.length < w) r.push(''); while (al.length < w) al.push(''); al.length = w; };
+    norm();
+    let cur = { r: 1, c: 0 };
+    const grid = h('table.tbl-grid');
+    const scroll = h('div.tbl-scroll', grid);
+    const count = h('span.tbl-count');
+
+    const focusCell = (r, c) => {
+      const el = grid.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+      if (el) { el.focus({ preventScroll: false }); el.select(); }
+    };
+    const paint = (focus) => {
+      norm();
+      U.clear(grid);
+      data.forEach((row, r) => {
+        const tr = h('tr', { class: r === 0 ? 'tbl-head' : '' });
+        row.forEach((v, c) => {
+          const inp = h('input.tbl-cell', {
+            type: 'text', value: v, dataset: { r, c }, autocomplete: 'off', spellcheck: 'true',
+            placeholder: r === 0 ? `En-tête ${c + 1}` : '', 'aria-label': r === 0 ? `En-tête, colonne ${c + 1}` : `Ligne ${r}, colonne ${c + 1}`,
+          });
+          inp.value = v;
+          inp.addEventListener('input', () => { data[r][c] = inp.value; });
+          inp.addEventListener('focus', () => { cur = { r, c }; });
+          inp.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            // Entrée : case du dessous (crée une ligne au bout du tableau)
+            e.preventDefault();
+            if (r === data.length - 1) { data.push(Array(width()).fill('')); paint({ r: r + 1, c }); }
+            else focusCell(r + 1, c);
+          });
+          tr.appendChild(h(r === 0 ? 'th' : 'td', inp));
+        });
+        grid.appendChild(tr);
+      });
+      count.textContent = `${data.length - 1} ligne${data.length > 2 ? 's' : ''} · ${width()} colonne${width() > 1 ? 's' : ''}`;
+      if (focus) requestAnimationFrame(() => focusCell(focus.r, focus.c));
+    };
+    const tool = (icon, label, fn, tip) => {
+      const b = h('button.tbl-tool', { type: 'button', 'aria-label': tip, 'data-tip': tip }, R.icon(icon, 18), h('span', label));
+      b.addEventListener('pointerdown', (e) => e.preventDefault()); // garde la case active
+      b.addEventListener('click', fn);
+      return b;
+    };
+    const tools = h('div.tbl-tools',
+      tool('plus', 'Ligne', () => { const at = Math.max(1, cur.r + 1); data.splice(at, 0, Array(width()).fill('')); paint({ r: at, c: cur.c }); }, 'Ajouter une ligne sous la case active'),
+      tool('trash', 'Ligne', () => {
+        if (data.length <= 2) { motion.shake(scroll); return; }
+        const at = Math.max(1, cur.r);
+        data.splice(at, 1);
+        paint({ r: Math.min(at, data.length - 1), c: cur.c });
+      }, 'Supprimer la ligne active'),
+      tool('plus', 'Colonne', () => { const at = cur.c + 1; for (const r of data) r.splice(at, 0, ''); al.splice(at, 0, ''); paint({ r: cur.r, c: at }); }, 'Ajouter une colonne à droite'),
+      tool('trash', 'Colonne', () => {
+        if (width() <= 1) { motion.shake(scroll); return; }
+        for (const r of data) r.splice(cur.c, 1);
+        al.splice(cur.c, 1);
+        paint({ r: cur.r, c: Math.min(cur.c, width() - 1) });
+      }, 'Supprimer la colonne active'),
+      count);
+    const body = h('div.tbl-ed', tools, scroll, h('p.tbl-hint', '1re ligne = en-têtes · Entrée : case du dessous · le tableau défile sur le côté.'));
+    paint();
+    const result = () => {
+      // lignes entièrement vides retirées (sauf les en-têtes)
+      const kept = [data[0], ...data.slice(1).filter((r) => r.some((c) => c.trim()))];
+      if (!kept.flat().some((c) => c.trim())) return isNew ? null : { remove: true };
+      if (kept.length < 2) kept.push(Array(width()).fill(''));
+      return { rows: kept, align: al.slice() };
+    };
+    const actions = [
+      !isNew ? { label: 'Supprimer', icon: 'trash', value: { remove: true }, danger: true } : null,
+      { label: 'Annuler', value: null },
+      { label: isNew ? 'Insérer' : 'Enregistrer', value: result, variant: 'filled' },
+    ].filter(Boolean);
+    return ui.dialog({
+      title: isNew ? 'Nouveau tableau' : 'Modifier le tableau', icon: 'table', body, cls: 'dialog-wide dialog-table', actions, dismissible: false,
+      onOpen: () => setTimeout(() => focusCell(isNew ? 0 : 1, 0), 60),
+    });
+  };
+
   /* ------------------------------------------------------------------ */
   /* Menus                                                              */
   /* ------------------------------------------------------------------ */

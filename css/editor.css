@@ -510,3 +510,23 @@
   .node { max-width: 220px; }
   .node.struct { max-width: 280px; }
 }
+
+/* icône de note sur le nœud : raccourci vers la note (cible élargie) */
+.node-has-note { position: relative; cursor: pointer; }
+.node-has-note::after { content: ""; position: absolute; inset: -10px; }
+@media (hover: hover) { .node-has-note:hover { color: var(--on-surface); } }
+
+/* Sources de la note */
+.pane-sources .btn { height: 32px; }
+.src-list { list-style: none; display: grid; gap: 2px; padding: 0; margin: 0 calc(-1 * var(--sp-2)); }
+.src-list li { min-width: 0; }
+.src-item { display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: 6px var(--sp-2); border-radius: var(--shape-s); color: var(--on-surface); text-decoration: none; min-width: 0; }
+.src-item:hover { background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
+.src-item > .ic { flex: none; color: var(--on-surface-variant); }
+.src-body { flex: 1; display: grid; min-width: 0; }
+.src-t { font: var(--body-m); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.src-h { font: var(--body-s); color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* tableau de l'aperçu : modifiable au toucher */
+.note-preview .md-table[data-table] { cursor: pointer; transition: border-color var(--dur-xs) var(--ease-out); }
+@media (hover: hover) { .note-preview .md-table[data-table]:hover { border-color: var(--on-surface); } }
+.src-slot { display: contents; }

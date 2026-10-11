@@ -356,7 +356,7 @@
       ['Partout', [[`${m} K`, 'Rechercher'], ['?', 'Afficher les raccourcis']]],
       ['Carte', [
         ['Tab', 'Ajouter un enfant (décomposer)'], ['Entrée', 'Ajouter un frère'], ['F2 · double-clic', 'Renommer'],
-        ['Espace', 'Ouvrir la note'], ['Suppr', 'Supprimer'], ['← ↑ → ↓', 'Naviguer entre les nœuds'],
+        ['Espace · 2e clic', 'Ouvrir la note (ou toucher son icône sur le nœud)'], ['Suppr', 'Supprimer'], ['← ↑ → ↓', 'Naviguer entre les nœuds'],
         ['L', 'Relier à un ou plusieurs nœuds (Entrée pour terminer)'], ['.', 'Replier / déplier'], [`${m} Z · ${m} ⇧ Z`, 'Annuler · Rétablir'],
         ['R', 'Ranger la carte'], ['F', 'Ajuster à l’écran'], ['+ / −', 'Zoom'], ['H', 'Mode masqué (révision)'],
         ['1 … 9', 'Changer le type du nœud'], ['Alt 1 · 2 · 3', 'Chapitre · Leçon · Section'], ['P', 'Basculer Carte / Plan'],

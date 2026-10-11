@@ -1561,6 +1561,10 @@
         gesture = { type: 'tap-collapse', id: e.pointerId, nodeId, start };
         return;
       }
+      if (nodeId && e.target.closest('.node-has-note') && !st.linking && !st.masked && !(e.shiftKey || e.metaKey || e.ctrlKey)) {
+        gesture = { type: 'tap-note', id: e.pointerId, nodeId, start };
+        return;
+      }
       if (nodeId) {
         const n = S.node(map, nodeId);
         gesture = { type: 'node', nodeId, start, moved: false, id: e.pointerId, shift: e.shiftKey || e.metaKey || e.ctrlKey, alt: e.altKey, pointerType: e.pointerType };
@@ -1669,6 +1673,8 @@
     }
 
     function onDragStart(e) {
+      // glisser depuis l'icône de note déplace le nœud, comme ailleurs sur le nœud
+      if (gesture.type === 'tap-note') Object.assign(gesture, { type: 'node', shift: false, alt: e.altKey, pointerType: e.pointerType });
       if (gesture.type === 'node') {
         if (st.masked || st.linking) { gesture.type = 'none'; return; }
         const id = gesture.nodeId;
@@ -1757,6 +1763,9 @@
         }
       } else if (g.type === 'tap-collapse') {
         toggleCollapse(g.nodeId);
+      } else if (g.type === 'tap-note') {
+        clearTimeout(st.noteTimer);
+        if (Math.hypot(e.clientX - g.start.x, e.clientY - g.start.y) < 10) openNote(g.nodeId);
       } else if (g.type === 'edge') {
         if (st.linking || st.masked) return;
         selectEdge(g.edgeId);
@@ -1831,8 +1840,12 @@
       if (st.masked) { reveal(id); return; }
       if (st.linking) { togglePick(id); return; }
       if (g.shift) { select(id, { toggle: true }); return; }
+      clearTimeout(st.noteTimer);
       if (dbl) { st.lastTap = null; select(id); startEdit(id); return; }
+      // 2e toucher sur le nœud déjà sélectionné → sa note (après la fenêtre du double-toucher)
+      const again = st.sel.size === 1 && st.sel.has(id) && !st.selEdge;
       select(id);
+      if (again) st.noteTimer = setTimeout(() => { if (!st.destroyed && !st.editing && st.sel.has(id)) openNote(id); }, 360);
     }
     function onTapBackground(e) {
       const now = Date.now();
@@ -2007,6 +2020,21 @@
         setTimeout(() => { const ta = pane.querySelector('.note-input'); if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); } }, m === 'docked' ? 50 : 360);
       }
     }
+    /** Ouvrir la note d'un nœud : Aperçu si elle existe (sans clavier), Écrire si elle est vide */
+    function openNote(id) {
+      const n = S.node(map, id);
+      if (!n) return;
+      if (!(st.sel.size === 1 && st.sel.has(id))) select(id);
+      const empty = !n.note.trim();
+      st.noteTab = empty ? 'write' : 'read';
+      openPane(empty);
+      requestAnimationFrame(() => {
+        const sec = pane.querySelector('.pane-note');
+        if (!sec) return;
+        const top = sec.getBoundingClientRect().top - paneInner.getBoundingClientRect().top - 8;
+        paneInner.scrollTo({ top: paneInner.scrollTop + top, behavior: motion.reduced() ? 'auto' : 'smooth' });
+      });
+    }
     let closeAnim = null;
     function closePane() {
       const m = paneMode();
@@ -2149,8 +2177,12 @@
         'aria-label': 'Note', spellcheck: 'true',
       });
       noteIn.value = n.note;
+      // la rubrique « Sources » suit la note pendant l'écriture (sans reconstruire le panneau)
+      const srcSlot = h('div.src-slot', sourcesSec(n, noteIn));
+      const refreshSources = U.debounce(() => { if (srcSlot.isConnected) { U.clear(srcSlot); const sec = sourcesSec(n, noteIn); if (sec) srcSlot.appendChild(sec); } }, 300);
       noteIn.addEventListener('input', () => {
         mutate(() => { n.note = noteIn.value; }, { coalesce: 'note:' + n.id, pane: false });
+        refreshSources();
       });
       noteIn.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') { e.stopPropagation(); noteIn.blur(); canvas.focus({ preventScroll: true }); }
@@ -2164,6 +2196,11 @@
       const preview = h('div.note-preview.md');
       const paintPreview = () => {
         preview.innerHTML = n.note.trim() ? R.md.render(n.note) : '<p class="muted">Aucune note pour l’instant. Passe en mode Écrire.</p>';
+        // toucher un tableau le rouvre dans la grille (les liens qu'il contient restent cliquables)
+        for (const t of U.$$('.md-table[data-table]', preview)) {
+          t.title = 'Toucher pour modifier le tableau';
+          t.addEventListener('click', (ev) => { if (!ev.target.closest('a')) editTable(n, noteIn, +t.dataset.table); });
+        }
         for (const a of U.$$('.md-wiki', preview)) {
           const target = map.nodes.find((x) => U.norm(x.title) === U.norm(a.dataset.wiki));
           if (!target) { a.classList.add('missing'); a.title = 'Aucun nœud de ce nom dans la carte'; }
@@ -2177,7 +2214,9 @@
         fmtBtn('heading', 'Intertitre', () => prefixLine(noteIn, '## ')),
         fmtBtn('bullet', 'Liste', () => prefixLine(noteIn, '- ')),
         fmtBtn('quote', 'Citation (texte de loi)', () => prefixLine(noteIn, '> ')),
-        fmtBtn('link', 'Lien vers un nœud [[…]]', () => wrapSel(noteIn, '[[', ']]')));
+        fmtBtn('link', 'Lien vers un nœud [[…]]', () => wrapSel(noteIn, '[[', ']]')),
+        fmtBtn('table', 'Tableau', () => tableAtCaret(n, noteIn)),
+        fmtBtn('globe', 'Source (lien web)', () => addSource(n, noteIn, true)));
       const noteTabs = h('div.segmented.seg-sm', { role: 'tablist' },
         noteTabBtn('write', 'Écrire', 'edit'), noteTabBtn('read', 'Aperçu', 'eye'));
       ui.segIndicator(noteTabs, 'note-tab');
@@ -2280,6 +2319,7 @@
         h('section.pane-sec.pane-note',
           h('div.pane-sec-head', h('h3.pane-sec-title', 'Note'), noteTabs),
           noteBody),
+        srcSlot,
         decomp,
         linksSec,
         revSec);
@@ -2295,6 +2335,86 @@
       return d <= 0 ? "aujourd'hui" : d === 1 ? 'demain' : `dans ${d} j`;
     }
     function fireInput(ta) { ta.dispatchEvent(new Event('input')); }
+
+    /* ---- Tableaux & sources : on écrit dans la note (Markdown), via le champ de note
+       pour garder un seul chemin d'écriture (annuler, sauvegarde, aperçu). ---- */
+    /** Remplace la note et rafraîchit le panneau (aperçu compris) */
+    function setNote(n, ta, value, caret) {
+      ta.value = value;
+      fireInput(ta);
+      if (st.noteTab === 'write' && ta.isConnected) {
+        ta.focus({ preventScroll: true });
+        if (caret != null) ta.setSelectionRange(caret, caret);
+      } else renderPane(true);
+    }
+    /** Le curseur est-il dans un tableau ? → le modifier ; sinon en créer un au curseur */
+    function tableAtCaret(n, ta) {
+      const line = ta.value.slice(0, ta.selectionStart).split('\n').length - 1;
+      const i = R.md.tables(ta.value).findIndex((t) => line >= t.start && line < t.end);
+      editTable(n, ta, i >= 0 ? i : null);
+    }
+    async function editTable(n, ta, idx) {
+      const list = R.md.tables(n.note);
+      const t = idx != null ? list[idx] : null;
+      const caret = ta.isConnected && st.noteTab === 'write' ? ta.selectionStart : n.note.length;
+      const res = await ui.tableEditor(t ? { rows: t.rows, align: t.align, isNew: false } : {});
+      if (!res || !S.node(map, n.id)) return;
+      const v = n.note;
+      if (t) {
+        const lines = v.replace(/\r\n?/g, '\n').split('\n');
+        const md = res.remove ? [] : R.md.tableToMd(res.rows, res.align).split('\n');
+        lines.splice(t.start, t.end - t.start, ...md);
+        setNote(n, ta, lines.join('\n').replace(/\n{3,}/g, '\n\n'));
+        ui.snack(res.remove ? 'Tableau supprimé' : 'Tableau mis à jour', { duration: 1600 });
+        return;
+      }
+      // nouveau tableau : sur ses propres lignes, séparé du texte par une ligne vide
+      const before = v.slice(0, caret), after = v.slice(caret);
+      const pre = !before ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+      const post = !after ? '\n' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
+      const block = pre + R.md.tableToMd(res.rows, res.align) + post;
+      setNote(n, ta, before + block + after, before.length + block.length);
+    }
+    /** Ajoute une source : titre + adresse → [titre](adresse) */
+    async function addSource(n, ta, atCaret) {
+      const inWrite = atCaret && ta.isConnected && st.noteTab === 'write';
+      const s0 = inWrite ? ta.selectionStart : n.note.length, e0 = inWrite ? ta.selectionEnd : n.note.length;
+      const picked = n.note.slice(s0, e0).trim();
+      const v = await ui.form({
+        title: 'Ajouter une source', icon: 'globe', ok: 'Ajouter',
+        fields: [
+          { key: 'url', label: 'Adresse', placeholder: 'https://www.legifrance.gouv.fr/…', required: true },
+          { key: 'title', label: 'Titre (facultatif)', value: picked, placeholder: 'Ex. Cass. civ. 1re, 3 mai 2000' },
+        ],
+      });
+      if (!v || !S.node(map, n.id)) return;
+      let url = v.url.trim();
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+      let host;
+      try { host = new URL(url).hostname; if (!host.includes('.')) throw new Error(); } catch (_) { ui.snack('Adresse invalide — vérifie le lien.'); return; }
+      const title = (v.title.trim() || host.replace(/^www\./, '')).replace(/[[\]]/g, '');
+      const link = `[${title}](${url.replace(/\)/g, '%29').replace(/\s/g, '%20')})`;
+      const val = n.note;
+      if (inWrite) {
+        setNote(n, ta, val.slice(0, s0) + link + val.slice(e0), s0 + link.length);
+      } else {
+        const sep = !val.trim() ? '' : val.endsWith('\n') ? '' : '\n';
+        setNote(n, ta, (val.trim() ? val : '') + sep + link);
+      }
+      ui.snack('Source ajoutée', { duration: 1600 });
+    }
+    /** Rubrique « Sources » : tous les liens web de la note, au même endroit */
+    function sourcesSec(n, ta) {
+      const list = R.md.links(n.note);
+      if (!list.length) return null;
+      return h('section.pane-sec.pane-sources',
+        h('div.pane-sec-head', h('h3.pane-sec-title', 'Sources'),
+          ui.btn('Ajouter', { icon: 'plus', variant: 'text', cls: 'btn-sm', onClick: () => addSource(n, ta, false) })),
+        h('ul.src-list', list.map((l) => h('li', h('a.src-item', { href: l.url, target: '_blank', rel: 'noopener' },
+          R.icon('globe', 18),
+          h('span.src-body', h('span.src-t', l.title), h('span.src-h', l.host)),
+          R.icon('external', 16))))));
+    }
     function wrapSel(ta, a, b) {
       const s = ta.selectionStart, e = ta.selectionEnd;
       const v = ta.value;
