@@ -202,12 +202,12 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Menu | scale depuis le déclencheur | 0.96 → 1, items +12 ms | 160 / 100 | out / in | follow-through |
 | Tooltip | opacité | 0 → 1 (400 ms de délai, 0 ensuite) | 120 | out | — |
 | Snackbar | y depuis le bord | 100 % + 16 px → 0 | 360 / 200 | out / in | pause au survol, swipe |
-| Nouveau nœud | translate + scale depuis la poignée du parent | parent → place, 0.6 → 1 | 240, cascade 20 ms | out | **clonage** |
+| Nouveau nœud | translate court depuis le côté du parent + opacité (taille fixe) | 18 px → 0 | 240, cascade 20 ms | out | **clonage** : le lien se dessine depuis le parent et arrive pile sur son bord |
 | Nouveau lien | stroke-dashoffset | 0 → longueur | 240 | out | tracé synchrone |
 | Repli / dépli | translate + scale vers / depuis le parent | — | 200 / 240 | in / out | relation parent-enfant |
 | Suppression | scale + opacité | 1 → 0.92 | 160 | in | pas d'anticipation (fréquent) |
 | Sélection | trait de surligneur | 0 → 100 % | 200 (0 au clavier) | out | signature |
-| Prise / dépôt d'un nœud | scale + ombre (pseudo-élément) | 1 → 1.03 → 1 | 160 / 300 | out / settle | dessin solide |
+| Prise / dépôt d'un nœud | élévation (ombre du pseudo-élément), **taille fixe** | ombre 0 → 1 | 160 | out | les liens restent accrochés au bord (M3 : un élément déplacé s'élève, il ne grossit pas) |
 | Ranger | x, y | pose → pose, +24 ms par niveau | 440 (+120) | x out, y in-out | **arcs**, overlap |
 | Caméra (ajuster, centrer) | transform | durée ∝ √distance | 200–480 | in-out | — |
 | Pan relâché | transform | inertie | — | décroissance | momentum |
@@ -217,6 +217,8 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Swipe de révision | x lié au doigt, tampons liés à x | — | ressort | snappy | parenting, momentum |
 | Fin de session | flamme, titre, bilan, barres, compteurs | séquence 4 temps | ≈ 1 s | pop / out | pic-fin, value change |
 | Thème | clip-path circulaire depuis le geste | 0 → rayon | 560 | in-out | masking |
+
+**Règle : jamais de `scale` sur un nœud relié.** Les liens s'accrochent à la boîte réelle du nœud ; un nœud grossi (même 3 %) déborde et paraît détaché de ses liens. Appui = luminosité, cible / sélection multiple / liaison réussie = anneau surligneur (pseudo-élément ou `box-shadow`), prise = élévation. Seule la suppression garde un léger rétrécissement : ses liens disparaissent en même temps.
 
 ### 5.4 Performance
 On n'anime que `transform` et `opacity`. Ombres portées par des pseudo-éléments dont seule l'opacité change ; grille de points sur son propre calque (translation modulo un pas) ; `will-change` posé seulement pendant le mouvement (le texte reste net après un zoom) ; panneau docké animé en `transform`, jamais en largeur ; barres de progression en `scaleX`.

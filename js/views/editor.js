@@ -419,8 +419,8 @@
       canvas.classList.toggle('is-linking', !!st.linking);
     }
 
-    /* Clonage (UX in Motion) : un nouvel élément naît de son parent — il part de la
-       poignée du parent et rejoint sa place. 240 ms ease-out, cascade de 20 ms. */
+    /* Clonage (UX in Motion) : un nouvel élément naît de son parent — son lien se dessine
+       depuis la poignée du parent pendant qu'il glisse en place. 240 ms ease-out, cascade 20 ms. */
     function anchorOf(id) {
       const p = S.node(map, id);
       const s = size(p);
@@ -435,9 +435,12 @@
         const a = anchorOf(from);
         const s = size(n);
         const dx = a.x - (n.x + s.w / 2), dy = a.y - (n.y + s.h / 2);
+        // court glissement depuis le côté du parent, sans changer de taille : le lien qui se
+        // dessine depuis le parent (drawBorn, même durée) arrive pile sur le bord du nœud
+        const k = Math.min(1, 18 / (Math.hypot(dx, dy) || 1));
         el.animate([
-          { translate: `${dx}px ${dy}px`, scale: 0.6, opacity: 0 },
-          { translate: '0px 0px', scale: 1, opacity: 1 },
+          { translate: `${dx * k}px ${dy * k}px`, opacity: 0 },
+          { translate: '0px 0px', opacity: 1 },
         ], { duration: motion.dur.md, delay: Math.min(i, 8) * 20, easing: motion.css.out, fill: 'backwards' });
       });
     }

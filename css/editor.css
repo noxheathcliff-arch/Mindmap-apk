@@ -101,7 +101,11 @@
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
   /* relâchement : petit ressort amorti (ζ ≈ 0.85), jamais de rebond visible */
-  transition: border-color var(--dur-sm) var(--ease-out), scale 300ms var(--ease-settle), opacity var(--dur-sm) var(--ease-out);
+  /* Jamais de « scale » sur un nœud relié : les liens s'accrochent à sa boîte réelle
+     (offsetWidth), un nœud grossi déborderait et paraîtrait détaché de ses liens.
+     Les états passent par l'élévation (ombre), un anneau ou la luminosité (M3 : un
+     élément déplacé s'élève, il ne grossit pas). */
+  transition: border-color var(--dur-sm) var(--ease-out), opacity var(--dur-sm) var(--ease-out), filter var(--dur-xs) var(--ease-out);
   outline: none;
 }
 /* Ombres d'élévation sur des pseudo-éléments : on anime leur opacité (composite),
@@ -186,28 +190,29 @@
 .node.selected { border-color: var(--on-surface); z-index: 2; }
 .node.t-chapitre.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
 .node.t-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
-.node:active:not(.editing):not(.dragging) { scale: .985; transition: scale var(--dur-xs) var(--ease-out); }
-/* prise en main : le nœud se soulève (scale 1.03 + ombre diffuse) */
-.node.dragging { scale: 1.03; z-index: 10; cursor: grabbing; transition: scale var(--dur-sm) var(--ease-out); }
+.node:active:not(.editing):not(.dragging) { filter: brightness(.95); }
+/* prise en main : le nœud se soulève (ombre diffuse d'élévation, sans changer de taille) */
+.node.dragging { z-index: 10; cursor: grabbing; }
 /* apparition sans parent (nœud libre, annuler/rétablir) : discrète */
 .node.born { animation: born var(--dur-sm) var(--ease-out) both; }
-@keyframes born { from { scale: .96; opacity: 0; } }
+@keyframes born { from { opacity: 0; } }
 /* suppression : sortie courte, pas d'anticipation (action fréquente) */
 .node.dying { animation: die var(--dur-sm) var(--ease-in) forwards; pointer-events: none; }
 @keyframes die { to { scale: .92; opacity: 0; } }
-.node.drop-target { scale: 1.04; border-color: var(--on-surface); box-shadow: 0 0 0 3px var(--primary); transition: scale var(--dur-sm) var(--ease-out); }
+.node.drop-target { border-color: var(--on-surface); box-shadow: 0 0 0 3px var(--primary); }
 /* nœud source d'une liaison : anneau qui respire (attente), sur pseudo-élément */
 .node.link-source::after { box-shadow: 0 0 0 3px var(--primary); opacity: 1; animation: ring 1.6s var(--ease-in-out) infinite; }
 /* éléments choisis pendant « Relier » (sélection multiple) */
-.node.link-pick { box-shadow: 0 0 0 3px var(--primary); scale: 1.02; }
+.node.link-pick { box-shadow: 0 0 0 3px var(--primary); }
 .node.link-pick .node-meta::after { content: "✓"; font: 700 12px/1 var(--font-plain); color: var(--on-surface); }
 @keyframes ring { 50% { opacity: .35; transform: scale(1.04); } }
 /* confirmation d'une liaison réussie (action secondaire) */
-.node.linked { animation: linked var(--dur-md) var(--ease-out); }
-@keyframes linked { from { scale: 1.05; } }
+/* l'anneau s'élargit et s'efface autour du nœud (sur un pseudo-élément : la boîte ne bouge pas) */
+.node.linked::after { animation: linked var(--dur-md) var(--ease-out); }
+@keyframes linked { from { opacity: 1; box-shadow: 0 0 0 3px var(--primary); } to { opacity: 0; box-shadow: 0 0 0 9px var(--primary); } }
 .node.collapsed { box-shadow: 4px 4px 0 -1px var(--surface), 4px 4px 0 0 var(--outline-variant), 8px 8px 0 -1px var(--surface), 8px 8px 0 0 var(--outline-variant); }
 .node.collapsed.selected { box-shadow: 4px 4px 0 -1px var(--surface), 4px 4px 0 0 var(--on-surface), 8px 8px 0 -1px var(--surface), 8px 8px 0 0 var(--on-surface); }
-.node.editing { cursor: text; scale: 1; }
+.node.editing { cursor: text; }
 .node.editing .hl { background-size: 100% 100%; color: var(--on-primary); -webkit-user-select: text; user-select: text; min-width: 4ch; display: inline-block; }
 .node.editing .hl:empty::before { content: attr(data-placeholder); color: color-mix(in srgb, var(--on-primary) 55%, transparent); font-style: italic; }
 
@@ -217,7 +222,7 @@
 .node.masked { cursor: help; }
 /* révélation = petite récompense : léger pop (seul overshoot du canvas, 3 %) */
 .node.revealing { animation: reveal var(--dur-md) var(--ease-pop); }
-@keyframes reveal { from { scale: .97; } }
+@keyframes reveal { from { box-shadow: 0 0 0 3px var(--primary); } }
 /* le trait de surligneur (signature) : 200 ms à la souris, instantané au clavier */
 .node .hl { transition: background-size 200ms var(--ease-out), color var(--dur-sm) var(--ease-out), filter 300ms var(--ease-out), opacity 300ms var(--ease-out); }
 .canvas.kbd .node .hl { transition: none; }
