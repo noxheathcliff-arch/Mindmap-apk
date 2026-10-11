@@ -23,18 +23,25 @@
     return base + '?' + q.toString();
   }
 
+  /* Échéancier : chaque jour est une pile de fiches vue de profil, empilée PAR COURS (encre et
+     papier du cours, du plus ancien en bas). On lit d'un coup combien et quoi revient quand. */
   function forecastCard(intro) {
     const days = S.forecast(7);
     const max = Math.max(1, ...days.map((d) => d.n));
     const fmt = (t, i) => (i === 0 ? 'Auj.' : i === 1 ? 'Dem.' : new Date(t).toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''));
     const total = days.slice(1).reduce((a, d) => a + d.n, 0);
+    const order = S.coursesSorted().slice().sort((a, b) => a.createdAt - b.createdAt);
+    const used = order.filter((c) => days.some((d) => d.by[c.id]));
+    const seg = (c, n) => R.courseArt.tint(h('span.fc-seg', { style: { flexGrow: String(n) }, title: `${c.title} · ${U.plural(n, 'carte')}` }), c);
     return h('section.hub-card', { 'aria-label': 'À venir' },
       h('div.hub-card-head', h('h2.hub-card-title', 'Échéancier'), h('span.hub-card-sub', total ? `${U.plural(total, 'fiche')} sur 6 jours` : 'Rien de prévu')),
-      h('div.fc', { role: 'img', 'aria-label': days.map((d, i) => `${fmt(d.day, i)} : ${d.n}`).join(', ') },
+      h('div.fc', { role: 'img', 'aria-label': days.map((d, i) => `${fmt(d.day, i)} : ${d.n}` + (used.length > 1 && d.n ? ` (${used.filter((c) => d.by[c.id]).map((c) => `${c.title} ${d.by[c.id]}`).join(', ')})` : '')).join(' ; ') },
         days.map((d, i) => h('div.fc-col', { class: (i === 0 ? 'is-today ' : '') + (d.n ? '' : 'zero'), title: `${new Date(d.day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' })} · ${U.plural(d.n, 'carte')}` },
           h('span.fc-n', d.n ? String(d.n) : ''),
-          h('span.fc-track', h('span.fc-bar', { style: { '--h': String(d.n / max), '--i': i }, class: intro ? 'grow' : '' })),
-          h('span.fc-l', fmt(d.day, i))))));
+          h('span.fc-track', h('span.fc-bar', { style: { '--h': String(d.n / max), '--i': i }, class: intro ? 'grow' : '' },
+            used.filter((c) => d.by[c.id]).map((c) => seg(c, d.by[c.id])))),
+          h('span.fc-l', fmt(d.day, i))))),
+      used.length > 1 ? h('div.fc-legend', used.map((c) => R.courseArt.tint(h('span.fc-key', h('i'), h('span', c.title)), c))) : null);
   }
 
   /* Carte de régularité : une case par jour, un tampon encré quand on a révisé ce jour-là
@@ -124,8 +131,11 @@
     const num = due ? h('span.dd-n', String(take)) : h('span.dd-n.dd-ok', R.icon('check', 36));
     const unit = h('span.dd-u', due ? (take > 1 ? 'cartes' : 'carte') : 'tout est à jour');
     const time = due ? h('span.dd-time', minutes(take)) : null;
+    // répartition par cours : un trait par cours, à l'encre du cours, long comme sa part du dû
+    const mix = due && tinted.length > 1 ? h('span.dd-mix', { 'aria-hidden': 'true' },
+      tinted.map((c) => R.courseArt.tint(h('i', { style: { flexGrow: String(S.courseStats(c.id).due) }, title: c.title }), c))) : null;
     const top = h('span.dd-top', { dataset: { hero: 'session:all:card' } },
-      h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'), num, unit, time);
+      h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'), num, unit, mix, time);
     const deck = h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${take} cartes` : 'Réviser quand même', onclick: start });
     for (let i = layersFor(take, size); i >= 1; i--) deck.appendChild(sheet(i));
     deck.appendChild(top);

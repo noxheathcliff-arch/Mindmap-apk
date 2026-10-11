@@ -184,6 +184,8 @@ Chaque section reprend un objet de l'étudiant en droit, sans quitter le vocabul
 - **À retravailler** : des fiches cornées (le coin plié = « à reprendre »), en bande horizontale.
 - **Session** : la fiche est un bristol (marge rouge, réponse posée sur une réglure de 28 px) ; noter au clavier ou au bouton fait frapper le tampon de la note avant le départ.
 - **Fin** : un relevé de session (ticket perforé, points de conduite, total, tampon de la série).
+- **Trousse d'encres** (les cartes restent blanches, la couleur vit dans les données et a toujours le même sens) : **bleue** = ce que tu as fait (tampons de régularité, « Compris », tampon du relevé) · **rouge de correction** = à reprendre (« À revoir ») · **encre du cours** = d'où vient la fiche (piles de l'échéancier empilées par cours avec légende, répartition du paquet du jour) · **surligneur** = maintenant (aujourd'hui, le compte).
+  Contrastes calculés (WCAG 2.2) : bleue #244d9e / #97c1f7 de 6,9 à 10,1:1, rouge #b02b27 / #ef958e de 5,7 à 8,4:1 sur carte, page et fond bas ; bord des piles ≥ 11:1 quelle que soit la teinte du cours. Le surligneur seul ne fait que 1,4:1 sur blanc : il ne porte jamais seul une forme (toujours sous un texte noir, 12:1, ou cerclé d'encre).
 
 ### 4.6 Carte de cours — la fiche et l'empreinte
 Une carte de cours n'est pas un dossier décoratif : c'est **la prochaine fiche à réviser**, posée sur la pile du cours.

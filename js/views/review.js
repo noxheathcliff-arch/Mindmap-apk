@@ -436,7 +436,7 @@
           ['maitrise', 'compris', 'revoir'].map((k, i) => {
             const n = h('span.rc-n', '0');
             counts.push([n, results[k], i]);
-            return h('div.rc-row', ui.mastery(k, 14), h('span.rc-l', S.RATINGS[k].label), h('span.rc-dots'),
+            return h('div.rc-row', { class: 'k-' + k }, ui.mastery(k, 14), h('span.rc-l', S.RATINGS[k].label), h('span.rc-dots'),
               h('span.rc-bar', h('span', { style: { '--w': String(results[k] / sum), '--i': i } })), n);
           }),
           h('div.rc-total', h('span', 'Total'), h('span.rc-dots'), totalEl),

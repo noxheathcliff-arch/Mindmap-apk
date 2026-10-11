@@ -620,13 +620,15 @@
     forecast(days = 7, scope = {}) {
       const maps = scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
       const t0 = U.startOfDay();
-      const out = Array.from({ length: days }, (_, i) => ({ day: t0 + i * U.DAY, n: 0 }));
+      // by : répartition par cours ({ courseId: n }), pour empiler les piles par cours
+      const out = Array.from({ length: days }, (_, i) => ({ day: t0 + i * U.DAY, n: 0, by: {} }));
       const now = Date.now();
+      const add = (i, m) => { out[i].n++; out[i].by[m.courseId] = (out[i].by[m.courseId] || 0) + 1; };
       for (const m of maps) for (const n of m.nodes) {
         if (!this.isReviewable(m, n)) continue;
-        if (this.isDue(n, now)) { out[0].n++; continue; }
+        if (this.isDue(n, now)) { add(0, m); continue; }
         const i = Math.floor((U.startOfDay(n.review.due) - t0) / U.DAY);
-        if (i > 0 && i < days) out[i].n++;
+        if (i > 0 && i < days) add(i, m);
       }
       return out;
     },

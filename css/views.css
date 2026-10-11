@@ -90,9 +90,13 @@
   position: relative; isolation: isolate;
   display: grid; padding: 10px 10px 0 0; min-width: 0;
 }
-.page-hub, .page-review { --rule: rgba(64, 104, 172, .15); --margin-rule: rgba(196, 64, 52, .30); }
-:root[data-theme="dark"] :is(.fiche, .page-hub, .page-review) { --rule: rgba(150, 178, 235, .11); --margin-rule: rgba(240, 120, 108, .30); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.fiche, .page-hub, .page-review) { --rule: rgba(150, 178, 235, .11); --margin-rule: rgba(240, 120, 108, .30); } }
+/* Trousse d'encres de la révision — la couleur a un sens, toujours le même :
+   bleue = ce que tu as fait (tampons, « Compris ») · rouge = à reprendre (« À revoir »)
+   · encre du cours = d'où vient la fiche · surligneur = maintenant.
+   Contrastes calculés (WCAG) : bleue 6,9 à 10,1:1, rouge 5,7 à 8,4:1 sur carte, page et fond bas. */
+.page-hub, .page-review { --rule: rgba(64, 104, 172, .15); --margin-rule: rgba(196, 64, 52, .30); --ink-blue: #244d9e; --ink-red: #b02b27; }
+:root[data-theme="dark"] :is(.fiche, .page-hub, .page-review) { --rule: rgba(150, 178, 235, .11); --margin-rule: rgba(240, 120, 108, .30); --ink-blue: #97c1f7; --ink-red: #ef958e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.fiche, .page-hub, .page-review) { --rule: rgba(150, 178, 235, .11); --margin-rule: rgba(240, 120, 108, .30); --ink-blue: #97c1f7; --ink-red: #ef958e; } }
 
 .fiche-under, .fiche::before {
   position: absolute; inset: 10px 10px 0 0; border-radius: var(--fiche-r); pointer-events: none;
@@ -386,9 +390,9 @@
   font: 600 13px/20px var(--font-plain); letter-spacing: .08em; text-transform: uppercase;
   border: 2px solid currentColor; opacity: 0;
 }
-.rate-stamp.left { left: var(--sp-6); rotate: -8deg; color: var(--on-surface); background: var(--surface-container-lowest); }
+.rate-stamp.left { left: var(--sp-6); rotate: -8deg; color: var(--ink-red); background: var(--surface-container-lowest); }
 .rate-stamp.right { right: var(--sp-6); rotate: 8deg; color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
-.rate-stamp.mid { left: 50%; translate: -50% 0; rotate: -4deg; color: var(--on-surface); background: var(--surface-container-high); }
+.rate-stamp.mid { left: 50%; translate: -50% 0; rotate: -4deg; color: var(--ink-blue); background: var(--surface-container-lowest); }
 /* noter au clavier ou au bouton : le tampon frappe (scale 1.5 → 1, 140 ms), la fiche accuse le coup */
 .rate-stamp.slam { animation: stamp-slam 140ms var(--ease-out) both; }
 @keyframes stamp-slam { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); } }
@@ -539,9 +543,9 @@
 .rc-bar > span { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(var(--w)); background: var(--on-surface); animation: grow var(--dur-xl) var(--ease-out) calc(420ms + var(--i, 0) * 90ms) both; }
 .rc-total { grid-template-columns: auto minmax(12px, 1fr) 28px; padding-top: 10px; border-top: 1px dashed var(--outline); font: var(--title-s); }
 .rc-stamp {
-  position: absolute; right: 66px; bottom: 16px; padding: 3px 10px; border: 2px solid var(--on-surface); border-radius: 4px;
-  box-shadow: inset 0 0 0 1.5px var(--surface-container-lowest), inset 0 0 0 3px var(--on-surface);
-  font: 700 12px/18px var(--font-plain); letter-spacing: .12em; text-transform: uppercase; color: var(--on-surface);
+  position: absolute; right: 66px; bottom: 16px; padding: 3px 10px; border: 2px solid var(--ink-blue); border-radius: 4px;
+  box-shadow: inset 0 0 0 1.5px var(--surface-container-lowest), inset 0 0 0 3px var(--ink-blue);
+  font: 700 12px/18px var(--font-plain); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-blue);
   transform: rotate(-9deg); opacity: .85; animation: rc-stamp var(--dur-md) var(--ease-out) 900ms both;
 }
 @keyframes rc-stamp { from { opacity: 0; transform: rotate(-9deg) scale(1.6); } }
@@ -608,7 +612,12 @@
 .dd-n { font: 400 52px/1 var(--font-brand); font-variant-numeric: tabular-nums; position: relative; z-index: 0; margin-top: 2px; }
 .dd-n::after { content: ""; position: absolute; z-index: -1; left: -4px; right: -4px; bottom: 6px; height: 14px; background: var(--hl-band); border-radius: 2px; }
 .dd-ok::after { display: none; }
+/* en sombre, le chiffre est clair : le surligneur devient un trait fin dessous (sinon blanc sur jaune) */
+:root[data-theme="dark"] .dd-n::after { height: 4px; bottom: 2px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dd-n::after { height: 4px; bottom: 2px; } }
 .dd-u { font: var(--title-s); }
+.dd-mix { display: flex; gap: 2px; width: 86px; height: 4px; margin-top: 6px; }
+.dd-mix i { display: block; min-width: 4px; flex-basis: 0; border-radius: 2px; background: var(--paper-ink); }
 .dd-time { position: absolute; right: 10px; bottom: 10px; padding: 2px 8px; border: 1.5px solid currentColor; border-radius: var(--shape-xs); font: 600 11px/16px var(--font-plain); letter-spacing: .04em; color: var(--on-surface-variant); transform: rotate(-4deg); }
 @media (hover: hover) {
   .daydeck:hover .dd-top { transform: translateY(-3px) rotate(-1deg); box-shadow: var(--elev-2); }
@@ -649,10 +658,11 @@
 /* le tampon : double cercle d'encre, incliné, encre un peu irrégulière (opacité) */
 .ly-stamp {
   display: grid; place-items: center; width: 92%; aspect-ratio: 1; border-radius: 50%;
-  border: 2px solid var(--on-surface); box-shadow: inset 0 0 0 2px var(--surface-container-lowest), inset 0 0 0 3.5px var(--on-surface);
-  color: var(--on-surface); transform: rotate(var(--r, -8deg)); opacity: .88;
+  border: 2px solid var(--ink-blue); box-shadow: inset 0 0 0 2px var(--surface-container-lowest), inset 0 0 0 3.5px var(--ink-blue);
+  color: var(--ink-blue); transform: rotate(var(--r, -8deg)); opacity: .92;
 }
-.ly-cell.is-today .ly-stamp { border-color: var(--on-surface); background: var(--hl-band); opacity: 1; }
+/* aujourd'hui : surligné ; le contour reste à l'encre (le jaune seul ne fait que 1,4:1 sur blanc) */
+.ly-cell.is-today .ly-stamp { border-color: var(--ink-blue); background: var(--primary); color: var(--on-primary); box-shadow: inset 0 0 0 2px var(--primary), inset 0 0 0 3.5px var(--ink-blue); opacity: 1; }
 .ly-stamp b { font: 700 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; }
 .ly-stamp.slam { animation: slam var(--dur-md) var(--ease-out) calc(320ms + var(--i, 0) * 45ms) both; }
 @keyframes slam { from { opacity: 0; transform: rotate(var(--r, -8deg)) scale(1.5); } 60% { opacity: 1; } }
@@ -661,14 +671,22 @@
 .fc-col { display: grid; grid-template-rows: 16px 1fr 16px; justify-items: center; gap: 4px; height: 100%; }
 .fc-n { font: 600 11px/16px var(--font-plain); font-variant-numeric: tabular-nums; color: var(--on-surface-variant); }
 .fc-track { position: relative; width: 100%; max-width: 28px; height: 100%; display: flex; align-items: flex-end; overflow: hidden; border-radius: 3px 3px 2px 2px; }
-/* chaque jour est une pile de fiches vue de profil : une tranche tous les 4 px */
-.fc-bar {
-  display: block; width: 100%; height: max(calc(var(--h) * 100%), 4px); border-radius: 3px 3px 2px 2px;
-  background: repeating-linear-gradient(to top, var(--surface-container-highest) 0 3px, var(--outline) 3px 4px);
-  border: 1px solid var(--outline);
+/* chaque jour est une pile de fiches vue de profil, empilée par cours (papier + tranches à
+   l'encre du cours ; bord ≥ 11:1 sur la carte quelle que soit la teinte) */
+.fc-bar { display: flex; flex-direction: column-reverse; width: 100%; height: max(calc(var(--h) * 100%), 4px); border-radius: 3px 3px 2px 2px; overflow: hidden; }
+.fc-seg {
+  display: block; min-height: 3px; flex-basis: 0;
+  background: repeating-linear-gradient(to top, var(--paper) 0 3px, color-mix(in srgb, var(--paper-ink) 55%, var(--paper)) 3px 4px);
+  box-shadow: inset 0 0 0 1px var(--paper-ink);
 }
-.fc-col.zero .fc-bar { background: none; border-style: dashed; border-color: var(--outline-variant); }
-.fc-col.is-today .fc-bar { background: repeating-linear-gradient(to top, var(--primary) 0 3px, color-mix(in srgb, var(--on-primary) 45%, var(--primary)) 3px 4px); border-color: color-mix(in srgb, var(--on-primary) 45%, var(--primary)); }
+.fc-seg:last-child { border-radius: 3px 3px 0 0; }
+.fc-col.zero .fc-bar { border: 1px dashed var(--outline-variant); height: 4px; }
+/* aujourd'hui : le surligneur passe sous l'étiquette et le compte (texte noir sur jaune : 12:1) */
+.fc-col.is-today .fc-l, .fc-col.is-today .fc-n { background: linear-gradient(var(--hl-band), var(--hl-band)) 0 var(--hl-pos) / 100% var(--hl-size) no-repeat; padding: 0 2px; }
+.fc-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: var(--sp-2); border-top: 1px solid var(--outline-variant); }
+.fc-key { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; font: var(--label-s); color: var(--on-surface-variant); }
+.fc-key i { width: 10px; height: 10px; flex: none; border-radius: 2px; background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--paper-ink); }
+.fc-key span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fc-col.is-today .fc-n { color: var(--on-surface); }
 .fc-l { font: 500 11px/16px var(--font-plain); color: var(--on-surface-variant); text-transform: capitalize; }
 .fc-col.is-today .fc-l { color: var(--on-surface); font-weight: 600; }
@@ -726,7 +744,7 @@
 .dog-k { font: var(--label-s); letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-variant); }
 .dog-t { font: var(--title-s); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .dog-s { font: var(--body-s); color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dog-stamp { position: absolute; left: 12px; bottom: 10px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 3px; font: 700 9px/15px var(--font-plain); letter-spacing: .08em; text-transform: uppercase; color: var(--on-surface-variant); transform: rotate(-5deg); }
+.dog-stamp { position: absolute; left: 12px; bottom: 10px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 3px; font: 700 9px/15px var(--font-plain); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-red); transform: rotate(-5deg); }
 @media (hover: hover) { .dog:hover { transform: translateY(-3px) rotate(-.8deg); } }
 .dog:active { transform: scale(.98); transition-duration: var(--dur-xs); }
 .dog:focus-visible { outline: 2px solid var(--on-surface); outline-offset: 2px; }
@@ -929,3 +947,10 @@
 .plan-sec.t-exemple .plan-note { font-style: italic; }
 /* badge « Lecture seule » des cartes (page du cours) */
 .ro-badge { display: inline-flex; align-items: center; gap: 4px; margin-right: var(--sp-2); padding: 1px 8px 1px 6px; border-radius: var(--shape-full); background: var(--surface-container-high); color: var(--on-surface); font: var(--label-s); vertical-align: 1px; }
+/* « À revoir » à l'encre rouge de correction, partout où il signale une fiche à reprendre */
+.end-weak-row .mastery { color: var(--ink-red); }
+/* relevé : chaque note à son encre (Maîtrisé reste noir : un jaune plein ne ferait que 1,4:1 sur blanc) */
+.rc-row.k-compris .rc-bar > span { background: var(--ink-blue); }
+.rc-row.k-revoir .rc-bar > span { background: var(--ink-red); }
+.rc-row.k-compris .mastery { color: var(--ink-blue); }
+.rc-row.k-revoir .mastery { color: var(--ink-red); }
