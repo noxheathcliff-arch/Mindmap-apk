@@ -106,9 +106,9 @@
     ui.menu(anchor, [
       { label: 'Modifier', icon: 'edit', onClick: () => R.actions.editCourse(c) },
       { label: 'Réviser ce cours', icon: 'cards', onClick: () => R.app.go('#/reviser/cours/' + c.id) },
-      { label: 'Exporter', icon: 'download', onClick: () => {
-        const data = { app: 'ratio', courses: [c], maps: S.mapsOf(c.id) };
-        U.download(`ratio-${U.slug(c.title)}.json`, JSON.stringify(data, null, 2));
+      { label: 'Exporter le cours (JSON)', icon: 'download', onClick: () => {
+        U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id));
+        ui.snack('Cours exporté · à importer avec Réglages › Importer');
       } },
       { divider: true },
       { label: 'Supprimer', icon: 'trash', danger: true, onClick: () => R.actions.deleteCourse(c, after) },

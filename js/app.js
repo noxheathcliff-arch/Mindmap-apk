@@ -305,90 +305,156 @@
     const motionSeg = makeSeg('Animations', 'settings-motion', [['system', 'Système', 'panel'], ['reduce', 'Réduites', 'pause'], ['full', 'Complètes', 'sparkle']],
       S.data.settings.motion || 'system', (v) => app.setMotion(v));
 
-    const fileInput = h('input', { type: 'file', accept: 'application/json,.json', hidden: true });
-    fileInput.addEventListener('change', async () => {
-      const f = fileInput.files[0];
-      if (!f) return;
-      const text = await f.text();
-      const mode = await ui.dialog({
-        title: 'Importer la sauvegarde', icon: 'upload',
-        body: h('p.dialog-text', 'Fusionner avec tes données actuelles, ou tout remplacer par le fichier ?'),
-        actions: [
-          { label: 'Annuler', value: null },
-          { label: 'Remplacer', value: 'replace', variant: 'outlined' },
-          { label: 'Fusionner', value: 'merge', variant: 'filled', primary: true },
-        ],
-      });
-      if (!mode) return;
-      try {
-        const r = S.importData(text, mode);
-        ui.snack(`Import réussi · ${U.plural(r.courses, 'cours', 'cours')}, ${U.plural(r.maps, 'carte')}`);
-        closeFn && closeFn();
-        app.go('#/', { replace: true });
-      } catch (e) {
-        ui.snack('Fichier illisible : ce n’est pas une sauvegarde Ratio.');
-      }
-    });
-
-    const colorsP = h('p.settings-p');
+    const colorsP = h('span.set-d');
     const paintColorsP = () => {
       const c = R.colors.settings();
-      const names = { familles: 'une couleur par famille de types', daltonisme: 'palette adaptée au daltonisme', perso: 'tes couleurs personnalisées' };
-      colorsP.textContent = c.mode === 'off'
-        ? 'Monochrome (réglage d’origine) : les types se distinguent par leur forme. Option pour repérer les types d’un coup d’œil.'
-        : `Actives : ${names[c.mode]}, intensité ${c.intensity === 'vif' ? 'vive' : 'douce'}. Le texte reste toujours lisible.`;
+      const names = { familles: 'une couleur par famille', daltonisme: 'palette daltonisme', perso: 'couleurs personnalisées' };
+      colorsP.textContent = c.mode === 'off' ? 'Monochrome : les types se distinguent par leur forme.' : `Actives : ${names[c.mode]}, intensité ${c.intensity === 'vif' ? 'vive' : 'douce'}.`;
     };
     paintColorsP();
-    const usageP = h('p.settings-p', 'Tout est enregistré sur cet appareil. Exporte régulièrement une sauvegarde.');
+
+    /* Données : jauge de stockage + date de la dernière sauvegarde (rappel au-delà de 14 jours) */
+    const size = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
+    const meter = h('span.set-meter', h('i'));
+    const usageD = h('span.set-d', 'Calcul…');
     S.usage().then((u) => {
-      const size = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
-      const where = u.backend === 'indexeddb' ? 'base locale du navigateur' : 'stockage local (limité à ~5 Mo)';
-      usageP.textContent = `Tout est enregistré sur cet appareil : ${size(u.bytes)} dans la ${where}${u.quota ? ` · ${size(u.quota)} disponibles` : ''}. Exporte régulièrement une sauvegarde.`;
+      const where = u.backend === 'indexeddb' ? 'base locale du navigateur' : 'stockage local (≈ 5 Mo)';
+      usageD.textContent = `${size(u.bytes)} utilisés${u.quota ? ` sur ${size(u.quota)}` : ''} · ${where}`;
+      meter.firstChild.style.transform = `scaleX(${u.quota ? Math.min(1, Math.max(0.01, u.bytes / u.quota)) : 0.02})`;
     });
+    const last = S.data.settings.lastExport;
+    const lastDays = last ? Math.floor((Date.now() - last) / U.DAY) : null;
+    const lastD = h('span.set-d', { class: last && lastDays < 14 ? '' : 'warn' },
+      last ? `Dernière sauvegarde ${U.relTime(last)}${lastDays >= 14 ? ' — pense à en refaire une' : ''}` : 'Aucune sauvegarde exportée pour l’instant');
+
+    const row = (icon, title, desc, control, cls = '') => h('div.set-row', { class: cls },
+      h('span.set-ic', R.icon(icon, 20)),
+      h('span.set-txt', h('span.set-t', title), desc || null),
+      control ? h('span.set-ctl', control) : null);
 
     const body = h('div.settings',
-      h('section.settings-sec',
-        h('h3.settings-h', 'Apparence'),
-        seg),
-      h('section.settings-sec',
-        h('h3.settings-h', 'Animations'),
-        motionSeg,
-        h('p.settings-p', '« Réduites » remplace les déplacements et zooms par des fondus courts.')),
-      h('section.settings-sec',
-        h('h3.settings-h', 'Couleurs des nœuds'),
-        colorsP,
-        h('div.settings-row', ui.btn('Personnaliser les couleurs', { icon: 'palette', variant: 'tonal', onClick: () => R.colors.openDialog().then(paintColorsP) }))),
-      h('section.settings-sec',
-        h('h3.settings-h', 'Données'),
-        usageP,
-        h('div.settings-row',
-          ui.btn('Exporter la sauvegarde', { icon: 'download', variant: 'tonal', onClick: () => {
+      h('section.set-group', h('h3.settings-h', 'Apparence'),
+        h('div.set-card',
+          row('sun', 'Thème', null, seg, 'stack'),
+          row('sparkle', 'Animations', h('span.set-d', '« Réduites » remplace déplacements et zooms par des fondus courts.'), motionSeg, 'stack'),
+          row('palette', 'Couleurs des nœuds', colorsP, ui.btn('Personnaliser', { variant: 'tonal', onClick: () => R.colors.openDialog().then(paintColorsP) })))),
+      h('section.set-group', h('h3.settings-h', 'Données'),
+        h('div.set-card',
+          row('folder', 'Stockage sur cet appareil', h('span.set-dd', usageD, meter)),
+          row('download', 'Sauvegarde', lastD, ui.btn('Exporter tout', { icon: 'download', variant: 'tonal', onClick: () => {
             U.download(`ratio-sauvegarde-${U.dayKey()}.json`, S.exportAll());
+            lastD.textContent = 'Dernière sauvegarde à l’instant'; lastD.classList.remove('warn');
             ui.snack('Sauvegarde téléchargée');
-          } }),
-          ui.btn('Importer', { icon: 'upload', variant: 'outlined', onClick: () => fileInput.click() }),
-          fileInput)),
-      h('section.settings-sec',
-        h('h3.settings-h', 'Aide'),
-        h('div.settings-row',
-          ui.btn('Raccourcis clavier', { icon: 'keyboard', variant: 'text', onClick: () => { closeFn(); setTimeout(showShortcuts, 220); } }),
-          ui.btn('Revoir le guide', { icon: 'help', variant: 'text', onClick: () => { closeFn(); setTimeout(onboarding, 220); } }))),
-      h('section.settings-sec.settings-danger',
-        h('h3.settings-h', 'Zone sensible'),
-        ui.btn('Tout effacer', { icon: 'trash', variant: 'text', cls: 'danger', onClick: async () => {
-          const ok = await ui.confirm('Tout effacer ?', 'Tous les cours, cartes et notes de cet appareil seront supprimés. Exporte une sauvegarde avant si besoin.', { ok: 'Tout effacer', danger: true, icon: 'trash' });
-          if (!ok) return;
-          S.reset();
-          closeFn && closeFn();
-          app.go('#/', { replace: true });
-          ui.snack('Données effacées');
-        } })),
-      h('p.settings-foot', 'Ratio · fonctionne hors-ligne · installable sur Android et desktop'));
+          } })),
+          row('upload', 'Importer', h('span.set-d', 'Une sauvegarde, un cours exporté ou un cours généré par une IA (fichier ou texte collé).'),
+            ui.btn('Importer…', { icon: 'upload', variant: 'outlined', onClick: () => { closeFn(); setTimeout(() => openImport(), 220); } })))),
+      h('section.set-group', h('h3.settings-h', 'Aide'),
+        h('div.set-card',
+          row('keyboard', 'Raccourcis clavier', null, ui.btn('Afficher', { variant: 'text', onClick: () => { closeFn(); setTimeout(showShortcuts, 220); } })),
+          row('help', 'Guide de démarrage', null, ui.btn('Revoir', { variant: 'text', onClick: () => { closeFn(); setTimeout(onboarding, 220); } })))),
+      h('section.set-group', h('h3.settings-h', 'Zone sensible'),
+        h('div.set-card.set-danger',
+          row('trash', 'Tout effacer', h('span.set-d', 'Supprime tous les cours, cartes et notes de cet appareil.'),
+            ui.btn('Effacer…', { variant: 'text', cls: 'danger', onClick: async () => {
+              const ok = await ui.confirm('Tout effacer ?', 'Tous les cours, cartes et notes de cet appareil seront supprimés. Exporte une sauvegarde avant si besoin.', { ok: 'Tout effacer', danger: true, icon: 'trash' });
+              if (!ok) return;
+              S.reset();
+              closeFn && closeFn();
+              app.go('#/', { replace: true });
+              ui.snack('Données effacées');
+            } })))),
+      h('p.settings-foot', 'Ratio · fonctionne hors ligne · installable sur Android et ordinateur'));
 
     let closeFn = null;
     ui.dialog({ title: 'Réglages', icon: 'settings', body, cls: 'dialog-settings', actions: [{ label: 'Fermer', value: true, variant: 'text' }], onOpen: (_, close) => { closeFn = close; } });
   }
   app.openSettings = openSettings;
+
+  /* ------------------------------------------------------------------ */
+  /* Import : source (déposer · choisir · coller) → aperçu → mode → import (annulable)
+     Le texte collé depuis une IA est lu tel quel : balises ```json, texte autour, virgules en
+     trop sont tolérés ; ce qui a été corrigé est dit dans l'aperçu.                         */
+  /* ------------------------------------------------------------------ */
+  function openImport() {
+    let parsed = null, mode = 'add', closeFn = null;
+    const KIND = { backup: 'Sauvegarde complète', course: 'Cours', map: 'Carte seule', maps: 'Cartes' };
+    const fileInput = h('input', { type: 'file', accept: 'application/json,.json,.txt', hidden: true });
+    const drop = h('div.imp-drop', { tabindex: '0', role: 'button', autofocus: true, 'aria-label': 'Choisir un fichier à importer' },
+      R.icon('upload', 28), h('b', 'Dépose un fichier .json ici'), h('span', 'ou touche pour en choisir un'));
+    const paste = h('textarea.imp-paste', { id: 'imp-paste', rows: 5, spellcheck: 'false', placeholder: 'Ou colle ici le JSON (par exemple la réponse d’une IA, balises ```json comprises)' });
+    const preview = h('div.imp-preview', { 'aria-live': 'polite' });
+    const go = ui.btn('Importer', { icon: 'upload', variant: 'filled', disabled: true });
+    const cancel = ui.btn('Annuler', { variant: 'text', onClick: () => closeFn && closeFn() });
+
+    const modeRow = (v, title, text, extra = '') => {
+      const b = h('button.list-item.choice', { type: 'button', role: 'radio', 'aria-checked': String(mode === v), class: extra, dataset: { v } },
+        h('span.choice-l', h('b', title), h('span.choice-sub', text)), h('span.choice-check', R.icon('check', 20)));
+      b.addEventListener('click', () => { mode = v; U.$$('.imp-modes .choice', preview).forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
+      return b;
+    };
+    function paint(err) {
+      U.clear(preview);
+      go.disabled = !parsed;
+      if (err) { preview.appendChild(h('p.imp-err', R.icon('close', 18), h('span', err))); return; }
+      if (!parsed) return;
+      const st = parsed.stats;
+      const chip = (n, w) => h('span.imp-stat', h('b', String(n)), ' ' + w);
+      const courses = parsed.data.courses;
+      preview.append(
+        h('div.imp-sum',
+          h('p.overline', KIND[parsed.kind] || 'Données'),
+          h('div.imp-stats', chip(st.courses, st.courses > 1 ? 'cours' : 'cours'), chip(st.maps, st.maps > 1 ? 'cartes' : 'carte'), chip(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'), chip(st.notes, st.notes > 1 ? 'notes' : 'note'), chip(st.edges, st.edges > 1 ? 'liens' : 'lien')),
+          h('ul.imp-courses', courses.slice(0, 6).map((c) => {
+            const n = parsed.data.maps.filter((m) => m.courseId === c.id).length;
+            return h('li', h('b', c.title), h('span', ` · ${U.plural(n, 'carte')}`));
+          }), courses.length > 6 ? h('li.muted', `… et ${courses.length - 6} autres`) : null)),
+        parsed.fixes.length || parsed.issues.length ? h('div.imp-notes',
+          h('p.overline', 'Corrigé à la lecture'),
+          h('ul', [...parsed.fixes.map((f) => f[0].toUpperCase() + f.slice(1)), ...parsed.issues].map((t) => h('li', R.icon('check', 14), h('span', t))))) : null,
+        h('div.imp-modes.choice-list.form-choice', { role: 'radiogroup', 'aria-label': 'Comment importer' },
+          modeRow('add', 'Ajouter en copie (conseillé)', 'Les cours importés s’ajoutent aux tiens. Rien n’est écrasé.'),
+          parsed.collide.courses || parsed.collide.maps
+            ? modeRow('update', 'Mettre à jour', `Remplace les éléments déjà présents (${[parsed.collide.courses ? U.plural(parsed.collide.courses, 'cours', 'cours') : null, parsed.collide.maps ? U.plural(parsed.collide.maps, 'carte') : null].filter(Boolean).join(', ')}) par ceux du fichier.`)
+            : null,
+          modeRow('replace', 'Tout remplacer', 'Efface tes données actuelles et ne garde que le fichier.', 'imp-danger')));
+      preview.classList.remove('in'); void preview.offsetWidth; preview.classList.add('in');
+    }
+    function analyse(text) {
+      try { parsed = S.parseImport(text); mode = 'add'; paint(); }
+      catch (e) { parsed = null; paint(e.message || 'Lecture impossible.'); }
+    }
+    const readFile = async (f) => { if (!f) return; paste.value = ''; analyse(await f.text()); };
+    fileInput.addEventListener('change', () => readFile(fileInput.files[0]));
+    drop.addEventListener('click', () => fileInput.click());
+    drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); });
+    paste.addEventListener('input', U.debounce(() => { if (paste.value.trim()) analyse(paste.value); else { parsed = null; paint(); } }, 250));
+
+    go.addEventListener('click', async () => {
+      if (!parsed) return;
+      if (mode === 'replace') {
+        const ok = await ui.confirm('Tout remplacer ?', 'Tes cours, cartes et notes actuels seront remplacés par le fichier. Tu pourras annuler juste après.', { ok: 'Tout remplacer', danger: true, icon: 'upload' });
+        if (!ok) return;
+      }
+      const r = S.applyImport(parsed, mode);
+      closeFn && closeFn();
+      app.go(r.courses.length === 1 && mode !== 'replace' ? '#/cours/' + r.courses[0] : '#/', { replace: true });
+      ui.snack(`Importé · ${U.plural(r.courses.length, 'cours', 'cours')}, ${U.plural(r.maps, 'carte')}`, {
+        action: 'Annuler', duration: 8000,
+        onAction: () => { S.restoreSnapshot(r.snapshot); app.go('#/', { replace: true }); ui.snack('Import annulé'); },
+      });
+    });
+
+    const body = h('div.imp',
+      drop, fileInput,
+      h('label.imp-or', { for: 'imp-paste' }, 'ou'),
+      paste, preview,
+      h('div.dialog-actions', cancel, go));
+    ui.dialog({ title: 'Importer', icon: 'upload', body, cls: 'dialog-wide dialog-import', onOpen: (_, close) => { closeFn = close; } });
+  }
+  app.openImport = openImport;
 
   /* ------------------------------------------------------------------ */
   /* Raccourcis                                                         */

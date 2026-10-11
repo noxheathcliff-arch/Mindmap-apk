@@ -167,18 +167,28 @@
     return edges;
   }
 
-  function sanitize(d) {
+  /* sanitize(d, rep) : rep (facultatif) compte ce qui a été corrigé pendant la normalisation,
+     pour le rapport d'import (rien n'est perdu en silence). */
+  function sanitize(d, rep = null) {
     const out = blank();
     if (!d || typeof d !== 'object') return out;
+    const note = (k, n = 1) => { if (rep) rep[k] = (rep[k] || 0) + n; };
     out.courses = Array.isArray(d.courses) ? d.courses.filter((c) => c && c.id).map((c) => ({
       id: String(c.id), title: String(c.title || 'Sans titre'), description: String(c.description || ''),
       createdAt: +c.createdAt || Date.now(), updatedAt: +c.updatedAt || Date.now(),
     })) : [];
     const courseIds = new Set(out.courses.map((c) => c.id));
     out.maps = Array.isArray(d.maps) ? d.maps.filter((m) => m && m.id).map((m) => {
-      const nodes = Array.isArray(m.nodes) ? m.nodes.filter((n) => n && n.id).map((n) => ({
+      const rawNodes = Array.isArray(m.nodes) ? m.nodes : [];
+      const seenIds = new Set();
+      const nodes = rawNodes.filter((n) => {
+        if (!n || n.id == null) { note('nodesWithoutId'); return false; }
+        if (seenIds.has(String(n.id))) { note('duplicateNodes'); return false; }
+        seenIds.add(String(n.id));
+        return true;
+      }).map((n) => ({
         id: String(n.id),
-        type: TYPES[n.type] ? n.type : 'idee',
+        type: TYPES[n.type] ? n.type : (note('unknownTypes'), 'idee'),
         title: String(n.title ?? ''),
         note: String(n.note ?? ''),
         x: Number.isFinite(+n.x) ? +n.x : 0,
@@ -189,29 +199,48 @@
           box: U.clamp(+n.review.box || 0, 0, 5), due: +n.review.due || 0, last: +n.review.last || 0,
           rating: RATINGS[n.review.rating] ? n.review.rating : null,
         } : { box: 0, due: 0, last: 0, rating: null },
-      })) : [];
+      }));
       const ids = new Set(nodes.map((n) => n.id));
-      const edges = Array.isArray(m.edges) ? m.edges.filter((e) => e && ids.has(e.from) && ids.has(e.to) && e.from !== e.to)
-        .map((e) => ({
-          id: String(e.id || U.uid('e')), from: e.from, to: e.to, kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || ''),
+      const edges = Array.isArray(m.edges) ? m.edges.filter((e) => {
+        const ok = e && ids.has(String(e.from)) && ids.has(String(e.to)) && String(e.from) !== String(e.to);
+        if (!ok) note('droppedEdges');
+        return ok;
+      }).map((e) => ({
+          id: String(e.id || U.uid('e')), from: String(e.from), to: String(e.to), kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || ''),
           ...(e.group ? { group: String(e.group) } : {}),
         })) : [];
       // une seule arête hiérarchique entrante par nœud
       const seen = new Set();
       for (const e of edges) {
         if (e.kind !== 'tree') continue;
-        if (seen.has(e.to)) e.kind = 'link'; else seen.add(e.to);
+        if (seen.has(e.to)) { e.kind = 'link'; note('extraParents'); } else seen.add(e.to);
       }
+      // positions absentes (ou toutes identiques) : la carte sera rangée automatiquement à l'ouverture
+      const placed = rawNodes.filter((n) => n && Number.isFinite(+n.x) && Number.isFinite(+n.y) && n.x !== null && n.y !== null);
+      const stacked = nodes.length > 1 && (placed.length < nodes.length || nodes.every((n) => n.x === nodes[0].x && n.y === nodes[0].y));
+      if (stacked && rep) note('autoLayout');
       normalizeGroups(edges);
       return {
         id: String(m.id), courseId: String(m.courseId || ''), title: String(m.title || 'Sans titre'),
         createdAt: +m.createdAt || Date.now(), updatedAt: +m.updatedAt || Date.now(),
         viewport: m.viewport && Number.isFinite(+m.viewport.k) ? { x: +m.viewport.x || 0, y: +m.viewport.y || 0, k: +m.viewport.k || 1 } : null,
         nodes, edges,
-        ...(m.needsLayout ? { needsLayout: true } : {}),
+        ...(m.needsLayout || (rep && stacked) ? { needsLayout: true } : {}),
         ...(m.readOnly ? { readOnly: true } : {}),
       };
-    }).filter((m) => courseIds.has(m.courseId)) : [];
+    }).filter((m) => {
+      if (courseIds.has(m.courseId)) return true;
+      // à l'import, une carte sans cours connu n'est pas perdue : elle rejoint un cours « Importé »
+      if (rep) {
+        let orphan = out.courses.find((c) => c._orphans);
+        if (!orphan) { orphan = { id: U.uid('c'), title: 'Importé', description: 'Cartes sans cours dans le fichier importé', createdAt: Date.now(), updatedAt: Date.now(), _orphans: true }; out.courses.push(orphan); }
+        m.courseId = orphan.id;
+        note('orphanMaps');
+        return true;
+      }
+      return false;
+    }) : [];
+    for (const c of out.courses) delete c._orphans;
     if (d.settings && typeof d.settings === 'object') {
       out.settings.theme = ['system', 'light', 'dark'].includes(d.settings.theme) ? d.settings.theme : 'system';
       out.settings.motion = ['system', 'reduce', 'full'].includes(d.settings.motion) ? d.settings.motion : 'system';
@@ -233,6 +262,7 @@
       }
       out.settings.reviewLog = d.settings.reviewLog && typeof d.settings.reviewLog === 'object' ? { ...d.settings.reviewLog } : {};
       out.settings.sessionSize = [10, 20, 0].includes(+d.settings.sessionSize) ? +d.settings.sessionSize : 20; // 0 = toutes
+      out.settings.lastExport = +d.settings.lastExport || 0;
     }
     return out;
   }
@@ -677,35 +707,128 @@
     },
 
     /* ---------------- Import / export ---------------- */
+    /* Format de fichier : { format: 'ratio', version: 2, kind: 'backup' | 'course', courses, maps[, settings] }.
+       À l'import, on accepte aussi une carte seule ({ nodes, edges }) et { course, maps } (un cours). */
     exportAll() {
-      return JSON.stringify({ app: 'ratio', exportedAt: new Date().toISOString(), ...this.data }, null, 2);
+      this.data.settings.lastExport = Date.now();
+      this.save();
+      return JSON.stringify({ format: 'ratio', version: 2, kind: 'backup', exportedAt: new Date().toISOString(), ...this.data }, null, 2);
     },
-    importData(text, mode = 'merge') {
-      const parsed = JSON.parse(text);
-      // tolérant : accepte une sauvegarde complète, une carte seule, ou un cours exporté
-      let incoming;
-      if (parsed && parsed.maps && parsed.courses) incoming = sanitize(parsed);
-      else if (parsed && parsed.nodes) {
+    /** Un cours et ses cartes, sans les réglages ni l'historique de révision des autres cours */
+    exportCourse(id) {
+      const c = this.course(id);
+      if (!c) return null;
+      return JSON.stringify({ format: 'ratio', version: 2, kind: 'course', exportedAt: new Date().toISOString(), courses: [c], maps: this.mapsOf(id) }, null, 2);
+    },
+
+    /**
+     * Lit un texte à importer, sans rien modifier. Tolérant (loi de Postel) : retire un BOM, les
+     * balises ```json d'une réponse d'IA, le texte autour de l'objet, les virgules finales et les
+     * guillemets typographiques. Renvoie l'aperçu, les corrections faites et les collisions
+     * d'identifiants avec les données actuelles — ou lève une erreur lisible.
+     */
+    parseImport(text) {
+      const fixes = [];
+      let t = String(text || '').replace(/^﻿/, '').trim();
+      if (!t) throw new Error('Le fichier ou le texte est vide.');
+      const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      if (fence) { t = fence[1].trim(); fixes.push('balises de code retirées'); }
+      const start = t.search(/[[{]/);
+      if (start > 0) { t = t.slice(start); fixes.push('texte avant le JSON ignoré'); }
+      const endObj = Math.max(t.lastIndexOf('}'), t.lastIndexOf(']'));
+      if (endObj >= 0 && endObj < t.length - 1) { t = t.slice(0, endObj + 1); fixes.push('texte après le JSON ignoré'); }
+      let parsed;
+      try { parsed = JSON.parse(t); } catch (e1) {
+        const repaired = t.replace(/[“”]/g, '"').replace(/,\s*([}\]])/g, '$1');
+        try { parsed = JSON.parse(repaired); fixes.push('virgules en trop ou guillemets typographiques corrigés'); } catch (e2) {
+          const m = String(e1.message).match(/position (\d+)/);
+          let where = '';
+          if (m) { const pos = +m[1]; const before = t.slice(0, pos); where = ` (ligne ${before.split('\n').length}, colonne ${pos - before.lastIndexOf('\n')})`; }
+          throw new Error(`JSON invalide${where}. Vérifie qu'il est complet (accolades et crochets fermés).`);
+        }
+      }
+      // reconnaître la forme
+      let kind, raw;
+      if (Array.isArray(parsed) && parsed.every((x) => x && x.nodes)) {
+        kind = 'maps';
         const c = { id: U.uid('c'), title: 'Importé', description: '', createdAt: Date.now(), updatedAt: Date.now() };
-        incoming = sanitize({ courses: [c], maps: [{ ...parsed, courseId: c.id }] });
-      } else throw new Error('Format non reconnu');
+        raw = { courses: [c], maps: parsed.map((m) => ({ ...m, courseId: c.id })) };
+      } else if (parsed && Array.isArray(parsed.maps) && (Array.isArray(parsed.courses) || parsed.course)) {
+        kind = parsed.kind === 'backup' || (parsed.settings && parsed.courses && parsed.courses.length > 1) ? 'backup' : 'course';
+        raw = parsed.course ? { courses: [{ ...parsed.course, id: parsed.course.id || U.uid('c') }], maps: parsed.maps.map((m) => ({ ...m, courseId: m.courseId || parsed.course.id })) } : parsed;
+        if (parsed.course && !parsed.course.id) for (const m of raw.maps) m.courseId = raw.courses[0].id;
+      } else if (parsed && Array.isArray(parsed.nodes)) {
+        kind = 'map';
+        const c = { id: U.uid('c'), title: 'Importé', description: '', createdAt: Date.now(), updatedAt: Date.now() };
+        raw = { courses: [c], maps: [{ ...parsed, id: parsed.id || U.uid('m'), courseId: c.id }] };
+      } else throw new Error('Ce JSON ne ressemble pas à des données Ratio : il faut des cours et des cartes (« courses », « maps ») ou une carte (« nodes »).');
+      const rep = {};
+      const data = sanitize(raw, rep);
+      if (parsed.settings) data.settings = { ...data.settings, ...sanitize({ settings: parsed.settings }).settings };
+      // aperçu
+      let nodes = 0, edges = 0, notes = 0, links = 0, labels = 0;
+      for (const m of data.maps) {
+        nodes += m.nodes.length; edges += m.edges.length;
+        notes += m.nodes.filter((n) => n.note.trim()).length;
+        links += m.edges.filter((e) => e.kind === 'link').length;
+        labels += m.edges.filter((e) => e.label).length;
+      }
+      const collide = {
+        courses: data.courses.filter((c) => this.course(c.id)).length,
+        maps: data.maps.filter((m) => this.map(m.id)).length,
+      };
+      const issues = [];
+      const say = (k, f) => { if (rep[k]) issues.push(f(rep[k])); };
+      say('unknownTypes', (n) => `${U.plural(n, 'nœud')} au type inconnu → « Idée »`);
+      say('droppedEdges', (n) => `${U.plural(n, 'lien')} vers un nœud absent, ignoré${n > 1 ? 's' : ''}`);
+      say('extraParents', (n) => `${U.plural(n, 'second parent')} transformé${n > 1 ? 's' : ''} en renvoi`);
+      say('duplicateNodes', (n) => `${U.plural(n, 'nœud')} en double, ignoré${n > 1 ? 's' : ''}`);
+      say('nodesWithoutId', (n) => `${U.plural(n, 'nœud')} sans identifiant, ignoré${n > 1 ? 's' : ''}`);
+      say('orphanMaps', (n) => `${U.plural(n, 'carte')} sans cours → rangée${n > 1 ? 's' : ''} dans « Importé »`);
+      say('autoLayout', (n) => `${U.plural(n, 'carte')} sans positions → rangée${n > 1 ? 's' : ''} automatiquement à l’ouverture`);
+      return { kind, data, fixes, issues, collide, stats: { courses: data.courses.length, maps: data.maps.length, nodes, edges, notes, links, labels } };
+    },
+
+    /**
+     * Applique une analyse. mode : 'add' (ajouter en copie : identifiants neufs, rien n'est écrasé)
+     * | 'update' (même identifiants : remplace les versions existantes) | 'replace' (tout remplacer).
+     * Renvoie un instantané pour annuler (restoreSnapshot).
+     */
+    applyImport(parsed, mode = 'add') {
+      const snapshot = JSON.stringify(this.data);
+      const inc = JSON.parse(JSON.stringify(parsed.data));
       if (mode === 'replace') {
-        incoming.settings = { ...this.data.settings, ...incoming.settings, onboarded: true };
-        this.data = incoming;
+        inc.settings = { ...this.data.settings, ...inc.settings, onboarded: true };
+        this.data = inc;
       } else {
-        for (const c of incoming.courses) {
+        if (mode === 'add') {
+          // identifiants neufs pour les cours et les cartes (les nœuds sont propres à leur carte)
+          const cid = new Map();
+          for (const c of inc.courses) { const n = U.uid('c'); cid.set(c.id, n); c.id = n; c.createdAt = c.updatedAt = Date.now(); }
+          for (const m of inc.maps) { m.id = U.uid('m'); m.courseId = cid.get(m.courseId) || m.courseId; }
+        }
+        for (const c of inc.courses) {
           const ex = this.course(c.id);
           if (ex) Object.assign(ex, c); else this.data.courses.push(c);
         }
-        for (const m of incoming.maps) {
+        for (const m of inc.maps) {
           const i = this.data.maps.findIndex((x) => x.id === m.id);
           if (i >= 0) this.data.maps[i] = m; else this.data.maps.push(m);
         }
         const log = this.data.settings.reviewLog;
-        for (const [k, v] of Object.entries(incoming.settings.reviewLog || {})) log[k] = Math.max(log[k] || 0, v);
+        for (const [k, v] of Object.entries(inc.settings.reviewLog || {})) log[k] = Math.max(log[k] || 0, v);
       }
       this.changed('import');
-      return { courses: incoming.courses.length, maps: incoming.maps.length };
+      return { snapshot, courses: inc.courses.map((c) => c.id), maps: inc.maps.length };
+    },
+    restoreSnapshot(snapshot) {
+      this.data = sanitize(JSON.parse(snapshot));
+      this.changed('import');
+    },
+    /** Compatibilité : ancien appel (fusion par identifiants) */
+    importData(text, mode = 'merge') {
+      const r = this.applyImport(this.parseImport(text), mode === 'replace' ? 'replace' : 'update');
+      return { courses: r.courses.length, maps: r.maps };
     },
     reset() {
       const theme = this.data.settings.theme;
