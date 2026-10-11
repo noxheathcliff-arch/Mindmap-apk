@@ -182,6 +182,7 @@
             h('div.rcard-hint', { hidden: true }),
             answer),
           h('span.rate-stamp.left', { 'aria-hidden': 'true' }, 'À revoir'),
+          h('span.rate-stamp.mid', { 'aria-hidden': 'true' }, 'Compris'),
           h('span.rate-stamp.right', { 'aria-hidden': 'true' }, 'Maîtrisé'));
         if (course) R.courseArt.tint(card, course);
 
@@ -293,7 +294,16 @@
             { transform: `translateX(${dir * dist}px) translateY(20px) rotate(${dir * 10}deg)`, opacity: 0 },
           ], { duration: ms, easing: motion.css.in, fill: 'forwards' });
         } else {
-          cardEl.classList.add('leaving', rating === 'revoir' ? 'out-left' : rating === 'maitrise' ? 'out-right' : 'out-up');
+          // le tampon de la note frappe la fiche (scale 1.5 → 1, 140 ms), puis elle part dans sa direction
+          const stamp = cardEl.querySelector(rating === 'revoir' ? '.rate-stamp.left' : rating === 'maitrise' ? '.rate-stamp.right' : '.rate-stamp.mid');
+          const leave = cardEl;
+          const out = rating === 'revoir' ? 'out-left' : rating === 'maitrise' ? 'out-right' : 'out-up';
+          if (motion.reduced()) leave.classList.add('leaving', out);
+          else {
+            stamp.classList.add('slam');
+            leave.classList.add('stamped');
+            setTimeout(() => leave.classList.add('leaving', out), 140);
+          }
         }
         done++;
         idx++;
@@ -302,7 +312,7 @@
           busy = false;
           if (idx >= queue.length) finish();
           else showCard('stack');
-        }, motion.reduced() ? 0 : 120);
+        }, motion.reduced() ? 0 : fling ? 120 : 260);
       }
 
       /* Annuler la dernière note : l'état de la fiche, le journal du jour et la file reviennent
@@ -419,16 +429,19 @@
         const remaining = S.dueCount(scope);
         const sum = results.revoir + results.compris + results.maitrise || 1;
         const counts = [];
-        const dist = h('div.dist',
+        /* Relevé de session : un ticket perforé, points de conduite, total, tampon de la série */
+        const totalEl = h('b.rc-n', '0');
+        const dist = h('div.receipt', { role: 'group', 'aria-label': 'Relevé de session' },
+          h('div.rc-head', h('span', 'Relevé de session'), h('span', new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))),
           ['maitrise', 'compris', 'revoir'].map((k, i) => {
-            const n = h('span.dist-n', '0');
+            const n = h('span.rc-n', '0');
             counts.push([n, results[k], i]);
-            return h('div.dist-row',
-              ui.mastery(k, 14),
-              h('span.dist-l', S.RATINGS[k].label),
-              h('span.dist-bar', h('span', { style: { '--w': String(results[k] / sum), '--i': i } })),
-              n);
-          }));
+            return h('div.rc-row', ui.mastery(k, 14), h('span.rc-l', S.RATINGS[k].label), h('span.rc-dots'),
+              h('span.rc-bar', h('span', { style: { '--w': String(results[k] / sum), '--i': i } })), n);
+          }),
+          h('div.rc-total', h('span', 'Total'), h('span.rc-dots'), totalEl),
+          h('span.rc-stamp', streak > 1 ? `Série · ${streak} j` : 'Validée'));
+        counts.push([totalEl, done, 3]);
         const weak = [...missed.values()].filter(({ node }) => node.review.rating === 'revoir');
         const streakEl = h('span.end-streak', String(streak));
         const doneEl = h('b', String(done));

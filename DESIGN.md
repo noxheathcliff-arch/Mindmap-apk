@@ -175,6 +175,16 @@ Monochrome par défaut (60/30/10 intact). L'option **Couleurs des nœuds** (Rég
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).
 
+### 4.7 Réviser — un bureau de révision, pas un tableau de bord
+Chaque section reprend un objet de l'étudiant en droit, sans quitter le vocabulaire de la fiche :
+- **Le paquet du jour** : la session à venir en vrai paquet ; feuilles dessous aux teintes des cours les plus chargés, épaisseur = taille de session (10 · 20 · toutes) ; la fiche bristol du dessus porte le compte au surligneur et le temps sur un petit tampon. Elle devient la première fiche de la session.
+- **Carte de régularité** : 7 cases, un tampon encré (nombre de fiches, inclinaison propre au jour) par jour révisé ; aujourd'hui au surligneur.
+- **Échéancier** : chaque jour est une pile de fiches vue de profil (une tranche tous les 4 px) ; aujourd'hui en jaune.
+- **Par cours** : l'empreinte au centre de son anneau de maîtrise ; le nombre dû en tampon de la teinte du cours.
+- **À retravailler** : des fiches cornées (le coin plié = « à reprendre »), en bande horizontale.
+- **Session** : la fiche est un bristol (marge rouge, réponse posée sur une réglure de 28 px) ; noter au clavier ou au bouton fait frapper le tampon de la note avant le départ.
+- **Fin** : un relevé de session (ticket perforé, points de conduite, total, tampon de la série).
+
 ### 4.6 Carte de cours — la fiche et l'empreinte
 Une carte de cours n'est pas un dossier décoratif : c'est **la prochaine fiche à réviser**, posée sur la pile du cours.
 - **Pile** : 0, 1 ou 2 feuilles dessous selon le nombre de cartes mentales (0, 1–2, 3 et plus). L'épaisseur dit la taille du cours sans un chiffre.
@@ -226,6 +236,10 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Lecture seule (action refusée) | la pastille oscille une fois (±3 px) + message « Carte en lecture seule · Modifier » (au plus une fois toutes les 2,5 s) | — | 320 | out | feedback sans bloquer ; l'information n'est pas portée par le seul mouvement |
 | Révision : fiche suivante | **est** la première feuille du paquet : part de sa géométrie exacte (7 px, 96 % de large, sans ombre) et se pose ; son contenu suit en fondu (+80 ms) ; la feuille du fond remonte d'un cran puis s'efface | translateY 7 → 0, scaleX .96 → 1 | 240 | out | continuité spatiale, follow-through |
 | Révision : actions | l'ancien jeu sort (−4 px, opacité) puis le nouveau entre (+6 px → 0) avec 50 % de chevauchement ; les notes gardent leur cascade de 30 ms | — | 100 in / 240 out (+50) | in / out | sortie avant entrée, un seul jeu lisible |
+| Révision : noter (clavier / bouton) | le tampon de la note frappe la fiche (scale 1.5 → 1), la fiche accuse le coup (.99), puis part dans sa direction ; la suivante entre à 260 ms | — | 140 + 220 | out / in | feedback tactile, anticipation courte ; au glisser, pas de tampon (déjà visible) |
+| Réviser : paquet du jour | survol : la fiche du dessus se soulève (−3 px, −1°), les feuilles s'éventaillent ; 1re visite : les feuilles s'ouvrent en cascade (40 ms) | — | 240 / 360 | out | affordance (« prends le paquet ») |
+| Réviser : tampons | le tampon du jour frappe à la 1re visite (scale 1.5 → 1) ; l'anneau de maîtrise se trace | — | 240 (+500) / 560 | out | récompense, value change |
+| Fin : relevé | le ticket sort (−14 px, scaleY .92 → 1), ses barres poussent, le tampon frappe en dernier | — | 360 drawer / 560 / 240 (+900) | out | pic-fin |
 | Révision : compteur | « 3 / 10 » tique quand il change | 4 px, opacité .35 → 1 | 160 | out | value change |
 | Révision : réponse longue (petit écran) | défilement doux jusqu'au début de la réponse si elle commence sous 55 % de la hauteur | — | natif (smooth) | — | l'œil suit la réponse |
 | Réviser → session | container transform : « Commencer » → première fiche ; ligne d'un cours (ou en-tête du cours) → bande de la fiche, empreinte comprise ; retour symétrique | — | 360 | drawer | continuité ; la première fiche n'a pas d'entrée propre |

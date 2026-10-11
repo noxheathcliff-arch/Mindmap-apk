@@ -29,7 +29,7 @@
     const fmt = (t, i) => (i === 0 ? 'Auj.' : i === 1 ? 'Dem.' : new Date(t).toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''));
     const total = days.slice(1).reduce((a, d) => a + d.n, 0);
     return h('section.hub-card', { 'aria-label': 'À venir' },
-      h('div.hub-card-head', h('h2.hub-card-title', 'À venir'), h('span.hub-card-sub', total ? `${U.plural(total, 'carte')} sur 6 jours` : 'Rien de prévu')),
+      h('div.hub-card-head', h('h2.hub-card-title', 'Échéancier'), h('span.hub-card-sub', total ? `${U.plural(total, 'fiche')} sur 6 jours` : 'Rien de prévu')),
       h('div.fc', { role: 'img', 'aria-label': days.map((d, i) => `${fmt(d.day, i)} : ${d.n}`).join(', ') },
         days.map((d, i) => h('div.fc-col', { class: (i === 0 ? 'is-today ' : '') + (d.n ? '' : 'zero'), title: `${new Date(d.day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' })} · ${U.plural(d.n, 'carte')}` },
           h('span.fc-n', d.n ? String(d.n) : ''),
@@ -37,44 +37,93 @@
           h('span.fc-l', fmt(d.day, i))))));
   }
 
-  function streakCard() {
+  /* Carte de régularité : une case par jour, un tampon encré quand on a révisé ce jour-là
+     (le nombre de fiches dans le tampon, une inclinaison propre au jour, comme à la main) */
+  function loyaltyCard(intro) {
+    const log = S.data.settings.reviewLog;
     const streak = S.streak();
-    const today = S.reviewedToday();
-    return h('section.hub-card', { 'aria-label': 'Régularité' },
-      h('div.hub-card-head', h('h2.hub-card-title', 'Régularité'), h('span.hub-card-sub', today ? `${U.plural(today, 'carte')} aujourd’hui` : 'Pas encore aujourd’hui')),
+    let on = 0;
+    const cells = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = U.dayKey(d);
+      const n = log[key] || 0;
+      if (n) on++;
+      const tilt = ((parseInt(key.replace(/\D/g, ''), 10) * 37) % 25) - 12;
+      cells.push(h('div.ly-cell', { class: (n ? 'on ' : '') + (i === 0 ? 'is-today' : ''), title: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' }) + (n ? ` · ${U.plural(n, 'fiche')}` : ' · rien') },
+        h('span.ly-d', d.toLocaleDateString('fr-FR', { weekday: 'narrow' })),
+        h('span.ly-slot',
+          n ? h('span.ly-stamp', { class: intro && i === 0 ? 'slam' : '', style: { '--r': tilt + 'deg' } }, h('b', String(n))) : i === 0 ? h('span.ly-wait', 'auj.') : h('span.ly-num', String(d.getDate()))),
+      ));
+    }
+    return h('section.hub-card.loyal', { 'aria-label': 'Régularité' },
+      h('div.hub-card-head', h('h2.hub-card-title', 'Carte de régularité'), h('span.hub-card-sub', `${on}/7 jours`)),
+      h('div.ly-grid', cells),
       h('div.today-streak.hub-streak', { class: streak ? 'lit' : '' },
         h('span.flame', R.icon('flame', 20)),
-        h('span', streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Lance ta série aujourd’hui'),
-        R.weekDots()));
+        h('span', streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Un tampon aujourd’hui lance ta série')));
+  }
+
+  /** L'empreinte du cours au centre d'un anneau : l'arc dit la maîtrise (0 → 100 %) */
+  function masteryRing(c, p) {
+    const ring = h('span.mring', { role: 'img', 'aria-label': `Maîtrise ${Math.round(p * 100)} %`, style: { '--p': String(p) } });
+    ring.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle class="mr-track" cx="24" cy="24" r="21"/><circle class="mr-val" cx="24" cy="24" r="21" pathLength="100"/></svg>';
+    ring.appendChild(R.courseArt.mark(c, { size: 'sm', hero: true }));
+    return ring;
   }
 
   function courseRow(c) {
     const st = S.courseStats(c.id);
     const due = st.due;
     const row = h('a.hub-course', { href: sessionHref('#/reviser/cours/' + c.id, { all: !due }), class: due ? '' : 'is-done', dataset: { hero: 'course:' + c.id + ':band' } },
-      R.courseArt.mark(c, { size: 'sm', hero: true }),
+      masteryRing(c, st.progress),
       h('span.hub-course-body',
         h('span.hub-course-t', c.title),
-        h('span.hub-course-s', due ? `${minutes(Math.min(due, S.data.settings.sessionSize || due))} · maîtrise ${Math.round(st.progress * 100)} %` : `À jour · maîtrise ${Math.round(st.progress * 100)} %`),
-        ui.progress(st.progress, { label: 'Maîtrise du cours' })),
-      due ? h('span.hub-course-due', String(due)) : h('span.hub-course-ok', R.icon('check', 18)));
+        h('span.hub-course-s', due ? `${minutes(Math.min(due, S.data.settings.sessionSize || due))} · maîtrise ${Math.round(st.progress * 100)} %` : `À jour · maîtrise ${Math.round(st.progress * 100)} %`)),
+      due ? h('span.due-stamp', h('b', String(due)), h('span', due > 1 ? 'dues' : 'due')) : h('span.hub-course-ok', R.icon('check', 18)));
     R.courseArt.tint(row, c);
     return row;
   }
 
+  /* À retravailler : des fiches cornées (coin plié = « à reprendre »), en bande horizontale */
   function weakList() {
-    const list = S.weakCards(5);
+    const list = S.weakCards(8);
     if (!list.length) return null;
     return h('section.lib-sec',
       h('div.sec-head', h('h2.sec-title', 'À retravailler'), h('span.sec-count', String(list.length))),
-      h('p.hub-hint', 'Les dernières cartes notées « À revoir ». Elles reviennent dès demain ; un détour par la carte aide à comprendre ce qui coince.'),
-      h('div.hub-weak', list.map(({ map, node }) => {
+      h('p.hub-hint', 'Les dernières fiches notées « À revoir ». Elles reviennent dès demain ; un détour par la carte aide à comprendre ce qui coince.'),
+      h('div.dogs', list.map(({ map, node }) => {
         const c = S.course(map.courseId);
-        return h('a.hub-weak-row', { href: `#/carte/${map.id}?n=${node.id}` },
-          ui.mastery('revoir', 14),
-          h('span.hub-weak-body', h('span.hub-weak-t', node.title), h('span.hub-weak-s', [c && c.title, map.title].filter(Boolean).join(' › '))),
-          R.icon('chevronRight', 18));
+        const card = h('a.dog', { href: `#/carte/${map.id}?n=${node.id}` },
+          h('span.dog-band'),
+          h('span.dog-k', S.isStruct(node.type) ? S.kickerOf(map, node) : S.TYPES[node.type].label),
+          h('span.dog-t', node.title),
+          h('span.dog-s', map.title),
+          h('span.dog-stamp', 'À revoir'));
+        if (c) R.courseArt.tint(card, c);
+        return card;
       })));
+  }
+
+  /* Le paquet du jour : la session à venir, en vrai paquet. Les feuilles du dessous prennent la
+     teinte des cours les plus chargés ; leur nombre suit la taille de session (10 · 20 · toutes).
+     La fiche du dessus porte le compte et devient la première fiche de la session. */
+  function dayDeck(take, due, size, start) {
+    const tinted = S.coursesSorted().map((c) => ({ c, d: S.courseStats(c.id).due })).filter((x) => x.d).sort((a, b) => b.d - a.d).map((x) => x.c);
+    const layers = due ? Math.min(size === 10 ? 1 : size === 20 ? 2 : 3, Math.max(0, take - 1)) : 1;
+    const sheets = [];
+    for (let i = layers; i >= 1; i--) {
+      const sh = h('span.dd-sheet', { class: 's' + i, 'aria-hidden': 'true' });
+      const c = tinted[(i - 1) % Math.max(1, tinted.length)];
+      if (c) R.courseArt.tint(sh, c);
+      sheets.push(sh);
+    }
+    const top = h('span.dd-top', { dataset: { hero: 'session:all:card' } },
+      h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'),
+      due ? h('span.dd-n', String(take)) : h('span.dd-n.dd-ok', R.icon('check', 36)),
+      h('span.dd-u', due ? (take > 1 ? 'cartes' : 'carte') : 'tout est à jour'),
+      due ? h('span.dd-time', minutes(take)) : null);
+    return h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${take} fiches` : 'Réviser quand même', onclick: start }, sheets, top);
   }
 
   R.views.reviewHub = {
@@ -113,6 +162,8 @@
             : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) }));
           const meta = h('p.hub-meta', metaFor(take));
           let cta = ctaFor(take);
+          const start = () => R.app.go(sessionHref('#/reviser/tout', { all: !due }));
+          let deck = dayDeck(take, due, size, start);
           const coursesBox = courses.length ? h('div.hub-courses', courses.map(courseRow)) : null;
           /* durée de session : un choix mémorisé (10 · 20 · toutes), appliqué partout.
              Mise à jour sur place (l'indicateur glisse, le libellé tique) : la page ne se reconstruit
@@ -131,6 +182,10 @@
                 const next = ctaFor(n);
                 if (!motion.reduced()) next.classList.add('tick');
                 cta.replaceWith(next); cta = next;
+                // le paquet s'épaissit ou s'amincit (feuilles en fondu), le compte tique
+                const nd = dayDeck(n, due, v, start);
+                if (!motion.reduced()) nd.classList.add('swap');
+                deck.replaceWith(nd); deck = nd;
                 if (coursesBox) { U.clear(coursesBox); courses.forEach((c) => coursesBox.appendChild(courseRow(c))); }
               });
               return b;
@@ -141,21 +196,23 @@
               h('p.overline.hero-date', new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })),
               h('h1.hero-title', due ? [h('span.hl-sweep', h('span.hub-num', String(due))), due > 1 ? ' cartes à réviser' : ' carte à réviser'] : h('span.hl-sweep', 'Tout est à jour.'))),
             // le bloc « Commencer » devient la première fiche de la session (élément partagé)
-            h('section.hub-start', { dataset: { hero: 'session:all:card' } },
-              meta,
-              h('div.hub-size-row', h('span.hub-size-l', 'Session'), seg),
-              cta),
-            h('div.hub-side.only-narrow', streakCard(), forecastCard(intro)),
+            h('section.hub-start',
+              deck,
+              h('div.hub-start-ctl',
+                meta,
+                h('div.hub-size-row', h('span.hub-size-l', 'Session'), seg),
+                cta)),
+            h('div.hub-side.only-narrow', loyaltyCard(intro), forecastCard(intro)),
             courses.length ? h('section.lib-sec',
               h('div.sec-head', h('h2.sec-title', 'Par cours'), h('span.sec-count', String(courses.length))),
               coursesBox) : null,
             weakList());
         }
-        const aside = anyReviewable ? h('aside.hub-side.only-wide', streakCard(), forecastCard(intro)) : null;
+        const aside = anyReviewable ? h('aside.hub-side.only-wide', loyaltyCard(intro), forecastCard(intro)) : null;
         const page = h('div.page.page-hub', { class: intro ? 'intro' : '' }, topbar, h('div.page-scroll', h('div.hub-layout', main, aside)));
         el.appendChild(page);
         if (intro) {
-          R.motion.stagger([...U.$$('.hub-start, .hub-side .hub-card, .hub-course, .hub-weak-row', el)], 1, { step: 40, max: 8 });
+          R.motion.stagger([...U.$$('.hub-start, .hub-side .hub-card, .hub-course, .dog', el)], 1, { step: 40, max: 8 });
           const num = el.querySelector('.hub-num');
           if (num) motion.countUp(num, due, { duration: 800 });
           setTimeout(() => page.classList.remove('intro'), 1400);
