@@ -109,15 +109,28 @@
     doctrine:   { label: 'Doctrine',           kicker: 'Doctrine',      prompt: 'Quelle est cette position doctrinale ?' },
     exemple:    { label: 'Exemple',            kicker: 'Exemple',       prompt: 'Qu’illustre cet exemple ?' },
     retenir:    { label: 'À retenir',          kicker: 'À retenir',     prompt: 'Restitue l’essentiel' },
+    // au-delà du droit : raisonner, se repérer, citer (cours d'histoire, de sciences, essais…)
+    question:   { label: 'Question',           kicker: 'Question',      prompt: 'Réponds à cette question' },
+    methode:    { label: 'Méthode',            kicker: 'Méthode',       prompt: 'Retrouve les étapes de cette méthode' },
+    comparaison:{ label: 'Comparaison',        kicker: 'Comparaison',   prompt: 'Compare : points communs et différences' },
+    piege:      { label: 'Piège',              kicker: 'Piège',         prompt: 'Quel est le piège à éviter ?' },
+    citation:   { label: 'Citation',           kicker: 'Citation',      prompt: 'Que dit cette citation, et qu’en retenir ?' },
+    personne:   { label: 'Personne',           kicker: 'Personne',      prompt: 'Qui est-ce et quel est son apport ?' },
+    date:       { label: 'Date',               kicker: 'Date',          prompt: 'Que s’est-il passé, et pourquoi est-ce important ?' },
+    chiffre:    { label: 'Chiffre clé',        kicker: 'Chiffre',       prompt: 'Que mesure ce chiffre et que montre-t-il ?' },
+    formule:    { label: 'Formule',            kicker: 'Formule',       prompt: 'Restitue la formule et le sens de chaque terme' },
   };
   /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–3 */
-  const TYPE_ORDER = ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'juris', 'texte', 'idee', 'chapitre', 'lecon', 'section', 'doctrine', 'exemple', 'retenir'];
+  const TYPE_ORDER = ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'juris', 'texte', 'idee', 'chapitre', 'lecon', 'section', 'doctrine', 'exemple', 'retenir',
+    'question', 'methode', 'comparaison', 'piege', 'citation', 'personne', 'date', 'chiffre', 'formule'];
   const STRUCT_ORDER = ['chapitre', 'lecon', 'section'];
   /** Regroupement du menu « Type » (divulgation par familles) */
   const TYPE_GROUPS = [
     { label: 'Structure du cours', types: STRUCT_ORDER },
-    { label: 'Notion', types: ['notion', 'definition', 'fond', 'forme', 'effet', 'exception'] },
-    { label: 'Sources', types: ['texte', 'juris', 'doctrine'] },
+    { label: 'Notion', types: ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'piege'] },
+    { label: 'Raisonner', types: ['question', 'methode', 'comparaison'] },
+    { label: 'Sources', types: ['texte', 'juris', 'doctrine', 'citation', 'personne'] },
+    { label: 'Repères', types: ['date', 'chiffre', 'formule'] },
     { label: 'Compléments', types: ['exemple', 'retenir', 'idee'] },
   ];
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
@@ -269,6 +282,8 @@
       out.settings.reviewLog = d.settings.reviewLog && typeof d.settings.reviewLog === 'object' ? { ...d.settings.reviewLog } : {};
       out.settings.sessionSize = [10, 20, 0].includes(+d.settings.sessionSize) ? +d.settings.sessionSize : 20; // 0 = toutes
       out.settings.lastExport = +d.settings.lastExport || 0;
+      // aides à la lecture (fils teintés par branche, numéros d'ordre) : actives par défaut
+      out.settings.readingAids = d.settings.readingAids !== false;
     }
     return out;
   }
@@ -866,7 +881,7 @@
       const stacked = m.nodes.every((n) => n.x === m.nodes[0].x && n.y === m.nodes[0].y);
       if (!stacked && !force) return false;
       const vp = typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight - 64 } : undefined;
-      const r = R.layout.arrange(m, R.layout.estimate, { mode: m.layoutPick || m.layout || 'auto', viewport: vp });
+      const r = R.layout.arrange(m, R.layout.estimate, { mode: m.layoutPick || m.layout || 'auto', viewport: vp, fast: true });
       for (const n of m.nodes) if (r.pos[n.id]) Object.assign(n, r.pos[n.id]);
       m.layout = r.mode;
       return true;

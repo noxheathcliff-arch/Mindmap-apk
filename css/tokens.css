@@ -160,6 +160,7 @@
 /* ---- Dark scheme ----------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --branch-l: .76; --branch-c: .1;
     --primary: var(--ref-highlighter);
     --on-primary: #1a1600;
     --primary-container: #3d3300;
@@ -199,6 +200,7 @@
 }
 
 :root[data-theme="dark"] {
+  --branch-l: .76; --branch-c: .1;
   --primary: var(--ref-highlighter);
   --on-primary: #1a1600;
   --primary-container: #3d3300;

@@ -33,7 +33,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 |---|---|---|
 | **Cours** | titre, description (ex. « M1 · S1 · Pr. X »), dates | Le « dossier unique » demandé. Un seul niveau : pas de sous-dossiers (loi de Tesler : on absorbe la complexité, l'utilisatrice n'a qu'un rangement à faire). |
 | **Carte** | titre, cours, nœuds, liens, vue (zoom/position), dates | Une carte = une notion ou un chapitre. |
-| **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 15 types (voir §4.4), dont 3 de structure. |
+| **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 24 types (voir §4.4), dont 3 de structure. |
 | **Tableau, source** | vivent **dans la note** (Markdown : `| a | b |`, `[titre](https://…)`) | Aucun champ nouveau : export, import, plan, recherche et révision les reçoivent tels quels. Saisie en grille (Loi de Tesler : la syntaxe reste cachée) ; rubrique « Sources » = liens de la note extraits à l'affichage. |
 | **Lien** | source, cible, **nature** (hiérarchique / renvoi), libellé, groupe | Hiérarchique = décomposition (trait plein). Renvoi = « voir aussi », « sauf », « implique » (pointillé + flèche). |
 | **Fourche** | liens partageant un `group` (même source, même nature, un libellé) | Un tronc, un libellé posé sur le point de séparation, une branche par élément. Chaque branche reste un lien ordinaire : hiérarchie, révision, plan et import n'en dépendent pas. Les enfants d'un nœud ET/OU sont dessinés en fourche implicite (« ET » une seule fois). |
@@ -51,7 +51,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 - **Structure** : hiérarchie peu profonde (Bibliothèque → Cours → Carte → Nœud → Note) + **hypertexte** (liens de renvoi entre nœuds).
 
 ### 3.2 Système d'étiquetage
-Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée* ; structure : *Chapitre, Leçon, Section*. Logique : *cumulatives (ET)* / *alternatives (OU)*. Révision : *À revoir, Compris, Maîtrisé*. Les libellés d'action sont des verbes (« Nouvelle carte », « Réviser », « Relier »).
+Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée* — et, au-delà du droit, *Question, Méthode, Comparaison, Piège, Citation, Personne, Date, Chiffre clé, Formule* ; structure : *Chapitre, Leçon, Section*. Logique : *cumulatives (ET)* / *alternatives (OU)*. Révision : *À revoir, Compris, Maîtrisé*. Les libellés d'action sont des verbes (« Nouvelle carte », « Réviser », « Relier »).
 
 ### 3.3 Systèmes de navigation
 | Type | Implémentation |
@@ -153,6 +153,17 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 | Doctrine | DOCTRINE | serif droit, coins alternés |
 | Exemple | EXEMPLE | bordure pointillée fine (points) |
 | À retenir | À RETENIR | fond surligneur pâle (`primary-container`) — seul type « accent », car c'est littéralement ce qu'on surligne |
+| Question | QUESTION | bulle (coin inférieur gauche cassé) |
+| Méthode | MÉTHODE | filet épais à gauche ; ses étapes s'affichent en frise fléchée |
+| Comparaison | COMPARAISON | doubles filets gauche et droite |
+| Piège | PIÈGE | tirets encre + hachures légères |
+| Citation | CITATION | italique serif, filet gauche, fond `surface-container-low` (annotation) |
+| Personne | PERSONNE | pilule |
+| Date | DATE | filet épais en haut, chiffres tabulaires ; 3–6 dates sœurs = frise chronologique |
+| Chiffre clé | CHIFFRE | grand chiffre gras tabulaire |
+| Formule | FORMULE | mono, fond `surface-container-low` |
+
+Les 9 derniers ouvrent l'app au-delà du droit (histoire, sciences, essais, développement personnel) ; ils sont regroupés dans le menu *Type* en **Raisonner**, **Sources** et **Repères**.
 
 **Structure d'un cours** (`rank` 1 → 3) — la hiérarchie se lit au premier regard par la taille, la graisse et l'encre, toujours sans couleur :
 
@@ -164,7 +175,9 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 
 - **Numérotation automatique** : rang parmi les frères du même type (dans l'ordre vertical du plan) ; pas de numéro quand le type est seul à son niveau.
 - **Jauge de branche** : maîtrise de tout ce qui descend du nœud (barre de 4 px, `scaleX`, 360 ms).
-- **Liens « colonne vertébrale »** : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés (2,4 px).
+- **Liens « colonne vertébrale »** : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés (2,4 px) ; l'épaisseur décroît avec la profondeur (2,6 → 2 → 1,5 px).
+- **Constructions de lecture** (moteur de rangement) : *peigne* (épine + dents droites) dès 4 enfants ; *frise* fléchée pour 3–6 étapes d'une méthode ou 3–6 dates ; *annotations* en retrait pour les appuis (exemple, arrêt, doctrine, texte, citation, personne) ; « À retenir » détaché par un espace.
+- **Aides à la lecture** (activées par défaut, ⋮ → Disposition) : une teinte douce par branche principale sur les traits seulement (OKLCH, angle d'or entre branches, nœuds toujours monochromes) et des pastilles d'ordre 1, 2, 3… sur les branches principales qui ne sont pas déjà numérotées.
 - **Zoom sémantique** : sous 45 %, le contenu s'estompe (opacité 0,5) et seuls les sur-titres de structure restent affichés.
 - **Mini-fonctions** : « Réviser ce chapitre / cette leçon » (révision limitée à la branche, route `#/reviser/carte/:id/:nœud`), « Isoler » (replie les autres nœuds du même type, cadre la branche), sommaire dans le panneau, enfant par défaut qui suit le plan (Chapitre → Leçon), raccourcis `Alt 1–3`.
 - **Plan** : la structure devient des intertitres et la numérotation I. A. 1. a) repart sous chacun ; « À retenir » est un encadré hors numérotation.

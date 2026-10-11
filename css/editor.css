@@ -156,6 +156,18 @@
 .node.t-exemple { border: 1.5px dotted var(--on-surface-variant); }
 .node.t-retenir { background: var(--primary-container); color: var(--on-primary-container); border-color: color-mix(in srgb, var(--primary) 60%, var(--on-surface)); }
 .node.t-retenir .node-top { color: color-mix(in srgb, var(--on-primary-container) 75%, transparent); }
+/* types « au-delà du droit » — toujours différenciés par la forme */
+.node.t-question { border-color: var(--on-surface-variant); border-radius: 16px 16px 16px 4px; }
+.node.t-methode { border-left: 5px solid var(--on-surface); padding-left: 11px; }
+.node.t-comparaison { border-left: 3px double var(--on-surface-variant); border-right: 3px double var(--on-surface-variant); }
+.node.t-piege { border: 1.5px dashed var(--on-surface); background: repeating-linear-gradient(-45deg, transparent 0 7px, color-mix(in srgb, var(--on-surface) 7%, transparent) 7px 13px), var(--surface-container-lowest); }
+.node.t-citation .node-title { font: italic 400 15px/21px var(--font-brand); }
+.node.t-citation { border-color: transparent; background: var(--surface-container-low); border-left: 3px solid var(--outline); border-radius: 4px; }
+.node.t-personne { border-radius: 999px; padding-left: 18px; padding-right: 18px; }
+.node.t-date { border-top: 4px solid var(--on-surface); font-variant-numeric: tabular-nums; }
+.node.t-chiffre .node-title { font: 700 18px/24px var(--font-plain); font-variant-numeric: tabular-nums; }
+.node.t-formule .node-title { font: 500 14px/20px var(--font-mono); }
+.node.t-formule { background: var(--surface-container-low); }
 
 /* Structure du cours : Chapitre › Leçon › Section. La hiérarchie se lit au premier regard
    (taille, graisse, encre), toujours sans couleur ; le sur-titre numéroté est surligné. */
@@ -589,3 +601,25 @@
 .layout-choices .choice { align-items: center; gap: 14px; }
 .layout-ic { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--shape-m, 12px); background: var(--surface-container); color: var(--on-surface-variant); }
 .layout-choices .choice[aria-checked="true"] .layout-ic { background: var(--primary-container, var(--surface-container-high)); color: var(--on-surface); }
+
+/* Aides à la lecture
+   - épaisseur selon la profondeur : la colonne vertébrale se voit d'abord (Buzan : branches
+     principales plus épaisses), le détail s'affine ;
+   - une teinte douce par branche de premier niveau (angle d'or) : on suit une idée d'un bout à
+     l'autre sans se perdre. Les nœuds restent monochromes ; les renvois restent gris pointillés. */
+.edge.k-tree.lv-1 { stroke-width: 2.6; }
+.edge.k-tree.lv-2 { stroke-width: 2; }
+.edge.k-tree.lv-3 { stroke-width: 1.5; }
+.reading-aids .edge.k-tree.tint { stroke: oklch(var(--branch-l, .58) var(--branch-c, .11) var(--bh, 0)); }
+.reading-aids .edge.k-tree.tint.rel, .reading-aids .edge.k-tree.tint.sel { stroke: oklch(calc(var(--branch-l, .58) - .1) calc(var(--branch-c, .11) + .03) var(--bh, 0)); stroke-width: 2.8; }
+/* ordre de lecture des branches principales (hors leçons/sections, déjà numérotées) */
+.node-order {
+  position: absolute; top: -10px; left: -10px; z-index: 3;
+  display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+  background: var(--on-surface); color: var(--surface); font: 700 11px/1 var(--font-plain);
+  box-shadow: 0 0 0 2px var(--surface); pointer-events: none;
+}
+.node-order:empty, .canvas:not(.reading-aids) .node-order { display: none; }
+.layout-sep { margin: var(--sp-4) 0 var(--sp-2); }
+/* séquence (méthode, chronologie) : « puis » → trait plein fléché d'une étape à la suivante */
+.edge.k-tree.seq { stroke-width: 1.8; }

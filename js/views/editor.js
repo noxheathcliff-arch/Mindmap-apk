@@ -314,6 +314,13 @@
       const k = Math.min((r.w - pad * 2) / (b.x1 - b.x0), (r.h - pad * 2) / (b.y1 - b.y0));
       if (k >= 0.7) { fit(false, 1); return; }
       const root = S.roots(map)[0];
+      // vue d'ensemble d'abord (Shneiderman) : la racine et ses branches principales lisibles d'un coup
+      const first = new Set([root.id, ...S.childrenOf(map, root.id).map((c) => c.id)]);
+      const fb = bbox(first);
+      if (fb) {
+        const kf = Math.min((r.w - pad * 2) / (fb.x1 - fb.x0), (r.h - pad * 2) / (fb.y1 - fb.y0));
+        if (kf >= 0.55) { fit(false, 0.95, first); return; }
+      }
       const s = size(root);
       const kk = U.isCompact() ? 0.8 : 0.85;
       const left = U.isCompact() ? 24 : 112;
@@ -358,7 +365,7 @@
     function nodeEl(n) {
       const el = h('div.node', { dataset: { id: n.id }, role: 'treeitem', tabindex: '-1' });
       el.innerHTML = '<span class="node-top"><span class="node-kicker"></span><span class="node-meta"></span></span><span class="node-title"><span class="hl"></span></span>' +
-        '<span class="node-meter" aria-hidden="true"><i></i></span>' +
+        '<span class="node-meter" aria-hidden="true"><i></i></span><span class="node-order" aria-hidden="true"></span>' +
         '<button type="button" class="node-collapse" tabindex="-1" aria-label="Replier"></button>' +
         '<span class="node-handle" data-handle="1" aria-hidden="true" title="Glisser pour relier · cliquer pour ajouter un enfant"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>';
       return el;
@@ -397,6 +404,8 @@
         el.dataset.sized = '';
       }
       el.classList.toggle('untitled', !n.title);
+      const ord = el.querySelector('.node-order');
+      if (ord.textContent !== (ctx.order || '')) ord.textContent = ctx.order || '';
       el.classList.toggle('has-kids', ctx.childCount > 0);
       el.classList.toggle('collapsed', n.collapsed);
       el.classList.toggle('selected', st.sel.has(n.id));
@@ -420,6 +429,12 @@
       const alive = new Set();
       const emerging = [];
       const nums = S.structNumbers(map);
+      // ordre de lecture des branches principales : 1, 2, 3… (sauf leçons/sections, déjà numérotées)
+      const order = new Map();
+      for (const r of S.roots(map)) {
+        const kids = S.childrenOf(map, r.id);
+        if (kids.filter((k) => !S.isStruct(k.type)).length >= 3) kids.forEach((k, i) => { if (!S.isStruct(k.type)) order.set(k.id, String(i + 1)); });
+      }
       for (const n of map.nodes) {
         if (hidden.has(n.id)) continue;
         alive.add(n.id);
@@ -440,6 +455,7 @@
           descCount: n.collapsed ? S.descendants(map, n.id).length : 0,
           isRoot: !parents.has(n.id),
           kicker: S.kickerOf(map, n, nums),
+          order: order.get(n.id) || '',
           stats: S.isStruct(n.type) ? S.branchStats(map, n.id) : null,
         });
       }
@@ -566,7 +582,14 @@
        branche par élément. Deux origines :
         - explicite : liens partageant un `group` (libellé commun, choisi par l'utilisateur) ;
         - implicite : enfants d'un nœud ET/OU sans libellé propre → « ET » affiché une fois. */
-    function computeBundles(visible) {
+    /** Séquences en ligne (méthode, chronologie) : enfant → étape précédente */
+    function seqMap(visible) {
+      const at = new Map();
+      for (const n of map.nodes) { const s2 = size(n); at.set(n.id, { id: n.id, x: n.x, y: n.y, w: s2.w, h: s2.h }); }
+      return R.layout.sequencePrev({ edges: visible }, at, map.layout);
+    }
+    function computeBundles(visible, seq = new Map()) {
+      const seqIds = new Set([...seq.keys(), ...seq.values()]);
       const bundles = new Map();
       const add = (key, e, explicit) => {
         if (!bundles.has(key)) bundles.set(key, { key, explicit, from: e.from, kind: e.kind, edges: [] });
@@ -574,12 +597,19 @@
       };
       for (const e of visible) {
         if (e.group) add('g:' + e.group, e, true);
-        else if (e.kind === 'tree' && !e.label) {
+        else if (e.kind === 'tree' && !e.label && !seqIds.has(e.to)) {
           const p = S.node(map, e.from);
-          if (p && p.logic) add('l:' + e.from, e, false);
+          if (!p) continue;
+          // un faisceau par côté (carte centrée : la racine a des enfants des deux côtés)
+          const c = S.node(map, e.to);
+          const side = map.layout === 'down' ? '' : c && c.x < p.x ? ':L' : ':R';
+          add((p.logic ? 'l:' : 'c:') + e.from + side, e, false);
         }
       }
-      for (const [k, b] of bundles) if (b.edges.length < 2) bundles.delete(k);
+      // ET / OU : dès deux branches ; liste simple : peigne à partir de quatre enfants
+      // (une épine et des dents droites se lisent comme une liste, sans écheveau de courbes)
+      for (const [k, b] of bundles) if (b.edges.length < (k.startsWith('c:') ? (map.layout === 'down' ? 99 : 4) : 2)) bundles.delete(k);
+      for (const b of bundles.values()) b.comb = b.kind === 'tree' && map.layout !== 'down' && b.edges.length >= 4;
       return bundles;
     }
     function bundleLabel(b) {
@@ -592,6 +622,15 @@
     function bundleGeometry(b, byId, rects, busy = new Map()) {
       const a = byId.get(b.from);
       const sa = size(a);
+      if (b.comb) {
+        // peigne : épine verticale à mi-chemin entre le parent et la colonne de ses enfants
+        const kids = b.edges.map((e) => byId.get(e.to));
+        const left = kids[0].x < a.x;
+        const col = left ? Math.max(...kids.map((k) => k.x + size(k).w)) : Math.min(...kids.map((k) => k.x));
+        const p1 = [left ? a.x : a.x + sa.w, a.y + sa.h / 2];
+        const x = left ? Math.max(col + 14, p1[0] - Math.max(18, (p1[0] - col) * 0.5)) : Math.min(col - 14, p1[0] + Math.max(18, (col - p1[0]) * 0.5));
+        return { p1, d1: [left ? -1 : 1, 0], J: [x, p1[1]], comb: true };
+      }
       if (b.kind === 'link' && rects && !st.fastEdges) {
         // fourche de renvois : le côté de sortie dont le tronc et les branches ne traversent aucun nœud
         let best = null;
@@ -695,12 +734,35 @@
         const a = byId.get(e.from), b = byId.get(e.to);
         return a && b && !hidden.has(a.id) && !hidden.has(b.id);
       });
-      const bundles = computeBundles(visible);
+      const seq = seqMap(visible);
+      const bundles = computeBundles(visible, seq);
       // colonne vertébrale du cours : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés
       const spine = (from, kind) => {
         const r = kind === 'tree' && S.TYPES[byId.get(from).type].rank;
         return r && r < 3 ? ' spine' : '';
       };
+      // aides à la lecture : profondeur (traits plus fins en s'éloignant de la racine) et
+      // branche de premier niveau (une teinte par branche : on suit une idée d'un bout à l'autre)
+      const lvl = new Map(), branch = new Map();
+      {
+        const roots = S.roots(map);
+        const q = roots.map((r) => [r.id, 0, -1]);
+        while (q.length) {
+          const [id, d, b] = q.shift();
+          if (lvl.has(id)) continue;
+          lvl.set(id, d); branch.set(id, b);
+          S.childrenOf(map, id).forEach((c, i) => q.push([c.id, d + 1, d === 0 ? i : b]));
+        }
+      }
+      const aids = S.data.settings.readingAids !== false;
+      const BH = (i) => Math.round((25 + i * 137.508) % 360); // angle d'or : deux branches voisines ne se ressemblent jamais
+      const deco = (from, to, kind) => {
+        if (kind !== 'tree') return '';
+        const d = Math.min(3, (lvl.get(from) || 0) + 1);
+        return ` lv-${d}${aids && branch.get(to) >= 0 ? ' tint' : ''}`;
+      };
+      const hueOf = (to) => (branch.get(to) >= 0 ? BH(branch.get(to)) : null);
+      canvas.classList.toggle('reading-aids', aids);
       const selEdgeObj = st.selEdge ? map.edges.find((x) => x.id === st.selEdge) : null;
       const selGroup = selEdgeObj && selEdgeObj.group;
 
@@ -739,7 +801,13 @@
         }
         const gm = geoPre.get(b.key) || bundleGeometry(b, byId, rects, busy);
         geo.set(b.key, gm);
-        const d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
+        let d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
+        if (gm.comb) {
+          // l'épine fait partie du tronc (neutre) ; chaque dent part de l'épine vers son enfant
+          const ys = b.edges.map((e) => { const t = byId.get(e.to); return t.y + size(t).h / 2; });
+          const y0 = Math.min(gm.J[1], ...ys) + 0, y1 = Math.max(gm.J[1], ...ys);
+          d += ` M${gm.J[0]},${y0 + 12} L${gm.J[0]},${y1 - 12}`;
+        }
         br.trunk.setAttribute('d', d);
         br.hit.setAttribute('d', d);
         // tronc d'une fourche explicite : cliquable (sélectionne la fourche) ; implicite : non
@@ -747,7 +815,8 @@
         else { delete br.hit.dataset.edge; br.hit.style.pointerEvents = 'none'; }
         const sel = b.explicit && selGroup && b.edges[0].group === selGroup;
         const related = st.sel.has(b.from) || b.edges.some((e) => st.sel.has(e.to));
-        br.trunk.setAttribute('class', `edge trunk k-${b.kind}${spine(b.from, b.kind)}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        br.trunk.setAttribute('class', `edge trunk k-${b.kind}${spine(b.from, b.kind)}${deco(b.from, b.edges[0].to, b.kind)}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        { const hh = b.kind === 'tree' && !gm.comb && (lvl.get(b.from) || 0) > 0 ? hueOf(b.edges[0].to) : null; if (hh != null) br.trunk.style.setProperty('--bh', hh); else br.trunk.classList.remove('tint'); }
         const lbl = bundleLabel(b);
         setLabel(br.label, lbl, { sel, logic: !b.edges[0].label && !!lbl });
         if (b.explicit) { br.label.dataset.edge = b.edges[0].id; delete br.label.dataset.logicFrom; }
@@ -790,6 +859,7 @@
           st.edgeEls.set(e.id, rec);
         }
         const bundle = bundleOf.get(e.id);
+        rec.seq = false;
         const sel = st.selEdge === e.id || (selGroup && e.group === selGroup);
         const related = st.sel.has(e.from) || st.sel.has(e.to);
         let c;
@@ -801,13 +871,26 @@
             const cv = R.layout.route({ id: bundle.from, x: gm.J[0], y: gm.J[1] }, { w: 0, h: 0 }, { id: b.id, x: b.x, y: b.y }, size(b), { rects, polys, busy, fromJ: true, fast: !!st.fastEdges, side });
             c = { d: cv.d, at: cv.at };
             polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
+          } else if (gm.comb) {
+            // dent du peigne : descend l'épine puis rejoint l'enfant à l'horizontale
+            const sb = size(b), y = b.y + sb.h / 2;
+            const tx = gm.d1[0] > 0 ? b.x : b.x + sb.w;
+            const dy = y - gm.J[1];
+            const from = Math.abs(dy) < 1 ? gm.J : [gm.J[0], y - Math.sign(dy) * 12];
+            const el = R.layout.elbow(Math.abs(dy) < 1 ? [gm.J, [tx, y]] : [from, [gm.J[0], y], [tx, y]], 12);
+            c = { d: el.d, at: el.at };
           } else c = branchCurve(gm.J, gm.d1, b, e.kind);
           rec.mid = gm.J;
           setLabel(rec.label, '', {});
           if (e.kind === 'tree') polys.push({ pts: R.layout.sample(c.at ? c : { at: (t) => bez(c, t) }, 6), ends: new Set([e.from, e.to]) });
         } else {
           let cv;
-          if (e.kind === 'tree') {
+          const prevStep = e.kind === 'tree' && seq.get(e.to) ? byId.get(seq.get(e.to)) : null;
+          if (prevStep) {
+            // étape suivante d'une séquence : flèche depuis l'étape précédente (« puis »)
+            const sp = size(prevStep), sb = size(b);
+            cv = R.layout.elbow([[prevStep.x + sp.w, b.y + Math.min(sp.h, sb.h) / 2], [b.x, b.y + Math.min(sp.h, sb.h) / 2]]);
+          } else if (e.kind === 'tree') {
             cv = R.layout.treeCurve(map.layout, a, size(a), b, size(b));
           } else {
             const sa = size(a), sb = size(b);
@@ -816,8 +899,9 @@
           }
           c = { d: cv.d };
           polys.push({ pts: R.layout.sample(cv, e.kind === 'tree' ? 6 : 14), ends: new Set([e.from, e.to]) });
-          const lbl = edgeLabel(e);
+          const lbl = prevStep ? '' : edgeLabel(e);
           setLabel(rec.label, lbl, { sel, logic: !e.label && !!lbl });
+          rec.seq = !!prevStep;
           if (lbl) {
             // ET / OU sur un lien isolé : près de l'enfant ; libellé : là où il ne cache rien
             const sz = { w: rec.label.offsetWidth || R.layout.labelSize(lbl).w, h: rec.label.offsetHeight || 19 };
@@ -828,9 +912,11 @@
         }
         rec.path.setAttribute('d', c.d);
         rec.hit.setAttribute('d', c.d);
-        rec.path.setAttribute('class', `edge k-${e.kind}${spine(e.from, e.kind)}${bundle ? ' branch' : ''}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
-        if (e.kind === 'link') rec.path.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
+        rec.path.setAttribute('class', `edge k-${e.kind}${spine(e.from, e.kind)}${deco(e.from, e.to, e.kind)}${bundle ? ' branch' : ''}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
+        if (e.kind === 'tree' && hueOf(e.to) != null) rec.path.style.setProperty('--bh', hueOf(e.to));
+        if (e.kind === 'link' || rec.seq) rec.path.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
         else rec.path.removeAttribute('marker-end');
+        rec.path.classList.toggle('seq', !!rec.seq);
         drawBorn(rec, e);
       }
       if (ed._newEdges) ed._newEdges.clear();
@@ -1086,7 +1172,19 @@
           b.addEventListener('click', () => { closeFn && closeFn(); setTimeout(() => tidy(v), 160); });
           return b;
         }));
-      ui.dialog({ title: 'Disposition', icon: 'tidy', body: list, cls: 'dialog-layout', onOpen: (_, close) => { closeFn = close; } });
+      // aides à la lecture : un interrupteur pour toutes les cartes
+      const aidsOn = () => S.data.settings.readingAids !== false;
+      const aids = h('button.list-item.choice.layout-aids', { type: 'button', role: 'switch', 'aria-checked': String(aidsOn()) },
+        h('span.layout-ic', { html: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h7" stroke="oklch(.6 .12 25)"/><path d="M4 12h11" stroke="oklch(.6 .12 162)"/><path d="M4 17h8" stroke="oklch(.6 .12 300)"/><circle cx="19" cy="7" r="2.6" fill="currentColor" stroke="none"/></svg>' }),
+        h('span.choice-l', h('b', 'Aides à la lecture'), h('span.choice-sub', 'Une teinte douce par branche principale et les numéros d’ordre de lecture (1, 2, 3…). Pour toutes les cartes.')),
+        h('span.choice-check', R.icon('check', 20)));
+      aids.addEventListener('click', () => {
+        S.data.settings.readingAids = !aidsOn();
+        aids.setAttribute('aria-checked', String(aidsOn()));
+        S.save(); render();
+      });
+      const body = h('div', list, h('p.overline.layout-sep', 'Affichage'), h('div.choice-list.form-choice.layout-choices', aids));
+      ui.dialog({ title: 'Disposition', icon: 'tidy', body, cls: 'dialog-layout', onOpen: (_, close) => { closeFn = close; } });
     }
     R.actions.chooseLayout = chooseLayout;
 
@@ -1235,6 +1333,8 @@
         effet: 'Effet…', exception: 'Exception…', juris: 'Cass. civ. …', texte: 'Art. …', idee: 'Idée…',
         chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…',
         doctrine: 'Auteur, position…', exemple: 'Exemple…', retenir: 'À retenir…',
+        question: 'Question…', methode: 'Méthode…', comparaison: 'A ou B ?…', piege: 'Piège…',
+        citation: '« … »', personne: 'Nom…', date: '1789…', chiffre: '42 %…', formule: 'E = mc²…',
       }[n.type];
     }
 

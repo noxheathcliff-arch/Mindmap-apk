@@ -3,14 +3,14 @@
   "type": "portable_ai_skill_specification",
   "id": "ratio_book_to_course_compiler",
   "name": "Ratio — Compilateur Livre → Cours",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "language": "fr",
   "purpose": {
     "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio complet, prêt à importer : un fichier JSON unique contenant un cours, ses cartes mentales, leurs nœuds typés, leurs notes rédigées en Markdown, leurs liens hiérarchiques et transversaux étiquetés.",
     "secondary": [
       "Produire des cartes faites pour la révision active : chaque nœud est une question que l'on peut se poser, sa note et ses enfants en sont la réponse.",
       "Restituer fidèlement le livre (plan, notions, définitions, conditions, exceptions, exemples, sources, auteurs) sans rien inventer.",
-      "Utiliser intelligemment tout ce que l'application permet : 15 types de nœuds, logique ET/OU, renvois étiquetés, fourches, surligneur, tableaux, citations, listes, liens [[internes]].",
+      "Utiliser intelligemment tout ce que l'application permet : 24 types de nœuds, logique ET/OU, renvois étiquetés, fourches, surligneur, tableaux, citations, listes, liens [[internes]].",
       "Rester valide au premier import : schéma exact, identifiants uniques, aucune référence cassée."
     ],
     "not_for": [
@@ -128,7 +128,7 @@
     },
     "node": {
       "id": "chaîne unique DANS LA CARTE (ex. \"n1\", \"n2\"…)",
-      "type": "un des 15 types de node_types (minuscules, sans accent)",
+      "type": "un des 24 types de node_types (minuscules, sans accent)",
       "title": "indice de rappel, ≤ 80 caractères (idéalement ≤ 50)",
       "note": "Markdown (markdown_spec), \"\" si aucune",
       "logic": "\"et\" (enfants cumulatifs), \"ou\" (enfants alternatifs) ou null",
@@ -152,7 +152,7 @@
       "Chaque carte a UNE racine (le nœud de type chapitre), tous les autres nœuds y sont rattachés par des arêtes tree. Aucun nœud isolé.",
       "Pas de cycle dans l'arbre ; pas d'arête d'un nœud vers lui-même.",
       "from et to désignent des nœuds de la MÊME carte (il n'existe pas de lien entre cartes).",
-      "Types inconnus → convertis en « Idée » à l'import : n'utiliser que les 15 types.",
+      "Types inconnus → convertis en « Idée » à l'import : n'utiliser que les 24 types.",
       "Les champs inconnus sont ignorés ; les champs omis prennent leur valeur par défaut."
     ],
     "skeleton": {
@@ -308,18 +308,86 @@
         "review_prompt": "Développe cette idée",
         "use": "Élément d'une énumération, argument, conseil, étape sans autre type plus précis. Type par défaut.",
         "family": "compléments"
+      },
+      {
+        "type": "question",
+        "label": "Question",
+        "review_prompt": "Réponds à cette question",
+        "use": "Problématique, question que le livre pose et résout (« Pourquoi… ? »). Titre = la question (« ? » permis) ; note ou enfants = la réponse.",
+        "family": "raisonner"
+      },
+      {
+        "type": "methode",
+        "label": "Méthode",
+        "review_prompt": "Retrouve les étapes de cette méthode",
+        "use": "Procédure en étapes ordonnées. Enfants = étapes (forme ou idee, titres ≤ 34 caractères, verbes d'action) : 3 à 6 étapes feuilles s'affichent en FRISE fléchée. logic \"et\".",
+        "family": "raisonner"
+      },
+      {
+        "type": "comparaison",
+        "label": "Comparaison",
+        "review_prompt": "Compare : points communs et différences",
+        "use": "Distinction entre 2 à 4 notions (« A ou B ? »). Note = tableau comparatif ; enfants = les notions comparées si elles sont développées.",
+        "family": "raisonner"
+      },
+      {
+        "type": "piege",
+        "label": "Piège",
+        "review_prompt": "Quel est le piège à éviter ?",
+        "use": "Erreur fréquente, confusion, faux ami, idée reçue réfutée. Plus fort qu'une exception : ce que l'élève risque de faire de travers.",
+        "family": "notion"
+      },
+      {
+        "type": "citation",
+        "label": "Citation",
+        "review_prompt": "Que dit cette citation, et qu'en retenir ?",
+        "use": "Phrase célèbre ou formule marquante d'un auteur (hors texte de loi : texte). Titre = la citation courte entre « » ; note = auteur, contexte, sens. S'affiche en annotation.",
+        "family": "sources"
+      },
+      {
+        "type": "personne",
+        "label": "Personne",
+        "review_prompt": "Qui est-ce et quel est son apport ?",
+        "use": "Auteur, personnage historique, chercheur, témoin. Titre = le nom ; note = qui, quand, apport. Pour une thèse d'auteur, préférer doctrine. S'affiche en annotation.",
+        "family": "sources"
+      },
+      {
+        "type": "date",
+        "label": "Date",
+        "review_prompt": "Que s'est-il passé, et pourquoi est-ce important ?",
+        "use": "Événement daté. Titre = la date (+ 2 à 4 mots) ; note = l'événement et sa portée. 3 à 6 dates sœurs feuilles, dans l'ordre chronologique, s'affichent en FRISE chronologique.",
+        "family": "repères"
+      },
+      {
+        "type": "chiffre",
+        "label": "Chiffre clé",
+        "review_prompt": "Que mesure ce chiffre et que montre-t-il ?",
+        "use": "Statistique, ordre de grandeur, résultat d'étude chiffré. Titre = le chiffre (« 70 % des… ») ; note = source et interprétation.",
+        "family": "repères"
+      },
+      {
+        "type": "formule",
+        "label": "Formule",
+        "review_prompt": "Restitue la formule et le sens de chaque terme",
+        "use": "Formule, équation, règle de calcul, moyen mnémotechnique littéral. Titre = la formule ; note = chaque terme expliqué.",
+        "family": "repères"
       }
     ],
     "selection_heuristic": [
-      "Le livre définit un terme → definition.",
-      "Le livre décompose un concept en éléments → notion (logic et/ou selon le cas) + enfants.",
-      "Le livre dit « il faut », « condition », « cause », « parce que » → fond.",
-      "Le livre décrit « comment faire », des étapes, une technique → forme pour une étape opératoire, idee pour un conseil.",
-      "Le livre dit « conduit à », « entraîne », « conséquence », « bénéfice », « coût » → effet.",
-      "Le livre dit « sauf », « mais », « attention », « à éviter », « limite » → exception.",
-      "Le livre cite un auteur/une théorie → doctrine ; une étude/expérience/statistique → juris ; une citation-clé textuelle → texte.",
-      "Le livre raconte une histoire ou un cas → exemple, rattaché à l'idée qu'il illustre.",
-      "Rien de tout cela → idee. Ne pas forcer un type juridique sur un contenu qui ne s'y prête pas."
+      "Décide dans cet ordre (le premier « oui » l'emporte) :",
+      "1. Est-ce une partie du plan ? → chapitre (racine) / lecon / section.",
+      "2. Le livre pose-t-il une question à laquelle il répond ? → question.",
+      "3. Le livre définit-il un terme ? → definition.",
+      "4. Est-ce une suite d'étapes à suivre dans l'ordre ? → methode (étapes en enfants).",
+      "5. Le livre oppose-t-il ou distingue-t-il 2 à 4 notions ? → comparaison (tableau dans la note).",
+      "6. Est-ce une erreur fréquente, une confusion, une idée reçue ? → piege ; une limite ou un « sauf » ? → exception.",
+      "7. Est-ce une condition, une cause, un prérequis ? → fond ; une modalité, une étape, une manière de faire ? → forme.",
+      "8. Est-ce une conséquence, un bénéfice, un coût, un symptôme ? → effet.",
+      "9. Est-ce un événement daté ? → date ; un chiffre ? → chiffre ; une formule ? → formule.",
+      "10. Est-ce une source ? texte de loi / source primaire → texte ; décision, étude, expérience → juris ; thèse d'un auteur → doctrine ; phrase célèbre → citation ; personne → personne.",
+      "11. Une histoire, un cas, un exemple → exemple ; la synthèse d'une partie → retenir.",
+      "12. Un concept qui se décompose en éléments → notion ; sinon → idee.",
+      "Ne pas forcer un type juridique (fond, forme, juris, texte) sur un livre non juridique quand un type plus juste existe."
     ],
     "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance."
   },
@@ -373,6 +441,7 @@
         "id": "P2",
         "name": "CONCEVOIR LE COURS",
         "do": [
+          "Appliquer course_design : comparer au moins deux découpages candidats par partie et garder le meilleur total (C1–C5).",
           "1 carte = 1 unité de révision cohérente (souvent 1 chapitre ; regrouper les chapitres très courts d'un même thème ; scinder un chapitre de plus de ~60 nœuds en deux cartes).",
           "Viser 6 à 20 cartes pour un livre ; ordre des cartes = ordre du livre.",
           "Ajouter si utile une carte d'ouverture « Vue d'ensemble » (thèse du livre, plan, notions transversales) — elle sert de carte-sommaire et accueille les renvois globaux.",
@@ -398,7 +467,9 @@
           "Sous la structure : notions, définitions, conditions, effets, exceptions, sources, exemples (node_types.selection_heuristic).",
           "Poser logic: \"et\" quand les enfants sont cumulatifs (toutes les conditions, toutes les étapes d'une méthode), \"ou\" quand ils sont alternatifs (plusieurs voies, plusieurs profils au choix), null sinon (liste d'exemples, de conseils indépendants).",
           "Ajouter les renvois transversaux (edge_rules) : 0 à 4 par carte, entre nœuds proches (readability_rules.R5), chacun avec un libellé qui dit la relation ; une relation lointaine s'écrit [[Titre]] dans la note.",
-          "Utiliser une fourche (group) quand un même nœud mène, avec la même relation, à plusieurs nœuds éloignés (ex. une cause « implique » trois effets situés dans d'autres branches)."
+          "Utiliser une fourche (group) quand un même nœud mène, avec la même relation, à plusieurs nœuds éloignés (ex. une cause « implique » trois effets situés dans d'autres branches).",
+          "Exploiter les constructions de Ratio (readability_rules.R11) : frises pour les méthodes et chronologies, peignes pour les listes, annotations pour les exemples et sources, ordre des branches = ordre de lecture.",
+          "Choisir chaque libellé de renvoi par edge_rules.labels.procedure ; créer un libellé sur mesure quand aucun préréglage n'est exact."
         ]
       },
       {
@@ -498,19 +569,101 @@
         "car",
         "donc"
       ],
-      "custom_examples": [
-        "s'oppose à",
-        "cause",
-        "aggrave",
-        "remédie à",
-        "s'applique à",
-        "illustre",
-        "nuance",
-        "précède",
-        "prolonge",
-        "sous réserve de"
+      "custom_allowed": true,
+      "rule": "Le libellé dit la relation EXACTE. Si aucun préréglage ne la dit précisément, CRÉE le tien : 1 à 3 mots, verbe au présent ou préposition, minuscules (sauf ET/OU), ≤ 14 caractères de préférence (20 au maximum). Test : la phrase « [source] — [libellé] → [cible] » doit être vraie et compréhensible par un élève qui ne connaît pas le livre.",
+      "procedure": [
+        "1. Nommer la catégorie de la relation (lexicon ci-dessous).",
+        "2. Choisir le mot le plus précis de la catégorie, ou en créer un plus juste (« aggrave », « protège de », « naît de », « précède »).",
+        "3. Lire la phrase à voix haute dans le sens de la flèche ; si elle sonne faux, inverser la flèche ou changer le mot.",
+        "4. Bannir les libellés vagues (« lien », « rapport », « voir » quand une relation plus précise existe)."
       ],
-      "rule": "1 à 3 mots, minuscules (sauf ET/OU), au présent, se lisant « source — libellé → cible »."
+      "lexicon": {
+        "cause": [
+          "cause",
+          "provoque",
+          "nourrit",
+          "naît de",
+          "découle de",
+          "entretient"
+        ],
+        "conséquence": [
+          "implique",
+          "entraîne",
+          "mène à",
+          "aboutit à",
+          "donc"
+        ],
+        "condition": [
+          "exige",
+          "suppose",
+          "dépend de",
+          "sous réserve de"
+        ],
+        "opposition": [
+          "s'oppose à",
+          "contredit",
+          "contraire de",
+          "≠"
+        ],
+        "exception": [
+          "sauf",
+          "nuance",
+          "limite",
+          "tempère"
+        ],
+        "remède": [
+          "remédie à",
+          "protège de",
+          "évite",
+          "prévient",
+          "corrige"
+        ],
+        "renforcement": [
+          "renforce",
+          "aggrave",
+          "amplifie",
+          "affaiblit"
+        ],
+        "illustration / preuve": [
+          "illustre",
+          "prouve",
+          "confirme",
+          "démontre"
+        ],
+        "précision": [
+          "précise",
+          "développe",
+          "définit",
+          "détaille"
+        ],
+        "temps": [
+          "précède",
+          "suit",
+          "puis",
+          "prépare"
+        ],
+        "but / moyen": [
+          "sert à",
+          "permet",
+          "pour",
+          "au moyen de"
+        ],
+        "comparaison": [
+          "ressemble à",
+          "plus fort que",
+          "se distingue de"
+        ],
+        "renvoi": [
+          "voir",
+          "cf."
+        ]
+      },
+      "examples_custom": [
+        "La culpabilité — entretient → Le besoin de plaire",
+        "Dire non poliment — protège de → L'épuisement",
+        "Le disque rayé — sert à → Tenir sa position",
+        "Rosenberg — définit → La CNV"
+      ]
     },
     "when_to_link": [
       "Une cause décrite dans une branche produit un effet décrit dans une autre → « implique » / « cause ».",
@@ -603,6 +756,19 @@
         "id": "R10",
         "name": "La disposition est laissée à Ratio",
         "rule": "Ne pas fournir x, y. Facultatif : \"layoutPick\" sur une carte pour imposer une disposition — \"right\" (arbre vers la droite, défaut conseillé), \"balanced\" (centrée : racine au centre, 4 à 6 branches équilibrées), \"down\" (pyramide : petite hiérarchie ≤ 24 nœuds, ≤ 3 niveaux). Sans layoutPick, Ratio compare les trois et garde la plus lisible."
+      },
+      {
+        "id": "R11",
+        "name": "Constructions qui se lisent d'un coup d'œil",
+        "rule": "Ratio transforme certaines structures en constructions visuelles ; utilise-les volontairement :",
+        "constructions": [
+          "FRISE fléchée : un nœud methode (ou ET) avec 3 à 6 étapes feuilles (forme/idee, titres ≤ 34 caractères), ou 3 à 6 dates sœurs feuilles dans l'ordre chronologique.",
+          "PEIGNE (liste) : un parent avec 4 enfants ou plus s'affiche comme une liste à épine ; garde les titres de la liste parallèles (même forme grammaticale).",
+          "ANNOTATIONS : exemple, juris, doctrine, texte, citation, personne feuilles s'affichent en retrait sous l'élément qu'ils illustrent — place-les juste après lui.",
+          "NUMÉROS D'ORDRE : les branches principales (hors leçons/sections) sont numérotées 1, 2, 3… dans l'ordre du JSON : mets-les dans l'ordre où l'élève doit les lire.",
+          "FILS DE COULEUR : chaque branche principale a sa teinte ; une branche = une idée suivie de bout en bout (ne disperse pas une idée sur plusieurs branches).",
+          "SYNTHÈSE : « À retenir » en dernier, détaché par un espace."
+        ]
       }
     ]
   },
@@ -620,7 +786,7 @@
     {
       "id": "G1",
       "name": "Validité du schéma",
-      "check": "format/version/kind présents ; 1 cours ; chaque carte a id unique, courseId = id du cours, needsLayout true ; ids de nœuds et d'arêtes uniques par carte ; types ∈ 15 types ; from/to existent ; ≤ 1 parent tree par nœud ; 1 seule racine par carte ; aucun nœud isolé ; pas de cycle.",
+      "check": "format/version/kind présents ; 1 cours ; chaque carte a id unique, courseId = id du cours, needsLayout true ; ids de nœuds et d'arêtes uniques par carte ; types ∈ 24 types ; from/to existent ; ≤ 1 parent tree par nœud ; 1 seule racine par carte ; aucun nœud isolé ; pas de cycle.",
       "blocking": true
     },
     {
@@ -644,13 +810,13 @@
     {
       "id": "G5",
       "name": "Richesse d'expression",
-      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds NON structurels (une carte isolée peut descendre à 20 %) ; un seul par note, deux seulement si la note dépasse 12 lignes ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds.",
+      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds NON structurels (une carte isolée peut descendre à 20 %) ; un seul par note, deux seulement si la note dépasse 12 lignes ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds. Types : au moins 6 types différents par carte de plus de 20 nœuds, choisis par node_types.selection_heuristic (pas de type juridique forcé hors droit).",
       "blocking": false
     },
     {
       "id": "G6",
       "name": "Maillage",
-      "check": "Chaque carte a 0 à 4 renvois étiquetés (6 au maximum au-delà de 30 nœuds), tous entre nœuds proches (R5) ; libellés variés et justes.",
+      "check": "Chaque carte a 0 à 4 renvois étiquetés (6 au maximum au-delà de 30 nœuds), tous entre nœuds proches (R5) ; libellés variés et justes. Chaque libellé passe le test de la phrase « source — libellé → cible » (edge_rules.labels.rule) ; libellés créés quand aucun préréglage n'est exact.",
       "blocking": false
     },
     {
@@ -675,7 +841,7 @@
       "Lire 5 cartes de révision au hasard : question → réponse ?",
       "Lisibilité (G8) : racine à 3–7 branches, renvois ≤ 4 et proches, aucun exemple directement sous la racine, titres courts."
     ],
-    "validator_python": "import json,sys\nT={'notion','definition','fond','forme','effet','exception','juris','texte','idee','chapitre','lecon','section','doctrine','exemple','retenir'}\nd=json.load(open(sys.argv[1]));E=[]\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=6 if len(ids)>30 else 4\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1:W.append(p+': renvoi lointain '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (→ [[Titre]] dans la note ?)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>14:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (15–45)'%len(ids))\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
+    "validator_python": "import json,sys\nT={'notion','definition','fond','forme','effet','exception','juris','texte','idee','chapitre','lecon','section','doctrine','exemple','retenir','question','methode','comparaison','piege','citation','personne','date','chiffre','formule'}\nd=json.load(open(sys.argv[1]));E=[]\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=6 if len(ids)>30 else 4\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1:W.append(p+': renvoi lointain '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (→ [[Titre]] dans la note ?)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (15–45)'%len(ids))\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
   },
   "anti_patterns": [
     {
@@ -773,6 +939,18 @@
       "name": "racine_fourre_tout",
       "description": "Racine à 8+ enfants mélangeant parties, exemples, citations et sources.",
       "correction": "3–6 parties homogènes sous la racine ; exemples et sources rangés dans la partie concernée (R1, R2)."
+    },
+    {
+      "id": "AP17",
+      "name": "libellé_passe_partout",
+      "description": "« voir », « lien », « implique » partout, même quand la relation est plus précise.",
+      "correction": "edge_rules.labels.procedure : nommer la catégorie, puis le mot exact — en créer un si besoin."
+    },
+    {
+      "id": "AP18",
+      "name": "chronologie_en_vrac",
+      "description": "Des dates éparpillées dans plusieurs branches ou dans le désordre.",
+      "correction": "3 à 6 dates sœurs feuilles, dans l'ordre chronologique, sous un parent (frise)."
     }
   ],
   "example": {
@@ -1009,8 +1187,46 @@
   },
   "implementation_notes": {
     "format_note": "Spécification JSON portable, dans le même esprit que universal_problem_solving_invention_engine. Pour Claude (Skills natifs), le fichier SKILL.md voisin sert de point d'entrée et renvoie à ce JSON. Pour ChatGPT, Gemini, Mistral… : joindre ce fichier au début de la conversation avec le document et écrire « Applique ce skill à ce livre ».",
-    "app_compatibility": "Format vérifié avec Ratio ≥ 2.4.0 (import tolérant : balises ```json, virgules finales et guillemets typographiques sont corrigés automatiquement, mais ne pas compter dessus).",
+    "app_compatibility": "Format vérifié avec Ratio ≥ 2.6 (24 types : les 9 types question, methode, comparaison, piege, citation, personne, date, chiffre, formule demandent Ratio 2.6 ; une version antérieure les importe en « Idée »).",
     "privacy": "Le JSON ne contient que le cours : aucun historique de révision, aucun réglage.",
-    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins."
+    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins. La v1.3 ajoute 9 types (au-delà du droit), la création de libellés sur mesure, les constructions visuelles de Ratio (frises, peignes, annotations) et une grille de décision pour découper le livre en cartes."
+  },
+  "course_design": {
+    "why": "Découper un livre en cartes, c'est décider où l'élève s'arrêtera pour réviser. On note chaque découpage candidat sur des critères pondérés.",
+    "candidates": "Pour chaque partie du livre, comparer au moins deux découpages (ex. 1 carte par chapitre, chapitres courts regroupés, chapitre long scindé).",
+    "criteria": [
+      {
+        "id": "C1",
+        "name": "Cohérence",
+        "weight": 0.3,
+        "question": "Toute la carte répond-elle à UNE question (son titre) ?"
+      },
+      {
+        "id": "C2",
+        "name": "Taille",
+        "weight": 0.2,
+        "question": "15–35 nœuds ? (0 au-delà de 45 ou en dessous de 12)"
+      },
+      {
+        "id": "C3",
+        "name": "Autonomie",
+        "weight": 0.15,
+        "question": "Se révise-t-elle sans ouvrir une autre carte ? (peu de dépendances externes)"
+      },
+      {
+        "id": "C4",
+        "name": "Équilibre",
+        "weight": 0.15,
+        "question": "3–6 branches principales de poids comparables ?"
+      },
+      {
+        "id": "C5",
+        "name": "Mémorisabilité",
+        "weight": 0.2,
+        "question": "Les énumérations du livre y sont-elles entières et les titres rappelables ?"
+      }
+    ],
+    "decision": "Garder le découpage au meilleur total ; à égalité, celui qui suit le plan du livre.",
+    "map_title": "Le titre d'une carte est la question ou l'idée qu'elle traite, en 2 à 7 mots (« Pourquoi on ne sait pas dire non »), pas « Chapitre 5 »."
   }
 }

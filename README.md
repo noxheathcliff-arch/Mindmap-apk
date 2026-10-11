@@ -32,7 +32,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 |---|---|
 | **Cours** | Le dossier d'un enseignement (ex. *Droit des obligations*). Sur l'accueil, chaque cours est une **fiche** à sa teinte, marquée d'une **empreinte** générée depuis ses cartes, qui montre la prochaine question à réviser. |
 | **Carte** | Une notion à décomposer, ou un chapitre entier (choix à la création). |
-| **Nœud** | Un élément typé : Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée. |
+| **Nœud** | Un élément typé : Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée — et, au-delà du droit : Question, Méthode, Comparaison, Piège, Citation, Personne, Date, Chiffre clé, Formule. |
 | **Structure** | **Chapitre › Leçon › Section** : des nœuds plus grands et numérotés automatiquement (« Leçon 2 »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
 | **Note** | Le bloc-notes de chaque nœud (Markdown), avec aperçu. |
 | **Lien** | Hiérarchique (décomposition, trait plein) ou renvoi (« voir », « sauf », « implique »… en pointillé fléché). |
@@ -79,6 +79,16 @@ Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapit
 - les **libellés** se posent là où ils ne cachent aucun texte ;
 - une fourche dont les cibles sont trop éloignées est dessinée en renvois séparés.
 
+Le moteur ne se contente pas de ranger : il **construit** la carte pour qu'elle se lise d'un coup d'œil.
+
+- les listes de 4 éléments ou plus deviennent des **peignes** (une épine, des dents droites) ;
+- les étapes d'une **Méthode** et les **Dates** sœurs (3 à 6) deviennent une **frise fléchée** de gauche à droite ;
+- exemples, arrêts, citations, personnes… se placent en **annotation**, en retrait sous l'idée qu'ils illustrent ;
+- « À retenir » se détache ; les traits s'affinent avec la profondeur ;
+- **aides à la lecture** (⋮ → Disposition, activées par défaut) : une teinte douce par branche principale et des pastilles d'ordre 1, 2, 3.
+
+Pour chaque disposition, un optimiseur règle ensuite les écarts (colonnes, groupes, retraits, frises) en gardant ce qui améliore une note de lisibilité : liens qui traversent un nœud, libellés masqués, croisements, longueur des renvois, groupes ambigus, longs arcs, forme par rapport à l'écran.
+
 Une carte importée sans positions est rangée dès l'import (vignettes justes avant même la première ouverture), puis affinée avec les tailles réelles à l'ouverture.
 
 ### Lecture seule
@@ -117,7 +127,7 @@ Un import s'annule depuis la barre qui suit (*Annuler*).
 
 ### Transformer un livre en cours (skill pour IA)
 
-Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.2.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.3.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
 
 ## Structure
 

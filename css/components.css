@@ -440,6 +440,15 @@
 .cp-juris .cp-t { font-style: italic; }
 .cp-texte .cp-t { font-family: var(--font-mono); font-size: 13px; }
 .cp-lecon { border-width: 2.5px; }
+.cp-question { border-radius: 14px 14px 14px 4px; }
+.cp-methode { border-left-width: 5px; }
+.cp-comparaison { border-left: 3px double; border-right: 3px double; }
+.cp-piege { border-style: dashed; }
+.cp-citation .cp-t { font-family: var(--font-brand); font-style: italic; }
+.cp-personne { border-radius: 999px; }
+.cp-date { border-top-width: 4px; }
+.cp-chiffre .cp-t { font-weight: 700; }
+.cp-formule .cp-t { font-family: var(--font-mono); font-size: 13px; }
 .cp-pick { display: grid; gap: 6px; min-width: 0; }
 .cp-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .cp-sw { width: 26px; height: 26px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform var(--dur-xs) var(--ease-out), box-shadow var(--dur-xs) var(--ease-out); }

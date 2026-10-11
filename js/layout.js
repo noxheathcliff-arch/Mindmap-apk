@@ -37,11 +37,32 @@
       label: 25,      // libellé qui recouvre un nœud ou un autre libellé
       len: 4,         // longueur des renvois (par 100 px)
       fit: 50,        // -log(échelle d'ajustement) : passer de 50 % à 80 % vaut ~2 croisements
+      amb: 4,         // voisins de colonne de groupes différents trop proches (proximité ambiguë)
+      seq: 12,        // bonus par étape rangée en séquence (méthode, chronologie)
+      reach: 1.5,     // arcs hiérarchiques très longs (par 100 px au-delà de 220 px)
+      aspect: 6,      // écart de forme avec l'écran (|log| du rapport des proportions)
       mode: { right: 0, balanced: 15, down: 10 }, // familiarité : l'arbre horizontal d'abord
     },
   };
+  // rôle de lecture de chaque type : structure, contenu, appui (exemple, source…), synthèse
+  P.satIndent = 18;   // un appui (exemple, arrêt, citation…) se décale comme une annotation
+  P.satGap = 6;       // deux appuis consécutifs se serrent (ils forment un bloc)
+  P.summaryGap = 26;  // « À retenir » se détache de ce qui précède
+  P.seq = 1;          // séquences (méthodes, chronologies) en ligne
+  const SUPPORT = new Set(['exemple', 'juris', 'doctrine', 'texte', 'citation', 'personne']);
+  const role = (n) => (!n ? 'core' : R.store.TYPES[n.type] && R.store.TYPES[n.type].rank ? 'struct' : n.type === 'retenir' ? 'summary' : SUPPORT.has(n.type) ? 'support' : 'core');
+  /** Espace de recherche de l'optimiseur : chaque disposition est affinée sur ces réglages */
+  const SEARCH = {
+    depthGap: [72, 88, 108],
+    cousinGap: [18, 24, 34],
+    leafGap: [8, 10, 14],
+    structGap: [26, 34, 46],
+    satIndent: [0, 18, 28],
+    seq: [1, 0],
+  };
   const GAP_X = P.depthGap, GAP_Y = 16, GAP_ROOT = P.rootGap; // compatibilité
   const STACK = { indent: 28, top: 18, gap: 8, spine: 14 }; // pyramide : feuilles en colonne sous le parent
+  const SEQ = { gap: 34 }; // séquence : écart entre deux étapes (place pour la flèche)
 
   /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
       reflètent editor.css ; les nœuds de structure sont plus grands (hiérarchie visuelle). */
@@ -50,6 +71,7 @@
     lecon:    { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
     section:  { cw: 8.6,  pad: 35, lh: 22, base: 25, min: 120, max: 280, bar: 10 },
     notion:   { cw: 8.4,  pad: 43, lh: 24, base: 27, min: 64,  max: 260, bar: 0 },
+    chiffre:  { cw: 9.6,  pad: 33, lh: 26, base: 22, min: 64,  max: 260, bar: 0 },
   };
   const BASE = { cw: 7.4, pad: 31, lh: 20, base: 22, min: 64, max: 260, bar: 0 };
 
@@ -141,6 +163,37 @@
   function busDown(p1, p2, busY) {
     if (Math.abs(p1[0] - p2[0]) < 1) return elbow([p1, p2]);
     return elbow([p1, [p1[0], busY], [p2[0], busY], p2]);
+  }
+
+  /**
+   * Séquences repérées sur la carte (enfants alignés en ligne à droite du parent) :
+   * enfant → frère précédent. at : id → {x, y, w, h}.
+   */
+  function sequencePrev(map, at, mode = map.layout) {
+    const out = new Map();
+    if (mode === 'down') return out;
+    const kids = new Map();
+    for (const e of map.edges) if (e.kind === 'tree') { if (!kids.has(e.from)) kids.set(e.from, []); kids.get(e.from).push(e.to); }
+    for (const [pid, ids] of kids) {
+      if (ids.length < 3) continue;
+      const p = at.get(pid);
+      const ks = ids.map((i) => at.get(i));
+      if (!p || ks.some((k) => !k)) continue;
+      if (ks.some((k) => Math.abs(k.y - ks[0].y) > 1 || k.x < p.x + p.w)) continue;
+      ks.sort((a, b) => a.x - b.x);
+      for (let i = 1; i < ks.length; i++) out.set(ks[i].id, ks[i - 1].id);
+    }
+    return out;
+  }
+  /** Dent de peigne : parent → épine (mi-chemin de la colonne des enfants) → enfant */
+  function combTooth(a, kids, b) {
+    const left = b.x < a.x;
+    const col = left ? Math.max(...kids.map((k) => k.x + k.w)) : Math.min(...kids.map((k) => k.x));
+    const p1 = [left ? a.x : a.x + a.w, a.y + a.h / 2];
+    const x = left ? Math.max(col + 14, p1[0] - Math.max(18, (p1[0] - col) * 0.5)) : Math.min(col - 14, p1[0] + Math.max(18, (col - p1[0]) * 0.5));
+    const y = b.y + b.h / 2;
+    const tx = left ? b.x + b.w : b.x;
+    return elbow(Math.abs(y - p1[1]) < 1 ? [p1, [tx, y]] : [p1, [x, p1[1]], [x, y], [tx, y]], 12);
   }
 
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
@@ -395,7 +448,11 @@
     const own = dim(n);
     seen.add(id);
     const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
-    if (!ch.length) return { pos: new Map([[id, { d: 0, b: 0 }]]), lv: [{ d0: 0, d1: own.dl, lo: 0, hi: own.bl }], c: own.bl / 2, leaf: true, struct: isStruct(n) };
+    if (!ch.length) {
+      // feuille d'appui (exemple, source…) : décalée comme une annotation de la ligne au-dessus
+      const ind = cfg.satIndent && role(n) === 'support' && level > 1 ? cfg.satIndent : 0;
+      return { pos: new Map([[id, { d: ind, b: 0 }]]), lv: [{ d0: ind, d1: ind + own.dl, lo: 0, hi: own.bl }], c: own.bl / 2, leaf: true, struct: isStruct(n), role: role(n) };
+    }
     return group(id, own, ch, T, dim, cfg, seen, level);
   }
   /**
@@ -404,7 +461,7 @@
    * Purchase et al. 2010), et un lien ne coupe jamais le coin d'un nœud plus large.
    * Renvoie le décalage de chaque niveau depuis le niveau 0.
    */
-  function columns(rootIds, T, dim, gap, first = 0) {
+  function columns(rootIds, T, dim, gap, first = 0, indent = 0) {
     const maxD = [];
     const seen = new Set();
     let frontier = rootIds.map((id) => [id, first]);
@@ -413,7 +470,9 @@
       for (const [id, L] of frontier) {
         if (seen.has(id)) continue;
         seen.add(id);
-        maxD[L] = Math.max(maxD[L] || 0, dim(T.byId.get(id)).dl);
+        const nn = T.byId.get(id);
+        const ind = indent && role(nn) === 'support' && !(T.kids.get(id) || []).length && L > 1 ? indent : 0;
+        maxD[L] = Math.max(maxD[L] || 0, dim(nn).dl + ind);
         for (const c of T.kids.get(id) || []) next.push([c, L + 1]);
       }
       frontier = next;
@@ -422,12 +481,46 @@
     for (let L = 1; L < maxD.length + 1; L++) cols[L] = cols[L - 1] + (maxD[L - 1] || 0) + gap;
     return cols;
   }
+  /** Écart entre deux frères : il dit s'ils vont ensemble (proximité, Gestalt) */
   function sepFor(cfg, a, b) {
     if (a.struct || b.struct) return cfg.structGap;
+    if (b.role === 'summary') return cfg.summaryGap;
+    if (a.leaf && b.leaf && a.role === 'support' && b.role === 'support') return cfg.satGap;
     if (a.leaf && b.leaf) return cfg.leafGap;
     return cfg.sibGap;
   }
+  /**
+   * Séquence : les étapes d'une méthode, une suite ET d'étapes, ou une chronologie (dates) se
+   * rangent en LIGNE, reliées par des flèches — une frise se lit d'un trait, de gauche à droite.
+   */
+  function isSequence(id, ch, T) {
+    const p = T.byId.get(id);
+    if (!p || ch.length < 3 || ch.length > 6) return false;
+    if (ch.some((c) => (T.kids.get(c) || []).length)) return false;
+    const kids = ch.map((c) => T.byId.get(c));
+    if (kids.some((k) => (k.title || '').length > 34)) return false;
+    if (kids.every((k) => k.type === 'date')) return true;
+    if (p.type === 'methode' && kids.every((k) => ['forme', 'idee', 'methode'].includes(k.type))) return true;
+    return p.logic === 'et' && kids.every((k) => k.type === 'forme');
+  }
   function group(id, own, ch, T, dim, cfg, seen, level = 0) {
+    if (cfg.seq && isSequence(id, ch, T)) {
+      const cd0 = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap;
+      const pos = new Map([[id, { d: 0, b: 0 }]]);
+      const mid = own.bl / 2;
+      // étapes alignées par le haut : même y, donc l'ordre de lecture (y puis x) reste celui du cours
+      const top = mid - Math.max(...ch.map((c) => dim(T.byId.get(c)).bl)) / 2;
+      let d = cd0, lo = Math.min(0, top), hi = own.bl;
+      for (const c of ch) {
+        seen.add(c);
+        const s = dim(T.byId.get(c));
+        pos.set(c, { d, b: top });
+        hi = Math.max(hi, top + s.bl);
+        d += s.dl + SEQ.gap;
+      }
+      const n = T.byId.get(id);
+      return { pos, lv: [{ d0: 0, d1: own.dl, lo: 0, hi: own.bl }, { d0: cd0, d1: d - SEQ.gap, lo, hi }], c: mid, leaf: false, struct: !!(n && isStruct(n)), role: role(n) };
+    }
     // pyramide : une liste de feuilles (≥ 3) se range en colonne sous son parent, comme un
     // sommaire — la pyramide reste étroite et la liste se lit de haut en bas
     if (cfg.stackLeaves && ch.length >= 3 && ch.every((c) => !(T.kids.get(c) || []).length)) {
@@ -441,7 +534,7 @@
         maxW = Math.max(maxW, s.bl);
       }
       const n = T.byId.get(id);
-      return { pos, lv: [{ d0: 0, d1: d, lo: 0, hi: Math.max(own.bl, STACK.indent + maxW) }], c: own.bl / 2, leaf: false, struct: !!(n && isStruct(n)) };
+      return { pos, lv: [{ d0: 0, d1: d, lo: 0, hi: Math.max(own.bl, STACK.indent + maxW) }], c: own.bl / 2, leaf: false, struct: !!(n && isStruct(n)), role: role(n) };
     }
     const subs = ch.map((c) => subtree(c, T, dim, cfg, seen, level + 1));
     // les enfants commencent après le parent — ou au début de la colonne suivante (colonnes alignées)
@@ -453,24 +546,24 @@
     const pb = mid - own.bl / 2;
     const pos = new Map([[id, { d: 0, b: pb }]]);
     subs.forEach((s, i) => { for (const [k, v] of s.pos) pos.set(k, { d: v.d + cd, b: v.b + st.offs[i] }); });
-    return { pos, lv: [{ d0: 0, d1: own.dl, lo: pb, hi: pb + own.bl }, ...st.lv], c: mid, leaf: false, struct: !!(T.byId.get(id) && isStruct(T.byId.get(id))) };
+    return { pos, lv: [{ d0: 0, d1: own.dl, lo: pb, hi: pb + own.bl }, ...st.lv], c: mid, leaf: false, struct: !!(T.byId.get(id) && isStruct(T.byId.get(id))), role: role(T.byId.get(id)) };
   }
 
   /** Une racine et sa descendance, selon la disposition → { id: {x, y} } relatifs (racine en 0,0) */
-  function layoutTree(rootId, T, size, mode, split) {
+  function layoutTree(rootId, T, size, mode, split, prm = P) {
     const out = {};
     const root = T.byId.get(rootId);
     const rs = size(root);
     if (mode === 'down') {
-      const cfg = { gap: P.downGap, leafGap: P.downSibGap, sibGap: P.downSibGap, structGap: P.downSibGap + 16, cousinGap: P.downSibGap, stackLeaves: true };
+      const cfg = { gap: prm.downGap, leafGap: prm.downSibGap, sibGap: prm.downSibGap, structGap: prm.downSibGap + 16, cousinGap: prm.downSibGap, satGap: prm.downSibGap, summaryGap: prm.downSibGap + 12, stackLeaves: true };
       const dimD = (n) => { const s = size(n); return { dl: s.h, bl: s.w }; };
-      cfg.cols = columns([rootId], T, dimD, P.downGap);
+      cfg.cols = columns([rootId], T, dimD, prm.downGap);
       const L = subtree(rootId, T, dimD, cfg, new Set(), 0);
       const r0 = L.pos.get(rootId);
       for (const [id, v] of L.pos) out[id] = { x: v.b - r0.b, y: v.d };
       return out;
     }
-    const cfg = { gap: P.depthGap, leafGap: P.leafGap, sibGap: P.sibGap, structGap: P.structGap, cousinGap: P.cousinGap };
+    const cfg = { gap: prm.depthGap, leafGap: prm.leafGap, sibGap: prm.sibGap, structGap: prm.structGap, cousinGap: prm.cousinGap, satGap: prm.satGap, summaryGap: prm.summaryGap, satIndent: prm.satIndent };
     const dim = (n) => { const s = size(n); return { dl: s.w, bl: s.h }; };
     const kids = (T.kids.get(rootId) || []);
     out[rootId] = { x: 0, y: 0 };
@@ -482,8 +575,9 @@
     for (const side of sides) {
       if (!side.ids.length) continue;
       // colonnes de ce côté : niveau 1 = enfants de la racine
-      const cols = columns(side.ids, T, dim, P.depthGap, 1);
-      const scfg = { ...cfg, cols };
+      const cols = columns(side.ids, T, dim, prm.depthGap, 1, prm.satIndent);
+      // séquences en ligne : seulement quand la lecture va vers la droite (sinon l'ordre s'inverserait)
+      const scfg = { ...cfg, cols, seq: side.dir > 0 && prm.seq !== 0 };
       const subs = side.ids.map((c) => subtree(c, T, dim, scfg, seen, 1));
       const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) : cfg.cousinGap));
       const first = st.offs[0] + subs[0].c, last = st.offs[subs.length - 1] + subs[subs.length - 1].c;
@@ -491,7 +585,7 @@
       subs.forEach((s, i) => {
         for (const [id, v] of s.pos) {
           const w = size(T.byId.get(id)).w;
-          const x = side.dir > 0 ? rs.w + P.depthGap + v.d : -P.depthGap - v.d - w;
+          const x = side.dir > 0 ? rs.w + prm.depthGap + v.d : -prm.depthGap - v.d - w;
           out[id] = { x, y: v.b + st.offs[i] + shift };
         }
       });
@@ -510,12 +604,12 @@
   }
 
   /** Disposition complète d'une carte pour un mode donné (positions absolues) */
-  function place(map, T, size, mode, split) {
+  function place(map, T, size, mode, split, prm = P) {
     const out = {};
     let cursor = 0;
     const done = new Set();
     for (const r of T.roots) {
-      const loc = layoutTree(r, T, size, mode, split && r === T.roots[0] ? split : Math.ceil((T.kids.get(r) || []).length / 2));
+      const loc = layoutTree(r, T, size, mode, split && r === T.roots[0] ? split : Math.ceil((T.kids.get(r) || []).length / 2), prm);
       const ids = Object.keys(loc).filter((id) => !done.has(id));
       ids.forEach((id) => done.add(id));
       const bb = bbox(loc, T, size, ids);
@@ -523,7 +617,7 @@
       const dx = mode === 'down' ? cursor - bb.x0 : -bb.x0 + (loc[r] ? 0 : 0);
       const dy = mode === 'down' ? -bb.y0 : cursor - bb.y0;
       for (const id of ids) out[id] = { x: loc[id].x + dx, y: loc[id].y + dy };
-      cursor += (mode === 'down' ? bb.w : bb.h) + P.rootGap;
+      cursor += (mode === 'down' ? bb.w : bb.h) + prm.rootGap;
     }
     // la première racine ne bouge pas (pas de saut de caméra)
     const a = T.byId.get(T.roots[0]);
@@ -537,7 +631,7 @@
   /* ------------------------------------------------------------------ */
   /* Note d'une disposition                                              */
   /* ------------------------------------------------------------------ */
-  function evaluate(map, pos, size, mode, vp = {}) {
+  function evaluate(map, pos, size, mode, vp = {}, quick = false) {
     const S = R.store;
     const rects = [];
     const at = new Map();
@@ -550,11 +644,28 @@
     const polys = [];
     const treeLabels = [];
     const busy = busySides(map, mode, at, (r) => r);
+    const seqPrev = sequencePrev(map, at, mode);
+    // peignes (≥ 4 enfants d'un même côté) : même géométrie que l'éditeur
+    const sideKids = new Map();
+    for (const e of map.edges) {
+      if (e.kind !== 'tree' || e.label || mode === 'down') continue;
+      const a = at.get(e.from), b = at.get(e.to);
+      if (!a || !b) continue;
+      if (seqPrev.has(e.to) || [...seqPrev.values()].includes(e.to)) continue;
+      const k = e.from + (b.x < a.x ? 'L' : 'R');
+      if (!sideKids.has(k)) sideKids.set(k, []);
+      sideKids.get(k).push(b);
+    }
     for (const e of map.edges) {
       if (e.kind !== 'tree') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
-      const cv = treeCurve(mode, a, a, b, b);
+      const kids = !e.label && mode !== 'down' ? sideKids.get(e.from + (b.x < a.x ? 'L' : 'R')) : null;
+      let cv;
+      const prev = seqPrev.get(e.to);
+      if (prev) { const q = at.get(prev); cv = elbow([[q.x + q.w, q.y + q.h / 2], [b.x, b.y + b.h / 2]]); }
+      else if (kids && kids.length >= 4) cv = combTooth(a, kids, b);
+      else cv = treeCurve(mode, a, a, b, b);
       polys.push({ pts: sample(cv, 8), ends: new Set([e.from, e.to]) });
       if (e.label) treeLabels.push({ cv, label: e.label });
     }
@@ -565,7 +676,7 @@
       if (e.kind !== 'link') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
-      const rt = route(a, a, b, b, { rects, polys, placed, busy, label: e.label ? labelSize(e.label) : null });
+      const rt = route(a, a, b, b, { rects, polys, placed, busy, fast: quick, label: e.label ? labelSize(e.label) : null });
       hits += rt.hits; cross += rt.cross; len += rt.len;
       polys.push({ pts: rt.pts, ends: new Set([e.from, e.to]) });
       if (e.label) { const p = placeLabel(rt, labelSize(e.label), rects, placed); if (p.ov > 0) lblOv++; }
@@ -575,9 +686,40 @@
     const W = x1 - x0, H = y1 - y0;
     const vw = vp.w || 1280, vh = vp.h || 800;
     const fit = Math.min(1.2, Math.min(vw / (W + 64), vh / (H + 64)));
+    // proximité ambiguë (Gestalt) : deux voisins de colonne qui n'ont pas le même parent doivent
+    // être nettement plus éloignés que deux frères — sinon l'œil les croit du même groupe
+    const parentOf = new Map();
+    for (const e of map.edges) if (e.kind === 'tree') parentOf.set(e.to, e.from);
+    const horizontal = mode !== 'down';
+    const cols = new Map();
+    for (const r of rects) { const k = Math.round((horizontal ? r.x : r.y) / 12); if (!cols.has(k)) cols.set(k, []); cols.get(k).push(r); }
+    let amb = 0, sibGaps = [], cousinGaps = [];
+    for (const list of cols.values()) {
+      list.sort((a, b) => (horizontal ? a.y - b.y : a.x - b.x));
+      for (let i = 1; i < list.length; i++) {
+        const a = list[i - 1], b = list[i];
+        const g = horizontal ? b.y - (a.y + a.h) : b.x - (a.x + a.w);
+        if (parentOf.get(a.id) === parentOf.get(b.id)) sibGaps.push(g); else cousinGaps.push(g);
+      }
+    }
+    const medSib = sibGaps.length ? sibGaps.sort((a, b) => a - b)[Math.floor(sibGaps.length / 2)] : 10;
+    for (const g of cousinGaps) if (g < medSib * 1.8) amb++;
+    // longs arcs de la hiérarchie : un parent loin de ses enfants oblige à suivre une longue courbe
+    let reach = 0;
+    for (const e of map.edges) {
+      if (e.kind !== 'tree') continue;
+      const a = at.get(e.from), b = at.get(e.to);
+      if (!a || !b) continue;
+      const d = horizontal ? Math.abs((b.y + b.h / 2) - (a.y + a.h / 2)) : Math.abs((b.x + b.w / 2) - (a.x + a.w / 2));
+      reach += Math.max(0, d - 220) / 100;
+    }
+    // forme : une carte au format de l'écran se parcourt sans gymnastique
+    const aspect = Math.abs(Math.log((W / Math.max(1, H)) / (vw / vh)));
     const w = P.w;
-    const cost = w.hit * hits + w.cross * cross + w.label * lblOv + w.len * (len / 100) - w.fit * Math.log(Math.max(0.02, fit)) + (w.mode[mode] || 0);
-    return { cost, hits, cross, lblOv, len: Math.round(len), fit: +fit.toFixed(3), W: Math.round(W), H: Math.round(H) };
+    const cost = w.hit * hits + w.cross * cross + w.label * lblOv + w.len * (len / 100) - w.fit * Math.log(Math.max(0.02, fit))
+      + w.amb * amb + w.reach * reach + w.aspect * aspect + (w.mode[mode] || 0)
+      - w.seq * new Set(seqPrev.values()).size / 2; // une frise lue d'un trait vaut un peu de largeur
+    return { cost, hits, cross, lblOv, len: Math.round(len), fit: +fit.toFixed(3), amb, reach: +reach.toFixed(1), aspect: +aspect.toFixed(2), W: Math.round(W), H: Math.round(H) };
   }
 
   /**
@@ -611,13 +753,39 @@
     }
     let best = null;
     const tried = [];
-    for (const c of cands) {
-      const pos = place(map, T, size, c.mode, c.split);
-      const sc = evaluate(map, pos, size, c.mode, opts.viewport);
+    const run = (c, prm, quick = false) => {
+      const pos = place(map, T, size, c.mode, c.split, prm);
+      const sc = evaluate(map, pos, size, c.mode, opts.viewport, quick);
       tried.push({ mode: c.mode, split: c.split, ...sc });
-      if (!best || sc.cost < best.score.cost) best = { pos, mode: c.mode, score: sc };
+      return { pos, mode: c.mode, split: c.split, prm, score: sc };
+    };
+    // 1) chaque disposition avec les réglages par défaut
+    const firsts = cands.map((c) => run(c, P)).sort((a, b) => a.score.cost - b.score.cost);
+    best = firsts[0];
+    // 2) l'optimiseur affine les deux meilleures (descente par coordonnées sur SEARCH) :
+    //    écarts, colonnes, retraits — chaque réglage n'est gardé que s'il améliore la note
+    const budget = opts.fast ? 0 : map.nodes.length > 80 ? 1 : 2;
+    for (const start of firsts.slice(0, opts.fast ? 0 : 2)) {
+      // affinage en évaluation rapide (sans départage des croisements), note complète à la fin
+      let cur = run({ mode: start.mode, split: start.split }, start.prm, true);
+      const base = cur;
+      for (let round = 0; round < budget; round++) {
+        let improved = false;
+        for (const [k, vals] of Object.entries(SEARCH)) {
+          if (cur.mode === 'down' && k !== 'structGap') continue;
+          for (const v of vals) {
+            if (cur.prm[k] === v) continue;
+            const cand = run({ mode: cur.mode, split: cur.split }, { ...cur.prm, [k]: v }, true);
+            if (cand.score.cost < cur.score.cost - 0.01) { cur = cand; improved = true; }
+          }
+        }
+        if (!improved) break;
+      }
+      if (cur === base) continue;
+      const full = run({ mode: cur.mode, split: cur.split }, cur.prm);
+      if (full.score.cost < best.score.cost) best = full;
     }
-    return { ...best, tried };
+    return { pos: best.pos, mode: best.mode, score: best.score, params: best.prm, tried };
   }
 
   /** Compatibilité : positions seules, dans la disposition actuelle (ou celle demandée) */
@@ -649,6 +817,11 @@
       const last = ch[ch.length - 1];
       return { x: last.x + size(last).w + P.downSibGap, y: last.y };
     }
+    // séquence en ligne (méthode, chronologie) : l'étape suivante se pose à droite de la dernière
+    if (ch.length >= 2 && ch.every((c) => Math.abs(c.y - ch[0].y) <= 1) && ch[0].x > parent.x + ps.w) {
+      const last = ch.reduce((m, c) => (c.x > m.x ? c : m), ch[0]);
+      return { x: last.x + size(last).w + SEQ.gap, y: last.y };
+    }
     const side = ch.filter((c) => (f.child === 'left' ? c.x < parent.x : c.x >= parent.x));
     if (!side.length) return f.child === 'left' ? { x: parent.x - P.depthGap - 160, y: parent.y + ps.h / 2 - 22 } : { x: parent.x + ps.w + P.depthGap, y: parent.y + ps.h / 2 - 22 };
     const last = side.reduce((m, c) => (c.y > m.y ? c : m), side[0]);
@@ -656,9 +829,9 @@
   }
 
   R.layout = {
-    P, GAP_X, GAP_Y, GAP_ROOT, STACK, stacked,
+    P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT, STACK, stacked,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow,
-    treeSides, treeCurve, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
+    treeSides, treeCurve, combTooth, sequencePrev, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);

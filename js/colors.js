@@ -96,6 +96,8 @@
     notion: 28, definition: 52, fond: 8, forme: 348, effet: 72, exception: 330,
     texte: 152, juris: 178, doctrine: 202,
     exemple: 292, retenir: 92, idee: 312,
+    piege: 18, question: 236, methode: 214, comparaison: 222,
+    citation: 165, personne: 190, date: 128, chiffre: 112, formule: 140,
   };
   const family = {};
   for (const [t, h] of Object.entries(FAMILY_HUES)) family[t] = oklchToHex({ L: 0.64, C: 0.14, h });
