@@ -177,7 +177,7 @@ Une carte de cours n'est pas un dossier décoratif : c'est **la prochaine fiche 
 - **Corps réglé** (marge rouge pâle, lignes tous les 28 px) : la question de la prochaine fiche (`store.nextCard` : la plus en retard, sinon la première nouvelle de la plus ancienne carte). « Réviser » ouvre la révision **sur cette fiche-là** (`?start=carte.nœud`).
 - **Quatre états** : *Prochaine fiche* (question + Réviser + nombre dû) · *À jour* (prochaine échéance, maîtrise) · *À compléter* (des cartes, aucune note) · *Fiche blanche* (aucune carte → Nouvelle carte).
 - **En-tête du cours** : la bande papier seule, sans contour ni surligneur sur le titre (la teinte et l'empreinte suffisent à identifier le cours ; le jaune sur une teinte pastel brouillait la lecture).
-- **Emplacement « Nouveau cours / Nouvelle carte »** : la place de la prochaine feuille, en pointillés, sans fond ; pastille + cerclée, libellé et une ligne d'aide. Au survol, la pastille se remplit en jaune et tourne de 90°.
+- **Emplacement « Nouveau cours / Nouvelle carte »** : la place de la prochaine feuille, en pointillés, sans fond ; pastille + cerclée, libellé et une ligne d'aide. Mouvement : voir §5.3 (« Emplacement d'ajout »).
 - **Accessibilité** : un seul lien (le titre, étiré sur toute la fiche) ; Options et Réviser restent au-dessus et atteignables au clavier ; anneau de focus sur la feuille.
 
 ---
@@ -213,6 +213,9 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Vignette → canvas | élément partagé | vignette → canvas | 360 | drawer | continuité |
 | Fiche (survol, pointeur fin) | feuilles dessous en éventail, feuille −2 px, ombre (opacité) | +2 px / +1,2° par couche | 240 | out | anticipation douce, lecture de l'épaisseur |
 | Fiche (appui) / Réviser | scale | 1 → 0.985 / 0.97 | 100 | out | feedback |
+| Emplacement d'ajout (survol / focus, pointeur fin) | les pointillés se referment en feuille pleine (feuille fantôme : opacité + scale .965 → 1), puis la pastille s'encre de jaune depuis son centre (.6 → 1) et le + tourne de 90° | — | 240, pastille +40 | out (retour 160 in) | staging : la feuille, puis l'action |
+| Emplacement d'ajout (appui) | feuille scale 1 → .985, pastille 1 → .9 (squash) ; au toucher, l'appui déclenche aussi l'encre | — | 100 | out | feedback, l'appui remplace le survol sur mobile |
+| Emplacement → formulaire | le dialogue naît du centre de l'emplacement (transform-origin) et y retourne ; l'emplacement reste « prêt » tant qu'il est ouvert | scale .9 → 1 / → .94 | 280 / 180 | out / in | continuité spatiale (origine = destination) |
 | Empreinte (1re visite de la session) | centre, puis branches en tracé, puis feuilles | pop 160 · tracé 420, cascade 35 ms (max 6) · feuilles +330 | ≈ 0,7 s | out | staging, cascade bornée ; jamais rejoué ensuite |
 | Dialogue | opacité, scale, y | 0.96, 8 px → 1 | 280 / 180 | out / in | staging (scrim 200 ms) |
 | Menu | scale depuis le déclencheur | 0.96 → 1, items +12 ms | 160 / 100 | out / in | follow-through |

@@ -45,9 +45,10 @@
   /* ---------------- Actions partagées ------------------------------ */
   R.actions = R.actions || {};
 
-  R.actions.newCourse = async function () {
+  /* from : élément d'où naît le formulaire (emplacement « Nouveau cours / Nouvelle carte ») */
+  R.actions.newCourse = async function ({ from } = {}) {
     const v = await ui.form({
-      title: 'Nouveau cours', icon: 'folder', ok: 'Créer',
+      title: 'Nouveau cours', icon: 'folder', ok: 'Créer', origin: from,
       fields: [
         { key: 'title', label: 'Intitulé du cours', placeholder: 'Ex. Droit des obligations', required: true },
         { key: 'description', label: 'Précision (facultatif)', placeholder: 'Ex. M1 · S1 · Pr. Dupont' },
@@ -80,14 +81,14 @@
     ui.snack('Cours supprimé', { action: 'Annuler', onAction: () => S.restore(snap) });
   };
 
-  R.actions.newMap = async function (courseId) {
+  R.actions.newMap = async function (courseId, { from } = {}) {
     if (!courseId) {
       const courses = S.coursesSorted();
       if (!courses.length) { await R.actions.newCourse(); return; }
       courseId = courses[0].id;
     }
     const v = await ui.form({
-      title: 'Nouvelle carte', icon: 'map', ok: 'Créer',
+      title: 'Nouvelle carte', icon: 'map', ok: 'Créer', origin: from,
       fields: [
         { key: 'title', label: 'Notion ou chapitre', placeholder: 'Ex. La formation du contrat', required: true },
         { key: 'root', label: 'Point de départ', choices: [
@@ -254,7 +255,7 @@
 
         const grid = h('div.course-grid');
         courses.forEach((c) => grid.appendChild(courseCard(c, draw, { draw: intro })));
-        const add = h('button.course-card.course-add.ripple', { type: 'button', onclick: R.actions.newCourse },
+        const add = h('button.course-card.course-add.ripple', { type: 'button', onclick: (e) => R.actions.newCourse({ from: e.currentTarget }) },
           h('span.add-ic', R.icon('plus', 20)), h('span.add-txt', h('span.add-l', 'Nouveau cours'), h('span.add-s', 'Un dossier par matière')));
         grid.appendChild(add);
         if (intro) R.motion.stagger(Array.from(grid.children), 1);

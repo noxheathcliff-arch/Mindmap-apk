@@ -174,6 +174,12 @@
 .dialog.out { animation: dialog-out 180ms var(--ease-in) forwards; }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
 @keyframes dialog-out { to { opacity: 0; transform: scale(.98); } }
+/* né d'un déclencheur (ui.dialog({ origin })) : transform-origin posé sur son centre, le
+   dialogue en sort et y retourne — l'écart d'échelle suffit à suggérer le trajet */
+.dialog.from-origin { animation-name: dialog-grow; }
+.dialog.from-origin.out { animation-name: dialog-shrink; }
+@keyframes dialog-grow { from { opacity: 0; transform: scale(.9); } }
+@keyframes dialog-shrink { to { opacity: 0; transform: scale(.94); } }
 /* le contenu suit le conteneur (follow-through, +40 ms) */
 .dialog > * { animation: fade-in var(--dur-md) var(--ease-out) 40ms both; }
 .dialog.out > * { animation: none; }

@@ -182,24 +182,73 @@
 .course-card.course-add, .map-card.map-add {
   /* l'emplacement de la prochaine feuille : un tracé en pointillés, sans fond ni ombre
      (sélecteurs doublés : passent devant .course-card / .map-card, définis plus bas) */
+  --add-dash: color-mix(in srgb, var(--on-surface) 26%, transparent);
   flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
-  background: transparent; border: 1.5px dashed color-mix(in srgb, var(--on-surface) 26%, transparent);
+  background: transparent; border: 1.5px dashed var(--add-dash);
   color: var(--on-surface); text-align: center;
-  transition: background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out), transform var(--dur-sm) var(--ease-out);
+  transition: border-color var(--dur-sm) var(--ease-in), transform var(--dur-sm) var(--ease-out);
+}
+.course-add::before, .map-add::before { display: none; } /* la feuille fantôme remplace la couche d'état */
+/* Feuille fantôme : au survol, les pointillés se referment en une feuille pleine */
+.course-add::after, .map-add::after {
+  content: ""; position: absolute; inset: -1.5px; z-index: -2; border-radius: inherit; pointer-events: none;
+  background: var(--surface-container-lowest); border: 1px solid var(--outline-variant);
+  opacity: 0; transform: scale(.965);
+  transition: opacity var(--dur-sm) var(--ease-in), transform var(--dur-sm) var(--ease-in);
 }
 .add-ic {
+  position: relative; isolation: isolate;
   display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%;
   border: 1.5px solid currentColor;
-  transition: transform var(--dur-md) var(--ease-out), background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
+  transition: border-color var(--dur-sm) var(--ease-in), color var(--dur-sm) var(--ease-in), transform var(--dur-sm) var(--ease-out);
 }
+/* l'encre jaune qui remplit la pastille, depuis son centre */
+.add-ic::before {
+  content: ""; position: absolute; inset: -1.5px; z-index: -1; border-radius: inherit;
+  background: var(--primary); opacity: 0; transform: scale(.6);
+  transition: opacity var(--dur-sm) var(--ease-in), transform var(--dur-sm) var(--ease-in);
+}
+:is(.course-add, .map-add) .ripple-wave { opacity: .06; } /* l'onde reste discrète sur la feuille fantôme */
+.add-ic svg { transition: transform var(--dur-sm) var(--ease-in); }
 .add-txt { display: grid; gap: 2px; }
 .add-l { font: var(--title-s); }
 .add-s { font: var(--body-s); color: var(--on-surface-variant); }
+
+/* État « prêt » : survol (pointeur fin), focus clavier, et tant que le formulaire ouvert depuis
+   l'emplacement est à l'écran (.dialog-source). Entrée : feuille 240 ms, puis pastille +40 ms. */
 @media (hover: hover) {
-  .course-card.course-add:hover, .map-card.map-add:hover { background: var(--surface-container-low); border-color: color-mix(in srgb, var(--on-surface) 48%, transparent); }
-  .course-add:hover .add-ic, .map-add:hover .add-ic { transform: rotate(90deg); background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+  .course-add:hover, .map-add:hover { border-color: transparent; transition: border-color var(--dur-md) var(--ease-out), transform var(--dur-sm) var(--ease-out); }
+  .course-add:hover::after, .map-add:hover::after,
+  .course-add:hover .add-ic::before, .map-add:hover .add-ic::before { opacity: 1; transform: none; transition: opacity var(--dur-md) var(--ease-out), transform var(--dur-md) var(--ease-out); }
+  .course-add:hover .add-ic::before, .map-add:hover .add-ic::before { transition-delay: 40ms; }
+  .course-add:hover .add-ic, .map-add:hover .add-ic { border-color: var(--primary); color: var(--on-primary); transition: border-color var(--dur-sm) var(--ease-out) 40ms, color var(--dur-sm) var(--ease-out) 40ms, transform var(--dur-sm) var(--ease-out); }
+  .course-add:hover .add-ic svg, .map-add:hover .add-ic svg { transform: rotate(90deg); transition: transform var(--dur-md) var(--ease-out) 40ms; }
 }
+.course-add:is(:focus-visible, .dialog-source), .map-add:is(:focus-visible, .dialog-source) { border-color: transparent; }
+.course-add:is(:focus-visible, .dialog-source)::after, .map-add:is(:focus-visible, .dialog-source)::after,
+.course-add:is(:focus-visible, .dialog-source) .add-ic::before, .map-add:is(:focus-visible, .dialog-source) .add-ic::before { opacity: 1; transform: none; transition: opacity var(--dur-md) var(--ease-out), transform var(--dur-md) var(--ease-out); }
+.course-add:is(:focus-visible, .dialog-source) .add-ic, .map-add:is(:focus-visible, .dialog-source) .add-ic { border-color: var(--primary); color: var(--on-primary); }
+.course-add:is(:focus-visible, .dialog-source) .add-ic svg, .map-add:is(:focus-visible, .dialog-source) .add-ic svg { transform: rotate(90deg); }
+.course-add:focus-visible, .map-add:focus-visible { outline: 2px solid var(--on-surface); outline-offset: 3px; }
+
+/* Appui : la feuille se tasse, la pastille s'écrase un peu plus (squash) ; au toucher, l'appui
+   déclenche aussi l'encre (pas de survol sur mobile) */
 .course-card.course-add:active, .map-card.map-add:active { transform: scale(.985); transition-duration: var(--dur-xs); }
+.course-add:active .add-ic, .map-add:active .add-ic { transform: scale(.9); transition-duration: var(--dur-xs); }
+@media (hover: none) {
+  .course-add:active, .map-add:active { border-color: transparent; }
+  .course-add:active::after, .map-add:active::after,
+  .course-add:active .add-ic::before, .map-add:active .add-ic::before { opacity: 1; transform: none; transition: opacity var(--dur-xs) var(--ease-out), transform var(--dur-sm) var(--ease-out); }
+  .course-add:active .add-ic, .map-add:active .add-ic { border-color: var(--primary); color: var(--on-primary); }
+  .course-add:active .add-ic svg, .map-add:active .add-ic svg { transform: rotate(90deg); transition: transform var(--dur-sm) var(--ease-out); }
+}
+/* Animations réduites : la feuille et l'encre apparaissent en fondu, sans échelle ni rotation */
+:root[data-motion="reduce"] :is(.course-add, .map-add)::after,
+:root[data-motion="reduce"] :is(.course-add, .map-add) .add-ic::before,
+:root[data-motion="reduce"] :is(.course-add, .map-add) .add-ic svg,
+:root[data-motion="reduce"] :is(.course-add, .map-add) .add-ic,
+:root[data-motion="reduce"] .course-card.course-add, :root[data-motion="reduce"] .map-card.map-add { transform: none !important; }
+
 @media (max-width: 599.98px) {
   .course-card.course-add, .map-card.map-add { min-height: 76px; flex-direction: row; justify-content: flex-start; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); text-align: left; }
 }

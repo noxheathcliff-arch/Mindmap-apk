@@ -87,7 +87,9 @@
   /* ------------------------------------------------------------------ */
   const layer = () => U.$('#overlays');
 
-  ui.dialog = function ({ title, icon, body, actions = [], cls = '', dismissible = true, onOpen, full }) {
+  /** origin : élément déclencheur (facultatif). Le dialogue naît de lui et y retourne
+   *  (transform-origin sur son centre), et il reste « actif » tant que le dialogue est ouvert. */
+  ui.dialog = function ({ title, icon, body, actions = [], cls = '', dismissible = true, onOpen, full, origin }) {
     return new Promise((resolve) => {
       const prevFocus = document.activeElement;
       const scrim = h('div.scrim');
@@ -104,6 +106,7 @@
         closed = true;
         box.classList.add('out');
         scrim.classList.add('out');
+        if (origin) origin.classList.remove('dialog-source');
         document.removeEventListener('keydown', onKey, true);
         setTimeout(() => { wrap.remove(); if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); }, motion.reduced() ? 120 : 180);
         resolve(val);
@@ -129,6 +132,14 @@
       };
       document.addEventListener('keydown', onKey, true);
       layer().appendChild(wrap);
+      if (origin && origin.isConnected) {
+        // offsetLeft/Top : position de mise en page, indépendante de l'animation en cours
+        const o = origin.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+        const ox = o.left + o.width / 2 - w.left - box.offsetLeft, oy = o.top + o.height / 2 - w.top - box.offsetTop;
+        box.style.transformOrigin = `${Math.round(ox)}px ${Math.round(oy)}px`;
+        box.classList.add('from-origin');
+        origin.classList.add('dialog-source');
+      }
       ui.hideTip();
       requestAnimationFrame(() => {
         const f = box.querySelector('[autofocus], input, textarea') || box.querySelector('.dialog-actions .btn:last-child');
@@ -168,7 +179,7 @@
   };
 
   /** Formulaire : fields = [{key,label,value,placeholder,multiline,required}] */
-  ui.form = function ({ title, icon, fields, ok = 'Créer' }) {
+  ui.form = function ({ title, icon, fields, ok = 'Créer', origin }) {
     const inputs = {};
     const body = h('div.form');
     fields.forEach((f, i) => {
@@ -208,7 +219,7 @@
     };
     const collect = () => Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, v.value]));
     return ui.dialog({
-      title, icon, body,
+      title, icon, body, origin,
       actions: [
         { label: 'Annuler', value: null },
         { label: ok, value: collect, validate, variant: 'filled', primary: true },
@@ -673,6 +684,9 @@
       el.style.setProperty('--i', Math.min(base + i, max));
       el.style.setProperty('--step', step + 'ms');
       el.classList.add('stagger');
+      // retirée à la fin : une animation « both » figerait transform et couperait les transitions d'appui
+      const done = (e) => { if (e.target !== el) return; el.classList.remove('stagger'); el.removeEventListener('animationend', done); };
+      el.addEventListener('animationend', done);
     });
   };
 

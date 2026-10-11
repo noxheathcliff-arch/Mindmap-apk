@@ -92,7 +92,7 @@
 
         const grid = h('div.map-grid');
         maps.forEach((m) => grid.appendChild(mapCard(m, draw)));
-        grid.appendChild(h('button.map-card.map-add.ripple', { type: 'button', onclick: () => R.actions.newMap(course.id) },
+        grid.appendChild(h('button.map-card.map-add.ripple', { type: 'button', onclick: (e) => R.actions.newMap(course.id, { from: e.currentTarget }) },
           h('span.add-ic', R.icon('plus', 20)), h('span.add-txt', h('span.add-l', 'Nouvelle carte'), h('span.add-s', 'Une notion ou un chapitre'))));
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
