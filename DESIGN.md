@@ -142,6 +142,15 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 - **Mini-fonctions** : « Réviser ce chapitre / cette leçon » (révision limitée à la branche, route `#/reviser/carte/:id/:nœud`), « Isoler » (replie les autres nœuds du même type, cadre la branche), sommaire dans le panneau, enfant par défaut qui suit le plan (Chapitre → Leçon), raccourcis `Alt 1–3`.
 - **Plan** : la structure devient des intertitres et la numérotation I. A. 1. a) repart sous chacun ; « À retenir » est un encadré hors numérotation.
 
+### 4.4 bis Couleurs des nœuds (option)
+Monochrome par défaut (60/30/10 intact). L'option **Couleurs des nœuds** (Réglages, ou ⋮ dans une carte) **ajoute** une teinte par type sans retirer la forme : *teinte = famille, forme = type* — on repère d'un coup d'œil et la distinction survit au daltonisme et à l'impression.
+- **Familles** : Structure bleue, Notion chaude, Sources vertes, Compléments violets (À retenir ambre, comme le surligneur) ; variations de teinte dans la famille, même luminance/chroma OKLCH.
+- **Daltonisme** : palette d'Okabe & Ito (Wong, *Nature Methods* 2011) sur 7 types clés ; au-delà de ~8 couleurs on ne distingue plus de façon fiable, les autres types restent monochromes.
+- **Perso** : 12 nuances harmonieuses (teintes à 30°, luminance et saturation perçues égales) ou n'importe quelle couleur ; partir d'un préréglage le copie, rien n'est perdu.
+- **Intensité** : *douce* (fond pâle, bordure colorée, pour lire longtemps) ou *vive* (aplat de la couleur). Notion et Chapitre gardent un aplat soutenu : ce sont les ancres visuelles.
+- **Lisibilité garantie** : chaque couleur est déclinée en OKLCH (fond, bordure, texte, sur-titre) pour le thème clair et le sombre ; le texte est poussé vers le noir ou le blanc jusqu'à un contraste WCAG ≥ 4,5:1 (vérifié sur toutes les palettes : pire cas 4,52). En Perso, les paires de types trop proches (écart OKLab < 0,05) sont signalées.
+- **Légende** (panneau de la carte) et pastilles dans le menu Type ; bascule rapide Afficher/Masquer dans ⋮. Plan, impression et révision restent monochromes.
+
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).
 

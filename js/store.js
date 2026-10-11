@@ -216,6 +216,20 @@
       out.settings.motion = ['system', 'reduce', 'full'].includes(d.settings.motion) ? d.settings.motion : 'system';
       out.settings.onboarded = !!d.settings.onboarded;
       out.settings.paneOpen = d.settings.paneOpen !== false;
+      // couleurs des nœuds par type (option) : monochrome par défaut
+      const c = d.settings.colors;
+      if (c && typeof c === 'object') {
+        const hex = (v) => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null);
+        const custom = {};
+        if (c.custom && typeof c.custom === 'object') for (const t of TYPE_ORDER) { const v = hex(c.custom[t]); if (v) custom[t] = v; }
+        const modes = ['off', 'familles', 'daltonisme', 'perso'];
+        out.settings.colors = {
+          mode: modes.includes(c.mode) ? c.mode : 'off',
+          intensity: c.intensity === 'vif' ? 'vif' : 'doux',
+          custom,
+          ...(modes.includes(c.last) && c.last !== 'off' ? { last: c.last } : {}),
+        };
+      }
       out.settings.reviewLog = d.settings.reviewLog && typeof d.settings.reviewLog === 'object' ? { ...d.settings.reviewLog } : {};
     }
     return out;

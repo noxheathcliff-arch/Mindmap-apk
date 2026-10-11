@@ -304,6 +304,15 @@
       }
     });
 
+    const colorsP = h('p.settings-p');
+    const paintColorsP = () => {
+      const c = R.colors.settings();
+      const names = { familles: 'une couleur par famille de types', daltonisme: 'palette adaptée au daltonisme', perso: 'tes couleurs personnalisées' };
+      colorsP.textContent = c.mode === 'off'
+        ? 'Monochrome (réglage d’origine) : les types se distinguent par leur forme. Option pour repérer les types d’un coup d’œil.'
+        : `Actives : ${names[c.mode]}, intensité ${c.intensity === 'vif' ? 'vive' : 'douce'}. Le texte reste toujours lisible.`;
+    };
+    paintColorsP();
     const usageP = h('p.settings-p', 'Tout est enregistré sur cet appareil. Exporte régulièrement une sauvegarde.');
     S.usage().then((u) => {
       const size = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
@@ -319,6 +328,10 @@
         h('h3.settings-h', 'Animations'),
         motionSeg,
         h('p.settings-p', '« Réduites » remplace les déplacements et zooms par des fondus courts.')),
+      h('section.settings-sec',
+        h('h3.settings-h', 'Couleurs des nœuds'),
+        colorsP,
+        h('div.settings-row', ui.btn('Personnaliser les couleurs', { icon: 'palette', variant: 'tonal', onClick: () => R.colors.openDialog().then(paintColorsP) }))),
       h('section.settings-sec',
         h('h3.settings-h', 'Données'),
         usageP,
@@ -457,6 +470,7 @@
   app.start = async function () {
     try { await S.load(); } catch (e) { /* stockage illisible : l'app démarre quand même (données vides) */ }
     applyTheme();
+    R.colors.apply();
     applyMotion();
     if (S.fresh) R.seed();
     buildNav();

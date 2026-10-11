@@ -392,3 +392,53 @@
 .tbl-cell:focus { box-shadow: inset 0 0 0 2px var(--on-surface); background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .tbl-cell::placeholder { color: var(--on-surface-variant); opacity: .6; font-weight: 400; }
 .tbl-hint { font: var(--body-s); color: var(--on-surface-variant); }
+
+/* ---- Couleurs des nœuds (dialogue) ----------------------------------- */
+.dialog-colors .dialog-actions { justify-content: space-between; }
+.cp { display: grid; gap: var(--sp-4); min-width: 0; }
+.cp-sec, .cp-group { display: grid; gap: var(--sp-2); min-width: 0; }
+.cp-label { font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); }
+.cp-help { font: var(--body-s); color: var(--on-surface-variant); }
+.cp-seg { justify-self: start; max-width: 100%; }
+.cp-row { display: grid; grid-template-columns: minmax(120px, 168px) minmax(0, 1fr); align-items: center; gap: var(--sp-3); padding: 6px 0; border-top: 1px solid var(--outline-variant); }
+.cp-node {
+  display: grid; gap: 1px; min-width: 0; padding: 7px 12px 8px; border-radius: var(--shape-m);
+  background: var(--surface-container-lowest); border: 1.5px solid var(--outline-variant); color: var(--on-surface);
+  font: var(--body-m); transition: background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
+}
+.cp-k { font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* la forme de chaque type reste visible dans l'aperçu (teinte = famille, forme = type) */
+.cp-notion, .cp-chapitre { font-weight: 600; }
+.cp-notion { border-radius: 20px; }
+.cp-forme { border-style: double; border-width: 4px; padding: 5px 10px 6px; }
+.cp-exception { border-style: dashed; }
+.cp-exemple { border-style: dotted; }
+.cp-juris .cp-t, .cp-doctrine .cp-t { font-family: var(--font-brand); }
+.cp-juris .cp-t { font-style: italic; }
+.cp-texte .cp-t { font-family: var(--font-mono); font-size: 13px; }
+.cp-lecon { border-width: 2.5px; }
+.cp-pick { display: grid; gap: 6px; min-width: 0; }
+.cp-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cp-sw { width: 26px; height: 26px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform var(--dur-xs) var(--ease-out), box-shadow var(--dur-xs) var(--ease-out); }
+.cp-sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface-container-high), 0 0 0 4px var(--on-surface); }
+@media (hover: hover) { .cp-sw:hover { transform: scale(1.12); } }
+.cp-input { width: 34px; height: 28px; padding: 0; border: 1px solid var(--outline-variant); border-radius: var(--shape-xs); background: none; cursor: pointer; }
+.cp-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.cp-input::-webkit-color-swatch { border: 0; border-radius: 3px; }
+.cp-none { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px dashed var(--outline); color: var(--on-surface-variant); }
+.cp-none[aria-pressed="true"] { border-style: solid; border-color: var(--on-surface); color: var(--on-surface); }
+.cp-warn { display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-3); border-radius: var(--shape-s); background: var(--surface-container); font: var(--body-s); color: var(--on-surface); }
+.cp-warn .ic { flex: none; margin-top: 1px; }
+@media (max-width: 599px) {
+  .cp-row { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px 0; }
+  .cp-node { padding: 5px 10px 6px; }
+  /* une seule ligne qui défile au doigt : le dialogue reste court */
+  .cp-swatches { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 4px 2px; margin: -4px -2px; scroll-snap-type: x proximity; }
+  .cp-swatches::-webkit-scrollbar { display: none; }
+  .cp-swatches > * { flex: none; scroll-snap-align: start; }
+  .cp-sw { width: 32px; height: 32px; }
+}
+/* pastille de couleur dans les menus (Type) et la légende */
+.menu-swatch { flex: none; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid; margin-left: auto; }
+.menu-item .menu-swatch + .menu-hint { margin-left: var(--sp-2); }

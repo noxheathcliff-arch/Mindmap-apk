@@ -324,6 +324,7 @@
       if (it.icon) b.appendChild(R.icon(it.icon, 20));
       else if (it.checked != null) b.appendChild(h('span.menu-check', it.checked ? R.icon('check', 20) : ''));
       b.appendChild(h('span.menu-label', it.label));
+      if (it.swatch) b.appendChild(h('span.menu-swatch', { 'aria-hidden': 'true', style: { background: it.swatch.bg, borderColor: it.swatch.line } }));
       if (it.hint) b.appendChild(h('span.menu-hint', it.hint));
       b.addEventListener('click', () => { close(); it.onClick && it.onClick(); });
       el.appendChild(b);

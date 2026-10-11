@@ -1164,7 +1164,7 @@
       const items = [];
       for (const g of S.TYPE_GROUPS) {
         items.push({ header: g.label });
-        for (const t of g.types) items.push({ label: S.TYPES[t].label, checked: t === cur, hint: hint(t), onClick: () => setType(ids, t) });
+        for (const t of g.types) items.push({ label: S.TYPES[t].label, checked: t === cur, hint: hint(t), swatch: R.colors.swatch(t), onClick: () => setType(ids, t) });
       }
       ui.menu(anchor, items, { align: 'start', focusChecked: true });
     }
@@ -2077,6 +2077,20 @@
       paneInner.appendChild(paneNode(n));
     }
 
+    /** Légende des couleurs : seulement les types présents dans la carte (option Couleurs) */
+    function paneLegend() {
+      if (R.colors.settings().mode === 'off') return null;
+      const present = S.TYPE_ORDER.filter((t) => map.nodes.some((n) => n.type === t));
+      const rows = present.map((t) => ({ t, sw: R.colors.swatch(t), n: map.nodes.filter((x) => x.type === t).length })).filter((r) => r.sw);
+      if (!rows.length) return null;
+      return h('section.pane-legend',
+        h('div.pane-legend-head', h('p.overline', 'Légende'),
+          ui.btn('Modifier', { icon: 'palette', variant: 'text', cls: 'btn-sm', onClick: () => R.colors.openDialog() })),
+        h('ul.legend-list', rows.map((r) => h('li.legend-item',
+          h('span.legend-dot', { style: { background: r.sw.bg, borderColor: r.sw.line } }),
+          h('span.legend-l', S.TYPES[r.t].label), h('span.legend-n', String(r.n))))));
+    }
+
     /** Sommaire : les chapitres, leçons et sections de la carte, dans l'ordre du plan */
     function paneToc() {
       if (!map.nodes.some((n) => S.isStruct(n.type))) return null;
@@ -2123,6 +2137,7 @@
         ui.progress(ms.progress),
         ms.reviewable ? ui.btn('Réviser cette carte', { icon: 'cards', variant: 'tonal', cls: 'pane-cta', onClick: () => R.app.go('#/reviser/carte/' + map.id) }) : null,
         paneToc(),
+        paneLegend(),
         h('div.pane-help',
           h('p.overline', 'Pour bien démarrer'),
           h('ul.help-list',
@@ -2607,6 +2622,7 @@
         saveState.classList.remove('pending');
         return;
       }
+      if (type === 'settings') { if (!st.sel.size && !st.selEdge) renderPane(true); return; } // légende des couleurs
       if (type === 'edit') {
         clearTimeout(pendingTimer);
         pendingTimer = setTimeout(() => { saveState.classList.add('pending'); saveState.querySelector('span:last-child').textContent = 'Enregistrement…'; }, 400);
