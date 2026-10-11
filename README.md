@@ -30,7 +30,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 
 | Objet | Rôle |
 |---|---|
-| **Cours** | Le dossier d'un enseignement (ex. *Droit des obligations*). |
+| **Cours** | Le dossier d'un enseignement (ex. *Droit des obligations*). Sur l'accueil, chaque cours est une **fiche** à sa teinte, marquée d'une **empreinte** générée depuis ses cartes, qui montre la prochaine question à réviser. |
 | **Carte** | Une notion à décomposer, ou un chapitre entier (choix à la création). |
 | **Nœud** | Un élément typé : Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée. |
 | **Structure** | **Chapitre › Leçon › Section** : des nœuds plus grands et numérotés automatiquement (« Leçon 2 »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
@@ -98,6 +98,7 @@ css/editor.css          canvas, nœuds, liens, panneau de note, barres d'outils
 js/store.js             modèle de données, persistance (IndexedDB + miroir), répétition espacée
 js/layout.js            mise en page automatique (« Ranger »)
 js/colors.js            couleurs des nœuds par type (OKLCH, contraste garanti)
+js/mark.js              identité d'un cours : empreinte générative (SVG) + teinte papier
 js/markdown.js          rendu des notes
 js/ui.js                composants et moteur de motion
 js/views/*.js           bibliothèque, cours, éditeur, plan, révision

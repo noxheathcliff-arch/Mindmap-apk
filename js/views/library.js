@@ -145,19 +145,81 @@
     return card;
   }
 
-  function courseCard(c, rerender) {
+  /* ---------------- Carte de cours : la fiche bristol + l'empreinte ----------------
+     La carte dit « quel cours » (empreinte, teinte papier) et « quoi faire maintenant »
+     (la prochaine fiche à réviser, lancée d'un toucher). Lien étiré : le titre est le lien
+     principal et couvre la carte ; « Réviser » et « Options » restent des contrôles distincts. */
+  function untilLabel(t) {
+    if (!t || !Number.isFinite(t)) return '';
+    const days = Math.round((U.startOfDay(t) - U.startOfDay()) / U.DAY);
+    return days <= 0 ? 'aujourd’hui' : days === 1 ? 'demain' : `dans ${days} jours`;
+  }
+  function courseCard(c, rerender, { draw = false } = {}) {
     const st = S.courseStats(c.id);
-    const more = ui.iconBtn('more', { title: 'Options du cours', cls: 'card-more' });
+    const next = st.due ? S.nextCard(c.id) : null;
+    const art = R.courseArt;
+    const card = art.tint(h('article.fiche', { 'aria-labelledby': 'cc-' + c.id }), c);
+
+    // paquet : une ou deux fiches dépassent derrière, selon le nombre de cartes du cours
+    const layers = st.maps === 0 ? 0 : st.maps < 3 ? 1 : 2;
+    for (let i = 0; i < layers; i++) card.appendChild(h('span.fiche-under', { 'aria-hidden': 'true' }));
+
+    const more = ui.iconBtn('more', { title: 'Options du cours', cls: 'fiche-more' });
     more.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); R.actions.courseMenu(more, c, rerender); });
-    return h('a.course-card.ripple', { href: '#/cours/' + c.id },
-      h('div.cc-top',
-        h('span.cc-mono', { dataset: { hero: 'course:' + c.id + ':mono' } }, U.initials(c.title)),
-        more),
-      h('h3.cc-title', h('span', { dataset: { hero: 'course:' + c.id + ':title' } }, c.title)),
-      c.description ? h('p.cc-desc', c.description) : h('p.cc-desc.muted', U.relTime(S.courseActivity(c))),
-      h('div.cc-foot',
-        h('span.cc-meta', `${U.plural(st.maps, 'carte')} · ${U.plural(st.nodes, 'nœud')}`),
-        h('div.cc-progress', ui.progress(st.progress, { label: 'Maîtrise du cours' }), h('span.cc-pct', Math.round(st.progress * 100) + ' %'))));
+    const sub = c.description || (st.maps ? `Modifié ${U.relTime(S.courseActivity(c))}` : 'Nouveau cours');
+    const band = h('header.fiche-band', { dataset: { hero: 'course:' + c.id + ':band' } },
+      art.mark(c, { size: 'md', draw, hero: true }),
+      h('div.fiche-id',
+        h('p.fiche-sub', sub),
+        h('h3.fiche-title', { id: 'cc-' + c.id },
+          h('a.fiche-link', { href: '#/cours/' + c.id }, h('span', { dataset: { hero: 'course:' + c.id + ':title' } }, c.title)))),
+      more);
+
+    // la fiche elle-même : quatre états, du plus utile au plus calme
+    let kicker, q, p, qHero = null;
+    if (next) {
+      const T = S.TYPES[next.node.type];
+      kicker = 'Prochaine fiche' + (T.kicker || T.label ? ' · ' + (S.kickerOf(next.map, next.node) || T.label) : '');
+      q = next.node.title;
+      p = S.promptFor(next.map, next.node);
+      qHero = `fiche:${next.node.id}:q`;
+    } else if (st.reviewable) {
+      kicker = 'À jour';
+      q = 'Rien à réviser aujourd’hui';
+      const nx = S.nextDueInfo({ courseId: c.id }).next;
+      p = [nx < Infinity ? `Prochaine révision ${untilLabel(nx)}` : '', `maîtrise ${Math.round(st.progress * 100)} %`].filter(Boolean).join(' · ');
+    } else if (st.maps) {
+      kicker = 'À compléter';
+      q = 'Aucune fiche pour l’instant';
+      p = 'Écris des notes ou décompose tes notions : elles deviendront des fiches.';
+    } else {
+      kicker = 'Fiche blanche';
+      q = 'Commence par une première carte';
+      p = 'Une notion à décomposer, ou un chapitre entier.';
+    }
+    const body = h('div.fiche-body',
+      h('p.fiche-k', kicker),
+      h('p.fiche-q', qHero ? h('span', { dataset: { hero: qHero } }, q) : q),
+      h('p.fiche-p', p));
+
+    let action = null;
+    if (next) {
+      action = h('a.btn.btn-filled.fiche-cta', {
+        href: `#/reviser/cours/${c.id}?start=${next.map.id}.${next.node.id}`,
+        'aria-label': `Réviser ${U.plural(st.due, 'fiche')} de ${c.title}`,
+      }, R.icon('cards', 18), h('span', 'Réviser'), h('span.fiche-count', String(st.due)));
+    } else if (!st.maps) {
+      action = ui.btn('Nouvelle carte', { icon: 'plus', variant: 'text', cls: 'fiche-cta', onClick: (e) => { e.preventDefault(); e.stopPropagation(); R.actions.newMap(c.id); } });
+    }
+    const foot = h('footer.fiche-foot',
+      h('div.fiche-stats',
+        h('span.fiche-meta', st.maps ? `${U.plural(st.maps, 'carte')} · ${U.plural(st.nodes, 'nœud')}` : 'Aucune carte'),
+        st.reviewable ? h('span.fiche-meter', { role: 'img', 'aria-label': `Maîtrise ${Math.round(st.progress * 100)} %` },
+          h('i', { style: { transform: `scaleX(${st.progress})` } })) : null),
+      action);
+
+    card.appendChild(h('div.fiche-sheet', next ? { dataset: { hero: `fiche:${next.node.id}:card` } } : {}, band, body, foot));
+    return card;
   }
 
   R.mapRow = function (m, { showCourse = true } = {}) {
@@ -191,7 +253,7 @@
             ui.iconBtn('settings', { title: 'Réglages', onClick: () => R.app.openSettings() })));
 
         const grid = h('div.course-grid');
-        courses.forEach((c) => grid.appendChild(courseCard(c, draw)));
+        courses.forEach((c) => grid.appendChild(courseCard(c, draw, { draw: intro })));
         const add = h('button.course-card.course-add.ripple', { type: 'button', onclick: R.actions.newCourse },
           h('span.add-ic', R.icon('plus', 24)), h('span.add-l', 'Nouveau cours'));
         grid.appendChild(add);

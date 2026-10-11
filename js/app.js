@@ -46,7 +46,14 @@
      Repli sans View Transitions : axe Z simple (scale + fondu). */
   const supportsVT = typeof document.startViewTransition === 'function';
   let vtRunning = null;
-  const entityOf = (r) => (r && r.name === 'course' ? 'course:' + r.id : r && r.name === 'editor' ? 'map:' + r.id : null);
+  const entityOf = (r) => {
+    if (!r) return null;
+    if (r.name === 'course') return 'course:' + r.id;
+    if (r.name === 'editor') return 'map:' + r.id;
+    // révision lancée depuis la fiche d'un cours : la fiche devient la carte de révision
+    if (r.name === 'review' && r.q && r.q.start) return 'fiche:' + String(r.q.start).split('.')[1];
+    return null;
+  };
 
   /** Nomme les éléments « héros » d'une page pour une clé d'entité (un seul par rôle) */
   function nameHeroes(container, key) {

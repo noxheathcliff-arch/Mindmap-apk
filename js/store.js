@@ -544,8 +544,34 @@
       s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
       return s;
     },
-    /** Cartes de révision selon une portée : {all} | {courseId} | {mapId[, nodeId]} */
-    reviewQueue(scope = {}, { all = false, limit = 20 } = {}) {
+    /** Consigne de révision d'un nœud (partagée par la révision et la carte de cours) */
+    promptFor(map, node) {
+      const T = TYPES[node.type];
+      const kids = this.childrenOf(map, node.id).length;
+      if (!kids) return T.prompt;
+      if (node.logic) return `${T.prompt} — ${kids} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver`;
+      return `${T.prompt} — ${kids} élément${kids > 1 ? 's' : ''} à retrouver`;
+    },
+    /**
+     * Prochaine fiche d'un cours, déterministe : d'abord la plus en retard parmi les fiches
+     * déjà révisées, sinon la première fiche nouvelle (carte la plus ancienne, ordre du plan).
+     * La révision lancée depuis la carte de cours commence par celle-ci (option `first`).
+     */
+    nextCard(courseId, now = Date.now()) {
+      let late = null, fresh = null;
+      const maps = this.mapsOf(courseId).slice().sort((a, b) => a.createdAt - b.createdAt);
+      for (const m of maps) {
+        for (const n of m.nodes) {
+          if (!this.isReviewable(m, n) || !this.isDue(n, now)) continue;
+          if (n.review.last) { if (!late || n.review.due < late.node.review.due) late = { map: m, node: n }; }
+          else if (!fresh) fresh = { map: m, node: n };
+          else if (fresh.map === m && (n.y < fresh.node.y || (n.y === fresh.node.y && n.x < fresh.node.x))) fresh = { map: m, node: n };
+        }
+      }
+      return late || fresh;
+    },
+    /** Cartes de révision selon une portée : {all} | {courseId} | {mapId[, nodeId]} ; `first` = {mapId, nodeId} à placer en tête */
+    reviewQueue(scope = {}, { all = false, limit = 20, first = null } = {}) {
       const maps = scope.mapId ? [this.map(scope.mapId)].filter(Boolean)
         : scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
       const now = Date.now();
@@ -562,7 +588,12 @@
       due.sort((a, b) => a.due - b.due);
       // récompense de la chasse : ordre mélangé parmi les nouvelles
       for (let i = fresh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [fresh[i], fresh[j]] = [fresh[j], fresh[i]]; }
-      return [...due, ...fresh].slice(0, limit);
+      const queue = [...due, ...fresh];
+      if (first) {
+        const i = queue.findIndex((q) => q.mapId === first.mapId && q.nodeId === first.nodeId);
+        if (i > 0) queue.unshift(...queue.splice(i, 1));
+      }
+      return queue.slice(0, limit);
     },
     dueCount(scope = {}) { return this.reviewQueue(scope, { limit: 1e9 }).length; },
     rate(map, node, rating) {

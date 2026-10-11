@@ -354,6 +354,6 @@
   R.colors = {
     openDialog,
     PRESETS, SWATCHES, settings, palette, derive, css, apply, set, toggle, swatch, closePairs, currentTheme,
-    contrast, distance, variantOf, hexToOklch, oklchToHex,
+    contrast, distance, variantOf, hexToOklch, oklchToHex, ensureContrast,
   };
 })(window.R);

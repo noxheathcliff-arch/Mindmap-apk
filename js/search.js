@@ -137,7 +137,7 @@
       }
       if (r.courses.length) {
         list.appendChild(h('p.search-group', 'Cours'));
-        for (const c of r.courses) list.appendChild(item(h('span.cc-mono.xs', U.initials(c.title)), highlight(c.title, t), U.esc(c.description), '#/cours/' + c.id));
+        for (const c of r.courses) list.appendChild(item(R.courseArt.mark(c, { size: 'xs' }), highlight(c.title, t), U.esc(c.description), '#/cours/' + c.id));
       }
       if (r.maps.length) {
         list.appendChild(h('p.search-group', 'Cartes'));

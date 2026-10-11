@@ -169,6 +169,15 @@ Monochrome par défaut (60/30/10 intact). L'option **Couleurs des nœuds** (Rég
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).
 
+### 4.6 Carte de cours — la fiche et l'empreinte
+Une carte de cours n'est pas un dossier décoratif : c'est **la prochaine fiche à réviser**, posée sur la pile du cours.
+- **Pile** : 0, 1 ou 2 feuilles dessous selon le nombre de cartes mentales (0, 1–2, 3 et plus). L'épaisseur dit la taille du cours sans un chiffre.
+- **Bande papier** (en-tête) : teinte propre au cours, choisie parmi 8 teintes OKLCH (jamais le jaune, réservé au surligneur). Attribution dans l'ordre de création, chaque nouveau cours prend la teinte libre la plus éloignée des autres : les 8 premiers cours sont tous distincts, et la teinte ne change jamais. Encre ≥ 7:1, sous-titre ≥ 4,5:1, en clair comme en sombre.
+- **Empreinte** (`js/mark.js`) : sceau génératif dessiné depuis la vraie structure : une branche par carte mentale (plus longue quand elle grossit), des points pour ses nœuds, et **au surligneur la branche qui a le plus de fiches dues**. La silhouette ne dépend que des identifiants : stable d'une visite à l'autre, elle se densifie avec le cours. SVG en `currentColor`, aucun asset. Tailles xs 28 / sm 32 / md 44 / lg 72 (recherche, déplacement, carte, en-tête du cours).
+- **Corps réglé** (marge rouge pâle, lignes tous les 28 px) : la question de la prochaine fiche (`store.nextCard` : la plus en retard, sinon la première nouvelle de la plus ancienne carte). « Réviser » ouvre la révision **sur cette fiche-là** (`?start=carte.nœud`).
+- **Quatre états** : *Prochaine fiche* (question + Réviser + nombre dû) · *À jour* (prochaine échéance, maîtrise) · *À compléter* (des cartes, aucune note) · *Fiche blanche* (aucune carte → Nouvelle carte).
+- **Accessibilité** : un seul lien (le titre, étiré sur toute la fiche) ; Options et Réviser restent au-dessus et atteignables au clavier ; anneau de focus sur la feuille.
+
 ---
 
 ## 5. Motion design
@@ -197,7 +206,12 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 |---|---|---|---|---|---|
 | Bouton (press / relâche) | scale | 1 → 0.97 → 1 | 100 / 160 | out | squash, feedback |
 | Page (hiérarchie) | scale + opacité, axe Z | 0.97 → 1 / 1 → 1.02 | 240 (+60 délai) / 160 | out / in | sortie avant entrée, overlap |
-| Carte → page (cours, carte) | élément partagé (View Transitions) | carte → en-tête ; vignette → canvas | 360 | drawer | continuité, container transform |
+| Fiche de cours → page du cours | container transform (View Transitions) : la bande papier devient l'en-tête, l'empreinte md → lg, le titre glisse | bande → en-tête | 360 (contenu : fondu 240, +120) | drawer / out | continuité spatiale, un seul héros |
+| Fiche → révision | container transform : la feuille devient la carte de révision, la question devient son titre | fiche → carte | 360 | drawer | la promesse tenue : même question, même place |
+| Vignette → canvas | élément partagé | vignette → canvas | 360 | drawer | continuité |
+| Fiche (survol, pointeur fin) | feuilles dessous en éventail, feuille −2 px, ombre (opacité) | +2 px / +1,2° par couche | 240 | out | anticipation douce, lecture de l'épaisseur |
+| Fiche (appui) / Réviser | scale | 1 → 0.985 / 0.97 | 100 | out | feedback |
+| Empreinte (1re visite de la session) | centre, puis branches en tracé, puis feuilles | pop 160 · tracé 420, cascade 35 ms (max 6) · feuilles +330 | ≈ 0,7 s | out | staging, cascade bornée ; jamais rejoué ensuite |
 | Dialogue | opacité, scale, y | 0.96, 8 px → 1 | 280 / 180 | out / in | staging (scrim 200 ms) |
 | Menu | scale depuis le déclencheur | 0.96 → 1, items +12 ms | 160 / 100 | out / in | follow-through |
 | Tooltip | opacité | 0 → 1 (400 ms de délai, 0 ensuite) | 120 | out | — |

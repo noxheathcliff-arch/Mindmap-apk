@@ -24,7 +24,10 @@
         : scope.mapId ? (scopeMap || {}).title : scope.courseId ? (S.course(scope.courseId) || {}).title : 'Tous les cours';
       const exitHref = scopeNode ? `#/carte/${scope.mapId}?n=${scope.nodeId}` : scope.mapId ? '#/carte/' + scope.mapId : scope.courseId ? '#/cours/' + scope.courseId : '#/';
 
-      const queue = S.reviewQueue(scope, { all });
+      // lancée depuis la fiche d'une carte de cours : la session commence par cette fiche
+      const [startMap, startNode] = String((route.q && route.q.start) || '').split('.');
+      const first = startMap && startNode ? { mapId: startMap, nodeId: startNode } : null;
+      const queue = S.reviewQueue(scope, { all, first });
       const results = { revoir: 0, compris: 0, maitrise: 0 };
       const requeued = new Set();
       let idx = 0, revealed = false, done = 0, busy = false;
@@ -74,9 +77,10 @@
         const course = S.course(map.courseId);
         const nums = S.structNumbers(map);
 
-        const prompt = kids.length
-          ? (node.logic ? `${T.prompt} — ${kids.length} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver` : `${T.prompt} — ${kids.length} élément${kids.length > 1 ? 's' : ''} à retrouver`)
-          : T.prompt;
+        const prompt = S.promptFor(map, node);
+        // première fiche venue d'une carte de cours : elle « devient » la carte de révision
+        // (élément partagé, View Transitions) — pas d'entrée propre qui doublerait le mouvement
+        const shared = first && done === 0 && idx === 0 && node.id === first.nodeId;
 
         const answer = h('div.answer', { 'aria-live': 'polite' },
           h('div.answer-inner',
@@ -89,11 +93,11 @@
             node.note.trim() ? h('div.answer-block', h('p.overline', 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null,
             h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Ouvrir dans la carte')));
 
-        const card = h('article.rcard', { class: dir < 0 ? 'from-left' : 'from-right' },
+        const card = h('article.rcard', { class: shared ? '' : dir < 0 ? 'from-left' : 'from-right', dataset: shared ? { hero: `fiche:${node.id}:card` } : {} },
           h('div.rcard-ctx', [course ? course.title : null, map.title].filter(Boolean).join(' › ')),
           anc.length && !(anc.length === 1 && U.norm(anc[0].title) === U.norm(map.title)) ? h('div.rcard-path', anc.map((a, i) => [i ? ' › ' : '', a.title])) : null,
           h('div.rcard-kicker', S.isStruct(node.type) ? S.kickerOf(map, node, nums) : T.label),
-          h('h2.rcard-title', node.title),
+          h('h2.rcard-title', shared ? h('span', { dataset: { hero: `fiche:${node.id}:q` } }, node.title) : node.title),
           h('p.rcard-prompt', prompt),
           answer,
           h('span.rate-stamp.left', { 'aria-hidden': 'true' }, 'À revoir'),

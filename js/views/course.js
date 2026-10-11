@@ -16,7 +16,7 @@
     let chosen = courses[0].id;
     const list = h('div.choice-list', { role: 'radiogroup' }, courses.map((c, i) => {
       const b = h('button.list-item.choice', { type: 'button', role: 'radio', 'aria-checked': String(i === 0) },
-        h('span.cc-mono.sm', U.initials(c.title)), h('span.choice-l', c.title), h('span.choice-check', R.icon('check', 20)));
+        R.courseArt.mark(c, { size: 'sm' }), h('span.choice-l', c.title), h('span.choice-check', R.icon('check', 20)));
       b.addEventListener('click', () => { chosen = c.id; U.$$('.choice', list).forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
       return b;
     }));
@@ -97,12 +97,13 @@
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
         const header = h('div.course-head',
-          h('div.course-head-main',
-            h('span.cc-mono.lg', { dataset: { hero: 'course:' + course.id + ':mono' } }, U.initials(course.title)),
-            h('div',
+          // la bande « papier » de la fiche devient l'en-tête du cours (container transform)
+          R.courseArt.tint(h('div.course-head-main.course-band', { dataset: { hero: 'course:' + course.id + ':band' } },
+            R.courseArt.mark(course, { size: 'lg', hero: true }), // pas de tracé ici : l'empreinte arrive déjà de la fiche (élément partagé)
+            h('div.course-band-id',
               h('p.overline', 'Cours'),
               h('h1.course-title', h('span.hl-sweep', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
-              course.description ? h('p.course-desc', course.description) : null)),
+              course.description ? h('p.course-desc', course.description) : null)), course),
           h('div.course-stats',
             stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),
             stat(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'),
