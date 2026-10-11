@@ -61,6 +61,12 @@ Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Défin
 | Contextuelle | Barre d'actions du nœud sélectionné ; liens `[[Titre]]` dans les notes ; liens de renvoi |
 | Supplémentaire | Palette de recherche (Ctrl K) plein texte (titres + notes) ; vue Plan = « index » de la carte |
 
+### 3.3 bis Vue Plan — lire un plan long sans perdre le fil
+- **Où suis-je ?** Un fil d'Ariane collant (40 px, ≈ 1/20 de l'écran) apparaît une fois le premier titre passé : « II. Conditions de fond › A. Consentement… › 2. Intégrité… › b) Dol » ; chaque niveau ramène à son titre ; le plus profond reste visible (le début, coupé, s'efface en fondu).
+- **Comment les éléments s'articulent ?** Un « ET » / « OU » à chaque jointure entre éléments cumulatifs / alternatifs, posé sur le filet de leur niveau (la phrase d'annonce reste).
+- **Que veut dire ce point ?** Le point de maîtrise suit le dernier mot du titre (proximité), avec son libellé en infobulle et une légende sous l'en-tête (une icône d'état sans légende est ambiguë).
+- **Vue d'ensemble** : sommaire repliable dès 3 grandes parties. Rythme : plus d'air entre les grandes parties ; sur petit écran, retrait réduit (12 px par niveau) pour garder la largeur du texte.
+
 ### 3.4 Système de recherche
 Une seule entrée (Ctrl/⌘ K ou onglet Rechercher), insensible aux accents et à la casse. Présentation en **index** :
 - résultats groupés (Cours / Cartes / Notions), et **filtres** dès que deux familles coexistent (Tout · Cours · Cartes · Notions, avec effectifs) ;

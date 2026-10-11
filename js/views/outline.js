@@ -62,6 +62,8 @@
       h('p.overline', c ? c.title : 'Fiche'),
       h('h1.plan-title', map.title),
       h('p.plan-meta', `Fiche générée depuis la carte · ${U.plural(map.nodes.length, 'nœud')} · ${new Date(map.updatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`),
+      // légende du point de maîtrise (une icône d'état sans légende est ambiguë)
+      map.nodes.some((n) => n.review.rating) ? h('p.plan-legend.no-print', ['maitrise', 'compris', 'revoir'].map((k) => h('span', ui.mastery(k, 10), S.RATINGS[k].label))) : null,
       h('div.plan-actions.no-print', printBtn, mdBtn)));
 
     if (!map.nodes.length) {
@@ -80,6 +82,7 @@
       h('p.plan-logic', h('span.chip-mini', r.label), ` ${names(r.targets).join(' · ')}`));
 
     const nums = S.structNumbers(map);
+    const heads = []; // { el, label, trail } — pour le fil d'Ariane collant et le sommaire
     const logicLine = (n, count) => {
       const lt = logicText(n, count);
       return lt ? h('p.plan-logic', h('span.chip-mini', n.logic === 'et' ? 'ET' : 'OU'), ` Les ${count} éléments suivants sont ${lt}.`) : null;
@@ -96,38 +99,50 @@
     };
     /* Les enfants : la structure (Chapitre, Leçon, Section) devient des intertitres ;
        sous chacun, la numérotation du contenu (I. A. 1. a.) repart de zéro. */
-    const kids = (host, item, level, hb) => {
-      let i = 0;
+    const kids = (host, item, level, hb, trail = []) => {
+      let i = 0, prev = false;
+      // éléments cumulatifs / alternatifs : le lien est rappelé à chaque jointure (ET, OU)
+      const join = item.node && item.node.logic && item.children.length > 1 ? (item.node.logic === 'et' ? 'ET' : 'OU') : null;
       for (const ch of item.children) {
+        const struct = S.isStruct(ch.node.type), retenir = ch.node.type === 'retenir';
+        if (join && prev && !struct && !retenir) host.appendChild(h('div.plan-join', { 'aria-hidden': 'true', class: 'lvl-' + Math.min(level, 4) }, h('span.chip-mini', join)));
         // « À retenir » : un encadré, hors numérotation du plan
-        host.appendChild(S.isStruct(ch.node.type) ? structSection(ch, hb) : section(ch, level, ch.node.type === 'retenir' ? -1 : i++, hb));
+        host.appendChild(struct ? structSection(ch, hb, trail) : section(ch, level, retenir ? -1 : i++, hb, trail));
+        prev = !struct && !retenir;
       }
     };
     const openBtn = (n, ...inner) => h('button.plan-link', { type: 'button', onclick: () => onOpen && onOpen(n.id), title: 'Ouvrir dans la carte' }, ...inner);
-    const structSection = (item, hb) => {
+    const structSection = (item, hb, trail = []) => {
       const n = item.node;
       const rank = S.TYPES[n.type].rank;
       const head = h('h' + Math.min(6, hb) + '.plan-struct.rank-' + rank,
         h('span.plan-struct-k', S.kickerOf(map, n, nums)),
         openBtn(n, h('span.plan-t', n.title || 'Sans titre')));
       const sec = h('section.plan-sec.plan-struct-sec', { class: 'rank-' + rank + ' t-' + n.type }, head);
+      const me = { el: head, label: `${S.kickerOf(map, n, nums)} ${n.title || 'Sans titre'}`, top: !trail.length };
+      me.trail = [...trail, me];
+      heads.push(me);
       extras(sec, n, item.children.length);
-      kids(sec, item, 0, hb + 1);
+      kids(sec, item, 0, hb + 1, me.trail);
       return sec;
     };
-    const section = (item, level, idx, hb) => {
+    const section = (item, level, idx, hb, trail = []) => {
       const n = item.node;
       const T = S.TYPES[n.type];
       const tag = 'h' + Math.min(6, hb);
+      // le point de maîtrise suit le dernier mot du titre (proximité), avec son libellé en infobulle
       const head = h(tag + '.plan-h.lvl-' + Math.min(level, 4),
         h('span.plan-num', idx >= 0 ? num(level, idx) : ''),
         openBtn(n,
           T.kicker && n.type !== 'notion' ? h('span.plan-kicker', T.kicker) : null,
-          h('span.plan-t', n.title || 'Sans titre')),
-        n.review.rating ? ui.mastery(n.review.rating, 10) : null);
+          h('span.plan-t', n.title || 'Sans titre'),
+          n.review.rating ? h('span.plan-m', { title: S.RATINGS[n.review.rating].label }, ui.mastery(n.review.rating, 10)) : null));
       const sec = h('section.plan-sec', { class: 'lvl-' + Math.min(level, 4) + ' t-' + n.type }, head);
+      const me = { el: head, label: `${idx >= 0 ? num(level, idx) + ' ' : ''}${n.title || 'Sans titre'}`, top: !trail.length };
+      me.trail = [...trail, me];
+      if (level <= 3) heads.push(me);
       extras(sec, n, item.children.length);
-      if (item.children.length) kids(sec, item, level + 1, hb + 1);
+      if (item.children.length) kids(sec, item, level + 1, hb + 1, me.trail);
       return sec;
     };
 
@@ -147,6 +162,39 @@
     } else {
       kids(doc, { children: roots }, 0, 2);
     }
+    // sommaire (au moins 3 grandes parties) : repliable, juste après l'en-tête
+    const tops = heads.filter((x) => x.top);
+    const goTo = (x) => host.scrollTo({ top: x.el.getBoundingClientRect().top - host.getBoundingClientRect().top + host.scrollTop - 56, behavior: R.motion.reduced() ? 'auto' : 'smooth' });
+    if (tops.length >= 3) {
+      const toc = h('details.plan-toc', h('summary', h('span', 'Sommaire'), h('span.plan-toc-n', U.plural(tops.length, 'partie'))),
+        h('ol', tops.map((x) => h('li', h('button.plan-toc-a', { type: 'button', onclick: () => goTo(x) }, x.label)))));
+      doc.querySelector('.plan-head').after(toc);
+    }
+    // fil d'Ariane collant : où suis-je dans le plan (compact, apparaît une fois le 1er titre passé)
+    const ctx = h('nav.plan-ctx.no-print', { 'aria-label': 'Position dans le plan' });
+    doc.prepend(ctx);
+    let shown = null;
+    const update = () => {
+      const limit = host.getBoundingClientRect().top + 64;
+      let cur = null;
+      for (const x of heads) { if (x.el.getBoundingClientRect().top <= limit) cur = x; else break; }
+      if (cur === shown) return;
+      shown = cur;
+      ctx.classList.toggle('on', !!cur);
+      if (!cur) return;
+      U.clear(ctx);
+      cur.trail.forEach((x, i) => {
+        if (i) ctx.appendChild(R.icon('chevronRight', 14));
+        ctx.appendChild(h('button.plan-ctx-a', { type: 'button', onclick: () => goTo(x) }, x.label));
+      });
+      ctx.scrollLeft = ctx.scrollWidth; // le niveau le plus profond reste visible
+      ctx.classList.toggle('cut', ctx.scrollWidth > ctx.clientWidth + 1); // le début coupé s'efface en fondu
+    };
+    if (host._planScroll) host.removeEventListener('scroll', host._planScroll);
+    let raf = 0;
+    host._planScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); };
+    host.addEventListener('scroll', host._planScroll, { passive: true });
+
     host.appendChild(doc);
     if (R.motion.first('plan:' + map.id)) R.motion.stagger(U.$$(':scope > .plan-sec', doc));
     for (const a of U.$$('.md-wiki', doc)) {

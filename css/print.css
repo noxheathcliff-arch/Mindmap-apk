@@ -18,3 +18,4 @@ html, body { height: auto !important; overflow: visible !important; background: 
 .md th, .md td { border-color: #bbb !important; }
 .md thead th { background: #f0f0ec !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .md a.md-art { text-decoration: none !important; }
+.plan-toc { display: none !important; }

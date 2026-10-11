@@ -968,7 +968,53 @@
 .plan-note.md { font: var(--body-m); line-height: 22px; }
 .plan-refs { margin-top: var(--sp-2); font: var(--body-s); color: var(--on-surface-variant); }
 .plan-logic { margin-top: var(--sp-2); font: var(--body-s); color: var(--on-surface-variant); display: flex; gap: var(--sp-2); align-items: center; }
-.plan .mastery { align-self: center; }
+/* point de maîtrise : collé au dernier mot du titre (proximité), libellé en infobulle + légende */
+.plan-m { display: inline-block; margin-left: 8px; vertical-align: 1px; line-height: 0; }
+.plan-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: var(--sp-2); font: var(--label-s); color: var(--on-surface-variant); }
+.plan-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* fil d'Ariane collant : compact (40 px), n'occupe pas de place dans le flux (marge négative),
+   apparaît en fondu + 6 px une fois le premier titre passé ; le niveau le plus profond reste visible */
+.plan-ctx {
+  position: sticky; top: 0; z-index: 5; height: 40px; margin: 0 calc(-1 * var(--margin)) -40px;
+  display: flex; align-items: center; gap: 2px; padding: 0 var(--margin); overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+  background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--outline-variant);
+  opacity: 0; transform: translateY(-6px); pointer-events: none;
+  transition: opacity var(--dur-sm) var(--ease-in), transform var(--dur-sm) var(--ease-in);
+}
+.plan-ctx.on { opacity: 1; transform: none; pointer-events: auto; transition: opacity var(--dur-md) var(--ease-out), transform var(--dur-md) var(--ease-out); }
+.plan-ctx.cut { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28px); mask-image: linear-gradient(90deg, transparent 0, #000 28px); }
+.plan-ctx .ic { flex: none; color: var(--on-surface-variant); }
+.plan-ctx-a { flex: none; max-width: 22ch; overflow: hidden; text-overflow: ellipsis; padding: 4px 6px; border-radius: var(--shape-xs); font: var(--label-m); color: var(--on-surface-variant); }
+.plan-ctx-a:last-child { color: var(--on-surface); font-weight: 600; max-width: 30ch; }
+.plan-ctx-a:hover { background: var(--surface-container); }
+.plan-ctx-a:focus-visible { outline: 2px solid var(--on-surface); outline-offset: 1px; }
+
+/* sommaire repliable (≥ 3 parties) */
+.plan-toc { margin: calc(-1 * var(--sp-4)) 0 var(--sp-8); border: 1px solid var(--outline-variant); border-radius: var(--shape-m); background: var(--surface-container-lowest); }
+.plan-toc summary { display: flex; align-items: baseline; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); cursor: pointer; font: var(--title-s); list-style: none; }
+.plan-toc summary::-webkit-details-marker { display: none; }
+.plan-toc summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform var(--dur-sm) var(--ease-out); align-self: center; }
+.plan-toc[open] summary::after { transform: rotate(-135deg); }
+.plan-toc-n { font: var(--label-m); color: var(--on-surface-variant); }
+.plan-toc ol { list-style: none; margin: 0; padding: 0 var(--sp-2) var(--sp-3); display: grid; }
+.plan-toc-a { width: 100%; text-align: left; padding: 8px var(--sp-2); border-radius: var(--shape-xs); font: var(--body-m); }
+.plan-toc-a:hover { background: var(--surface-container); }
+
+/* jointures ET / OU entre éléments frères : la pastille chevauche le filet de leur niveau */
+.plan-join { margin: var(--sp-2) 0 calc(-1 * var(--sp-2)); line-height: 0; }
+.plan-join:not(.lvl-0) .chip-mini { transform: translateX(-50%); }
+.plan-join .chip-mini { position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--surface); }
+
+/* rythme : plus d'air entre les grandes parties, moins à l'intérieur */
+.plan > .plan-sec.lvl-0, .plan-struct-sec > .plan-sec.lvl-0 { margin-top: var(--sp-10); }
+
+/* petit écran : retrait réduit par niveau (le texte garde sa largeur), numéros en retrait suspendu */
+@media (max-width: 599.98px) {
+  .plan-sec.lvl-1, .plan-sec.lvl-2, .plan-sec.lvl-3, .plan-sec.lvl-4 { padding-left: 12px; }
+  .plan-h { gap: var(--sp-2); }
+  .plan-num { min-width: 1.35em; }
+}
 
 /* Plan : la structure du cours (Chapitre › Leçon › Section) en intertitres */
 .plan-struct-sec { margin-top: var(--sp-8); }
