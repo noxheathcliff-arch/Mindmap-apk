@@ -91,6 +91,22 @@ Chaque nœud qui a une note ou des éléments rattachés devient une carte de r�
 - **Pendant la session** : chaque fiche porte la teinte et l'empreinte de son cours, son état (*Nouvelle*, ou vue il y a… avec sa boîte 1–5), et le paquet dessous dit ce qu'il reste. **Indice** (`H`) : la forme de la réponse sans la réponse (nombre d'éléments, leur nature, l'initiale). **Annuler** (`Z`) reprend la dernière note, même depuis l'écran de fin.
 - **Fin de session** : le bilan, la série, et la liste des fiches restées « À revoir » avec un lien vers la carte.
 
+### Sauvegarder, importer, partager
+
+**Réglages → Données** : place utilisée, date de la dernière sauvegarde (rappel au-delà de 14 jours), **Exporter tout** (fichier `.json`) et **Importer…**. Un cours seul s'exporte depuis son menu ⋮ dans la bibliothèque.
+
+L'import accepte un fichier (glisser-déposer ou choisir) **ou un texte collé**, par exemple la réponse d'une IA — balises ```` ```json ````, texte autour, virgules en trop et guillemets typographiques sont corrigés tout seuls. Avant d'importer, un aperçu montre ce que contient le fichier (cours, cartes, nœuds, notes, liens) et ce qui a été corrigé à la lecture (types inconnus, liens cassés, cartes sans cours, positions absentes → carte rangée automatiquement). Trois façons d'importer :
+
+- **Ajouter en copie** (par défaut) : rien n'est jamais écrasé ;
+- **Compléter « … »** : proposé quand le fichier est la suite d'un cours déjà présent (un livre livré en plusieurs parties) ;
+- **Mettre à jour** / **Tout remplacer** (avec confirmation).
+
+Un import s'annule depuis la barre qui suit (*Annuler*).
+
+### Transformer un livre en cours (skill pour IA)
+
+Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.0.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+
 ## Structure
 
 ```
@@ -110,5 +126,6 @@ js/markdown.js          rendu des notes
 js/ui.js                composants et moteur de motion
 js/views/*.js           bibliothèque, cours, éditeur, plan, révision
 js/search.js            recherche (Ctrl/⌘ K)
+skills/                 skill « livre → cours Ratio » pour IA (JSON portable + SKILL.md)
 js/app.js               routeur, navigation, thème, réglages, onboarding
 ```

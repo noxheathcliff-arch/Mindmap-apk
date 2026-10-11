@@ -38,7 +38,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 | **Lien** | source, cible, **nature** (hiérarchique / renvoi), libellé, groupe | Hiérarchique = décomposition (trait plein). Renvoi = « voir aussi », « sauf », « implique » (pointillé + flèche). |
 | **Fourche** | liens partageant un `group` (même source, même nature, un libellé) | Un tronc, un libellé posé sur le point de séparation, une branche par élément. Chaque branche reste un lien ordinaire : hiérarchie, révision, plan et import n'en dépendent pas. Les enfants d'un nœud ET/OU sont dessinés en fourche implicite (« ET » une seule fois). |
 | **Carte de révision** | dérivée d'un nœud qui a une note ou des enfants | Boîte de Leitner 0→5, échéance. |
-| **Réglages** | thème, série de jours, journal de révision, onboarding | |
+| **Réglages** | thème, motion, couleurs, série de jours, journal de révision, date de dernière sauvegarde, onboarding | Regroupés en Apparence · Données · Aide · Zone sensible (une ligne = icône, intitulé + explication, contrôle). |
 
 ---
 
@@ -324,7 +324,8 @@ Réglage *Animations : Système / Réduites / Complètes*. En mode réduit, dép
 | Zeigarnik / Goal-gradient | Barre de progression de maîtrise par carte/cours ; barre de session qui s'accélère vers la fin. |
 | Pic-fin | Écran de fin de session soigné (bilan + série + éclat). |
 | Proximité / région commune / similarité | Groupes visuels (cartes), nœuds d'un même type partagent un traitement. |
-| Postel | Import JSON tolérant ; recherche insensible aux accents. |
+| Postel | Import JSON tolérant (réponse d'IA collée, balises, virgules finales, guillemets typographiques, cartes orphelines, positions absentes) avec aperçu de ce qui a été corrigé ; recherche insensible aux accents. |
+| Prévention des erreurs / réversibilité | Import « Ajouter en copie » par défaut (identifiants neufs en cas de collision, rien d'écrasé), « Compléter » pour la suite d'un cours, « Tout remplacer » confirmé, et *Annuler* après chaque import. |
 | Esthétique-utilisabilité | Monochrome soigné, un seul accent. |
 | Occam | Pas de dossiers imbriqués, pas de compte. |
 

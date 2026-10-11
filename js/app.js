@@ -392,6 +392,8 @@
       b.addEventListener('click', () => { mode = v; U.$$('.imp-modes .choice', preview).forEach((x) => x.setAttribute('aria-checked', String(x === b))); });
       return b;
     };
+    // suite d'un cours (partie 2 d'un livre…) : un seul cours, déjà présent, et seulement des cartes nouvelles
+    const completable = (p) => (p.data.courses.length === 1 && p.collide.courses === 1 && !p.collide.maps ? S.course(p.data.courses[0].id) : null);
     function paint(err) {
       U.clear(preview);
       go.disabled = !parsed;
@@ -400,6 +402,7 @@
       const st = parsed.stats;
       const chip = (n, w) => h('span.imp-stat', h('b', String(n)), ' ' + w);
       const courses = parsed.data.courses;
+      const suite = completable(parsed);
       preview.append(
         h('div.imp-sum',
           h('p.overline', KIND[parsed.kind] || 'Données'),
@@ -412,7 +415,8 @@
           h('p.overline', 'Corrigé à la lecture'),
           h('ul', [...parsed.fixes.map((f) => f[0].toUpperCase() + f.slice(1)), ...parsed.issues].map((t) => h('li', R.icon('check', 14), h('span', t))))) : null,
         h('div.imp-modes.choice-list.form-choice', { role: 'radiogroup', 'aria-label': 'Comment importer' },
-          modeRow('add', 'Ajouter en copie (conseillé)', 'Les cours importés s’ajoutent aux tiens. Rien n’est écrasé.'),
+          suite ? modeRow('complete', `Compléter « ${suite.title} » (conseillé)`, `Suite d’un cours déjà présent : ${U.plural(st.maps, 'carte')} rejoi${st.maps > 1 ? 'gnent' : 'nt'} ce cours.`) : null,
+          modeRow('add', suite ? 'Ajouter en copie' : 'Ajouter en copie (conseillé)', 'Les cours importés s’ajoutent aux tiens. Rien n’est écrasé.'),
           parsed.collide.courses || parsed.collide.maps
             ? modeRow('update', 'Mettre à jour', `Remplace les éléments déjà présents (${[parsed.collide.courses ? U.plural(parsed.collide.courses, 'cours', 'cours') : null, parsed.collide.maps ? U.plural(parsed.collide.maps, 'carte') : null].filter(Boolean).join(', ')}) par ceux du fichier.`)
             : null,
@@ -420,7 +424,7 @@
       preview.classList.remove('in'); void preview.offsetWidth; preview.classList.add('in');
     }
     function analyse(text) {
-      try { parsed = S.parseImport(text); mode = 'add'; paint(); }
+      try { parsed = S.parseImport(text); mode = completable(parsed) ? 'complete' : 'add'; paint(); }
       catch (e) { parsed = null; paint(e.message || 'Lecture impossible.'); }
     }
     const readFile = async (f) => { if (!f) return; paste.value = ''; analyse(await f.text()); };

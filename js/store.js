@@ -178,7 +178,7 @@
       createdAt: +c.createdAt || Date.now(), updatedAt: +c.updatedAt || Date.now(),
     })) : [];
     const courseIds = new Set(out.courses.map((c) => c.id));
-    out.maps = Array.isArray(d.maps) ? d.maps.filter((m) => m && m.id).map((m) => {
+    out.maps = Array.isArray(d.maps) ? d.maps.filter((m) => m && m.id).map((m, mi) => {
       const rawNodes = Array.isArray(m.nodes) ? m.nodes : [];
       const seenIds = new Set();
       const nodes = rawNodes.filter((n) => {
@@ -218,11 +218,12 @@
       // positions absentes (ou toutes identiques) : la carte sera rangée automatiquement à l'ouverture
       const placed = rawNodes.filter((n) => n && Number.isFinite(+n.x) && Number.isFinite(+n.y) && n.x !== null && n.y !== null);
       const stacked = nodes.length > 1 && (placed.length < nodes.length || nodes.every((n) => n.x === nodes[0].x && n.y === nodes[0].y));
-      if (stacked && rep) note('autoLayout');
+      if (stacked && rep && !m.needsLayout) note('autoLayout'); // demandé explicitement : rien à signaler
       normalizeGroups(edges);
       return {
         id: String(m.id), courseId: String(m.courseId || ''), title: String(m.title || 'Sans titre'),
-        createdAt: +m.createdAt || Date.now(), updatedAt: +m.updatedAt || Date.now(),
+        // sans date (import d'IA) : l'ordre du fichier devient l'ordre d'affichage (le plus récent d'abord)
+        createdAt: +m.createdAt || Date.now(), updatedAt: +m.updatedAt || Date.now() - mi,
         viewport: m.viewport && Number.isFinite(+m.viewport.k) ? { x: +m.viewport.x || 0, y: +m.viewport.y || 0, k: +m.viewport.k || 1 } : null,
         nodes, edges,
         ...(m.needsLayout || (rep && stacked) ? { needsLayout: true } : {}),
@@ -791,7 +792,8 @@
 
     /**
      * Applique une analyse. mode : 'add' (ajouter en copie : identifiants neufs, rien n'est écrasé)
-     * | 'update' (même identifiants : remplace les versions existantes) | 'replace' (tout remplacer).
+     * | 'update' (même identifiants : remplace les versions existantes) | 'complete' (ajoute les cartes
+     * d'une suite à un cours déjà présent) | 'replace' (tout remplacer).
      * Renvoie un instantané pour annuler (restoreSnapshot).
      */
     applyImport(parsed, mode = 'add') {
@@ -802,14 +804,23 @@
         this.data = inc;
       } else {
         if (mode === 'add') {
-          // identifiants neufs pour les cours et les cartes (les nœuds sont propres à leur carte)
+          // identifiants neufs pour les cours et les cartes déjà présents (les nœuds sont propres à leur carte) ;
+          // les autres gardent les leurs, pour qu'une suite (partie 2 d'un livre) puisse ensuite compléter le même cours
           const cid = new Map();
-          for (const c of inc.courses) { const n = U.uid('c'); cid.set(c.id, n); c.id = n; c.createdAt = c.updatedAt = Date.now(); }
-          for (const m of inc.maps) { m.id = U.uid('m'); m.courseId = cid.get(m.courseId) || m.courseId; }
+          for (const c of inc.courses) { c.createdAt = c.updatedAt = Date.now(); if (this.course(c.id)) { const n = U.uid('c'); cid.set(c.id, n); c.id = n; } }
+          for (const m of inc.maps) { if (this.map(m.id)) m.id = U.uid('m'); m.courseId = cid.get(m.courseId) || m.courseId; }
+        }
+        if (mode === 'complete') {
+          // la suite se range après les cartes déjà présentes du cours, dans l'ordre du fichier
+          for (const c of inc.courses) {
+            const floor = Math.min(Date.now(), ...this.mapsOf(c.id).map((m) => m.updatedAt));
+            inc.maps.filter((m) => m.courseId === c.id).forEach((m, i) => { m.updatedAt = floor - 1 - i; });
+          }
         }
         for (const c of inc.courses) {
           const ex = this.course(c.id);
-          if (ex) Object.assign(ex, c); else this.data.courses.push(c);
+          // 'complete' : les cartes rejoignent le cours existant, qui garde son titre et sa description
+          if (ex) { if (mode !== 'complete') Object.assign(ex, c); } else this.data.courses.push(c);
         }
         for (const m of inc.maps) {
           const i = this.data.maps.findIndex((x) => x.id === m.id);
