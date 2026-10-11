@@ -67,7 +67,7 @@ Une seule entrée (Ctrl/⌘ K ou onglet Rechercher), insensible aux accents et �
 - les notions sont **rangées sous leur carte** (en retrait, comme les sous-entrées d'un index) : le contexte n'est plus répété à chaque ligne ;
 - cours avec leur empreinte, cartes avec leur vignette ; le passage trouvé est souligné au **trait de surligneur** (pas d'aplat : le mot reste lisible) ;
 - un numéro d'article (« 1128 », « art. L. 132-1 ») propose aussi **« Chercher sur Légifrance »** ;
-- un seul repère de sélection (souris et clavier), légende clavier sur grand écran, astuce dans l'état vide.
+- une seule ligne sélectionnée à la fois (fond teinté, souris et clavier), légende clavier sur grand écran, astuce dans l'état vide.
 Ouvrir une notion → la carte s'ouvre centrée sur le nœud, panneau de note ouvert.
 
 ### 3.5 Plan du site (routes)
@@ -224,7 +224,7 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Emplacement → formulaire | le dialogue naît du centre de l'emplacement (transform-origin) et y retourne ; l'emplacement reste « prêt » tant qu'il est ouvert | scale .9 → 1 / → .94 | 280 / 180 | out / in | continuité spatiale (origine = destination) |
 | Recherche (ouverture) | le panneau naît de son déclencheur (onglet, icône ; transform-origin sur lui) : scale .94 → 1 + opacité ; scrim 240 ; sans déclencheur (Ctrl K), descend de 8 px | — | 240 (mobile plein écran : 360 drawer) | out | continuité spatiale ; l'onglet Rechercher s'allume tant que le panneau est ouvert |
 | Recherche (contenu) | lignes : opacité + 6 px → 0, à l'ouverture seulement (pas pendant la frappe) | cascade 20 ms, 10 max | 240 (+60) | out | follow-through ; fréquence → aucune animation par frappe |
-| Recherche (sélection) | un trait unique glisse (translateY) et s'étire (scaleY) jusqu'à la ligne active | — | 160 (0 en répétition clavier) | out | un seul héros, la sélection suit le pointeur |
+| Recherche (sélection) | la ligne active se teinte (couche d'état, opacité) ; pas de trait latéral | — | 160 | out | un seul état visible, la sélection suit le pointeur |
 | Recherche → résultat | container transform : la ligne devient sa destination — cours → bande de l'en-tête (empreinte xs → lg, titre), carte → canvas (vignette), notion → le nœud dans la carte ; le panneau s'efface avec l'ancienne page | — | 360 | drawer | la promesse tenue : ce qu'on a choisi est ce qu'on retrouve |
 | Recherche (fermeture) | retour vers le déclencheur : scale .97 + opacité | — | 160 | in | sortie plus courte que l'entrée |
 | Empreinte (1re visite de la session) | centre, puis branches en tracé, puis feuilles | pop 160 · tracé 420, cascade 35 ms (max 6) · feuilles +330 | ≈ 0,7 s | out | staging, cascade bornée ; jamais rejoué ensuite |

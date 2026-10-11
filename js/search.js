@@ -4,8 +4,8 @@
    Présentation « index » : les notions sont rangées sous leur carte (le contexte n'est
    pas répété à chaque ligne), le passage trouvé est souligné au surligneur, et un numéro
    d'article propose aussi la recherche sur Légifrance.
-   Mouvement : le panneau naît de son déclencheur ; un seul repère de sélection glisse
-   d'un résultat à l'autre ; le résultat choisi devient sa destination (View Transitions,
+   Mouvement : le panneau naît de son déclencheur ; la sélection est un fond qui suit
+   souris et clavier ; le résultat choisi devient sa destination (View Transitions,
    via R.app.go({ from, swap })). */
 (function (R) {
   'use strict';
@@ -96,7 +96,6 @@
     const input = h('input.search-input', { type: 'search', placeholder: 'Notion, note, article…', 'aria-label': 'Rechercher', autocomplete: 'off', spellcheck: 'false', enterkeyhint: 'search', role: 'combobox', 'aria-expanded': 'true', 'aria-controls': 'search-results', 'aria-autocomplete': 'list' });
     input.value = initial;
     const list = h('div.search-results#search-results', { role: 'listbox', 'aria-label': 'Résultats' });
-    const sel = h('div.search-sel', { 'aria-hidden': 'true' });
     const back = ui.iconBtn('back', { title: 'Fermer', cls: 'search-back' });
     const clearBtn = ui.iconBtn('close', { title: 'Effacer', cls: 'search-clear' });
     const scopes = h('div.search-scopes', { role: 'tablist', 'aria-label': 'Filtrer les résultats' });
@@ -105,7 +104,7 @@
     const box = h('div.search', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Recherche' },
       h('div.search-bar', back, R.icon('search', 22, 'search-ic'), input, clearBtn),
       scopes,
-      h('div.search-scroll', list, sel),
+      h('div.search-scroll', list),
       foot);
     const scrim = h('div.scrim.search-scrim');
     const wrap = h('div.search-wrap', scrim, box);
@@ -174,18 +173,13 @@
     };
     const titleHero = (key, html) => h('span', { dataset: { hero: key + ':title' }, html });
 
-    function setActive(i, { scroll = true, instant = false } = {}) {
-      if (i < 0 || !items.length) { sel.classList.remove('on'); return; }
+    function setActive(i, { scroll = true } = {}) {
+      if (i < 0 || !items.length) return;
       active = (i + items.length) % items.length;
       items.forEach((x, k) => x.setAttribute('aria-selected', String(k === active)));
       const it = items[active];
       input.setAttribute('aria-activedescendant', it.id || (it.id = 'si-' + Math.random().toString(36).slice(2, 8)));
       if (scroll) it.scrollIntoView({ block: 'nearest' });
-      // repère unique : un trait qui glisse et s'étire jusqu'à la ligne active (transform seul)
-      const y = it.offsetTop + 12, hh = Math.max(8, it.offsetHeight - 24);
-      sel.classList.toggle('instant', instant || !sel.classList.contains('on'));
-      sel.style.transform = `translateY(${y}px) scaleY(${hh / 100})`;
-      sel.classList.add('on');
     }
 
     function group(label, extra) {
@@ -291,13 +285,13 @@
         Array.from(list.children).slice(0, 10).forEach((el, i) => { el.style.setProperty('--i', i); el.classList.add('si-in'); });
       }
       firstPaint = false;
-      setActive(items.length ? 0 : -1, { instant: true });
+      setActive(items.length ? 0 : -1);
     }
 
     const onKey = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1, { instant: e.repeat }); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1, { instant: e.repeat }); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
       else if (e.key === 'Enter' && document.activeElement === input) { e.preventDefault(); if (items[active]) items[active].click(); }
     };
     document.addEventListener('keydown', onKey, true);

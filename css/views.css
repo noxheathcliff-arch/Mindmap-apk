@@ -431,8 +431,8 @@
 /* ---- Recherche -------------------------------------------------------- */
 /* Panneau « index » : barre, filtres, résultats rangés par carte, légende clavier.
    Mouvement : le panneau naît de son déclencheur (.from-origin, transform-origin posé en JS),
-   le contenu suit (cascade 20 ms, 1re ouverture seulement), un repère unique glisse
-   d'une ligne à l'autre ; sortie plus courte, en ease-in, vers le déclencheur. */
+   le contenu suit (cascade 20 ms, 1re ouverture seulement), la ligne active se teinte
+   (fondu 160 ms) ; sortie plus courte, en ease-in, vers le déclencheur. */
 .search-wrap { position: fixed; inset: 0; z-index: 55; display: flex; justify-content: center; align-items: flex-start; padding-top: 10vh; }
 .search-wrap .scrim { animation: none; opacity: 0; transition: opacity var(--dur-md) var(--ease-out); }
 .search-wrap.in .scrim { opacity: 1; }
@@ -475,14 +475,6 @@
 
 .search-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid var(--outline-variant); }
 .search-results { position: relative; padding: var(--sp-1) var(--sp-2) var(--sp-3); }
-/* repère de sélection : un seul trait, qui glisse (translateY) et s'étire (scaleY) — 160 ms */
-.search-sel {
-  position: absolute; left: 8px; top: 0; width: 3px; height: 100px; border-radius: 2px;
-  background: var(--on-surface); transform-origin: 0 0; opacity: 0; pointer-events: none;
-  transition: transform var(--dur-sm) var(--ease-out), opacity var(--dur-xs) var(--ease-out);
-}
-.search-sel.on { opacity: 1; }
-.search-sel.instant { transition: opacity var(--dur-xs) var(--ease-out); }
 
 .search-group { padding: var(--sp-4) var(--sp-3) var(--sp-2); font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); }
 /* sous-entrée d'index : la carte dans laquelle se trouvent les notions qui suivent */
@@ -494,7 +486,7 @@
 
 .search-item { min-height: 56px; gap: var(--sp-3); padding-left: var(--sp-4); }
 .search-item:hover::before { opacity: 0; } /* la sélection suit le pointeur : un seul état visible */
-.search-item[aria-selected="true"]::before { opacity: .07; }
+.search-item[aria-selected="true"]::before { opacity: .08; }
 .si-lead { display: grid; place-items: center; flex: none; width: 40px; color: var(--on-surface-variant); }
 .si-thumb { display: block; width: 48px; height: 32px; flex: none; border-radius: var(--shape-xs); background: var(--surface-container); overflow: hidden; padding: 2px; }
 .si-thumb .thumb { width: 100%; height: 100%; }
@@ -539,7 +531,6 @@
 @media (max-width: 599.98px), (pointer: coarse) { .search-foot { display: none; } }
 
 :root[data-motion="reduce"] .search, :root[data-motion="reduce"] .search.from-origin { transform: none !important; transition: opacity 120ms linear !important; }
-:root[data-motion="reduce"] .search-sel { transition: none; }
 :root[data-motion="reduce"] .si-in, :root[data-motion="reduce"] .search-clear { animation: none; }
 
 /* ---- Réglages & raccourcis -------------------------------------------- */
