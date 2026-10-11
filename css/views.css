@@ -613,3 +613,5 @@
 .plan-sec.t-retenir { padding: var(--sp-3) var(--sp-4); border-radius: var(--shape-m); background: var(--primary-container); color: var(--on-primary-container); border-left: 0; }
 .plan-sec.t-retenir .plan-num, .plan-sec.t-retenir .plan-kicker { color: inherit; }
 .plan-sec.t-exemple .plan-note { font-style: italic; }
+/* badge « Lecture seule » des cartes (page du cours) */
+.ro-badge { display: inline-flex; align-items: center; gap: 4px; margin-right: var(--sp-2); padding: 1px 8px 1px 6px; border-radius: var(--shape-full); background: var(--surface-container-high); color: var(--on-surface); font: var(--label-s); vertical-align: 1px; }

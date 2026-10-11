@@ -209,6 +209,7 @@
         viewport: m.viewport && Number.isFinite(+m.viewport.k) ? { x: +m.viewport.x || 0, y: +m.viewport.y || 0, k: +m.viewport.k || 1 } : null,
         nodes, edges,
         ...(m.needsLayout ? { needsLayout: true } : {}),
+        ...(m.readOnly ? { readOnly: true } : {}),
       };
     }).filter((m) => courseIds.has(m.courseId)) : [];
     if (d.settings && typeof d.settings === 'object') {
@@ -393,6 +394,7 @@
       copy.id = U.uid('m');
       copy.title = src.title + ' (copie)';
       copy.createdAt = copy.updatedAt = Date.now();
+      delete copy.readOnly; // une copie sert à retravailler : elle naît modifiable
       for (const n of copy.nodes) { const nid = U.uid('n'); idMap[n.id] = nid; n.id = nid; }
       for (const e of copy.edges) { e.id = U.uid('e'); e.from = idMap[e.from]; e.to = idMap[e.to]; }
       this.data.maps.push(copy);
@@ -404,6 +406,13 @@
       if (!m) return;
       Object.assign(m, patch, { updatedAt: Date.now() });
       this.changed();
+    },
+    /** Lecture seule : protège le contenu (nœuds, liens, notes) ; ne change pas la date de modification */
+    setReadOnly(id, on) {
+      const m = this.map(id);
+      if (!m || !!m.readOnly === !!on) return;
+      if (on) m.readOnly = true; else delete m.readOnly;
+      this.changed('readonly', m);
     },
     touchMap(m, type = 'change') {
       m.updatedAt = Date.now();

@@ -38,6 +38,9 @@
       { label: 'Dupliquer', icon: 'copy', onClick: () => { const c = S.duplicateMap(m.id); ui.snack('Carte dupliquée', { action: 'Ouvrir', onAction: () => R.app.go('#/carte/' + c.id) }); } },
       { label: 'Déplacer vers…', icon: 'folder', onClick: () => R.actions.moveMap(m) },
       { label: 'Réviser cette carte', icon: 'cards', onClick: () => R.app.go('#/reviser/carte/' + m.id) },
+      m.readOnly
+        ? { label: 'Autoriser les modifications', icon: 'lockOpen', onClick: () => S.setReadOnly(m.id, false) }
+        : { label: 'Lecture seule', icon: 'lock', onClick: () => { S.setReadOnly(m.id, true); ui.snack(`« ${m.title} » en lecture seule`, { action: 'Annuler', onAction: () => S.setReadOnly(m.id, false) }); } },
       { divider: true },
       { label: 'Exporter en Markdown', icon: 'download', onClick: () => U.download(`${U.slug(m.title)}.md`, R.outline.markdown(m), 'text/markdown') },
       { label: 'Exporter (JSON)', icon: 'download', onClick: () => U.download(`${U.slug(m.title)}.json`, JSON.stringify(m, null, 2)) },
@@ -59,7 +62,7 @@
       h('div.mc-thumb', { dataset: { hero: 'map:' + m.id + ':thumb' } }, R.thumb(m)),
       h('div.mc-body',
         h('div.mc-head', h('h3.mc-title', h('span', { dataset: { hero: 'map:' + m.id + ':title' } }, m.title)), more),
-        h('p.mc-meta', `${U.plural(st.nodes, 'nœud')} · ${U.relTime(m.updatedAt)}`),
+        h('p.mc-meta', m.readOnly ? h('span.ro-badge', { title: 'Lecture seule' }, R.icon('lock', 14), 'Lecture seule') : null, `${U.plural(st.nodes, 'nœud')} · ${U.relTime(m.updatedAt)}`),
         h('div.mc-foot',
           ui.progress(st.progress, { label: 'Maîtrise de la carte' }),
           h('span.mc-due', st.due && st.reviewable ? `${st.due} à réviser` : st.reviewable ? 'À jour' : 'Pas de carte'))));
@@ -138,7 +141,7 @@
       const stat = (n, l) => h('div.stat', h('span.stat-n', String(n)), h('span.stat-l', l));
       draw();
       R.app.setFab({ icon: 'plus', label: 'Nouvelle carte', onClick: () => R.actions.newMap(route.id) });
-      const off = S.on((t) => { if (t === 'change' || t === 'import' || t === 'review') draw(); });
+      const off = S.on((t) => { if (t === 'change' || t === 'import' || t === 'review' || t === 'readonly') draw(); });
       return { unmount: off };
     },
   };

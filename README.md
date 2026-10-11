@@ -69,6 +69,9 @@ Sur mobile : toucher pour sélectionner, la barre du bas devient contextuelle (E
 
 Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapitre, `Tab` y ajoute des **Leçons**, puis les notions de chacune (une Section se pose avec `Alt 3`). Les leçons et sections sont numérotées toutes seules dans l'ordre du plan ; chacune affiche une jauge de maîtrise de sa branche. Sans rien sélectionner, le panneau affiche le **sommaire** du chapitre. Sur une leçon : **Réviser cette leçon** (seulement ses cartes) et **Isoler** (replie les autres leçons). En vue **Plan**, la structure devient des intertitres (*Leçon 1 — …*) et la numérotation I. A. 1. repart sous chacun ; « À retenir » devient un encadré. Au zoom éloigné, le détail s'estompe et la structure reste lisible.
 
+### Lecture seule
+Le cadenas de la barre (ou *Lecture seule* dans le menu ⋮ d'une carte) protège une carte terminée : on peut toujours la parcourir, ouvrir les notes, replier, isoler, passer en Plan, le mode masqué et la réviser, mais plus rien ne s'ajoute, ne se supprime ni ne se déplace (glisser un nœud fait défiler la carte, double-cliquer ouvre la note). Le réglage est mémorisé et la carte porte un badge *Lecture seule* ; une copie (*Dupliquer*) naît modifiable.
+
 ### Couleurs des nœuds (option)
 
 Par défaut tout reste monochrome. **Réglages → Couleurs des nœuds** (ou ⋮ dans une carte) : *Familles*, *Daltonisme* ou *Perso* (une couleur par type), en intensité douce ou vive. Le texte s'ajuste tout seul pour rester lisible, la forme de chaque type est conservée, une légende apparaît dans le panneau de la carte. *Revenir au monochrome* ou *Masquer les couleurs* à tout moment (tes couleurs Perso sont gardées).

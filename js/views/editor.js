@@ -94,12 +94,15 @@
 
     const bottomBar = h('div.bottombar', { role: 'toolbar' });
     const saveState = h('span.save-state', { 'aria-live': 'polite' }, R.icon('check', 16), h('span', 'Enregistré'));
-    const titleBtn = h('button.ed-title', { type: 'button', 'data-tip': 'Renommer la carte', onclick: () => R.actions.renameMap(map), dataset: { hero: 'map:' + map.id + ':title' } });
+    const titleBtn = h('button.ed-title', { type: 'button', 'data-tip': 'Renommer la carte', onclick: () => { if (!guard()) R.actions.renameMap(map); }, dataset: { hero: 'map:' + map.id + ':title' } });
     const crumbCourse = h('a.crumb', { href: '#/cours/' + map.courseId });
     const undoBtn = ui.iconBtn('undo', { title: 'Annuler', onClick: () => undo() });
     const redoBtn = ui.iconBtn('redo', { title: 'Rétablir', onClick: () => redo() });
     undoBtn.dataset.kbd = `${U.mod} Z`; redoBtn.dataset.kbd = `${U.mod} ⇧ Z`;
     const paneBtn = ui.iconBtn('panel', { title: 'Panneau de note', cls: 'only-docked', onClick: () => togglePane() });
+    /* Lecture seule : un interrupteur dans la barre ; allumé, il affiche son libellé */
+    const lockBtn = h('button.ed-lock', { type: 'button' }, h('span.ed-lock-ic'), h('span.ed-lock-l', 'Lecture seule'));
+    lockBtn.addEventListener('click', () => toggleReadOnly());
     const moreBtn = ui.iconBtn('more', { title: 'Options de la carte' });
     moreBtn.addEventListener('click', () => R.actions.mapMenu(moreBtn, map, () => R.app.go('#/cours/' + map.courseId, { replace: true }), { inEditor: true }));
     const modeSeg = h('div.segmented.seg-sm.mode-seg', { role: 'tablist', 'aria-label': 'Affichage' },
@@ -116,7 +119,7 @@
       ui.iconBtn('back', { title: 'Retour au cours', onClick: () => { flushEdit(); R.app.go('#/cours/' + map.courseId); } }),
       h('div.ed-crumbs', crumbCourse, h('span.crumb-sep', R.icon('chevronRight', 16)), titleBtn),
       modeSeg,
-      h('div.topbar-actions', saveState, h('span.only-wide-ed', undoBtn, redoBtn),
+      h('div.topbar-actions', lockBtn, saveState, h('span.only-wide-ed.ed-history', undoBtn, redoBtn),
         ui.iconBtn('search', { title: 'Rechercher', cls: 'ed-search', onClick: (e) => R.search.open('', { from: e.currentTarget }) }), paneBtn, moreBtn));
 
     const body = h('div.ed-body', stage, pane);
@@ -124,10 +127,51 @@
     root.appendChild(page);
 
     /* ------------------------------------------------------------------ */
+    /* Lecture seule                                                      */
+    /* ------------------------------------------------------------------ */
+    /* La carte se lit, se parcourt et se révise (sélection, notes, replier, isoler, masqué,
+       Plan) ; tout ce qui change son contenu est refusé ici et, par sécurité, dans mutate. */
+    const ro = () => !!map.readOnly;
+    let roNudgeAt = 0;
+    /** true si l'action doit être refusée (et le signale, sans répéter le message) */
+    function guard() {
+      if (!ro()) return false;
+      const now = Date.now();
+      if (now - roNudgeAt > 2500) {
+        roNudgeAt = now;
+        ui.snack('Carte en lecture seule', { action: 'Modifier', onAction: () => S.setReadOnly(map.id, false) });
+      }
+      // l'interrupteur se signale : petit balancement, une fois
+      lockBtn.classList.remove('nudge'); void lockBtn.offsetWidth; lockBtn.classList.add('nudge');
+      return true;
+    }
+    function toggleReadOnly() {
+      const on = !ro();
+      S.setReadOnly(map.id, on);
+      if (on) ui.snack('Lecture seule : la carte ne peut plus être modifiée', { action: 'Annuler', onAction: () => S.setReadOnly(map.id, false), duration: 3000 });
+    }
+    function applyReadOnly(first) {
+      const on = ro();
+      page.classList.toggle('is-ro', on);
+      lockBtn.setAttribute('aria-pressed', String(on));
+      lockBtn.setAttribute('aria-label', on ? 'Lecture seule activée — autoriser les modifications' : 'Passer en lecture seule');
+      lockBtn.dataset.tip = on ? 'Autoriser les modifications' : 'Lecture seule';
+      const ic = lockBtn.querySelector('.ed-lock-ic');
+      U.clear(ic); ic.appendChild(R.icon(on ? 'lock' : 'lockOpen', 20));
+      if (first) return;
+      if (on) { flushEdit(); if (st.linking) stopLinking(); if (st.selEdge) select(null); st.noteTab = 'read'; }
+      ic.classList.remove('swap'); void ic.offsetWidth; ic.classList.add('swap');
+      ctxKey = ''; bbKey = '';
+      render(); renderPane(true); positionCtx(); renderBottomBar(); updateBanner();
+    }
+
+    /* ------------------------------------------------------------------ */
     /* Historique                                                         */
     /* ------------------------------------------------------------------ */
     const snapshot = () => JSON.stringify({ nodes: map.nodes, edges: map.edges });
-    function mutate(fn, { coalesce, pane: refreshPane = true, type = 'edit' } = {}) {
+    /* view : changement d'affichage (replier, isoler), permis en lecture seule */
+    function mutate(fn, { coalesce, pane: refreshPane = true, type = 'edit', view = false } = {}) {
+      if (!view && guard()) return undefined;
       const now = Date.now();
       if (!(coalesce && st.coalesce === coalesce && now - st.coalesceAt < 1500)) {
         st.undo.push(snapshot());
@@ -157,8 +201,8 @@
       renderPane(true);
       updateHistoryBtns();
     }
-    function undo() { if (!st.undo.length) return; flushEdit(); st.redo.push(snapshot()); restoreSnap(st.undo.pop()); ui.snack('Annulé', { duration: 1200 }); }
-    function redo() { if (!st.redo.length) return; flushEdit(); st.undo.push(snapshot()); restoreSnap(st.redo.pop()); ui.snack('Rétabli', { duration: 1200 }); }
+    function undo() { if (!st.undo.length || ro()) return; flushEdit(); st.redo.push(snapshot()); restoreSnap(st.undo.pop()); ui.snack('Annulé', { duration: 1200 }); }
+    function redo() { if (!st.redo.length || ro()) return; flushEdit(); st.undo.push(snapshot()); restoreSnap(st.redo.pop()); ui.snack('Rétabli', { duration: 1200 }); }
     function updateHistoryBtns() {
       for (const b of U.$$('[data-act="undo"]', page).concat(undoBtn)) b.disabled = !st.undo.length;
       for (const b of U.$$('[data-act="redo"]', page).concat(redoBtn)) b.disabled = !st.redo.length;
@@ -734,6 +778,7 @@
       setTimeout(() => (coach.hidden = true), 200);
     }
     function addChild(parentId, { edit = true, title = '', type, at } = {}) {
+      if (guard()) return null;
       const p = S.node(map, parentId);
       if (!p) return null;
       hideCoach();
@@ -756,6 +801,7 @@
       return n;
     }
     function addSibling(id) {
+      if (guard()) return;
       const p = S.parentOf(map, id);
       if (!p) {
         const n0 = S.node(map, id);
@@ -777,6 +823,7 @@
       return n;
     }
     function addFree(at, type = 'notion') {
+      if (guard()) return;
       const n = S.newNode({ type, title: '', x: at.x, y: at.y });
       mutate(() => { map.nodes.push(n); st.fresh.add(n.id); }, { pane: false });
       st.sel = new Set([n.id]); st.primary = n.id; st.selEdge = null;
@@ -810,6 +857,7 @@
       for (const i of ids) { const n = S.node(map, i); n.x += dx; n.y += dy; }
     }
     function deleteNodes(ids) {
+      if (guard()) return;
       ids = [...ids].filter((id) => S.node(map, id));
       if (!ids.length) return;
       const all = new Set();
@@ -825,10 +873,12 @@
       ui.snack(all.size > 1 ? `${all.size} nœuds supprimés` : 'Nœud supprimé', { action: 'Annuler', onAction: undo });
     }
     function deleteEdge(id) {
+      if (guard()) return;
       mutate(() => { map.edges = map.edges.filter((e) => e.id !== id); st.selEdge = null; });
       ui.snack('Lien supprimé', { action: 'Annuler', onAction: undo });
     }
     function connect(from, to) {
+      if (guard()) return;
       if (from === to) return;
       if (map.edges.some((e) => (e.from === from && e.to === to) || (e.from === to && e.to === from))) {
         ui.snack('Ces deux nœuds sont déjà reliés');
@@ -843,9 +893,11 @@
       ui.snack(tree ? 'Rattaché comme sous-élément' : 'Renvoi créé', { action: 'Modifier', onAction: () => selectEdge(e.id) });
     }
     function setType(ids, type) {
+      if (guard()) return;
       mutate(() => { for (const id of ids) { const n = S.node(map, id); if (n) n.type = type; } });
     }
     function setLogic(id, logic) {
+      if (guard()) return;
       mutate(() => { const n = S.node(map, id); if (n) n.logic = logic; });
     }
     /* Nœuds de structure (Chapitre, Leçon, Section) */
@@ -861,7 +913,7 @@
       mutate(() => {
         for (const o of others) o.collapsed = true;
         for (const a of [...S.ancestors(map, n.id), n]) a.collapsed = false;
-      });
+      }, { view: true });
       const ids = new Set([n.id, ...S.descendants(map, n.id)]);
       setTimeout(() => fit(true, 1, ids), 60);
     }
@@ -884,9 +936,10 @@
           const hidden = S.hiddenSet(map);
           for (const d of S.descendants(map, id)) if (!hidden.has(d)) st.origin.set(d, id);
         }
-      });
+      }, { view: true });
     }
     function duplicateBranch(id) {
+      if (guard()) return;
       const ids = [id, ...S.descendants(map, id)];
       const idMap = {};
       const b = bbox(new Set(ids));
@@ -915,6 +968,7 @@
     /** Ranger : pose à pose, trajectoires en arc */
     let tidyStop = null;
     function tidy() {
+      if (guard()) return;
       flushEdit();
       measure();
       const target = R.layout.tidy(map, sizeFn);
@@ -961,6 +1015,7 @@
     /* Édition du titre en place                                          */
     /* ------------------------------------------------------------------ */
     function startEdit(id, isNew = false) {
+      if (guard()) return;
       if (st.masked) return;
       flushEdit();
       const n = S.node(map, id);
@@ -1052,8 +1107,9 @@
     /* ------------------------------------------------------------------ */
     function ctxItems() {
       const n = primaryNode();
-      if (st.selEdge) return edgeItems();
+      if (st.selEdge) return ro() ? null : edgeItems();
       if (!n) return null;
+      if (ro()) return roItems(n);
       if (st.sel.size > 1) {
         return [
           { label: `${st.sel.size} sélectionnés`, text: true },
@@ -1072,6 +1128,18 @@
           ? (S.branchStats(map, n.id).reviewable ? { icon: 'cards', label: 'Réviser', act: () => reviewBranch(n), tip: `Réviser ${STRUCT_THIS[n.type]}` } : null)
           : { icon: 'logic', label: n.logic ? (n.logic === 'et' ? 'ET' : 'OU') : 'ET/OU', act: (b) => logicMenu(b, n), tip: 'Conditions cumulatives ou alternatives', on: !!n.logic },
         kids ? { icon: n.collapsed ? 'expand' : 'collapse', label: n.collapsed ? 'Déplier' : 'Replier', act: () => toggleCollapse(n.id), tip: n.collapsed ? 'Déplier la branche' : 'Replier la branche', kbd: '.' } : null,
+        { icon: 'more', label: 'Plus', act: (b) => nodeMenu(b, n) },
+      ].filter(Boolean);
+    }
+    /** Lecture seule : lire, réviser, replier, centrer — rien qui modifie la carte */
+    function roItems(n) {
+      if (st.sel.size > 1) return [{ label: `${st.sel.size} sélectionnés`, text: true }];
+      const kids = S.childrenOf(map, n.id).length;
+      return [
+        { icon: 'note', label: 'Note', act: () => openPane(false), tip: 'Lire la note', kbd: 'Espace', on: !!n.note.trim() },
+        S.isStruct(n.type) && S.branchStats(map, n.id).reviewable ? { icon: 'cards', label: 'Réviser', act: () => reviewBranch(n), tip: `Réviser ${STRUCT_THIS[n.type]}` } : null,
+        kids ? { icon: n.collapsed ? 'expand' : 'collapse', label: n.collapsed ? 'Déplier' : 'Replier', act: () => toggleCollapse(n.id), tip: n.collapsed ? 'Déplier la branche' : 'Replier la branche', kbd: '.' } : null,
+        { icon: 'target', label: 'Centrer', act: () => centerOn(n.id), tip: 'Centrer sur ce nœud' },
         { icon: 'more', label: 'Plus', act: (b) => nodeMenu(b, n) },
       ].filter(Boolean);
     }
@@ -1181,6 +1249,18 @@
     }
     function nodeMenu(anchor, n) {
       const kids = S.childrenOf(map, n.id).length;
+      if (ro()) {
+        ui.menu(anchor, [
+          { label: 'Lire la note', icon: 'note', onClick: () => openPane(false) },
+          { label: 'Centrer', icon: 'target', onClick: () => centerOn(n.id) },
+          ...structMenuItems(n),
+          kids ? { label: n.collapsed ? 'Déplier' : 'Replier', icon: n.collapsed ? 'expand' : 'collapse', onClick: () => toggleCollapse(n.id) } : null,
+          { label: 'Réviser cette carte', icon: 'cards', onClick: () => R.app.go('#/reviser/carte/' + map.id) },
+          { divider: true },
+          { label: 'Autoriser les modifications', icon: 'lockOpen', onClick: () => S.setReadOnly(map.id, false) },
+        ].filter(Boolean));
+        return;
+      }
       ui.menu(anchor, [
         { label: 'Renommer', icon: 'edit', hint: 'F2', onClick: () => startEdit(n.id) },
         { label: 'Ajouter un frère', icon: 'sibling', hint: 'Entrée', onClick: () => addSibling(n.id) },
@@ -1324,8 +1404,8 @@
         t.appendChild(b);
         return b;
       };
-      add('plus', 'Nouveau nœud libre', () => addFreeCenter(), 'double-clic', 'vt-primary');
-      add('tidy', 'Ranger la carte', () => tidy(), 'R');
+      add('plus', 'Nouveau nœud libre', () => addFreeCenter(), 'double-clic', 'vt-primary vt-edit');
+      add('tidy', 'Ranger la carte', () => tidy(), 'R', 'vt-edit');
       add('fit', 'Ajuster à l’écran', () => fit(), 'F');
       ed._maskBtn = add('eyeOff', 'Mode masqué (révision)', () => toggleMask(), 'H');
       t.appendChild(h('div.vt-sep'));
@@ -1355,6 +1435,21 @@
         { icon: 'fit', label: 'Ajuster', act: () => fit() },
         { icon: 'close', label: 'Quitter', act: toggleMask },
       ];
+      else if (ro()) {
+        const kids = n && st.sel.size === 1 ? S.childrenOf(map, n.id).length : 0;
+        items = n && st.sel.size === 1 ? [
+          { icon: 'note', label: 'Note', act: () => openPane(false), on: !!n.note.trim() },
+          kids ? { icon: n.collapsed ? 'expand' : 'collapse', label: n.collapsed ? 'Déplier' : 'Replier', act: () => toggleCollapse(n.id) } : null,
+          { icon: 'target', label: 'Centrer', act: () => centerOn(n.id) },
+          { icon: 'more', label: 'Plus', act: (b) => nodeMenu(b, n) },
+        ].filter(Boolean) : st.sel.size > 1 ? [
+          { icon: 'close', label: 'Désélect.', act: () => select(null) },
+        ] : [
+          { icon: 'fit', label: 'Ajuster', act: () => fit() },
+          { icon: 'eyeOff', label: 'Masquer', act: toggleMask },
+          { icon: 'lockOpen', label: 'Modifier', act: () => S.setReadOnly(map.id, false), tip: 'Autoriser les modifications' },
+        ];
+      }
       else if (st.selEdge) items = edgeItems() || [];
       else if (n && st.sel.size === 1) {
         items = [
@@ -1391,6 +1486,7 @@
     }
     function mobileNodeMenu(anchor, n) {
       const kids = S.childrenOf(map, n.id).length;
+      if (ro()) { nodeMenu(anchor, n); return; }
       ui.menu(anchor, [
         { label: 'Renommer', icon: 'edit', onClick: () => startEdit(n.id) },
         { label: 'Ajouter un frère', icon: 'sibling', onClick: () => addSibling(n.id) },
@@ -1436,6 +1532,7 @@
        1 élément → lien simple (comme avant) ; plusieurs → fourche ;
        extend → les éléments deviennent de nouvelles branches du lien sélectionné. */
     function startLinking(id, { extend = null } = {}) {
+      if (guard()) return;
       flushEdit();
       st.linking = { from: id, picked: [], extend };
       select(null);
@@ -1601,10 +1698,10 @@
           const anchor = h('span', { style: { position: 'fixed', left: start.x + 'px', top: start.y + 'px', width: '1px', height: '1px' } });
           document.body.appendChild(anchor);
           ui.menu(anchor, [
-            { label: 'Nouveau nœud ici', icon: 'plus', onClick: () => addFree({ x: p.x - 60, y: p.y - 20 }) },
-            { label: 'Ranger la carte', icon: 'tidy', onClick: tidy },
+            ro() ? null : { label: 'Nouveau nœud ici', icon: 'plus', onClick: () => addFree({ x: p.x - 60, y: p.y - 20 }) },
+            ro() ? null : { label: 'Ranger la carte', icon: 'tidy', onClick: tidy },
             { label: 'Ajuster à l’écran', icon: 'fit', onClick: () => fit() },
-          ], { align: 'start' });
+          ].filter(Boolean), { align: 'start' });
           setTimeout(() => anchor.remove(), 300);
         }, 520);
       }
@@ -1678,6 +1775,12 @@
     function onDragStart(e) {
       // glisser depuis l'icône de note déplace le nœud, comme ailleurs sur le nœud
       if (gesture.type === 'tap-note') Object.assign(gesture, { type: 'node', shift: false, alt: e.altKey, pointerType: e.pointerType });
+      if ((gesture.type === 'node' || gesture.type === 'connect') && ro()) {
+        // lecture seule : on ne déplace pas le nœud, on fait glisser la carte
+        Object.assign(gesture, { type: 'pan', view: { ...st.view } });
+        canvas.classList.add('is-panning');
+        return;
+      }
       if (gesture.type === 'node') {
         if (st.masked || st.linking) { gesture.type = 'none'; return; }
         const id = gesture.nodeId;
@@ -1755,6 +1858,7 @@
           render();
         } else onTapNode(g.nodeId, e, g);
       } else if (g.type === 'connect') {
+        if (ro()) { onTapNode(g.from, e, { shift: false }); return; }
         tempEdge.setAttribute('d', '');
         for (const el of st.els.values()) el.classList.remove('drop-target');
         if (!g.moved) addChild(g.from);
@@ -1770,10 +1874,10 @@
         clearTimeout(st.noteTimer);
         if (Math.hypot(e.clientX - g.start.x, e.clientY - g.start.y) < 10) openNote(g.nodeId);
       } else if (g.type === 'edge') {
-        if (st.linking || st.masked) return;
+        if (st.linking || st.masked || ro()) return;
         selectEdge(g.edgeId);
       } else if (g.type === 'logic') {
-        if (st.linking || st.masked) return;
+        if (st.linking || st.masked || ro()) return;
         const p = S.node(map, g.from);
         if (p) { select(p.id); logicMenu(g.anchor, p); }
       } else if (g.type === 'marquee') {
@@ -1844,7 +1948,7 @@
       if (st.linking) { togglePick(id); return; }
       if (g.shift) { select(id, { toggle: true }); return; }
       clearTimeout(st.noteTimer);
-      if (dbl) { st.lastTap = null; select(id); startEdit(id); return; }
+      if (dbl) { st.lastTap = null; select(id); if (ro()) openNote(id); else startEdit(id); return; }
       // 2e toucher sur le nœud déjà sélectionné → sa note (après la fenêtre du double-toucher)
       const again = st.sel.size === 1 && st.sel.has(id) && !st.selEdge;
       select(id);
@@ -1855,7 +1959,7 @@
       const dbl = st.lastTap && st.lastTap.id === '__bg' && now - st.lastTap.t < 350 && Math.hypot(e.clientX - st.lastTap.x, e.clientY - st.lastTap.y) < 30;
       st.lastTap = { id: '__bg', t: now, x: e.clientX, y: e.clientY };
       if (st.linking) return; // en sélection multiple, un toucher dans le vide n'annule pas
-      if (dbl && !st.masked) {
+      if (dbl && !st.masked && !ro()) {
         st.lastTap = null;
         const p = toWorld(e.clientX, e.clientY);
         addFree({ x: Math.round(p.x - 60), y: Math.round(p.y - 20) }, map.nodes.length ? 'idee' : 'notion');
@@ -1877,11 +1981,13 @@
         const anchor = h('span', { style: { position: 'fixed', left: e.clientX + 'px', top: e.clientY + 'px', width: '1px', height: '1px' } });
         document.body.appendChild(anchor);
         ui.menu(anchor, [
-          { label: 'Nouveau nœud ici', icon: 'plus', onClick: () => addFree({ x: p.x - 60, y: p.y - 20 }) },
-          { label: 'Ranger la carte', icon: 'tidy', hint: 'R', onClick: tidy },
+          ro() ? null : { label: 'Nouveau nœud ici', icon: 'plus', onClick: () => addFree({ x: p.x - 60, y: p.y - 20 }) },
+          ro() ? null : { label: 'Ranger la carte', icon: 'tidy', hint: 'R', onClick: tidy },
           { label: 'Ajuster à l’écran', icon: 'fit', hint: 'F', onClick: () => fit() },
           { label: st.masked ? 'Quitter le mode masqué' : 'Mode masqué', icon: 'eyeOff', hint: 'H', onClick: toggleMask },
-        ], { align: 'start' });
+          ro() ? { divider: true } : null,
+          ro() ? { label: 'Autoriser les modifications', icon: 'lockOpen', onClick: () => S.setReadOnly(map.id, false) } : null,
+        ].filter(Boolean), { align: 'start' });
         setTimeout(() => anchor.remove(), 300);
       }
     }
@@ -1895,7 +2001,7 @@
       const mod = e.ctrlKey || e.metaKey;
       const k = e.key;
       if (k.startsWith('Arrow') || k === 'Tab' || k === 'Enter') canvas.classList.add('kbd');
-      if (mod && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+      if (mod && k.toLowerCase() === 'z') { e.preventDefault(); if (ro()) return; e.shiftKey ? redo() : undo(); return; }
       if (mod && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if (mod && k.toLowerCase() === 'a' && st.mode === 'map') { e.preventDefault(); st.sel = new Set([...st.els.keys()]); st.primary = [...st.sel][0] || null; render(); renderPane(); return; }
       if (e.altKey && !mod && /^Digit[1-3]$/.test(e.code) && st.mode === 'map' && !st.masked && primaryNode()) {
@@ -1935,6 +2041,8 @@
         }
         return;
       }
+      // lecture seule : Entrée / Espace lisent la note ; les touches d'édition sont refusées (gardes)
+      if (ro() && (k === 'Enter' || k === ' ')) { e.preventDefault(); openPane(false); return; }
       if (k === 'Tab') { e.preventDefault(); if (e.shiftKey) { const p = S.parentOf(map, n.id); if (p) addSibling(p.id); } else addChild(n.id); return; }
       if (k === 'Enter') { e.preventDefault(); addSibling(n.id); return; }
       if (k === 'F2') { e.preventDefault(); startEdit(n.id); return; }
@@ -2017,7 +2125,7 @@
       renderPane(true);
       const n = primaryNode();
       if (n) setTimeout(() => ensureVisible(n.id), 320);
-      if (focusNote) {
+      if (focusNote && !ro()) {
         st.noteTab = 'write';
         renderPane(true);
         setTimeout(() => { const ta = pane.querySelector('.note-input'); if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); } }, m === 'docked' ? 50 : 360);
@@ -2029,8 +2137,8 @@
       if (!n) return;
       if (!(st.sel.size === 1 && st.sel.has(id))) select(id);
       const empty = !n.note.trim();
-      st.noteTab = empty ? 'write' : 'read';
-      openPane(empty);
+      st.noteTab = empty && !ro() ? 'write' : 'read';
+      openPane(empty && !ro());
       requestAnimationFrame(() => {
         const sec = pane.querySelector('.pane-note');
         if (!sec) return;
@@ -2157,7 +2265,8 @@
       const kids = S.childrenOf(map, n.id);
 
       // titre
-      const titleIn = h('textarea.pane-title-input', { rows: 1, placeholder: placeholderFor(n), 'aria-label': 'Titre du nœud', spellcheck: 'true' });
+      const locked = ro();
+      const titleIn = h('textarea.pane-title-input', { rows: 1, placeholder: placeholderFor(n), 'aria-label': 'Titre du nœud', spellcheck: 'true', readOnly: locked });
       titleIn.value = n.title;
       const autosize = () => { titleIn.style.height = 'auto'; titleIn.style.height = titleIn.scrollHeight + 'px'; };
       titleIn.addEventListener('input', () => {
@@ -2177,11 +2286,11 @@
       ])) : null;
 
       // type & logique
-      const typeChip = h('button.chip.chip-filter', { type: 'button', 'aria-label': 'Type : ' + T.label }, h('span', T.label), R.icon('chevronDown', 16));
+      const typeChip = h('button.chip.chip-filter', { type: 'button', 'aria-label': 'Type : ' + T.label, disabled: locked }, h('span', T.label), locked ? null : R.icon('chevronDown', 16));
       typeChip.addEventListener('click', () => typeMenu(typeChip, [n.id]));
       const logicSeg = h('div.segmented.seg-xs', { role: 'radiogroup', 'aria-label': 'Logique des éléments rattachés' },
         [[null, '—', 'Sans précision'], ['et', 'ET', 'Cumulatifs'], ['ou', 'OU', 'Alternatifs']].map(([v, l, t]) => {
-          const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(n.logic === v), 'data-tip': t }, l);
+          const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(n.logic === v), 'data-tip': t, disabled: locked }, l);
           b.addEventListener('click', () => setLogic(n.id, v));
           return b;
         }));
@@ -2189,7 +2298,7 @@
 
       // note
       const hasNote = !!n.note.trim();
-      const tab = st.noteTab || (hasNote ? 'read' : 'write');
+      const tab = locked ? 'read' : st.noteTab || (hasNote ? 'read' : 'write');
       const noteIn = h('textarea.note-input', {
         placeholder: 'Écris ta note… (Markdown : **gras**, *italique*, ==surligné==, - liste, > citation, [[autre nœud]])',
         'aria-label': 'Note', spellcheck: 'true',
@@ -2213,9 +2322,9 @@
       });
       const preview = h('div.note-preview.md');
       const paintPreview = () => {
-        preview.innerHTML = n.note.trim() ? R.md.render(n.note) : '<p class="muted">Aucune note pour l’instant. Passe en mode Écrire.</p>';
+        preview.innerHTML = n.note.trim() ? R.md.render(n.note) : `<p class="muted">${locked ? 'Aucune note.' : 'Aucune note pour l’instant. Passe en mode Écrire.'}</p>`;
         // toucher un tableau le rouvre dans la grille (les liens qu'il contient restent cliquables)
-        for (const t of U.$$('.md-table[data-table]', preview)) {
+        if (!locked) for (const t of U.$$('.md-table[data-table]', preview)) {
           t.title = 'Toucher pour modifier le tableau';
           t.addEventListener('click', (ev) => { if (!ev.target.closest('a')) editTable(n, noteIn, +t.dataset.table); });
         }
@@ -2258,7 +2367,7 @@
         return b;
       }
       let noteBody;
-      preview.addEventListener('dblclick', () => switchTab('write', true));
+      if (!locked) preview.addEventListener('dblclick', () => switchTab('write', true));
       if (tab === 'read') { paintPreview(); noteBody = preview; }
       else noteBody = writeBody;
 
@@ -2286,7 +2395,7 @@
             S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
             h('span.decomp-t', c.title || 'Sans titre'),
             c.note.trim() ? R.icon('note', 14) : null)))) : null,
-        h('label.decomp-add', R.icon('plus', 18), addIn));
+        locked ? null : h('label.decomp-add', R.icon('plus', 18), addIn));
 
       // liens
       const links = map.edges.filter((e) => e.kind === 'link' && (e.from === n.id || e.to === n.id));
@@ -2298,7 +2407,7 @@
             h('span.link-dir', e.from === n.id ? '→' : '←'),
             e.label ? h('span.link-label', e.label) : null,
             h('span', other.title || 'Sans titre')),
-          ui.iconBtn('close', { title: 'Supprimer le renvoi', cls: 'icon-btn-sm', onClick: () => deleteEdge(e.id) }));
+          locked ? null : ui.iconBtn('close', { title: 'Supprimer le renvoi', cls: 'icon-btn-sm', onClick: () => deleteEdge(e.id) }));
         }))) : null;
 
       // révision
@@ -2335,7 +2444,7 @@
         typeRow,
         branchSec,
         h('section.pane-sec.pane-note',
-          h('div.pane-sec-head', h('h3.pane-sec-title', 'Note'), noteTabs),
+          h('div.pane-sec-head', h('h3.pane-sec-title', 'Note'), locked ? h('span.pane-ro', R.icon('lock', 14), 'Lecture seule') : noteTabs),
           noteBody),
         srcSlot,
         decomp,
@@ -2607,6 +2716,7 @@
     /* ------------------------------------------------------------------ */
     /* Initialisation                                                     */
     /* ------------------------------------------------------------------ */
+    applyReadOnly(true);
     const updateHeader = () => {
       titleBtn.textContent = map.title;
       const c = course();
@@ -2626,6 +2736,7 @@
         return;
       }
       if (type === 'settings') { if (!st.sel.size && !st.selEdge) renderPane(true); return; } // légende des couleurs
+      if (type === 'readonly') { applyReadOnly(); return; }
       if (type === 'edit') {
         clearTimeout(pendingTimer);
         pendingTimer = setTimeout(() => { saveState.classList.add('pending'); saveState.querySelector('span:last-child').textContent = 'Enregistrement…'; }, 400);

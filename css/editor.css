@@ -545,3 +545,42 @@
 .legend-dot { flex: none; width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid; }
 .legend-l { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .legend-n { font: var(--label-m); color: var(--on-surface-variant); font-variant-numeric: tabular-nums; }
+
+/* ---- Lecture seule ------------------------------------------------------
+   Interrupteur dans la barre : éteint, une icône discrète (cadenas ouvert) ; allumé, une
+   pastille « Lecture seule » (cadenas fermé). Mouvement : le cadenas se referme
+   (scale .8 → 1 + 2 px, 240 ms out), le libellé suit (+40 ms) ; une action refusée fait
+   osciller la pastille une fois (320 ms). En lecture seule, les outils d'édition
+   disparaissent et glisser un nœud déplace la carte. */
+.ed-lock {
+  position: relative; display: inline-flex; align-items: center; gap: var(--sp-2); flex: none;
+  height: 40px; min-width: 40px; padding: 0 10px; margin-right: var(--sp-1);
+  border-radius: var(--shape-full); color: var(--on-surface-variant); font: var(--label-l);
+  transition: background-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
+}
+.ed-lock::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: currentColor; opacity: 0; transition: opacity var(--dur-sm) var(--ease-out); }
+.ed-lock:hover::before { opacity: var(--state-hover); }
+.ed-lock:focus-visible { outline: 2px solid var(--on-surface); outline-offset: 2px; }
+.ed-lock-ic { display: grid; place-items: center; }
+.ed-lock-ic.swap { animation: lock-snap var(--dur-md) var(--ease-out); }
+@keyframes lock-snap { from { opacity: .3; transform: translateY(-2px) scale(.8); } }
+.ed-lock-l { display: none; }
+.ed-lock[aria-pressed="true"] { background: var(--on-surface); color: var(--surface); padding: 0 14px 0 10px; }
+.ed-lock[aria-pressed="true"] .ed-lock-l { display: inline; animation: lock-label var(--dur-md) var(--ease-out) 40ms both; }
+@keyframes lock-label { from { opacity: 0; transform: translateX(-4px); } }
+.ed-lock:active { transform: scale(.97); }
+.ed-lock.nudge { animation: lock-nudge 320ms var(--ease-out); }
+@keyframes lock-nudge { 20% { transform: translateX(-3px); } 45% { transform: translateX(3px); } 70% { transform: translateX(-2px); } 90% { transform: translateX(1px); } }
+@media (max-width: 599.98px) {
+  .ed-lock { margin-right: 0; }
+  .ed-lock[aria-pressed="true"] { padding: 0 10px; }
+  .ed-lock[aria-pressed="true"] .ed-lock-l { display: none; }
+}
+.is-ro .vt-edit, .is-ro .ed-history { display: none; }
+.is-ro .node-handle { display: none; }
+.is-ro .canvas:not(.is-panning) .node { cursor: pointer; }
+.is-ro .ed-title { cursor: default; }
+.pane-ro { display: inline-flex; align-items: center; gap: 6px; font: var(--label-m); color: var(--on-surface-variant); }
+.is-ro .pane-title-input { cursor: default; }
+.is-ro .pane-title-input:focus { outline: none; }
+:root[data-motion="reduce"] .ed-lock-ic.swap, :root[data-motion="reduce"] .ed-lock-l, :root[data-motion="reduce"] .ed-lock.nudge { animation: none !important; }
