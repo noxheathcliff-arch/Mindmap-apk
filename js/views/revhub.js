@@ -123,7 +123,8 @@
       h('div.dogs', list.map(({ map, node }) => {
         const c = S.course(map.courseId);
         const card = h('a.dog', { href: `#/carte/${map.id}?n=${node.id}`, dataset: { hero: `map:${map.id}:node` } },
-          h('span.dog-band'),
+          // forme de la fiche (sous le texte) : la feuille coupée en diagonale + le rabat posé dessus
+          h('span.dog-shape', { 'aria-hidden': 'true' }, h('span.dog-paper', h('span.dog-band')), h('span.dog-shade'), h('span.dog-flap')),
           h('span.dog-k', S.isStruct(node.type) ? S.kickerOf(map, node) : S.TYPES[node.type].label),
           h('span.dog-t', node.title),
           h('span.dog-s', map.title),
