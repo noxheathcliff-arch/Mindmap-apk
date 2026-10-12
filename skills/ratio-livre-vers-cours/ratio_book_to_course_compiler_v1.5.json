@@ -531,7 +531,7 @@
       "procedure": [
         {
           "passe": "1. Fonction",
-          "faire": "Relire la phrase source et nommer en un verbe ce que fait le passage dans le raisonnement : définir, décrire, classer, faire reconnaître, expliquer pourquoi, dire ce qui en résulte, poser ce qu'il faut, signaler une difficulté, y répondre, viser, prescrire, ordonner des actions, entraîner, soutenir, objecter, tempérer, écarter une règle, prévenir une erreur, comparer, illustrer, prouver, citer, situer, mesurer, résumer. Chaque fiche (cards) commence par sa fonction."
+          "faire": "Relire la phrase source et nommer en un verbe ce que fait le passage dans le raisonnement : définir, décrire, classer, faire reconnaître, expliquer pourquoi, dire ce qui en résulte, poser ce qu'il faut, signaler une difficulté, y répondre, viser, prescrire, ordonner des actions, entraîner, soutenir, objecter, tempérer, écarter une règle, prévenir une erreur, comparer, illustrer, prouver, citer, situer, mesurer, résumer. Chaque fiche (cards) commence par sa fonction. Une image, une métaphore ou un slogan (« un seau percé », « ni hérisson ni paillasson ») prend le type de ce qu'il DÉCRIT : une conséquence décrite par une image est une conséquence ; ce n'est un exemple que s'il raconte un cas."
         },
         {
           "passe": "2. Indices",
@@ -664,7 +664,7 @@
         {
           "type": "cause",
           "fonction": "EXPLIQUER POURQUOI : ce qui PROVOQUE (vient avant, pousse)",
-          "lien_parent": "« [enfant] » provoque / explique « [parent] »",
+          "lien_parent": "« [enfant] » provoque / explique ce que décrit « [parent] » — ou, si le parent est un but ou une capacité (« S'affirmer »), « [enfant] » est ce qui l'EMPÊCHE (un frein est la cause de l'échec)",
           "indices": [
             "parce que",
             "à cause de",
@@ -674,7 +674,11 @@
             "origine",
             "facteur",
             "favorise",
-            "engendre"
+            "engendre",
+            "ce qui nous empêche",
+            "frein",
+            "nous retient",
+            "vient de"
           ],
           "parents_typiques": [
             "question",
@@ -762,7 +766,8 @@
           "pas_si": {
             "c'est une erreur ponctuelle de l'élève": "piege",
             "c'est une limite d'une théorie": "critique",
-            "il explique un autre fait": "cause"
+            "il explique un autre fait": "cause",
+            "c'est un frein qui explique pourquoi on n'y arrive pas (répond à « qu'est-ce qui empêche ? »)": "cause"
           }
         },
         {
@@ -1397,7 +1402,7 @@
         },
         {
           "groupe": "cause · condition · objectif · conséquence",
-          "question_discriminante": "Où est l'enfant dans le temps par rapport au parent ? AVANT et il POUSSE → cause ; AVANT et il PERMET (nécessaire) → condition ; APRÈS et il est VOULU → objectif ; APRÈS et il ARRIVE (voulu ou non) → conséquence.",
+          "question_discriminante": "Où est l'enfant dans le temps par rapport au parent ? AVANT et il POUSSE → cause ; AVANT et il PERMET (nécessaire) → condition ; APRÈS et il est VOULU → objectif ; APRÈS et il ARRIVE (voulu ou non) → conséquence. Un FREIN (« ce qui nous empêche de… ») est une cause : il explique pourquoi on n'y arrive pas. C'est un problème seulement s'il est une situation à résoudre pour elle-même.",
           "phrase_test": "cause : « [enfant] provoque [parent] » ; condition : « sans [enfant], pas de [parent] » ; objectif : « on fait [parent] pour [enfant] » ; conséquence : « [parent] entraîne [enfant] »"
         },
         {
