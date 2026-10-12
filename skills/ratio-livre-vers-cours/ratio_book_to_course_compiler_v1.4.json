@@ -342,7 +342,7 @@
         "type": "comparaison",
         "label": "Comparaison",
         "review_prompt": "Compare : points communs et différences",
-        "use": "Distinction entre 2 à 4 notions (« A ou B ? ») ; note = tableau comparatif.",
+        "use": "Distinction entre 2 à 4 notions (« A ou B ? ») ; note = tableau comparatif. Le tableau a au moins 2 critères ; si le livre n'en donne qu'un, faire 2 nœuds avantage/inconvenient ou une note simple plutôt que d'inventer des critères.",
         "family": "raisonner"
       },
       {
@@ -541,7 +541,37 @@
       "15. Un cas, une histoire → exemple ; la synthèse → retenir ; un concept qui se décompose → notion.",
       "16. Seulement si rien ne convient → idee."
     ],
-    "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance."
+    "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance.",
+    "boundary_tests": [
+      {
+        "entre": "cause / condition",
+        "test": "« X PROVOQUE Y » (sans X, Y n'arriverait pas de lui-même ; X pousse vers Y) → cause. « Il FAUT X pour que Y soit possible » (X ouvre la porte, ne pousse pas) → condition. « La clé pour dire non est l'estime de soi » → condition."
+      },
+      {
+        "entre": "cause / objectif",
+        "test": "Regarde le temps : ce qui vient AVANT et pousse (passé, origine) → cause ; ce qu'on cherche à obtenir APRÈS (« pour… », « afin de… », « pour quoi faire ? ») → objectif. « Pour se sentir utile » → objectif."
+      },
+      {
+        "entre": "conseil / solution / étape",
+        "test": "etape = une action à sa place dans une suite ordonnée (méthode). solution = une réponse à un problème NOMMÉ (souvent plusieurs solutions alternatives, logic \"ou\"). conseil = une recommandation générale, sans problème précis ni ordre. Des « stratégies face au patron » répondent au problème « refuser au patron » → solution, logic \"ou\"."
+      },
+      {
+        "entre": "nuance / critique / piège / exception",
+        "test": "exception : une règle énoncée + un cas où elle ne s'applique pas (test « SAUF »). nuance : tempère sans contredire (« pas toujours », « attention, cela ne plaira pas à tout le monde »). critique : attaque une idée ou en montre la faiblesse. piege : une erreur que l'ÉLÈVE risque de commettre (« croire que… », « confondre… »)."
+      },
+      {
+        "entre": "caractéristique / signe / catégorie",
+        "test": "caracteristique décrit ce que la chose EST ; signe permet de la RECONNAÎTRE de l'extérieur (symptôme, comportement observable) ; categorie est une SORTE de la chose (typologie)."
+      },
+      {
+        "entre": "argument / conseil",
+        "test": "argument justifie une thèse (« parce que… ») ; conseil dit quoi faire."
+      },
+      {
+        "entre": "question + cardinal",
+        "test": "Une question qui annonce une liste peut porter le cardinal entre parenthèses : « Pourquoi ne sait-on pas dire non ? (7 raisons) »."
+      }
+    ]
   },
   "markdown_spec": {
     "inline": {
@@ -639,7 +669,7 @@
         "name": "VALIDER",
         "do": [
           "Passer TOUTES les quality_gates. Si un environnement d'exécution de code est disponible, exécuter self_check.validator_python sur le JSON et corriger jusqu'à zéro erreur.",
-          "Audit des types : pour chaque nœud, lire la question de révision (review_prompt) suivie du titre. Si la note n'y répond pas, ou si un type plus précis existe (selection_heuristic, faux_amis), changer le type. Vérifier en particulier chaque exception (test « … SAUF … ») et chaque idee.",
+          "Audit des types : pour chaque nœud, lire la question de révision (review_prompt) suivie du titre. Si la note n'y répond pas, ou si un type plus précis existe (selection_heuristic, faux_amis), changer le type. Vérifier en particulier chaque exception (test « … SAUF … ») et chaque idee. En cas d'hésitation entre deux types proches, appliquer node_types.boundary_tests.",
           "Relire 5 nœuds au hasard en mode « révision » : la question (review_prompt + titre) a-t-elle une réponse claire dans la note/les enfants ?",
           "Vérifier la couverture : chaque chapitre/section du plan P1 apparaît quelque part ; chaque énumération a son cardinal.",
           "Le rapport signale aussi les défauts du livre rencontrés (modeling_patterns.defective_sources)."
@@ -843,12 +873,12 @@
     ],
     "examples": "Un exemple n'est JAMAIS un enfant d'un nœud-énumération (avec ou sans logic) ni d'un nœud ET/OU (il serait compté parmi les « N éléments à retrouver ») : le rattacher comme enfant de l'élément précis qu'il illustre. S'il illustre l'énumération entière, le placer comme frère juste APRÈS elle, sans renvoi (la proximité suffit — R5 interdit les renvois « illustre » entre voisins).",
     "parent_table_exception": "Exception à « la note d'un parent ne répète pas ses enfants » : un tableau qui COMPARE les enfants entre eux (critères en colonnes) a sa place dans la note du parent ; les enfants gardent alors leur propre définition/explication.",
-    "questionnaires": "Test / questionnaire du livre → si c'est une partie d'une carte : un nœud section « Test : … » ; si c'est toute une carte : racine chapitre « Test : … ». Consigne et barème en tableau dans la note du nœud « Test ». Une question = un nœud idee (note : réponses et points en tableau). Plus de 7 questions : les regrouper en sections de 3 à 6 (« Questions 1 à 6 », « Questions 7 à 11 ») pour respecter R1. Chaque profil de résultat = un nœud effet (« 11–18 points : … ») sous une section « Résultats ». Quand le test occupe toute la carte, la note de la racine porte à la fois la thèse (une phrase) et la consigne + le barème ; le seuil de types de G5 ne s'applique pas à cette carte.",
-    "methods": "Méthode en étapes → nœud methode avec logic \"et\" ; une étape = un enfant forme (ou idee) dans l'ordre, titre = verbe d'action ≤ 34 caractères. 3 à 6 étapes feuilles → frise fléchée. Plus de 6 étapes : garder le nombre exact du livre (pas de frise : Ratio les range en liste).",
+    "questionnaires": "Test / questionnaire du livre → si c'est une partie d'une carte : une section « Test : … » ; si c'est toute une carte : racine chapitre « Test : … » (note : thèse en une phrase + consigne + barème en tableau). Une question du test = un nœud question (note : réponses et points en tableau). Plus de 7 questions : sections de 3 à 6 (« Questions 1 à 6 »…). Chaque profil de résultat = un nœud categorie (« 11–18 points : … ») sous une section « Résultats ». Le seuil de types de G5 ne s'applique pas à une carte-test.",
+    "methods": "Méthode en étapes → nœud methode avec logic \"et\" ; une action = un enfant etape dans l'ordre, titre = verbe d'action ≤ 34 caractères. 3 à 6 étapes feuilles → frise fléchée. Plus de 6 étapes : garder le nombre exact du livre (Ratio les range en liste). (forme seulement dans un cours de droit.)",
     "structure_levels": "La racine chapitre peut avoir directement des section (sans lecon) si le chapitre n'a qu'un niveau de parties. N'utiliser lecon que s'il existe deux niveaux.",
     "defective_sources": [
       "Erreur manifeste de traduction ou coquille gênante : reformuler fidèlement au sens et ajouter *(sic)* ou *(complément : …)* ; ne jamais corriger silencieusement un fait.",
-      "Contradiction interne du livre : modéliser les deux positions (souvent deux nœuds exception ou idee) reliées par « contredit » (ou « s'oppose à »), et la signaler dans le rapport.",
+      "Contradiction interne du livre : modéliser les deux positions (en général deux nuance, ou un conseil et une nuance) reliées par un renvoi « contredit », et la signaler dans le rapport.",
       "Section annoncée mais absente du texte : ne rien inventer ; la signaler dans le rapport (« Laissé de côté / manquant »).",
       "Passage répété mot pour mot : ne le modéliser qu'une fois."
     ]
@@ -864,7 +894,7 @@
       {
         "id": "R2",
         "name": "Frères homogènes",
-        "rule": "À un même niveau, des éléments de même nature (toutes des parties, ou toutes des conditions, ou tous des conseils). Un « À retenir » se place en DERNIER enfant de la racine ou de la partie qu'il résume."
+        "rule": "À un même niveau, des éléments de même nature (toutes des parties, ou toutes des conditions, ou tous des conseils). Un « À retenir » se place en DERNIER enfant de la racine ou de la partie qu'il résume. Si le livre range dans une liste un élément d'une autre nature (une fausse croyance parmi des « signes »), le type précis l'emporte (piege) : le type sert la révision ; la liste reste la même."
       },
       {
         "id": "R3",
@@ -916,7 +946,7 @@
         "name": "Constructions qui se lisent d'un coup d'œil",
         "rule": "Ratio transforme certaines structures en constructions visuelles ; utilise-les volontairement :",
         "constructions": [
-          "FRISE fléchée : un nœud methode (ou ET) avec 3 à 6 étapes feuilles (forme/idee, titres ≤ 34 caractères), ou 3 à 6 dates sœurs feuilles dans l'ordre chronologique.",
+          "FRISE fléchée : un nœud methode avec 3 à 6 etape feuilles (titres ≤ 34 caractères), ou 3 à 6 dates sœurs feuilles dans l'ordre chronologique.",
           "PEIGNE (liste) : tout parent avec 4 enfants ou plus (racine et sections comprises) s'affiche comme une liste à épine ; garde les titres de la liste parallèles (même forme grammaticale).",
           "ANNOTATIONS : exemple, juris, doctrine, texte, citation, personne feuilles s'affichent en retrait sous l'élément qu'ils illustrent — place-les juste après lui.",
           "NUMÉROS D'ORDRE : les branches principales (hors leçons/sections) sont numérotées 1, 2, 3… dans l'ordre du JSON : mets-les dans l'ordre où l'élève doit les lire.",
