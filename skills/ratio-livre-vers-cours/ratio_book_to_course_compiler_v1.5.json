@@ -3,7 +3,7 @@
   "type": "portable_ai_skill_specification",
   "id": "ratio_book_to_course_compiler",
   "name": "Ratio — Compilateur Livre → Cours",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "language": "fr",
   "purpose": {
     "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio complet, prêt à importer : un fichier JSON unique contenant un cours, ses cartes mentales, leurs nœuds typés, leurs notes rédigées en Markdown, leurs liens hiérarchiques et transversaux étiquetés.",
@@ -1689,6 +1689,18 @@
         {
           "cas": "Ledger quand un seul type est plausible",
           "regle": "Écrire un seul candidat suffit ; la phrase de lien reste obligatoire. Pour la cause, choisir la phrase « provoque » ou « empêche » selon que le parent est un phénomène ou un but."
+        },
+        {
+          "cas": "Formule ou citation ?",
+          "regle": "formule = phrase-type que l'élève DIRA lui-même (« Je dois y réfléchir ») ou équation ; citation = maxime ou pensée d'un auteur à comprendre (« Personne ne peut vous blesser sans votre permission »)."
+        },
+        {
+          "cas": "Bénéfice caché d'un comportement",
+          "regle": "Ce que le comportement RAPPORTE (même s'il est nuisible au total) est un avantage, pas une conséquence : les conséquences voisines sont les coûts, l'avantage explique pourquoi on s'y accroche."
+        },
+        {
+          "cas": "Constat tiré d'une étude",
+          "regle": "Un résultat placé sous une étude est une consequence, un chiffre ou une idee ; jamais une critique (qui laisserait croire à une limite de l'étude)."
         }
       ]
     }
@@ -2588,6 +2600,7 @@
   ],
   "changelog_1_5": [
     "1.5.0 : moteur de typage en 6 passes, fiches, groupes de confusion, replis, étalonnage.",
-    "1.5.1 : freins = causes ; motifs cachés = causes (test de la thèse) ; images typées par ce qu'elles décrivent ; contradictions typées naturellement ; règles complémentaires (nœud d'énumération, question comme problème nommé, personne et étude, exception paraphrasée)."
+    "1.5.1 : freins = causes ; motifs cachés = causes (test de la thèse) ; images typées par ce qu'elles décrivent ; contradictions typées naturellement ; règles complémentaires (nœud d'énumération, question comme problème nommé, personne et étude, exception paraphrasée).",
+    "1.5.2 : formule/citation, bénéfice caché = avantage, constat d'étude ≠ critique (issus de l'audit indépendant du cours v1.5 : 357 justes, 7 discutables, 0 faux sur 364)."
   ]
 }
