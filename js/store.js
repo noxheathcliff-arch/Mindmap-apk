@@ -160,7 +160,7 @@
   ];
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
-  const LAYOUTS = ['right', 'balanced', 'down'];
+  const LAYOUTS = ['right', 'balanced', 'down', 'organic'];
 
   const RATINGS = {
     revoir:   { label: 'À revoir', fill: 1 },
@@ -525,7 +525,7 @@
       const ids = new Set(map.edges.filter((e) => e.kind === 'tree' && e.from === id).map((e) => e.to));
       const list = map.nodes.filter((n) => ids.has(n.id));
       if (map.layout === 'down') return list.sort((a, b) => a.x - b.x || a.y - b.y);
-      if (map.layout === 'balanced') {
+      if (map.layout === 'balanced' || map.layout === 'organic') {
         const p = this.node(map, id);
         if (p && !this.parentEdge(map, id)) {
           const right = list.filter((n) => n.x >= p.x).sort((a, b) => a.y - b.y || a.x - b.x);

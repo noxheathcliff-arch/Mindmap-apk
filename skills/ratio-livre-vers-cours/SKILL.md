@@ -5,7 +5,7 @@ description: Transforme un livre, un PDF de cours, un polycopié ou des notes en
 
 # Ratio — Compilateur Livre → Cours
 
-La spécification complète est dans `ratio_book_to_course_compiler_v1.5.json` (même dossier). **Lis-la en entier avant de commencer**, puis applique son `pipeline` (P0 → P7) sans sauter de phase, avec ses `modeling_patterns` (énumérations, exemples, questionnaires, méthodes, sources défectueuses).
+La spécification complète est dans `ratio_book_to_course_compiler_v1.6.json` (même dossier). **Lis-la en entier avant de commencer**, puis applique son `pipeline` (P0 → P7) sans sauter de phase, avec ses `modeling_patterns` (énumérations, exemples, questionnaires, méthodes, sources défectueuses).
 
 ## L'essentiel
 

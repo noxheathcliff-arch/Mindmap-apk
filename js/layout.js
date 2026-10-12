@@ -9,7 +9,9 @@
       groupes séparés par l'espace (proximité, Gestalt), structure plus aérée ;
    4. une carte lisible d'un coup d'œil sur l'écran réel (échelle d'ajustement).
 
-   Trois dispositions candidates, notées puis comparées :
+   Quatre dispositions candidates, notées puis comparées (« libre » est préférée tant qu'elle reste propre) :
+   - « libre » : rendu fait à la main — base centrée sans colonnes, léger désordre déterministe,
+     éventail, liens en bouquet ; l'amplitude baisse si un lien traverse un nœud ;
    - « droite » : arbre horizontal (lecture gauche → droite, haut → bas) — la plus familière ;
    - « centrée » : racine au centre, branches de part et d'autre, ordre horaire (convention
      des cartes mentales), utile quand la racine a beaucoup de branches ;
@@ -41,7 +43,9 @@
       seq: 12,        // bonus par étape rangée en séquence (méthode, chronologie)
       reach: 1.5,     // arcs hiérarchiques très longs (par 100 px au-delà de 220 px)
       aspect: 6,      // écart de forme avec l'écran (|log| du rapport des proportions)
-      mode: { right: 0, balanced: 15, down: 10 }, // familiarité : l'arbre horizontal d'abord
+      // familiarité ; « libre » est préférée (rendu fait à la main) tant qu'elle reste propre :
+      // les contraintes (nœud traversé, libellé masqué, croisement) pèsent bien plus lourd
+      mode: { right: 0, balanced: 15, down: 10, organic: -18 },
     },
   };
   // rôle de lecture de chaque type : structure, contenu, appui (exemple, source…), synthèse
@@ -208,6 +212,17 @@
       return busDown(p1, p2, p1[1] + (p2[1] - p1[1]) / 2);
     }
     const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
+    // libre : les départs s'étalent sur le flanc du parent selon la hauteur de l'enfant
+    // (les courbes ne naissent pas toutes du même point, comme tracées à la main)
+    if (mode === 'organic' && (s1 === 'l' || s1 === 'r')) {
+      const lim = Math.max(0, sa.h / 2 - 7);
+      p1[1] += Math.max(-lim, Math.min(lim, (p2[1] - p1[1]) * 0.3));
+      // et partent déjà orientés vers leur enfant (bouquet) : les courbes d'une grande fratrie
+      // divergent dès le départ au lieu de courir côte à côte
+      const dx = Math.abs(p2[0] - p1[0]) || 1, sl = Math.max(-1.1, Math.min(1.1, (p2[1] - p1[1]) / dx));
+      const n = Math.hypot(1, sl);
+      return cubic(p1, [DIRS[s1][0] / n, sl / n], p2, DIRS[s2], handle(p1, p2));
+    }
     return cubic(p1, DIRS[s1], p2, DIRS[s2], handle(p1, p2));
   }
 
@@ -670,7 +685,7 @@
     for (const side of sides) {
       if (!side.ids.length) continue;
       // colonnes de ce côté : niveau 1 = enfants de la racine
-      const cols = columns(side.ids, T, dim, prm.depthGap, 1, prm.satIndent);
+      const cols = prm.organic ? null : columns(side.ids, T, dim, prm.depthGap, 1, prm.satIndent);
       // séquences en ligne : seulement quand la lecture va vers la droite (sinon l'ordre s'inverserait)
       const scfg = { ...cfg, cols, seq: side.dir > 0 && prm.seq !== 0 };
       const subs = side.ids.map((c) => subtree(c, T, dim, scfg, seen, 1));
@@ -724,6 +739,97 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Disposition « libre » (organique)                                   */
+  /* ------------------------------------------------------------------ */
+  /* Un rendu « fait à la main » : la base centrée sans colonnes alignées, puis un léger
+     désordre déterministe (hachage de l'identifiant : stable d'un rangement à l'autre),
+     transmis à toute la sous-branche, et un éventail — les frères des extrémités se
+     rapprochent du parent, la branche s'ouvre comme une molécule. Les chevauchements sont
+     ensuite écartés ; l'amplitude baisse tant qu'un lien traverse un nœud ou qu'un libellé
+     masque un texte (le désordre est permis, pas le fouillis). */
+  function rnd(id, k) { let h = 2166136261 ^ k; for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619); return ((h >>> 0) % 10007) / 10007; }
+  const ORG = { jx: 34, jy: 14, fan: 44, pad: 16, iters: 80, gapMin: 64 };
+  function placeOrganic(map, T, size, split, prm, amp) {
+    const base = place(map, T, size, 'balanced', split, { ...prm, organic: true, seq: 0, satIndent: 0 });
+    if (!amp) return base;
+    const parent = new Map();
+    for (const [pid, ks] of T.kids) for (const k of ks) parent.set(k, pid);
+    const sz = (id) => size(T.byId.get(id));
+    const cx = (id, P) => P[id].x + sz(id).w / 2;
+    const off = {};
+    const pos = {};
+    for (const id in base) pos[id] = { ...base[id] };
+    // parcours en largeur depuis les racines : un parent est décalé avant ses enfants
+    let frontier = T.roots.slice();
+    for (const r of T.roots) off[r] = { x: 0, y: 0 };
+    while (frontier.length) {
+      const next = [];
+      for (const pid of frontier) {
+        const ks = (T.kids.get(pid) || []).filter((k) => base[k]);
+        const po = off[pid] || { x: 0, y: 0 };
+        for (const sideSign of [1, -1]) {
+          const grp = ks.filter((k) => Math.sign(cx(k, base) - cx(pid, base)) === sideSign || (sideSign === 1 && cx(k, base) === cx(pid, base)));
+          grp.forEach((k, i) => {
+            const t = grp.length > 1 ? (i / (grp.length - 1)) * 2 - 1 : 0;
+            const lx = sideSign * ((rnd(k, 1) - 0.5) * 2 * ORG.jx - ORG.fan * t * t) * amp;
+            const ly = (rnd(k, 2) - 0.5) * 2 * ORG.jy * amp;
+            off[k] = { x: po.x + lx, y: po.y + ly };
+          });
+        }
+        next.push(...ks);
+      }
+      frontier = next;
+    }
+    for (const id in pos) if (off[id]) { pos[id].x += off[id].x; pos[id].y += off[id].y; }
+    // un enfant ne vient jamais à moins de ORG.gapMin du bord de son parent (place pour la courbe,
+    // la jonction ET / OU et un libellé) : sinon on recule toute sa sous-branche
+    const sub = (id, out = []) => { out.push(id); for (const k of T.kids.get(id) || []) if (pos[k]) sub(k, out); return out; };
+    let q = T.roots.slice();
+    while (q.length) {
+      const nx = [];
+      for (const pid of q) for (const k of T.kids.get(pid) || []) {
+        if (!pos[k]) continue;
+        const side = cx(k, base) >= cx(pid, base) ? 1 : -1;
+        // une grande fratrie a besoin de longueur pour que ses courbes s'écartent (bouquet)
+        const nk = (T.kids.get(pid) || []).length;
+        const need = Math.min(120, ORG.gapMin + Math.max(0, nk - 4) * 7);
+        const gap = side > 0 ? pos[k].x - (pos[pid].x + sz(pid).w) : pos[pid].x - (pos[k].x + sz(k).w);
+        if (gap < need) { const d = side * (need - gap); for (const id of sub(k)) pos[id].x += d; }
+        nx.push(k);
+      }
+      q = nx;
+    }
+    // écarter les chevauchements (marge ORG.pad) ; la première racine ne bouge pas
+    const ids = Object.keys(pos);
+    const fixed = T.roots[0];
+    for (let it = 0; it < ORG.iters; it++) {
+      let moved = false;
+      for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+        const a = ids[i], b = ids[j], A = pos[a], B = pos[b], sa = sz(a), sb = sz(b);
+        const ox = Math.min(A.x + sa.w, B.x + sb.w) - Math.max(A.x, B.x) + ORG.pad;
+        const oy = Math.min(A.y + sa.h, B.y + sb.h) - Math.max(A.y, B.y) + ORG.pad;
+        if (ox <= 0 || oy <= 0) continue;
+        moved = true;
+        // écarte selon l'axe du plus petit recouvrement ; en y, l'ordre de lecture est conservé
+        const [up, dn] = A.y + sa.h / 2 <= B.y + sb.h / 2 ? [a, b] : [b, a];
+        if (oy <= ox * 1.4) {
+          const d = oy / 2 + 0.5;
+          if (up !== fixed) pos[up].y -= dn === fixed ? 2 * d : d;
+          if (dn !== fixed) pos[dn].y += up === fixed ? 2 * d : d;
+        } else {
+          const [l, r] = A.x <= B.x ? [a, b] : [b, a];
+          const d = ox / 2 + 0.5;
+          if (l !== fixed) pos[l].x -= r === fixed ? 2 * d : d;
+          if (r !== fixed) pos[r].x += l === fixed ? 2 * d : d;
+        }
+      }
+      if (!moved) break;
+    }
+    for (const id in pos) { pos[id].x = Math.round(pos[id].x); pos[id].y = Math.round(pos[id].y); }
+    return pos;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Note d'une disposition                                              */
   /* ------------------------------------------------------------------ */
   function evaluate(map, pos, size, mode, vp = {}, quick = false) {
@@ -743,7 +849,7 @@
     // peignes (≥ 4 enfants d'un même côté) : même géométrie que l'éditeur
     const sideKids = new Map();
     for (const e of map.edges) {
-      if (e.kind !== 'tree' || e.label || mode === 'down') continue;
+      if (e.kind !== 'tree' || e.label || mode === 'down' || mode === 'organic') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
       if (seqPrev.has(e.to) || [...seqPrev.values()].includes(e.to)) continue;
@@ -818,7 +924,7 @@
   }
 
   /**
-   * Range la carte. opts.mode : 'auto' (défaut) | 'right' | 'balanced' | 'down'.
+   * Range la carte. opts.mode : 'auto' (défaut) | 'right' | 'balanced' | 'down' | 'organic'.
    * Renvoie { pos: {id: {x, y}}, mode, score, tried: [...] } sans muter la carte.
    */
   function arrange(map, size = estimate, opts = {}) {
@@ -846,9 +952,28 @@
         for (const s of ks) push('balanced', s);
       }
     }
+    // libre : mêmes coupures que la centrée (ou tout à droite pour une petite racine)
+    if (want === 'auto' || want === 'organic') {
+      const splits = new Set(cands.filter((c) => c.mode === 'balanced').map((c) => c.split));
+      if (!splits.size) splits.add(main.length >= 4 ? Math.ceil(main.length / 2) : main.length);
+      for (const sp of splits) push('organic', sp);
+    }
     let best = null;
     const tried = [];
     const run = (c, prm, quick = false) => {
+      if (c.mode === 'organic') {
+        // l'amplitude du désordre baisse tant que la carte n'est pas propre
+        let pick = null;
+        for (const amp of [1, 0.55, 0.25, 0]) {
+          const pos = placeOrganic(map, T, size, c.split, prm, amp);
+          const sc = evaluate(map, pos, size, 'organic', opts.viewport, quick);
+          const cand = { pos, mode: 'organic', split: c.split, prm, score: { ...sc, amp } };
+          if (!pick || sc.cost < pick.score.cost) pick = cand;
+          if (sc.hits === 0 && sc.lblOv === 0) { pick = cand; break; }
+        }
+        tried.push({ mode: 'organic', split: c.split, ...pick.score });
+        return pick;
+      }
       const pos = place(map, T, size, c.mode, c.split, prm);
       const sc = evaluate(map, pos, size, c.mode, opts.viewport, quick);
       tried.push({ mode: c.mode, split: c.split, ...sc });
@@ -868,6 +993,7 @@
         let improved = false;
         for (const [k, vals] of Object.entries(SEARCH)) {
           if (cur.mode === 'down' && k !== 'structGap') continue;
+          if (cur.mode === 'organic' && !['depthGap', 'cousinGap', 'leafGap'].includes(k)) continue;
           for (const v of vals) {
             if (cur.prm[k] === v) continue;
             const cand = run({ mode: cur.mode, split: cur.split }, { ...cur.prm, [k]: v }, true);
@@ -895,7 +1021,7 @@
     const p = S.parentOf(map, node.id);
     // côté gauche d'une carte centrée : la branche pousse vers la gauche
     if (p && node.x + 1 < p.x) return { child: 'left', sib: 'y' };
-    if (!p && map.layout === 'balanced') return { child: 'right', sib: 'y' };
+    if (!p && (map.layout === 'balanced' || map.layout === 'organic')) return { child: 'right', sib: 'y' };
     let a = p;
     while (a) { const pp = S.parentOf(map, a.id); if (!pp) break; if (a.x + 1 < pp.x) return { child: 'left', sib: 'y' }; a = pp; }
     return { child: 'right', sib: 'y' };

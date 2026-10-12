@@ -322,7 +322,7 @@
         if (kf >= 0.55) {
           // cadrée à gauche (droite) / au centre (centrée) : la suite de la lecture reste en vue
           const kk2 = Math.min(0.95, kf);
-          const x = map.layout === 'balanced' ? r.x + r.w / 2 - ((fb.x0 + fb.x1) / 2) * kk2 : r.x + pad - fb.x0 * kk2;
+          const x = map.layout === 'balanced' || map.layout === 'organic' ? r.x + r.w / 2 - ((fb.x0 + fb.x1) / 2) * kk2 : r.x + pad - fb.x0 * kk2;
           Object.assign(st.view, { k: kk2, x, y: r.y + r.h / 2 - ((fb.y0 + fb.y1) / 2) * kk2 });
           applyView();
           return;
@@ -332,7 +332,7 @@
       const kk = U.isCompact() ? 0.8 : 0.85;
       const left = U.isCompact() ? 24 : 112;
       // on ouvre sur la racine, là où commence la lecture : à gauche (droite), au centre (centrée), en haut (pyramide)
-      if (map.layout === 'balanced') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + r.h / 2 - (root.y + s.h / 2) * kk });
+      if (map.layout === 'balanced' || map.layout === 'organic') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + r.h / 2 - (root.y + s.h / 2) * kk });
       else if (map.layout === 'down') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + 24 - root.y * kk });
       else Object.assign(st.view, { k: kk, x: left - root.x * kk, y: r.h / 2 - (root.y + s.h / 2) * kk });
       applyView();
@@ -615,8 +615,10 @@
       }
       // ET / OU : dès deux branches ; liste simple : peigne à partir de quatre enfants
       // (une épine et des dents droites se lisent comme une liste, sans écheveau de courbes)
-      for (const [k, b] of bundles) if (b.edges.length < (k.startsWith('c:') ? (map.layout === 'down' ? 99 : 4) : 2)) bundles.delete(k);
-      for (const b of bundles.values()) b.comb = b.kind === 'tree' && map.layout !== 'down' && b.edges.length >= 4;
+      // disposition libre : pas de peigne, chaque enfant a sa propre courbe (rendu fait à la main)
+      const straight = map.layout === 'down' || map.layout === 'organic';
+      for (const [k, b] of bundles) if (b.edges.length < (k.startsWith('c:') ? (straight ? 99 : 4) : 2)) bundles.delete(k);
+      for (const b of bundles.values()) b.comb = b.kind === 'tree' && !straight && b.edges.length >= 4;
       return bundles;
     }
     function bundleLabel(b) {
@@ -1163,6 +1165,8 @@
         '<rect x="2.5" y="9.5" width="7" height="5" rx="1.2"/><path d="M9.5 12h3"/><path d="M17 3.5l1.1 2.6 2.6 1.1-2.6 1.1L17 10.9l-1.1-2.6-2.6-1.1 2.6-1.1z"/><path d="M17.5 14.5v5M15 17h5"/>'],
       ['right', 'Vers la droite', 'La lecture la plus familière : de gauche à droite, de haut en bas.',
         '<rect x="2" y="9.5" width="6" height="5" rx="1.2"/><rect x="15" y="3.5" width="7" height="4" rx="1.2"/><rect x="15" y="10" width="7" height="4" rx="1.2"/><rect x="15" y="16.5" width="7" height="4" rx="1.2"/><path d="M8 12h3.5M11.5 5.5v13M11.5 5.5H15M11.5 12H15M11.5 18.5H15"/>'],
+      ['organic', 'Libre', 'Les branches s’ouvrent en éventail, un peu en désordre, comme à la main — sans qu’aucun lien ne traverse un nœud.',
+        '<rect x="9" y="10" width="6" height="4.5" rx="1.2"/><rect x="2" y="3.5" width="5" height="4" rx="1.2"/><rect x="3.5" y="17" width="5" height="4" rx="1.2"/><rect x="17" y="2.5" width="5" height="4" rx="1.2"/><rect x="16" y="16.5" width="5.5" height="4" rx="1.2"/><path d="M9 11.5C7 10 6.5 8.5 6 7.5M9.5 14.5C8.5 16 7.5 16.5 7 17M15 11c1.2-1.5 2-3 2.5-4.5M14.5 14.5c1 1 1.8 1.6 2.3 2"/>'],
       ['balanced', 'Centrée', 'Le sujet au centre, les branches de chaque côté, dans le sens des aiguilles d’une montre.',
         '<rect x="9" y="9.5" width="6" height="5" rx="1.2"/><rect x="1.5" y="4" width="5" height="4" rx="1.2"/><rect x="1.5" y="16" width="5" height="4" rx="1.2"/><rect x="17.5" y="4" width="5" height="4" rx="1.2"/><rect x="17.5" y="16" width="5" height="4" rx="1.2"/><path d="M9 12H6.5M6.5 6v12M15 12h2.5M17.5 6v12"/>'],
       ['down', 'Pyramide', 'De haut en bas : pour une petite hiérarchie large et peu profonde.',
