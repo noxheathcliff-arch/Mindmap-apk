@@ -91,6 +91,11 @@ Toute notion est à **≤ 3 interactions** de l'accueil.
 
 ## 4. Système de design (Material Design 3)
 
+### 4.0 Règle permanente — pas de surlignage de contour
+- **Aucun contour décoratif** (outline, bordure, liseré) autour des cartes, des sections, des groupes de réglages ni des composants « carte blanche ». Un contour n'embellit pas l'interface : il la charge.
+- **Il n'est pas nécessaire pour rendre un élément visible** : le contraste tonal entre l'élément et son fond (paliers `surface-container-*`) suffit, et au besoin l'élévation (ombre douce en clair, palier plus clair en sombre).
+- Les contours restent réservés à ce qui est fonctionnel : champ de saisie (`outlined text field`), focus clavier, chip de filtre non sélectionnée, nœud de carte dont la forme encode le type.
+
 ### 4.1 Couleur — règle 60 / 30 / 10, monochrome
 | Part | Rôle M3 | Clair | Sombre | Usage |
 |---|---|---|---|---|
