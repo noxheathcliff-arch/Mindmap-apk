@@ -3,7 +3,7 @@
   "type": "portable_ai_skill_specification",
   "id": "ratio_book_to_course_compiler",
   "name": "Ratio — Compilateur Livre → Cours",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "language": "fr",
   "purpose": {
     "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio complet, prêt à importer : un fichier JSON unique contenant un cours, ses cartes mentales, leurs nœuds typés, leurs notes rédigées en Markdown, leurs liens hiérarchiques et transversaux étiquetés.",
@@ -523,55 +523,1123 @@
       }
     ],
     "selection_heuristic": [
-      "Pour CHAQUE nœud, réponds dans l'ordre ; le premier « oui » donne le type :",
-      "1. Partie du plan ? → chapitre / lecon / section.",
-      "2. Question que le livre pose et résout ? → question.",
-      "3. Terme défini ? → definition. Modèle ou théorie nommé ? → theorie.",
-      "4. Suite d'actions ordonnées ? → methode (parent) et etape (chaque action).",
-      "5. Ce qui PROVOQUE quelque chose ? → cause. Ce qui en RÉSULTE ? → consequence. Ce qu'il FAUT pour que ça marche ? → condition.",
-      "6. Une difficulté à résoudre ? → probleme ; sa réponse ? → solution ; un but ? → objectif.",
-      "7. Une recommandation ? → conseil ; une mise en pratique ? → exercice.",
-      "8. Une raison pour une thèse ? → argument ; une objection, une limite ? → critique ; une précision qui tempère ? → nuance ; une erreur à éviter ? → piege.",
-      "9. Deux notions mises face à face ? → comparaison (+ avantage / inconvenient pour chaque option).",
-      "10. Un trait qui décrit ? → caracteristique ; une sorte de… ? → categorie ; un indice pour reconnaître ? → signe.",
-      "11. Une date ? → date ; un chiffre ? → chiffre ; une formule à restituer ? → formule.",
-      "12. Une source : étude/expérience → etude ; phrase célèbre → citation ; personne → personne ; texte de loi / source primaire → texte ; (droit) décision → juris, position d'auteur → doctrine.",
-      "13. Une règle + le cas où elle ne s'applique pas ? → exception (test « … SAUF … »).",
-      "14. (droit uniquement) condition de validité → fond / forme ; régime, sanction → effet.",
-      "15. Un cas, une histoire → exemple ; la synthèse → retenir ; un concept qui se décompose → notion.",
-      "16. Seulement si rien ne convient → idee."
+      "Remplacé en v1.5 par node_types.type_selection_engine (fonction → indices → lien au parent → question de révision → départage → cohérence). L'ordre des types n'a plus d'importance."
     ],
     "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance.",
-    "boundary_tests": [
-      {
-        "entre": "cause / condition",
-        "test": "« X PROVOQUE Y » (sans X, Y n'arriverait pas de lui-même ; X pousse vers Y) → cause. « Il FAUT X pour que Y soit possible » (X ouvre la porte, ne pousse pas) → condition. « La clé pour dire non est l'estime de soi » → condition."
+    "type_selection_engine": {
+      "why": "Un type mal choisi pose une FAUSSE question de révision (« Explique cette exception » devant une simple nuance) et brouille la logique de la carte. Le type n'est pas une étiquette décorative : il dit quelle FONCTION le passage remplit dans le raisonnement de l'auteur. On le choisit donc par une procédure, pas à l'intuition, et on la rejoue pour chaque nœud.",
+      "procedure": [
+        {
+          "passe": "1. Fonction",
+          "faire": "Relire la phrase source et nommer en un verbe ce que fait le passage dans le raisonnement : définir, décrire, classer, faire reconnaître, expliquer pourquoi, dire ce qui en résulte, poser ce qu'il faut, signaler une difficulté, y répondre, viser, prescrire, ordonner des actions, entraîner, soutenir, objecter, tempérer, écarter une règle, prévenir une erreur, comparer, illustrer, prouver, citer, situer, mesurer, résumer. Chaque fiche (cards) commence par sa fonction."
+        },
+        {
+          "passe": "2. Indices",
+          "faire": "Repérer les indices du texte (cards[].indices) mais NE JAMAIS décider sur un mot seul : « sauf », « problème », « exception », « pour » sont souvent employés au sens courant. Retenir au plus 3 types candidats."
+        },
+        {
+          "passe": "3. Lien au parent",
+          "faire": "Pour chaque candidat, écrire la phrase cards[].lien_parent avec les vrais titres (« [enfant] provoque [parent] », « la règle [parent] s'applique, SAUF [enfant] »…). Éliminer tout candidat dont la phrase est fausse ou absurde. C'est le test le plus fort : le type décrit la RELATION avec le parent autant que le contenu."
+        },
+        {
+          "passe": "4. Question de révision",
+          "faire": "Lire review_prompt + titre comme le verra l'élève. La note doit y répondre directement. Sinon, éliminer le candidat (ou réécrire la note si le type est juste)."
+        },
+        {
+          "passe": "5. Départage",
+          "faire": "S'il reste plusieurs candidats, appliquer la question discriminante du groupe (clusters). S'il reste un doute réel, prendre le type de repli le plus général (fallback) : un type trop général affaiblit un peu la révision, un type faux la rend fausse. Noter le nœud dans le rapport, rubrique « types incertains », avec les deux candidats."
+        },
+        {
+          "passe": "6. Cohérence",
+          "faire": "Relire les frères : même nature → même type, sauf si l'un d'eux remplit une autre fonction (une fausse croyance au milieu de « signes » reste un piège). Vérifier les parents attendus (cards[].parents_typiques) : une étape a une méthode pour parent, une solution répond à un problème ou une question, un avantage porte sur une option."
+        }
+      ],
+      "cards": [
+        {
+          "type": "definition",
+          "fonction": "DÉFINIR un terme",
+          "lien_parent": "« [enfant] » est le terme que définit / précise « [parent] »",
+          "indices": [
+            "c'est",
+            "on appelle",
+            "désigne",
+            "se définit comme",
+            "signifie",
+            "qu'est-ce que"
+          ],
+          "parents_typiques": [
+            "notion",
+            "chapitre",
+            "section"
+          ],
+          "pas_si": {
+            "la phrase décrit un trait sans dire ce qu'est la chose": "caracteristique",
+            "c'est une sorte de la chose": "categorie"
+          }
+        },
+        {
+          "type": "notion",
+          "fonction": "NOMMER un concept qui se décompose",
+          "lien_parent": "« [enfant] » est un concept du chapitre, décomposé en éléments",
+          "indices": [
+            "la notion de",
+            "le concept de",
+            "comprend",
+            "se compose de"
+          ],
+          "parents_typiques": [
+            "chapitre",
+            "section",
+            "lecon"
+          ],
+          "pas_si": {
+            "il n'a pas d'enfants": "definition ou caracteristique"
+          }
+        },
+        {
+          "type": "caracteristique",
+          "fonction": "DÉCRIRE ce que la chose EST (trait, propriété, critère)",
+          "lien_parent": "« [enfant] » est une caractéristique de « [parent] »",
+          "indices": [
+            "est",
+            "possède",
+            "se caractérise par",
+            "a pour propriété",
+            "toujours",
+            "par nature"
+          ],
+          "parents_typiques": [
+            "notion",
+            "categorie",
+            "definition",
+            "theorie"
+          ],
+          "pas_si": {
+            "le trait se voit de l'extérieur et sert à reconnaître": "signe",
+            "c'est un défaut ou une limite de l'idée": "critique"
+          }
+        },
+        {
+          "type": "categorie",
+          "fonction": "CLASSER : une sorte, un type, un niveau",
+          "lien_parent": "« [enfant] » est une sorte / un type de « [parent] »",
+          "indices": [
+            "il existe … types",
+            "on distingue",
+            "catégorie",
+            "forme de",
+            "niveau",
+            "profil"
+          ],
+          "parents_typiques": [
+            "notion",
+            "comparaison"
+          ],
+          "pas_si": {
+            "c'est la définition du terme parent": "definition"
+          }
+        },
+        {
+          "type": "signe",
+          "fonction": "FAIRE RECONNAÎTRE : symptôme, comportement observable",
+          "lien_parent": "« [enfant] » est un signe qui permet de reconnaître « [parent] »",
+          "indices": [
+            "signe",
+            "symptôme",
+            "on le reconnaît à",
+            "se manifeste par",
+            "indice",
+            "vous … (comportement)"
+          ],
+          "parents_typiques": [
+            "notion",
+            "probleme",
+            "categorie"
+          ],
+          "pas_si": {
+            "le comportement est une erreur que l'élève risque de commettre": "piege",
+            "c'est ce qui provoque le parent": "cause"
+          }
+        },
+        {
+          "type": "cause",
+          "fonction": "EXPLIQUER POURQUOI : ce qui PROVOQUE (vient avant, pousse)",
+          "lien_parent": "« [enfant] » provoque / explique « [parent] »",
+          "indices": [
+            "parce que",
+            "à cause de",
+            "en raison de",
+            "provient de",
+            "s'explique par",
+            "origine",
+            "facteur",
+            "favorise",
+            "engendre"
+          ],
+          "parents_typiques": [
+            "question",
+            "probleme",
+            "notion",
+            "consequence"
+          ],
+          "pas_si": {
+            "c'est ce qu'il faut pour que ça marche (ouvre la porte sans pousser)": "condition",
+            "c'est ce qu'on cherche à obtenir (après, « pour… »)": "objectif",
+            "c'est un obstacle global à résoudre": "probleme"
+          }
+        },
+        {
+          "type": "consequence",
+          "fonction": "DIRE CE QUI EN RÉSULTE (vient après)",
+          "lien_parent": "« [enfant] » résulte de « [parent] »",
+          "indices": [
+            "donc",
+            "c'est pourquoi",
+            "entraîne",
+            "conduit à",
+            "résultat",
+            "finit par",
+            "provoque (parent → enfant)",
+            "coût",
+            "impact"
+          ],
+          "parents_typiques": [
+            "cause",
+            "notion",
+            "probleme",
+            "solution",
+            "date"
+          ],
+          "pas_si": {
+            "c'est un régime juridique, une sanction": "effet (droit)",
+            "c'est un point fort / faible d'une option comparée": "avantage / inconvenient"
+          }
+        },
+        {
+          "type": "condition",
+          "fonction": "POSER CE QU'IL FAUT (nécessaire, sans pousser)",
+          "lien_parent": "sans « [enfant] », « [parent] » n'est pas possible",
+          "indices": [
+            "il faut",
+            "à condition que",
+            "seulement si",
+            "nécessite",
+            "suppose",
+            "exige",
+            "sans … pas",
+            "prérequis",
+            "la clé"
+          ],
+          "parents_typiques": [
+            "notion",
+            "solution",
+            "objectif",
+            "methode"
+          ],
+          "pas_si": {
+            "c'est une condition de validité en droit": "fond / forme",
+            "c'est un cas qui écarte une règle": "exception"
+          }
+        },
+        {
+          "type": "probleme",
+          "fonction": "SIGNALER UNE DIFFICULTÉ à résoudre (situation)",
+          "lien_parent": "« [enfant] » est la difficulté que pose / que rencontre « [parent] »",
+          "indices": [
+            "le problème",
+            "la difficulté",
+            "obstacle",
+            "impossible de",
+            "on n'arrive pas à",
+            "crise",
+            "risque"
+          ],
+          "parents_typiques": [
+            "notion",
+            "chapitre",
+            "question"
+          ],
+          "pas_si": {
+            "c'est une erreur ponctuelle de l'élève": "piege",
+            "c'est une limite d'une théorie": "critique",
+            "il explique un autre fait": "cause"
+          }
+        },
+        {
+          "type": "solution",
+          "fonction": "RÉPONDRE À UN PROBLÈME nommé",
+          "lien_parent": "« [enfant] » résout / répond à « [parent] »",
+          "indices": [
+            "pour y remédier",
+            "la solution",
+            "face à",
+            "répondre à",
+            "stratégie",
+            "moyen de"
+          ],
+          "parents_typiques": [
+            "probleme",
+            "question"
+          ],
+          "pas_si": {
+            "recommandation générale sans problème précis": "conseil",
+            "action à sa place dans une suite ordonnée": "etape"
+          }
+        },
+        {
+          "type": "question",
+          "fonction": "POSER une question que le texte résout",
+          "lien_parent": "le texte répond à « [enfant] »",
+          "indices": [
+            "pourquoi",
+            "comment",
+            "faut-il",
+            "qu'est-ce qui",
+            "?"
+          ],
+          "parents_typiques": [
+            "chapitre",
+            "section",
+            "notion"
+          ],
+          "pas_si": {
+            "la question est rhétorique et ne reçoit pas de réponse": "idee ou nuance"
+          }
+        },
+        {
+          "type": "theorie",
+          "fonction": "EXPLIQUER par un modèle nommé",
+          "lien_parent": "« [enfant] » est un modèle / une théorie qui explique « [parent] »",
+          "indices": [
+            "théorie",
+            "modèle",
+            "approche",
+            "loi de",
+            "pyramide de",
+            "méthode de X (nommée)"
+          ],
+          "parents_typiques": [
+            "notion",
+            "chapitre",
+            "question"
+          ],
+          "pas_si": {
+            "c'est seulement la position d'un auteur en droit": "doctrine",
+            "c'est un résultat d'expérience": "etude"
+          }
+        },
+        {
+          "type": "argument",
+          "fonction": "SOUTENIR une thèse (pour)",
+          "lien_parent": "« [enfant] » est une raison en faveur de « [parent] »",
+          "indices": [
+            "car",
+            "en effet",
+            "la preuve",
+            "puisque",
+            "d'abord… ensuite",
+            "on peut défendre"
+          ],
+          "parents_typiques": [
+            "question",
+            "theorie",
+            "these/notion"
+          ],
+          "pas_si": {
+            "il dit quoi faire": "conseil",
+            "il attaque une idée": "critique"
+          }
+        },
+        {
+          "type": "critique",
+          "fonction": "OBJECTER : défaut, limite d'une idée ou d'une théorie",
+          "lien_parent": "« [enfant] » est un reproche ou une limite de « [parent] »",
+          "indices": [
+            "on reproche",
+            "limite",
+            "faiblesse",
+            "ne tient pas compte",
+            "critique",
+            "ne marche pas toujours (pour une théorie)"
+          ],
+          "parents_typiques": [
+            "theorie",
+            "argument",
+            "solution",
+            "notion"
+          ],
+          "pas_si": {
+            "tempère sans attaquer": "nuance",
+            "risque d'erreur de l'élève": "piege"
+          }
+        },
+        {
+          "type": "nuance",
+          "fonction": "TEMPÉRER sans contredire (pas toujours, cela dépend)",
+          "lien_parent": "« [enfant] » apporte une précision qui adoucit « [parent] »",
+          "indices": [
+            "pas toujours",
+            "cela dépend",
+            "dans certains cas",
+            "attention",
+            "toutefois",
+            "cependant",
+            "à relativiser",
+            "il faut s'attendre à"
+          ],
+          "parents_typiques": [
+            "conseil",
+            "notion",
+            "solution",
+            "argument",
+            "idee"
+          ],
+          "pas_si": {
+            "une règle + un cas qui l'écarte (test SAUF)": "exception",
+            "une erreur que l'élève risque de faire": "piege",
+            "un défaut de la théorie": "critique"
+          }
+        },
+        {
+          "type": "comparaison",
+          "fonction": "METTRE FACE À FACE 2 à 4 notions",
+          "lien_parent": "« [enfant] » compare des éléments de « [parent] »",
+          "indices": [
+            "ou",
+            "contre",
+            "par opposition à",
+            "à la différence de",
+            "alors que",
+            "tableau"
+          ],
+          "parents_typiques": [
+            "chapitre",
+            "notion",
+            "question"
+          ],
+          "pas_si": {
+            "un seul critère": "avantage / inconvenient ou caracteristique"
+          }
+        },
+        {
+          "type": "avantage",
+          "fonction": "POINT FORT d'une option",
+          "lien_parent": "« [enfant] » est un point fort de « [parent] »",
+          "indices": [
+            "avantage",
+            "atout",
+            "permet de",
+            "bénéfice (d'une option)"
+          ],
+          "parents_typiques": [
+            "solution",
+            "comparaison",
+            "categorie"
+          ],
+          "pas_si": {
+            "résultat d'une cause, pas d'une option choisie": "consequence"
+          }
+        },
+        {
+          "type": "inconvenient",
+          "fonction": "POINT FAIBLE d'une option",
+          "lien_parent": "« [enfant] » est un point faible de « [parent] »",
+          "indices": [
+            "inconvénient",
+            "défaut (d'une option)",
+            "risque",
+            "coût"
+          ],
+          "parents_typiques": [
+            "solution",
+            "comparaison",
+            "categorie"
+          ],
+          "pas_si": {
+            "critique d'une théorie ou d'une idée": "critique"
+          }
+        },
+        {
+          "type": "methode",
+          "fonction": "ORDONNER une suite d'actions (parent des étapes)",
+          "lien_parent": "« [enfant] » est une procédure pour atteindre « [parent] »",
+          "indices": [
+            "étapes",
+            "démarche",
+            "procédure",
+            "méthode",
+            "d'abord… puis… enfin",
+            "en N temps"
+          ],
+          "parents_typiques": [
+            "notion",
+            "chapitre",
+            "objectif",
+            "solution"
+          ],
+          "pas_si": {
+            "une seule action": "etape ou conseil"
+          }
+        },
+        {
+          "type": "etape",
+          "fonction": "UNE ACTION à sa place dans une suite",
+          "lien_parent": "« [enfant] » est l'étape n de « [parent] »",
+          "indices": [
+            "première étape",
+            "ensuite",
+            "puis",
+            "enfin",
+            "N°"
+          ],
+          "parents_typiques": [
+            "methode"
+          ],
+          "pas_si": {
+            "pas de suite ordonnée": "conseil",
+            "condition juridique de forme": "forme (droit)"
+          }
+        },
+        {
+          "type": "conseil",
+          "fonction": "PRESCRIRE : recommandation générale",
+          "lien_parent": "« [enfant] » est un conseil pour réussir « [parent] »",
+          "indices": [
+            "essayez",
+            "n'hésitez pas",
+            "il vaut mieux",
+            "pensez à",
+            "astuce",
+            "impératif (faites…)"
+          ],
+          "parents_typiques": [
+            "notion",
+            "objectif",
+            "chapitre",
+            "section"
+          ],
+          "pas_si": {
+            "répond à un problème nommé": "solution",
+            "fait partie d'une suite": "etape",
+            "activité à pratiquer avec consigne": "exercice"
+          }
+        },
+        {
+          "type": "exercice",
+          "fonction": "ENTRAÎNER : activité à faire, avec consigne",
+          "lien_parent": "l'élève fait « [enfant] » pour pratiquer « [parent] »",
+          "indices": [
+            "exercice",
+            "pendant N jours",
+            "notez",
+            "entraînez-vous",
+            "défi",
+            "essayez de (avec durée/consigne)"
+          ],
+          "parents_typiques": [
+            "conseil",
+            "notion",
+            "methode"
+          ],
+          "pas_si": {
+            "recommandation sans consigne": "conseil"
+          }
+        },
+        {
+          "type": "objectif",
+          "fonction": "VISER : le but recherché (après, « pour… »)",
+          "lien_parent": "« [enfant] » est ce que l'on cherche à obtenir par « [parent] »",
+          "indices": [
+            "pour",
+            "afin de",
+            "le but",
+            "viser",
+            "objectif",
+            "pour quoi faire"
+          ],
+          "parents_typiques": [
+            "methode",
+            "solution",
+            "notion",
+            "question"
+          ],
+          "pas_si": {
+            "ce qui pousse, avant": "cause"
+          }
+        },
+        {
+          "type": "date",
+          "fonction": "SITUER DANS LE TEMPS",
+          "lien_parent": "« [enfant] » est un moment de « [parent] »",
+          "indices": [
+            "en 1789",
+            "le 14 juillet",
+            "siècle",
+            "date"
+          ],
+          "parents_typiques": [
+            "notion",
+            "question",
+            "chapitre"
+          ],
+          "pas_si": {}
+        },
+        {
+          "type": "chiffre",
+          "fonction": "MESURER",
+          "lien_parent": "« [enfant] » chiffre « [parent] »",
+          "indices": [
+            "%",
+            "million",
+            "fois plus",
+            "sur 10"
+          ],
+          "parents_typiques": [
+            "notion",
+            "argument",
+            "etude",
+            "probleme"
+          ],
+          "pas_si": {}
+        },
+        {
+          "type": "formule",
+          "fonction": "RESTITUER mot pour mot (équation, phrase-type)",
+          "lien_parent": "« [enfant] » est la formule de « [parent] »",
+          "indices": [
+            "=",
+            "formule",
+            "phrase-type à dire"
+          ],
+          "parents_typiques": [
+            "notion",
+            "methode",
+            "theorie"
+          ],
+          "pas_si": {}
+        },
+        {
+          "type": "etude",
+          "fonction": "PROUVER par l'observation (étude, expérience)",
+          "lien_parent": "« [enfant] » est une étude qui montre « [parent] »",
+          "indices": [
+            "une étude",
+            "des chercheurs",
+            "expérience",
+            "enquête",
+            "a montré",
+            "observé"
+          ],
+          "parents_typiques": [
+            "argument",
+            "cause",
+            "consequence",
+            "notion"
+          ],
+          "pas_si": {
+            "décision de justice": "juris (droit)"
+          }
+        },
+        {
+          "type": "citation",
+          "fonction": "CITER une phrase marquante",
+          "lien_parent": "« [enfant] » est une phrase de X sur « [parent] »",
+          "indices": [
+            "« … »",
+            "disait",
+            "selon X : «"
+          ],
+          "parents_typiques": [
+            "notion",
+            "personne",
+            "argument",
+            "chapitre"
+          ],
+          "pas_si": {
+            "texte de loi": "texte"
+          }
+        },
+        {
+          "type": "personne",
+          "fonction": "PRÉSENTER une personne et son apport",
+          "lien_parent": "« [enfant] » est une personne qui a contribué à « [parent] »",
+          "indices": [
+            "nom propre",
+            "auteur",
+            "chercheur",
+            "infirmière",
+            "roi"
+          ],
+          "parents_typiques": [
+            "theorie",
+            "etude",
+            "notion",
+            "date"
+          ],
+          "pas_si": {
+            "sa thèse (droit)": "doctrine",
+            "son modèle": "theorie"
+          }
+        },
+        {
+          "type": "texte",
+          "fonction": "CITER une source primaire, un article de loi",
+          "lien_parent": "« [enfant] » est le texte qui fonde « [parent] »",
+          "indices": [
+            "art.",
+            "article",
+            "loi du",
+            "décret",
+            "« … » (texte officiel)"
+          ],
+          "parents_typiques": [
+            "notion",
+            "fond",
+            "forme",
+            "chapitre"
+          ],
+          "pas_si": {}
+        },
+        {
+          "type": "juris",
+          "fonction": "(DROIT) décision de justice",
+          "lien_parent": "« [enfant] » est une décision qui applique « [parent] »",
+          "indices": [
+            "Cass.",
+            "CE",
+            "arrêt",
+            "jugement",
+            "chambre"
+          ],
+          "parents_typiques": [
+            "fond",
+            "forme",
+            "effet",
+            "exception",
+            "notion"
+          ],
+          "pas_si": {
+            "hors droit": "etude"
+          }
+        },
+        {
+          "type": "doctrine",
+          "fonction": "(DROIT) position d'un auteur juridique",
+          "lien_parent": "« [enfant] » est la position de X sur « [parent] »",
+          "indices": [
+            "pour X",
+            "selon la doctrine",
+            "certains auteurs"
+          ],
+          "parents_typiques": [
+            "notion",
+            "fond",
+            "effet"
+          ],
+          "pas_si": {
+            "hors droit": "theorie / personne"
+          }
+        },
+        {
+          "type": "fond",
+          "fonction": "(DROIT) condition de validité de fond",
+          "lien_parent": "« [enfant] » est une condition de fond de « [parent] »",
+          "indices": [
+            "condition de validité",
+            "consentement",
+            "capacité",
+            "contenu licite"
+          ],
+          "parents_typiques": [
+            "notion"
+          ],
+          "pas_si": {
+            "hors droit": "condition"
+          }
+        },
+        {
+          "type": "forme",
+          "fonction": "(DROIT) formalité, procédure exigée",
+          "lien_parent": "« [enfant] » est une condition de forme de « [parent] »",
+          "indices": [
+            "écrit",
+            "acte notarié",
+            "délai",
+            "à peine de nullité",
+            "formalité"
+          ],
+          "parents_typiques": [
+            "notion"
+          ],
+          "pas_si": {
+            "hors droit": "etape / conseil"
+          }
+        },
+        {
+          "type": "effet",
+          "fonction": "(DROIT) régime, sanction, effet juridique",
+          "lien_parent": "« [enfant] » est un effet juridique de « [parent] »",
+          "indices": [
+            "nullité",
+            "restitution",
+            "sanction",
+            "opposable",
+            "régime"
+          ],
+          "parents_typiques": [
+            "notion",
+            "fond",
+            "forme"
+          ],
+          "pas_si": {
+            "hors droit": "consequence"
+          }
+        },
+        {
+          "type": "exception",
+          "fonction": "ÉCARTER une RÈGLE énoncée dans un cas précis",
+          "lien_parent": "la règle « [parent] » s'applique, SAUF « [enfant] »",
+          "indices": [
+            "sauf",
+            "excepté",
+            "hormis",
+            "à moins que",
+            "sauf si",
+            "par exception",
+            "ne s'applique pas lorsque"
+          ],
+          "parents_typiques": [
+            "regle (fond, notion, conseil, texte)"
+          ],
+          "pas_si": {
+            "pas de règle écartée, simple adoucissement": "nuance",
+            "erreur à éviter": "piege",
+            "difficulté": "probleme",
+            "défaut d'une idée": "critique"
+          }
+        },
+        {
+          "type": "exemple",
+          "fonction": "ILLUSTRER par un cas, une histoire",
+          "lien_parent": "« [enfant] » illustre « [parent] »",
+          "indices": [
+            "par exemple",
+            "prenons",
+            "imaginez",
+            "histoire de",
+            "cas de"
+          ],
+          "parents_typiques": [
+            "tout type de contenu"
+          ],
+          "pas_si": {
+            "c'est une preuve d'étude": "etude"
+          }
+        },
+        {
+          "type": "piege",
+          "fonction": "PRÉVENIR une ERREUR que l'élève risque de faire",
+          "lien_parent": "l'élève risque de se tromper en croyant / faisant « [enfant] »",
+          "indices": [
+            "erreur",
+            "ne pas confondre",
+            "beaucoup croient",
+            "idée reçue",
+            "faux",
+            "à éviter"
+          ],
+          "parents_typiques": [
+            "notion",
+            "conseil",
+            "methode",
+            "categorie"
+          ],
+          "pas_si": {
+            "difficulté du monde réel": "probleme",
+            "adoucissement": "nuance"
+          }
+        },
+        {
+          "type": "retenir",
+          "fonction": "RÉSUMER l'essentiel",
+          "lien_parent": "« [enfant] » résume « [parent] »",
+          "indices": [
+            "en résumé",
+            "l'essentiel",
+            "retenez",
+            "en bref"
+          ],
+          "parents_typiques": [
+            "chapitre",
+            "section",
+            "lecon"
+          ],
+          "pas_si": {}
+        },
+        {
+          "type": "idee",
+          "fonction": "DERNIER RECOURS : aucune fonction précise",
+          "lien_parent": "—",
+          "indices": [],
+          "parents_typiques": [
+            "—"
+          ],
+          "pas_si": {
+            "toute fonction ci-dessus": "son type"
+          }
+        }
+      ],
+      "clusters": [
+        {
+          "groupe": "exception · nuance · critique · piège · problème",
+          "question_discriminante": "Qui est concerné, et qu'est-ce qui est en jeu ? Une RÈGLE énoncée et un cas qui l'écarte → exception. Une affirmation qu'on adoucit (pas toujours, attention) → nuance. Une IDÉE ou une théorie qu'on attaque → critique. Une ERREUR que l'élève risque de faire → piège. Une DIFFICULTÉ du monde réel à résoudre → problème.",
+          "phrase_test": "exception : « [parent] s'applique, SAUF [enfant] » ; nuance : « [parent], mais pas toujours : [enfant] » ; critique : « on reproche à [parent] : [enfant] » ; piège : « attention à ne pas croire / faire [enfant] » ; problème : « la difficulté, c'est [enfant] »"
+        },
+        {
+          "groupe": "cause · condition · objectif · conséquence",
+          "question_discriminante": "Où est l'enfant dans le temps par rapport au parent ? AVANT et il POUSSE → cause ; AVANT et il PERMET (nécessaire) → condition ; APRÈS et il est VOULU → objectif ; APRÈS et il ARRIVE (voulu ou non) → conséquence.",
+          "phrase_test": "cause : « [enfant] provoque [parent] » ; condition : « sans [enfant], pas de [parent] » ; objectif : « on fait [parent] pour [enfant] » ; conséquence : « [parent] entraîne [enfant] »"
+        },
+        {
+          "groupe": "conseil · solution · étape · exercice · méthode",
+          "question_discriminante": "Y a-t-il un problème nommé ? → solution. Une place dans une suite ordonnée ? → étape (le parent est une méthode). Une consigne à pratiquer (durée, tâche) ? → exercice. Une suite d'actions avec des enfants ? → méthode. Sinon une recommandation générale → conseil."
+        },
+        {
+          "groupe": "définition · caractéristique · catégorie · signe · notion",
+          "question_discriminante": "Dit-il CE QU'EST le terme ? → définition. Un TRAIT de la chose ? → caractéristique. Une SORTE de la chose ? → catégorie. Un indice OBSERVABLE pour la reconnaître ? → signe. Un concept qui a lui-même des enfants ? → notion."
+        },
+        {
+          "groupe": "argument · théorie · étude · citation · personne",
+          "question_discriminante": "Une raison qui défend une thèse → argument ; un modèle nommé qui explique → théorie ; une observation, une expérience → étude ; une phrase exacte → citation ; une personne → personne."
+        },
+        {
+          "groupe": "avantage · inconvénient · conséquence",
+          "question_discriminante": "Le parent est-il une OPTION qu'on choisit (solution, catégorie comparée) ? Alors point fort → avantage, point faible → inconvénient. Sinon, ce qui arrive après → conséquence."
+        }
+      ],
+      "fallback": {
+        "principe": "En cas de doute irréductible entre deux types, prendre celui de droite (plus général), jamais l'inverse.",
+        "vers": {
+          "exception": "nuance",
+          "piege": "nuance",
+          "critique": "nuance",
+          "probleme": "notion",
+          "signe": "caracteristique",
+          "categorie": "caracteristique",
+          "solution": "conseil",
+          "etape": "conseil",
+          "objectif": "consequence",
+          "condition": "caracteristique",
+          "cause": "idee",
+          "theorie": "notion",
+          "argument": "idee"
+        }
       },
-      {
-        "entre": "cause / objectif",
-        "test": "Regarde le temps : ce qui vient AVANT et pousse (passé, origine) → cause ; ce qu'on cherche à obtenir APRÈS (« pour… », « afin de… », « pour quoi faire ? ») → objectif. « Pour se sentir utile » → objectif."
+      "calibration": {
+        "consigne": "Avant de typer le livre, lire ces cas : chacun montre un piège fréquent (le type tentant) et le raisonnement qui mène au bon type. Ils ne sont pas à recopier : ils étalonnent le jugement.",
+        "cas": [
+          {
+            "domaine": "droit",
+            "parent": "fond: Consentement",
+            "titre": "Majeur protégé",
+            "extrait": "Toute personne peut contracter, sauf les majeurs protégés dans les cas prévus par la loi.",
+            "type": "exception",
+            "pourquoi": "la règle « toute personne peut contracter » est écartée → SAUF passe",
+            "tentation": "nuance"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "conseil: Exprimer sa colère",
+            "titre": "Ce n'est pas toujours facile",
+            "extrait": "Exprimer sa colère calmement demande de l'entraînement ; les premières fois, on échoue souvent.",
+            "type": "nuance",
+            "pourquoi": "aucune règle écartée : on adoucit le conseil",
+            "tentation": "exception"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "notion: Dire oui à tout",
+            "titre": "Croire qu'on sera plus aimé",
+            "extrait": "On pense que dire oui fera qu'on nous aimera davantage ; c'est l'inverse.",
+            "type": "piege",
+            "pourquoi": "erreur de croyance que l'élève risque de reprendre",
+            "tentation": "nuance"
+          },
+          {
+            "domaine": "sociologie",
+            "parent": "theorie: La reproduction sociale (Bourdieu)",
+            "titre": "Elle sous-estime la mobilité",
+            "extrait": "On reproche à cette théorie d'oublier les parcours de réussite.",
+            "type": "critique",
+            "pourquoi": "on attaque la théorie",
+            "tentation": "nuance"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "chapitre: Arrêter de plaire",
+            "titre": "On finit par s'oublier",
+            "extrait": "Plaire à tout le monde coûte du temps, de l'énergie, puis on perd le contact avec ses besoins.",
+            "type": "consequence",
+            "pourquoi": "APRÈS, ça arrive",
+            "tentation": "probleme"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "notion: La peur du rejet",
+            "titre": "Des critiques reçues enfant",
+            "extrait": "Les enfants souvent critiqués craignent ensuite d'être rejetés.",
+            "type": "cause",
+            "pourquoi": "AVANT et ça pousse",
+            "tentation": "condition"
+          },
+          {
+            "domaine": "physique",
+            "parent": "notion: La fusion de la glace",
+            "titre": "Atteindre 0 °C",
+            "extrait": "La glace ne fond que si sa température atteint 0 °C.",
+            "type": "condition",
+            "pourquoi": "AVANT et nécessaire, ne pousse pas seul",
+            "tentation": "cause"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "solution: Rationner les sourires",
+            "titre": "Être pris au sérieux",
+            "extrait": "On sourit moins pour que nos refus soient pris au sérieux.",
+            "type": "objectif",
+            "pourquoi": "APRÈS et voulu (« pour que »)",
+            "tentation": "consequence"
+          },
+          {
+            "domaine": "géographie",
+            "parent": "notion: L'étalement urbain",
+            "titre": "Embouteillages",
+            "extrait": "Les villes qui s'étalent connaissent des trajets plus longs et des bouchons.",
+            "type": "consequence",
+            "pourquoi": "APRÈS, ça arrive",
+            "tentation": "inconvenient"
+          },
+          {
+            "domaine": "économie",
+            "parent": "solution: Le salaire minimum",
+            "titre": "Moins de pauvreté au travail",
+            "extrait": "Les bas salaires augmentent.",
+            "type": "avantage",
+            "pourquoi": "le parent est une option choisie : point fort",
+            "tentation": "consequence"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "probleme: Un collègue abuse de votre aide",
+            "titre": "Fixer une limite claire",
+            "extrait": "Dites-lui une fois pour toutes ce que vous acceptez et ce que vous refusez.",
+            "type": "solution",
+            "pourquoi": "répond au problème nommé",
+            "tentation": "conseil"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "notion: Gérer son stress",
+            "titre": "Respirer lentement",
+            "extrait": "Prenez l'habitude de respirer lentement quand la tension monte.",
+            "type": "conseil",
+            "pourquoi": "recommandation générale, pas de problème nommé, pas de suite",
+            "tentation": "solution"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "methode: Le disque rayé",
+            "titre": "Répéter la même phrase",
+            "extrait": "Deuxième temps : répétez calmement votre refus sans vous justifier.",
+            "type": "etape",
+            "pourquoi": "place dans une suite ordonnée",
+            "tentation": "conseil"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "notion: Prendre confiance",
+            "titre": "Le carnet des réussites",
+            "extrait": "Chaque soir pendant un mois, notez trois choses réussies.",
+            "type": "exercice",
+            "pourquoi": "consigne + durée",
+            "tentation": "conseil"
+          },
+          {
+            "domaine": "svt",
+            "parent": "notion: Le virus",
+            "titre": "Ne se reproduit qu'en cellule",
+            "extrait": "Un virus ne peut se multiplier qu'à l'intérieur d'une cellule hôte.",
+            "type": "caracteristique",
+            "pourquoi": "trait de ce qu'il est",
+            "tentation": "condition"
+          },
+          {
+            "domaine": "médecine",
+            "parent": "notion: L'anémie",
+            "titre": "Pâleur",
+            "extrait": "Le patient est pâle et vite essoufflé.",
+            "type": "signe",
+            "pourquoi": "indice observable pour reconnaître",
+            "tentation": "caracteristique"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "notion: Les profils au test",
+            "titre": "Bonne âme (26–33 points)",
+            "extrait": "Un des trois profils du test.",
+            "type": "categorie",
+            "pourquoi": "une sorte parmi plusieurs",
+            "tentation": "effet"
+          },
+          {
+            "domaine": "histoire",
+            "parent": "question: Pourquoi la Révolution ?",
+            "titre": "La crise financière",
+            "extrait": "L'État ne peut plus rembourser sa dette.",
+            "type": "cause",
+            "pourquoi": "AVANT et ça pousse vers la Révolution (à cette place, c'est une cause, même si c'est une difficulté)",
+            "tentation": "probleme"
+          },
+          {
+            "domaine": "histoire",
+            "parent": "chapitre: La France en 1788",
+            "titre": "Un État en faillite",
+            "extrait": "La dette dépasse la moitié des dépenses : il faut trouver de l'argent.",
+            "type": "probleme",
+            "pourquoi": "difficulté à résoudre, pas reliée ici à un effet",
+            "tentation": "cause"
+          },
+          {
+            "domaine": "philo",
+            "parent": "question: La technique nous libère-t-elle ?",
+            "titre": "Elle épargne l'effort",
+            "extrait": "Les machines nous libèrent des tâches pénibles.",
+            "type": "argument",
+            "pourquoi": "raison qui défend une thèse",
+            "tentation": "avantage"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "argument: Supprimer ses émotions fait mal",
+            "titre": "Étude sur des couples",
+            "extrait": "Des chercheurs ont mesuré la tension de couples qui retiennent leur colère.",
+            "type": "etude",
+            "pourquoi": "observation qui prouve",
+            "tentation": "exemple"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "notion: S'affirmer",
+            "titre": "« Non est une phrase complète »",
+            "extrait": "Formule à dire telle quelle.",
+            "type": "formule",
+            "pourquoi": "phrase-type à restituer mot pour mot",
+            "tentation": "citation"
+          }
+        ]
       },
-      {
-        "entre": "conseil / solution / étape",
-        "test": "etape = une action à sa place dans une suite ordonnée (méthode). solution = une réponse à un problème NOMMÉ (souvent plusieurs solutions alternatives, logic \"ou\"). conseil = une recommandation générale, sans problème précis ni ordre. Des « stratégies face au patron » répondent au problème « refuser au patron » → solution, logic \"ou\"."
-      },
-      {
-        "entre": "nuance / critique / piège / exception",
-        "test": "exception : une règle énoncée + un cas où elle ne s'applique pas (test « SAUF »). nuance : tempère sans contredire (« pas toujours », « attention, cela ne plaira pas à tout le monde »). critique : attaque une idée ou en montre la faiblesse. piege : une erreur que l'ÉLÈVE risque de commettre (« croire que… », « confondre… »)."
-      },
-      {
-        "entre": "caractéristique / signe / catégorie",
-        "test": "caracteristique décrit ce que la chose EST ; signe permet de la RECONNAÎTRE de l'extérieur (symptôme, comportement observable) ; categorie est une SORTE de la chose (typologie)."
-      },
-      {
-        "entre": "argument / conseil",
-        "test": "argument justifie une thèse (« parce que… ») ; conseil dit quoi faire."
-      },
-      {
-        "entre": "question + cardinal",
-        "test": "Une question qui annonce une liste peut porter le cardinal entre parenthèses : « Pourquoi ne sait-on pas dire non ? (7 raisons) »."
-      }
-    ]
+      "ledger": "Pendant P5, tenir une table de travail (pas dans le JSON) : id · titre · fonction · candidats · phrase de lien retenue · type. Elle oblige à décider nœud par nœud et sert au rapport (types incertains)."
+    }
   },
   "markdown_spec": {
     "inline": {
@@ -659,6 +1727,7 @@
         "id": "P5",
         "name": "RÉDIGER LES NOTES",
         "do": [
+          "Typer chaque nœud avec type_selection_engine (6 passes), en tenant le ledger. Le type se décide APRÈS avoir écrit la note : on sait alors ce que le nœud dit vraiment.",
           "Appliquer note_rules à chaque nœud.",
           "Écrire en français clair, phrases courtes, à la deuxième personne si le livre l'emploie (ou neutre).",
           "Insérer les citations exactes en > quand le livre a une formule marquante ; les tableaux quand il compare ; les cases à cocher pour les exercices."
@@ -669,7 +1738,7 @@
         "name": "VALIDER",
         "do": [
           "Passer TOUTES les quality_gates. Si un environnement d'exécution de code est disponible, exécuter self_check.validator_python sur le JSON et corriger jusqu'à zéro erreur.",
-          "Audit des types : pour chaque nœud, lire la question de révision (review_prompt) suivie du titre. Si la note n'y répond pas, ou si un type plus précis existe (selection_heuristic, faux_amis), changer le type. Vérifier en particulier chaque exception (test « … SAUF … ») et chaque idee. En cas d'hésitation entre deux types proches, appliquer node_types.boundary_tests.",
+          "Audit des types : rejouer les passes 3 et 4 (lien au parent, question de révision) sur TOUS les nœuds ; vérifier chaque exception, nuance, critique, piège, problème, cause, condition, objectif, solution et conseil avec la question discriminante de leur groupe. Lister les types incertains dans le rapport.",
           "Relire 5 nœuds au hasard en mode « révision » : la question (review_prompt + titre) a-t-elle une réponse claire dans la note/les enfants ?",
           "Vérifier la couverture : chaque chapitre/section du plan P1 apparaît quelque part ; chaque énumération a son cardinal.",
           "Le rapport signale aussi les défauts du livre rencontrés (modeling_patterns.defective_sources)."
@@ -1026,7 +2095,7 @@
       "Lisibilité (G8) : racine à 3–7 branches, renvois ≤ 4 et proches, aucun exemple directement sous la racine, titres courts.",
       "Audit des types : chaque question de révision a du sens pour son nœud ; aucun type juridique hors droit ; exception seulement au test « SAUF » ; idee ≤ 25 %."
     ],
-    "validator_python": "import json,sys\nT={'chapitre','lecon','section','notion','definition','caracteristique','categorie','signe','cause','consequence','condition','probleme','solution','question','theorie','argument','critique','nuance','comparaison','avantage','inconvenient','methode','etape','conseil','exercice','objectif','date','chiffre','formule','etude','citation','personne','texte','juris','doctrine','fond','forme','effet','exception','exemple','piege','retenir','idee'}\nd=json.load(open(sys.argv[1]));E=[];HORS='--hors-droit' in sys.argv\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=6 if len(ids)>30 else 4\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1:W.append(p+': renvoi lointain '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (→ [[Titre]] dans la note ?)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2:W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nfor m in d['maps']:\n  p=m['id'];ns=m['nodes'];N=len(ns)\n  if HORS:\n    for n in ns:\n      if n['type'] in ('fond','forme','effet','juris','doctrine'):W.append(p+': type juridique « '+n['type']+' » hors droit : '+n['title'][:40]+' (voir faux_amis)')\n  for n in ns:\n    if n['type']=='exception' and not re.search(r\"sauf|except|hormis|à moins|ne s.applique pas|sauf si|en dehors de\",(n['title']+' '+n.get('note','')).lower()):W.append(p+': exception sans règle écartée (test « SAUF ») : '+n['title'][:40]+' → nuance, critique, piege ?')\n  idees=sum(1 for n in ns if n['type']=='idee')\n  if N>=12 and idees>0.25*N:W.append(p+': %d %% de nœuds « idee » (≤ 25 %%) — choisir des types précis'%(100*idees//N))\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
+    "validator_python": "import json,sys\nT={'chapitre','lecon','section','notion','definition','caracteristique','categorie','signe','cause','consequence','condition','probleme','solution','question','theorie','argument','critique','nuance','comparaison','avantage','inconvenient','methode','etape','conseil','exercice','objectif','date','chiffre','formule','etude','citation','personne','texte','juris','doctrine','fond','forme','effet','exception','exemple','piege','retenir','idee'}\nd=json.load(open(sys.argv[1]));E=[];HORS='--hors-droit' in sys.argv\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=6 if len(ids)>30 else 4\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1:W.append(p+': renvoi lointain '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (→ [[Titre]] dans la note ?)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2:W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nfor m in d['maps']:\n  p=m['id'];ns=m['nodes'];N=len(ns)\n  if HORS:\n    for n in ns:\n      if n['type'] in ('fond','forme','effet','juris','doctrine'):W.append(p+': type juridique « '+n['type']+' » hors droit : '+n['title'][:40]+' (voir faux_amis)')\n  for n in ns:\n    if n['type']=='exception' and not re.search(r\"sauf|except|hormis|à moins|ne s.applique pas|sauf si|en dehors de\",(n['title']+' '+n.get('note','')).lower()):W.append(p+': exception sans règle écartée (test « SAUF ») : '+n['title'][:40]+' → nuance, critique, piege ?')\n  idees=sum(1 for n in ns if n['type']=='idee')\n  if N>=12 and idees>0.25*N:W.append(p+': %d %% de nœuds « idee » (≤ 25 %%) — choisir des types précis'%(100*idees//N))\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  def txt(n): return (n['title']+' '+n.get('note','')).lower()\n  for n in m['nodes']:\n    t=n['type'];P=T.get(par.get(n['id']));pt=P['type'] if P else None;x=txt(n);ti=n['title'][:38]\n    if t=='etape' and pt!='methode':W.append(p+': étape hors méthode : '+ti+' → conseil ?')\n    if t=='solution' and pt not in ('probleme','question','solution','section','lecon','chapitre'):W.append(p+': solution sans problème nommé au-dessus : '+ti+' → conseil ?')\n    if t in ('avantage','inconvenient') and pt not in ('solution','comparaison','categorie','theorie','methode','notion'):W.append(p+': '+t+' sans option au-dessus : '+ti+' → consequence ?')\n    if t=='consequence' and re.search(r\"\\bpour que\\b|\\bafin de\\b|\\bafin que\\b|\\bbut\\b\",x):W.append(p+': conséquence formulée comme un but : '+ti+' → objectif ?')\n    if t=='cause' and re.search(r\"\\bil faut\\b|\\bà condition\\b|\\bseulement si\\b|\\bnécessaire\\b\",x) and not re.search(r\"parce que|à cause|provoque|entraîne\",x):W.append(p+': cause formulée comme une condition : '+ti+' → condition ?')\n    if t in ('nuance','critique','piege','probleme') and re.search(r\"\\bsauf (si|dans|lorsque|quand)\\b|à moins que|\\bexcepté\\b\",x) and pt in ('fond','forme','texte'):W.append(p+': '+t+' qui écarte une règle juridique : '+ti+' → exception ?')\n    if t=='piege' and not re.search(r\"erreur|croi|confond|faux|idée reçue|éviter|ne pas|≠|attention|piège|pense\",x):W.append(p+': piège sans erreur nommée : '+ti+' → nuance ?')\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
   },
   "anti_patterns": [
     {
@@ -1352,6 +2421,7 @@
       "Plan du cours : liste numérotée des cartes (titre — nombre de nœuds — idée centrale).",
       "Choix de modélisation : correspondance des types utilisée (surtout hors droit), regroupements/scissions de chapitres.",
       "Laissé de côté : passages non repris et pourquoi (redites, digressions, remerciements…).",
+      "Types incertains : nœuds où deux types restaient possibles (titre, candidats, type retenu, raison).",
       "Points d'attention : passages ambigus, erreurs apparentes du livre, compléments signalés.",
       "Importer : Réglages › Données › Importer (ou glisser le fichier) ; parties suivantes → « Compléter le cours »."
     ]
@@ -1386,7 +2456,7 @@
     "format_note": "Spécification JSON portable, dans le même esprit que universal_problem_solving_invention_engine. Pour Claude (Skills natifs), le fichier SKILL.md voisin sert de point d'entrée et renvoie à ce JSON. Pour ChatGPT, Gemini, Mistral… : joindre ce fichier au début de la conversation avec le document et écrire « Applique ce skill à ce livre ».",
     "app_compatibility": "Format vérifié avec Ratio ≥ 2.7 (43 types ; une version antérieure importe les types inconnus en « Idée »).",
     "privacy": "Le JSON ne contient que le cours : aucun historique de révision, aucun réglage.",
-    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins. La v1.3 ajoute 9 types (au-delà du droit), la création de libellés sur mesure, les constructions visuelles de Ratio (frises, peignes, annotations) et une grille de décision pour découper le livre en cartes. La v1.4 ajoute 19 types universels (cause, conséquence, condition, problème, solution, argument, critique, nuance, avantage, inconvénient, caractéristique, catégorie, signe, étape, conseil, exercice, objectif, étude, théorie), le mode hors droit et l'audit des types."
+    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins. La v1.3 ajoute 9 types (au-delà du droit), la création de libellés sur mesure, les constructions visuelles de Ratio (frises, peignes, annotations) et une grille de décision pour découper le livre en cartes. La v1.4 ajoute 19 types universels (cause, conséquence, condition, problème, solution, argument, critique, nuance, avantage, inconvénient, caractéristique, catégorie, signe, étape, conseil, exercice, objectif, étude, théorie), le mode hors droit et l'audit des types. La v1.5 remplace l'arbre « premier oui » par un moteur de typage en 6 passes (fonction, indices, lien au parent, question de révision, départage, cohérence), 43 fiches de type, 6 groupes de confusion avec question discriminante, replis et cas d'étalonnage — mesuré sur un jeu d'évaluation à l'aveugle."
   },
   "course_design": {
     "why": "Découper un livre en cartes, c'est décider où l'élève s'arrêtera pour réviser. On note chaque découpage candidat sur des critères pondérés.",
