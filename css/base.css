@@ -192,11 +192,48 @@ body.immersive .rail, body.immersive .dock { display: none; }
   background: var(--surface-container); color: var(--on-surface-variant);
   box-shadow: var(--elev-2);
 }
-.navbar .nav-item { width: 48px; height: 48px; padding: 0; justify-content: center; border-radius: var(--shape-full); }
-.navbar .nav-indicator { position: static; width: 48px; height: 48px; }
-.navbar .nav-indicator::before { border-radius: var(--shape-full); }
-.navbar .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.navbar .nav-badge { top: 4px; left: auto; right: 2px; margin: 0; }
+/* barre flottante de navigation (compact) : Cours · action principale · Réviser
+   Les destinations portent icône + libellé ; l'actif se remplit (secondary-container, ressort).
+   Le centre accueille le FAB de la page ou son action principale, en primary : la seule
+   chose en forte emphase, sous le pouce. */
+.navbar { gap: var(--sp-1); padding: 6px; }
+.navbar .nav-item {
+  flex-direction: row; gap: var(--sp-2);
+  width: auto; height: 52px; padding: 0 var(--sp-4) 0 14px;
+  border-radius: var(--shape-full);
+  font: var(--label-l); color: var(--on-surface-variant);
+}
+.navbar .nav-item::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--secondary-container);
+  transform: scaleX(.6); opacity: 0;
+  transition: transform 350ms var(--spring-fast), opacity var(--dur-sm) var(--ease-out);
+}
+.navbar .nav-item.active::before { transform: none; opacity: 1; }
+.navbar .nav-item.active { color: var(--on-secondary-container); font-weight: 700; }
+.navbar .nav-item:hover::before { opacity: .45; transform: none; }
+.navbar .nav-item.active:hover::before { opacity: 1; }
+.navbar .nav-indicator { position: relative; width: 24px; height: 24px; background: none !important; }
+.navbar .nav-indicator::before { display: none; }
+.navbar .nav-label { position: relative; white-space: nowrap; }
+.navbar .nav-badge { top: -7px; left: auto; right: -12px; margin: 0; }
+/* le centre : FAB (icône) ou action de la page (icône + libellé court) */
+.nav-center { display: flex; align-items: center; margin: 0 2px; }
+.nav-center:empty { display: none; }
+.navbar .fab.nav-fab, .nav-cta {
+  height: 56px; border-radius: 18px;
+  background: var(--primary); color: var(--on-primary);
+  box-shadow: none;
+  transition: border-radius 350ms var(--spring-fast), transform var(--dur-sm) var(--ease-out);
+}
+.navbar .fab.nav-fab { width: 56px; }
+.navbar .fab.nav-fab:active, .nav-cta:active { border-radius: var(--shape-full); transform: scale(.96); transition-duration: 350ms, var(--dur-xs); }
+.nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-5) 0 var(--sp-4); font: var(--title-s); white-space: nowrap; animation: fab-in var(--dur-md) var(--ease-out) both; }
+.navbar.has-cta .nav-fab { display: none; }
+/* avec une action au centre, les destinations se réduisent à leur icône (la barre tient sur 360 dp) */
+.navbar.has-cta .nav-item { width: 52px; padding: 0; justify-content: center; }
+.navbar.has-cta .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 599.98px) { .navbar.has-cta ~ .ctxbar { display: none !important; } }
 .ctxbar { color: var(--on-surface-variant); }
 .ctxbar.vibrant { background: var(--primary-container); color: var(--on-primary-container); }
 .ctxbar .icon-btn { color: inherit; }

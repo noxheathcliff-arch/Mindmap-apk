@@ -176,8 +176,11 @@
     rail.appendChild(h('a.rail-brand', { href: '#/', 'aria-label': 'Ratio — accueil' }, logo(), h('span.rail-brand-name', 'Ratio')));
     rail.appendChild(h('div.rail-fab-slot#rail-fab'));
     const railItems = h('div.rail-items');
-    for (const d of DESTS) {
-      railItems.appendChild(navItem(d, 'rail'));
+    for (const d of DESTS) railItems.appendChild(navItem(d, 'rail'));
+    /* barre flottante (compact) : Cours · action principale au centre · Réviser. La recherche
+       n'y figure pas : elle est déjà dans la barre haute de chaque page principale. */
+    for (const d of DESTS.filter((x) => x.key !== 'search')) {
+      if (bar.children.length === 1) bar.appendChild(h('div.nav-center#nav-center'));
       bar.appendChild(navItem(d, 'bar'));
     }
     rail.appendChild(railItems);
@@ -258,8 +261,9 @@
     const rb = h('button.fab.fab-rail', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick });
     rb.append(R.icon(cfg.icon || 'plus', 24), h('span.fab-label', cfg.label));
     slot.appendChild(rb);
-    const f = h('button.fab.fab-float#fab-float', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick }, R.icon(cfg.icon || 'plus', 24));
-    (U.$('#dock') || U.$('#app')).appendChild(f);
+    // compact : le FAB prend le centre de la barre flottante
+    const f = h('button.fab.fab-float.nav-fab#fab-float', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick }, R.icon(cfg.icon || 'plus', 24));
+    (U.$('#nav-center') || U.$('#dock') || U.$('#app')).appendChild(f);
     syncDock();
   };
 
@@ -274,6 +278,7 @@
     U.clear(bar);
     bar.removeAttribute('style');
     bar.className = 'ctxbar';
+    centerAction(cfg);
     if (!cfg || !cfg.items || !cfg.items.length) { bar.hidden = true; syncDock(); return; }
     if (cfg.vibrant) bar.classList.add('vibrant');
     // barre teintée par un cours : ses rôles Material remplacent ceux de l'app (zone du cours)
@@ -295,6 +300,23 @@
     bar.hidden = false;
     syncDock();
   };
+
+  /** Compact : une page dont la seule action est l'action principale (Réviser › Commencer) la
+      place au centre de la barre flottante, à la place du FAB ; la barre contextuelle reste
+      pour les écrans larges. */
+  function centerAction(cfg) {
+    const slot = U.$('#nav-center');
+    if (!slot) return;
+    const old = slot.querySelector('.nav-cta');
+    if (old) old.remove();
+    const it = cfg && !cfg.replaceNav && cfg.items && cfg.items.length === 1 && cfg.items[0].primary ? cfg.items[0] : null;
+    slot.closest('.navbar').classList.toggle('has-cta', !!it);
+    if (!it) return;
+    const el = h(it.href ? 'a.nav-cta' : 'button.nav-cta', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '', 'aria-label': it.label },
+      R.icon(it.icon, 22), h('span.nav-cta-l', it.short || it.label));
+    if (it.onClick) el.addEventListener('click', (e) => it.onClick(e, el));
+    slot.appendChild(el);
+  }
 
   /** État du dock : sur compact, la barre d'actions remplace la navigation (replaceNav) ou s'y ajoute ;
       le FAB s'efface quand la page a déjà son action principale dans la barre. */
