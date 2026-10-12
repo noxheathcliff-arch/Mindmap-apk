@@ -211,23 +211,26 @@
 
         let main;
         if (!anyReviewable) {
+          R.app.setActions(null);
           main = h('div.hub-main', ui.emptyState({
             icon: 'cards', title: 'Pas encore de cartes de révision',
             text: 'Chaque nœud qui a une note ou des éléments rattachés devient une question. Décompose une notion pour commencer.',
             action: ui.btn('Aller à mes cours', { icon: 'library', variant: 'filled', onClick: () => R.app.go('#/') }),
           }));
         } else {
+          R.app.setActions(null);
           const due0 = due - fresh;
           const courses = S.coursesSorted().filter((c) => S.courseStats(c.id).reviewable)
             .sort((a, b) => S.courseStats(b.id).due - S.courseStats(a.id).due);
           const metaFor = (n) => (due
             ? [h('b', minutes(n)), ` pour cette session · ${[due0 ? `${due0} déjà vue${due0 > 1 ? 's' : ''}` : null, fresh ? `${fresh} nouvelle${fresh > 1 ? 's' : ''}` : null].filter(Boolean).join(' · ')}`]
             : ['Rien n’est dû aujourd’hui. Une série d’entraînement ne change pas tes échéances… sauf ce que tu notes.']);
-          const ctaFor = (n) => (due
-            ? ui.btn(`Commencer · ${n} carte${n > 1 ? 's' : ''}`, { icon: 'play', variant: 'filled', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout')) })
-            : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) }));
+          // l'action de la page vit dans la barre flottante (une seule action en forte emphase)
+          const ctaFor = (n, tick) => R.app.setActions({ items: [due
+            ? { icon: 'play', label: `Commencer · ${n} carte${n > 1 ? 's' : ''}`, primary: true, cls: 'hub-cta' + (tick ? ' tick' : ''), onClick: () => R.app.go(sessionHref('#/reviser/tout'), { from: el.querySelector('.dd-top') }) }
+            : { icon: 'cards', label: 'Réviser quand même', primary: true, cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) }] });
           const meta = h('p.hub-meta', metaFor(take));
-          let cta = ctaFor(take);
+          ctaFor(take);
           const start = () => R.app.go(sessionHref('#/reviser/tout', { all: !due }));
           const deck = dayDeck(take, due, size, start);
           const coursesBox = courses.length ? h('div.hub-courses', courses.map(courseRow)) : null;
@@ -245,9 +248,7 @@
                 seg._place();
                 const n = v ? Math.min(v, due) : due;
                 U.clear(meta); U.append(meta, metaFor(n));
-                const next = ctaFor(n);
-                if (!motion.reduced()) next.classList.add('tick');
-                cta.replaceWith(next); cta = next;
+                ctaFor(n, !motion.reduced());
                 // le paquet s'épaissit ou s'amincit sur place, le compte défile
                 deck.update(n, v);
                 if (coursesBox) { U.clear(coursesBox); courses.forEach((c) => coursesBox.appendChild(courseRow(c))); }
@@ -258,14 +259,14 @@
           main = h('div.hub-main',
             h('div.hero.hub-hero',
               h('p.overline.hero-date', new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })),
-              h('h1.hero-title', due ? [h('span.hl-sweep', h('span.hub-num', String(due))), due > 1 ? ' cartes à réviser' : ' carte à réviser'] : h('span.hl-sweep', 'Tout est à jour.'))),
+              h('h1.hero-title', due ? [h('span.hub-num', String(due)), due > 1 ? ' cartes à réviser' : ' carte à réviser'] : 'Tout est à jour')),
             // le bloc « Commencer » devient la première fiche de la session (élément partagé)
             h('section.hub-start',
               deck,
               h('div.hub-start-ctl',
+                h('h2.hub-start-t', due ? 'Paquet du jour' : 'Entraînement'),
                 meta,
-                h('div.hub-size-row', h('span.hub-size-l', 'Session'), seg),
-                cta)),
+                h('div.hub-size-row', h('span.hub-size-l', 'Session'), seg))),
             h('div.hub-side.only-narrow', loyaltyCard(intro), forecastCard(intro)),
             courses.length ? h('section.lib-sec',
               h('div.sec-head', h('h2.sec-title', 'Par cours'), h('span.sec-count', String(courses.length))),

@@ -148,11 +148,11 @@
 .node.t-forme { border: 4px double var(--outline); padding: 8px 13px 9px; }
 .node.t-effet { background: var(--surface-container-high); border-color: transparent; }
 .node.t-exception { border-style: dashed; border-color: var(--on-surface-variant); }
-.node.t-juris .node-title { font: italic 400 15px/21px var(--font-brand); }
+.node.t-juris .node-title { font: italic 400 15px/21px var(--font-serif); }
 .node.t-texte .node-title { font: 500 13px/20px var(--font-mono); }
 .node.t-idee { background: var(--surface-container); border-color: transparent; }
 .node.t-doctrine { border-color: var(--outline); border-radius: 4px 16px 4px 16px; }
-.node.t-doctrine .node-title { font: 400 15px/21px var(--font-brand); }
+.node.t-doctrine .node-title { font: 400 15px/21px var(--font-serif); }
 .node.t-exemple { border: 1.5px dotted var(--on-surface-variant); }
 .node.t-retenir { background: var(--primary-container); color: var(--on-primary-container); border-color: color-mix(in srgb, var(--primary) 60%, var(--on-surface)); }
 .node.t-retenir .node-top { color: color-mix(in srgb, var(--on-primary-container) 75%, transparent); }
@@ -161,7 +161,7 @@
 .node.t-methode { border-left: 5px solid var(--on-surface); padding-left: 11px; }
 .node.t-comparaison { border-left: 3px double var(--on-surface-variant); border-right: 3px double var(--on-surface-variant); }
 .node.t-piege { border: 1.5px dashed var(--on-surface); background: repeating-linear-gradient(-45deg, transparent 0 7px, color-mix(in srgb, var(--on-surface) 7%, transparent) 7px 13px), var(--surface-container-lowest); }
-.node.t-citation .node-title { font: italic 400 15px/21px var(--font-brand); }
+.node.t-citation .node-title { font: italic 400 15px/21px var(--font-serif); }
 .node.t-citation { border-color: transparent; background: var(--surface-container-low); border-left: 3px solid var(--outline); border-radius: 4px; }
 .node.t-personne { border-radius: 999px; padding-left: 18px; padding-right: 18px; }
 .node.t-date { border-top: 4px solid var(--on-surface); font-variant-numeric: tabular-nums; }
@@ -188,10 +188,10 @@
 .node.t-conseil { background: var(--surface-container-low); border-color: transparent; border-radius: 14px 4px 14px 4px; }
 .node.t-exercice { border: 2px solid var(--outline); border-radius: 6px; background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--on-surface) 6%, transparent) 19px 20px), var(--surface-container-lowest); }
 .node.t-objectif { border-color: var(--on-surface-variant); outline: 1.5px solid var(--outline); outline-offset: 3px; }
-.node.t-etude .node-title { font: italic 400 15px/21px var(--font-brand); }
+.node.t-etude .node-title { font: italic 400 15px/21px var(--font-serif); }
 .node.t-etude { border-color: var(--outline); border-radius: 4px 4px 14px 4px; }
 .node.t-theorie { border: 1.5px solid var(--on-surface); border-radius: 4px 16px 4px 16px; }
-.node.t-theorie .node-title { font: 500 15px/21px var(--font-brand); }
+.node.t-theorie .node-title { font: 500 15px/21px var(--font-serif); }
 
 /* Structure du cours : Chapitre › Leçon › Section. La hiérarchie se lit au premier regard
    (taille, graisse, encre), toujours sans couleur ; le sur-titre numéroté est surligné. */

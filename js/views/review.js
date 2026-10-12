@@ -458,7 +458,7 @@
               ui.mastery('revoir', 14), h('span', node.title), R.icon('chevronRight', 16))))) : null,
           h('p.end-next', remaining ? `Encore ${U.plural(remaining, 'carte')} à réviser maintenant.` : fc[1].n ? `Demain : ${U.plural(fc[1].n, 'carte')}.` : 'Rien d’autre à réviser pour l’instant.'),
           h('div.end-actions',
-            ui.btn('Terminer', { variant: remaining ? 'outlined' : 'filled', onClick: () => R.app.go(exitHref) }),
+            ui.btn('Terminer', { variant: remaining ? 'tonal' : 'filled', onClick: () => R.app.go(exitHref) }),
             remaining ? ui.btn('Encore une série', { icon: 'play', variant: 'filled', onClick: () => R.app.go(sessionBase() + '?n=' + (q.n != null ? q.n : S.data.settings.sessionSize) + '&r=' + Date.now(), { replace: true }) }) : null));
         deck.appendChild(end);
         document.removeEventListener('keydown', onEndKey);
@@ -486,7 +486,7 @@
           icon: 'check', title: 'Tout est à jour',
           text: fc[1].n ? `Prochaine révision : demain · ${U.plural(fc[1].n, 'carte')}. Tu peux aussi réviser quand même.` : 'Rien n’est dû aujourd’hui. Tu peux réviser quand même pour t’entraîner.',
           action: h('div.end-actions',
-            ui.btn('Retour', { variant: 'outlined', onClick: () => R.app.go(exitHref) }),
+            ui.btn('Retour', { variant: 'tonal', onClick: () => R.app.go(exitHref) }),
             ui.btn('Réviser quand même', { icon: 'cards', variant: 'filled', onClick: () => R.app.go(sessionBase() + '?all=1', { replace: true }) })),
         } : {
           icon: 'cards', title: 'Pas encore de cartes de révision',

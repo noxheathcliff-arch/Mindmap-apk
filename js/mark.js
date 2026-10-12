@@ -1,4 +1,4 @@
-/* Ratio — identité visuelle d'un cours : empreinte générative + teinte « papier »
+/* Ratio — identité visuelle d'un cours : dossier (forme), empreinte générative, schéma de couleur Material
  *
  * L'empreinte est dessinée à partir de la vraie structure du cours : un centre, une branche
  * par carte (plus longue quand la carte grossit), des points pour ses nœuds, et en surligneur
@@ -54,45 +54,55 @@
   }
 
   /**
-   * Empreinte d'un cours → <span class="cmark"> contenant un SVG.
+   * Dossier d'un cours → <span class="cmark"> contenant un SVG (direction « Barre contextuelle »).
+   * L'onglet prend l'accent du cours, le rabat son conteneur ; sur les grandes tailles (md, lg),
+   * l'empreinte du cours (une branche par carte) est tracée dans le rabat, à l'encre du conteneur.
    * size : xs | sm | md | lg ; draw : jouer le tracé (première apparition seulement)
    */
+  const FOLDER_BACK = 'M6 24a9 9 0 0 1 9-9h19.5c2.5 0 4.8 1 6.5 2.8l4.2 4.4c1 1 2.3 1.6 3.7 1.6H85a9 9 0 0 1 9 9v44a9 9 0 0 1-9 9H15a9 9 0 0 1-9-9z';
+  const FOLDER_FRONT = 'M6 39a9 9 0 0 1 9-9h70a9 9 0 0 1 9 9v38a9 9 0 0 1-9 9H15a9 9 0 0 1-9-9z';
   function mark(course, { size = 'md', draw = false, hero = false } = {}) {
-    const g = geometry(course);
     const px = SIZES[size] || SIZES.md;
-    const small = px <= 32;
-    const w = small ? 2.6 : 1.8, wHot = small ? 3.4 : 3;
-    const parts = [];
-    if (!g.branches.length) {
-      parts.push('<circle class="mk-ring" cx="50" cy="50" r="44" pathLength="1"/>');
-    } else {
-      // le sceau : un cadre discret, même silhouette pour tous les cours, quelle que soit leur taille
-      parts.push(`<circle class="mk-frame" cx="50" cy="50" r="46" stroke-width="${small ? 2.4 : 1.4}"/>`);
+    const big = px >= 44;
+    const parts = [`<path class="mk-back" d="${FOLDER_BACK}"/>`, `<path class="mk-front" d="${FOLDER_FRONT}"/>`];
+    const g = geometry(course);
+    if (big && g.branches.length) {
+      // l'empreinte, réduite et centrée dans le rabat (centre 50,58 ; rayon utile ≈ 22)
+      parts.push('<g class="mk-print" transform="translate(50 58) scale(.4) translate(-50 -50)">');
       g.branches.forEach((b, i) => {
         const hot = i === g.hot;
-        const cls = hot ? ' mk-hot' : '';
-        // branche à réviser : un trait de surligneur passe sous l'encre (signature de l'appli)
-        if (hot) parts.push(`<path class="mk-hl" d="${b.d}" pathLength="1" stroke-width="${small ? 11 : 9}" style="--k:${i}"/>`);
-        parts.push(`<path class="mk-b${cls}" d="${b.d}" pathLength="1" stroke-width="${hot ? wHot : w}" style="--k:${i}"/>`);
-        if (!small) for (const l of b.leaves) parts.push(`<circle class="mk-l${cls}" cx="${l.x.toFixed(1)}" cy="${l.y.toFixed(1)}" r="${l.r.toFixed(1)}" style="--k:${i}"/>`);
-        parts.push(`<circle class="mk-e${cls}" cx="${b.ex.toFixed(1)}" cy="${b.ey.toFixed(1)}" r="${small ? 4.5 : 3.2}" style="--k:${i}"/>`);
+        parts.push(`<path class="mk-b${hot ? ' mk-hot' : ''}" d="${b.d}" pathLength="1" stroke-width="${hot ? 6 : 4.2}" style="--k:${i}"/>`);
+        parts.push(`<circle class="mk-e${hot ? ' mk-hot' : ''}" cx="${b.ex.toFixed(1)}" cy="${b.ey.toFixed(1)}" r="${hot ? 7 : 5.5}" style="--k:${i}"/>`);
       });
+      parts.push('<circle class="mk-c" cx="50" cy="50" r="10"/></g>');
     }
-    parts.push(`<circle class="mk-c" cx="50" cy="50" r="${small ? 9 : 7}"/>`);
-    const label = g.branches.length
-      ? `Empreinte du cours : ${U.plural(g.branches.length + g.more, 'carte')}`
-      : 'Empreinte du cours : aucune carte';
+    const label = g.branches.length ? `Dossier du cours : ${U.plural(g.branches.length + g.more, 'carte')}` : 'Dossier du cours : aucune carte';
     const el = U.h('span.cmark', { class: 'cmark-' + size + (draw ? ' draw' : ''), role: 'img', 'aria-label': label });
     if (hero) el.dataset.hero = 'course:' + course.id + ':mono';
     el.innerHTML = `<svg viewBox="0 0 100 100" width="${px}" height="${px}" aria-hidden="true">${parts.join('')}</svg>`;
+    tint(el, course);
     return el;
   }
 
-  /* ---- Teinte « papier » du cours : 8 teintes, jamais le jaune (réservé au surligneur) ----
-     Attribution dans l'ordre de création : chaque cours prend sa teinte préférée (hachage de
-     son identifiant) si elle est libre, sinon la suivante. Stable dans le temps, et les huit
-     premiers cours ont tous une teinte différente. */
+  /* ---- Couleur d'un cours : un schéma Material par teinte (8 teintes, jamais le jaune,
+     réservé au surligneur). Attribution dans l'ordre de création : chaque cours prend sa teinte
+     préférée (hachage de son identifiant) si elle est libre, sinon la libre la plus éloignée.
+     Stable dans le temps ; les huit premiers cours ont tous une teinte différente.
+     Les rôles viennent de material-color-utilities (schéma « content » de jour, tons HCT 30/92 de
+     nuit), puis chaque contenu est ajusté jusqu'à WCAG 2.2 AA + APCA Lc 75 sur son conteneur.
+     [conteneur, sur-conteneur, accent, sur-accent, conteneur doux, sur-conteneur doux] */
   const HUES = [28, 58, 150, 186, 214, 248, 284, 332];
+  const SCHEMES = {
+    28: { l: ['#c15146', '#fffbff', '#8a2921', '#ffffff', '#ffb8af', '#0f0000'], d: ['#7a2e27', '#ffe2de', '#ffc4bc', '#4b100d', '#563c38', '#f9dcd8'] },
+    58: { l: ['#b25f00', '#fffbff', '#783e00', '#ffffff', '#ffc294', '#331700'], d: ['#6e3900', '#ffe3d0', '#ffc69b', '#3d1d00', '#533e2d', '#f7dece'] },
+    150: { l: ['#03873e', '#f7fff3', '#005825', '#ffffff', '#c1eec4', '#274d2f'], d: ['#005323', '#dcedd9', '#90e49d', '#002d10', '#374638', '#dbe6d8'] },
+    186: { l: ['#008378', '#f4fffc', '#00564e', '#ffffff', '#bce9e1', '#1d4843'], d: ['#005049', '#d6ede8', '#6ce5d6', '#002e29', '#314643', '#d7e6e2'] },
+    214: { l: ['#007f9b', '#fafdff', '#005366', '#ffffff', '#c1e9f9', '#244b57'], d: ['#004e60', '#d8ebf4', '#7ddeff', '#002a35', '#33454c', '#d8e4ea'] },
+    248: { l: ['#0079c5', '#fdfcff', '#004e82', '#ffffff', '#bddafe', '#173553'], d: ['#00497b', '#dee9fa', '#b7d7ff', '#002e50', '#384350', '#dde3ee'] },
+    284: { l: ['#6f68cd', '#fffbff', '#453ca0', '#ffffff', '#d4cffe', '#2c294e'], d: ['#423d86', '#eae5fb', '#d1ccff', '#211b5c', '#424051', '#e4e0ef'] },
+    332: { l: ['#ab54a1', '#fffbff', '#7b2975', '#ffffff', '#ffcef3', '#522f4d'], d: ['#6d2f66', '#fbe1f2', '#ffbdf1', '#420f40', '#4e3d4a', '#f0dde9'] },
+  };
+  const ROLE = ['pc', 'onpc', 'pri', 'onpri', 'sc', 'onsc'];
   const paperCache = new Map();
   let hueKey = '', hueOf = new Map();
   function hueFor(course) {
@@ -121,30 +131,24 @@
     }
     return hueOf.get(course.id) ?? HUES[hash(course.id) % HUES.length];
   }
+  /** Variables CSS du schéma du cours (clair et sombre ; le thème est résolu en CSS, classe .paper) */
   function paper(course) {
     const hue = hueFor(course);
     if (paperCache.has(hue)) return paperCache.get(hue);
-    const C = R.colors;
-    const mk = (L, c) => C.oklchToHex({ L, C: c, h: hue });
-    const light = { bg: mk(0.952, 0.032), line: mk(0.86, 0.045) };
-    light.ink = C.ensureContrast(mk(0.34, 0.075), light.bg, 7).hex;
-    light.sub = C.ensureContrast(mk(0.46, 0.06), light.bg, 4.5).hex;
-    const dark = { bg: mk(0.275, 0.03), line: mk(0.37, 0.04) };
-    dark.ink = C.ensureContrast(mk(0.9, 0.05), dark.bg, 7).hex;
-    dark.sub = C.ensureContrast(mk(0.78, 0.05), dark.bg, 4.5).hex;
-    const style = {
-      '--paper-l': light.bg, '--paper-line-l': light.line, '--paper-ink-l': light.ink, '--paper-sub-l': light.sub,
-      '--paper-d': dark.bg, '--paper-line-d': dark.line, '--paper-ink-d': dark.ink, '--paper-sub-d': dark.sub,
-    };
+    const sc = SCHEMES[hue];
+    const style = {};
+    ROLE.forEach((r, i) => { style[`--c-${r}-l`] = sc.l[i]; style[`--c-${r}-d`] = sc.d[i]; });
     paperCache.set(hue, style);
     return style;
   }
-  /** Applique la teinte papier à un élément (variables CSS, thème géré en CSS) */
+  /** Applique le schéma du cours à un élément (variables CSS, thème géré en CSS) */
   function tint(el, course) {
     for (const [k, v] of Object.entries(paper(course))) el.style.setProperty(k, v);
     el.classList.add('paper');
     return el;
   }
+  /** Les mêmes rôles, prêts pour app.setActions({ style }) : la barre d'actions prend la couleur du cours */
+  function vars(course) { return paper(course); }
 
-  R.courseArt = { mark, tint, paper };
+  R.courseArt = { mark, tint, paper, vars };
 })(window.R);

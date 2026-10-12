@@ -4,7 +4,7 @@
   const { U, ui, store: S } = R;
   const { h } = U;
 
-  const app = { current: null, route: null, fab: null };
+  const app = { current: null, route: null, fab: null, actions: null };
 
   /* ------------------------------------------------------------------ */
   /* Routeur (hash)                                                     */
@@ -142,6 +142,7 @@
     if (prev && !viaVT) page.classList.add('entering');
     host.appendChild(page);
     app.setFab(null);
+    app.setActions(null);
     app.route = route;
     document.body.dataset.route = route.name;
     document.body.classList.toggle('immersive', IMMERSIVE.has(route.name));
@@ -161,12 +162,18 @@
     { key: 'search', label: 'Rechercher', icon: 'search', action: (e) => R.search.open('', { from: e.currentTarget }), kbd: `${U.mod} K` },
   ];
 
+  /* Navigation (M3 Expressive, direction « Barre contextuelle ») :
+     · compact (< 600) : barre d'outils flottante en bas (navigation) dans un dock, avec le FAB
+       ou les actions de la page ;
+     · medium / expanded (600–1199) : rail replié 80 dp, FAB en haut ;
+     · large (≥ 1200) : rail étendu 260 dp, Extended FAB, et la liste des cours (dossiers).
+     Les actions propres à une page vivent dans une barre flottante contextuelle (setActions). */
   function buildNav() {
     const rail = U.$('#rail');
     const bar = U.$('#navbar');
     U.clear(rail); U.clear(bar);
 
-    rail.appendChild(h('a.rail-brand', { href: '#/', 'aria-label': 'Ratio — accueil' }, logo()));
+    rail.appendChild(h('a.rail-brand', { href: '#/', 'aria-label': 'Ratio — accueil' }, logo(), h('span.rail-brand-name', 'Ratio')));
     rail.appendChild(h('div.rail-fab-slot#rail-fab'));
     const railItems = h('div.rail-items');
     for (const d of DESTS) {
@@ -174,8 +181,35 @@
       bar.appendChild(navItem(d, 'bar'));
     }
     rail.appendChild(railItems);
+    rail.appendChild(h('div.rail-courses#rail-courses', { role: 'group', 'aria-label': 'Mes cours' }));
     rail.appendChild(h('div.rail-spacer'));
-    rail.appendChild(ui.iconBtn('settings', { title: 'Réglages', onClick: openSettings, cls: 'rail-settings' }));
+    const set = h('button.nav-item.rail-settings', { type: 'button', 'data-tip': 'Réglages', onclick: openSettings },
+      h('span.nav-indicator', R.icon('settings', 24)), h('span.nav-label', 'Réglages'));
+    rail.appendChild(set);
+
+    // dock (compact) : la barre de navigation flottante + le FAB ou les actions de la page
+    let dock = U.$('#dock');
+    if (!dock) { dock = h('div.dock#dock'); U.$('#app').appendChild(dock); }
+    dock.appendChild(bar);
+    if (!U.$('#ctxbar')) dock.appendChild(h('div.ctxbar#ctxbar', { role: 'toolbar', 'aria-label': 'Actions de la page', hidden: true }));
+    railCourses();
+  }
+
+  /* Rail étendu : un dossier par cours, son nombre de fiches dues, le cours courant surligné */
+  function railCourses(route = app.route) {
+    const box = U.$('#rail-courses');
+    if (!box) return;
+    U.clear(box);
+    const courses = S.coursesSorted();
+    if (!courses.length) return;
+    box.appendChild(h('p.rail-sec', 'Mes cours'));
+    const cur = route && (route.name === 'course' ? route.id : route.name === 'editor' ? (S.map(route.id) || {}).courseId : route.name === 'review' && route.scope ? route.scope.courseId : null);
+    for (const c of courses) {
+      const due = S.courseStats(c.id).due;
+      const a = h('a.rail-course', { href: '#/cours/' + c.id, class: c.id === cur ? 'active' : '', 'aria-current': c.id === cur ? 'page' : null },
+        R.courseArt.mark(c, { size: 'xs' }), h('span.rail-course-t', c.title), due ? h('span.rail-course-n', String(due)) : null);
+      box.appendChild(a);
+    }
   }
 
   function navItem(d, kind) {
@@ -192,6 +226,7 @@
   function updateNav(route = app.route) {
     if (!route) return;
     const active = route.name === 'review' || route.name === 'reviewHub' ? 'review' : route.name === 'library' || route.name === 'course' ? 'library' : '';
+    railCourses(route);
     for (const el of U.$$('.nav-item')) {
       const on = el.dataset.key === active;
       el.classList.toggle('active', on);
@@ -209,8 +244,10 @@
     }
   }
   app.updateNav = updateNav;
+  const updateCourses = U.debounce(() => railCourses(), 120);
 
-  /** FAB contextuel (rail sur grand écran, flottant sur mobile) */
+  /** FAB contextuel : dans le rail (Extended FAB quand le rail est étendu), à côté de la barre
+      flottante sur compact (FAB simple : M3 n'associe jamais un Extended FAB à une toolbar). */
   app.setFab = function (cfg) {
     app.fab = cfg;
     const slot = U.$('#rail-fab');
@@ -218,22 +255,62 @@
     const old = U.$('#fab-float');
     if (old) old.remove();
     if (!cfg) return;
-    const mk = (extended) => {
-      const b = h('button.fab', { type: 'button', 'aria-label': cfg.label, 'data-tip': extended ? null : cfg.label, onclick: cfg.onClick });
-      b.appendChild(R.icon(cfg.icon || 'plus', 24));
-      if (extended) b.appendChild(h('span.fab-label', cfg.label));
-      return b;
-    };
-    slot.appendChild(mk(false));
-    const f = mk(true);
-    f.id = 'fab-float';
-    f.classList.add('fab-float', 'fab-extended');
-    U.$('#app').appendChild(f);
+    const rb = h('button.fab.fab-rail', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick });
+    rb.append(R.icon(cfg.icon || 'plus', 24), h('span.fab-label', cfg.label));
+    slot.appendChild(rb);
+    const f = h('button.fab.fab-float#fab-float', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick }, R.icon(cfg.icon || 'plus', 24));
+    (U.$('#dock') || U.$('#app')).appendChild(f);
+    syncDock();
   };
+
+  /** Barre d'actions contextuelle (floating toolbar M3) : les actions de la page courante.
+      cfg = { items: [{ icon, label, onClick, href, primary, cls, count }], vibrant, style } ;
+      primary = une seule action en forte emphase (bouton plein). Sur compact, elle rejoint la
+      barre de navigation dans le dock ; replaceNav : elle la remplace (pages de détail). */
+  app.setActions = function (cfg) {
+    app.actions = cfg;
+    const bar = U.$('#ctxbar');
+    if (!bar) return;
+    U.clear(bar);
+    bar.removeAttribute('style');
+    bar.className = 'ctxbar';
+    if (!cfg || !cfg.items || !cfg.items.length) { bar.hidden = true; syncDock(); return; }
+    if (cfg.vibrant) bar.classList.add('vibrant');
+    // barre teintée par un cours : ses rôles Material remplacent ceux de l'app (zone du cours)
+    if (cfg.course) { R.courseArt.tint(bar, cfg.course); bar.classList.add('course-scope'); }
+    if (cfg.style) for (const [k, v] of Object.entries(cfg.style)) bar.style.setProperty(k, v);
+    for (const it of cfg.items) {
+      let el;
+      if (it.primary) {
+        el = h(it.href ? 'a.btn.btn-filled.ctx-primary' : 'button.btn.btn-filled.ctx-primary', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '' },
+          R.icon(it.icon, 20), h('span.ctx-primary-l', it.label));
+      } else {
+        el = h(it.href ? 'a.icon-btn.ctx-ic' : 'button.icon-btn.ctx-ic', { type: it.href ? null : 'button', href: it.href || null, 'aria-label': it.label, 'data-tip': it.label, class: it.cls || '' }, R.icon(it.icon, 24));
+      }
+      if (it.onClick) el.addEventListener('click', (e) => it.onClick(e, el));
+      if (it.disabled) { el.setAttribute('aria-disabled', 'true'); el.disabled = true; }
+      bar.appendChild(el);
+    }
+    bar.hidden = false;
+    syncDock();
+  };
+
+  /** État du dock : sur compact, la barre d'actions remplace la navigation (replaceNav) ou s'y ajoute ;
+      le FAB s'efface quand la page a déjà son action principale dans la barre. */
+  function syncDock() {
+    const dock = U.$('#dock');
+    if (!dock) return;
+    const cfg = app.actions;
+    const has = !!(cfg && cfg.items && cfg.items.length);
+    dock.classList.toggle('has-actions', has);
+    dock.classList.toggle('replace-nav', has && !!cfg.replaceNav);
+    document.body.classList.toggle('has-ctxbar', has);
+  }
 
   function logo() {
     const s = h('span.logo', { 'aria-hidden': 'true' });
-    s.innerHTML = '<svg viewBox="0 0 32 32" width="32" height="32"><rect x="2" y="2" width="28" height="28" rx="9" style="fill:var(--primary)"/><text x="16" y="23" text-anchor="middle" style="fill:var(--on-primary);font:600 20px \'Source Serif 4\', Georgia, serif">R</text><rect x="9" y="25" width="14" height="2" rx="1" style="fill:var(--on-primary)"/></svg>';
+    // un dossier (la forme des cours) qui porte l'initiale
+    s.innerHTML = '<svg viewBox="0 0 32 32" width="32" height="32"><path d="M3 9.5A4.5 4.5 0 0 1 7.5 5h5.4c1 0 1.9.4 2.6 1.1l1.2 1.3c.4.4.9.6 1.4.6h6.4A4.5 4.5 0 0 1 29 12.5v12A4.5 4.5 0 0 1 24.5 29h-17A4.5 4.5 0 0 1 3 24.5z" style="fill:var(--primary)"/><text x="16" y="25" text-anchor="middle" style="fill:var(--on-primary);font:800 15px \'Plus Jakarta Sans\', system-ui, sans-serif">R</text></svg>';
     return s;
   }
   app.logo = logo;
@@ -242,7 +319,9 @@
   document.addEventListener('scroll', (e) => {
     const t = e.target;
     if (!(t instanceof Element) || !t.classList.contains('page-scroll')) return;
-    const f = U.$('#fab-float');
+    // M3 : la barre flottante sort de l'écran au défilement vers le bas et revient en remontant
+    // (elle sort OU se replie, jamais les deux)
+    const f = U.$('#dock');
     const y = t.scrollTop, d = y - lastScroll;
     lastScroll = y;
     if (!f || Math.abs(d) < 6) return;
@@ -257,7 +336,7 @@
     if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     else document.documentElement.removeAttribute('data-theme');
     const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#121211' : '#f5f4ef');
+    for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#131318' : '#fbf8ff');
   }
   app.setTheme = (t, origin) => {
     const apply = () => { S.data.settings.theme = t; S.changed('settings'); applyTheme(); };
@@ -572,7 +651,7 @@
     buildNav();
     const navLater = U.debounce(() => updateNav(), 800);
     S.on((type) => {
-      if (type === 'change' || type === 'review' || type === 'import') updateNav();
+      if (type === 'change' || type === 'review' || type === 'import') { updateNav(); updateCourses(); }
       if (type === 'edit') navLater();
       if (type === 'saved' && S.saveError) ui.snack('Stockage plein : exporte une sauvegarde puis libère de la place.', { duration: 8000 });
     });

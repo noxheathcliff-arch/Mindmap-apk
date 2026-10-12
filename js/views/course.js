@@ -100,34 +100,35 @@
           h('span.add-ic', R.icon('plus', 20)), h('span.add-txt', h('span.add-l', 'Nouvelle carte'), h('span.add-s', 'Une notion ou un chapitre'))));
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
+        // l'en-tête est le dossier du cours, agrandi (même onglet, même rabat, même empreinte) :
+        // la bande de la carte d'accueil s'y transforme (container transform)
         const header = h('div.course-head',
-          // la bande « papier » de la fiche devient l'en-tête du cours (container transform)
-          R.courseArt.tint(h('div.course-head-main.course-band', { dataset: { hero: 'course:' + course.id + ':band' } },
-            R.courseArt.mark(course, { size: 'lg', hero: true }), // pas de tracé ici : l'empreinte arrive déjà de la fiche (élément partagé)
-            h('div.course-band-id',
-              h('p.overline', 'Cours'),
-              h('h1.course-title', h('span', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
-              course.description ? h('p.course-desc', course.description) : null)), course),
-          h('div.course-stats',
-            stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),
-            stat(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'),
-            stat(st.due, 'à réviser'),
-            h('div.stat.stat-progress',
-              h('span.stat-n', Math.round(st.progress * 100) + ' %'),
-              h('span.stat-l', 'maîtrise'),
-              ui.progress(st.progress))),
-          h('div.course-actions',
-            ui.btn('Nouvelle carte', { icon: 'plus', variant: 'filled', onClick: () => R.actions.newMap(course.id) }),
-            ui.btn('Réviser ce cours', { icon: 'cards', variant: 'outlined', disabled: !st.reviewable, onClick: () => R.app.go('#/reviser/cours/' + course.id) })));
+          R.courseArt.tint(h('div.course-head-main.course-band.course-scope', { dataset: { hero: 'course:' + course.id + ':band' } },
+            h('span.fiche-tab', { 'aria-hidden': 'true' }),
+            h('div.course-band-top',
+              R.courseArt.mark(course, { size: 'lg', hero: true }), // pas de tracé ici : l'empreinte arrive déjà de la carte (élément partagé)
+              h('div.course-band-id',
+                h('p.overline', 'Cours'),
+                h('h1.course-title', h('span', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
+                course.description ? h('p.course-desc', course.description) : null)),
+            h('div.course-stats',
+              stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),
+              stat(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'),
+              stat(st.due, 'à réviser'),
+              h('div.stat.stat-progress',
+                h('span.stat-n', Math.round(st.progress * 100) + ' %'),
+                h('span.stat-l', 'maîtrise'),
+                ui.progress(st.progress)))), course));
 
+        // la page du cours est la zone du cours : ses rôles Material s'y appliquent (boutons, progression)
         el.appendChild(h('div.page.page-course', { class: intro ? 'intro' : '' }, topbar, h('div.page-scroll',
-          h('div.course-layout', header,
+          R.courseArt.tint(h('div.course-layout.course-scope', header,
             maps.length ? h('section.lib-sec', h('div.sec-head', h('h2.sec-title', 'Cartes'), h('span.sec-count', String(maps.length))), grid)
               : h('section.lib-sec', ui.emptyState({
                 icon: 'map', title: 'Aucune carte dans ce cours',
                 text: 'Une carte = une notion à décomposer : sa définition, ses conditions, ses exceptions…',
                 action: ui.btn('Créer la première carte', { icon: 'plus', variant: 'filled', onClick: () => R.actions.newMap(course.id) }),
-              }))))));
+              }))), course))));
         if (intro) {
           // value change : les chiffres du cours défilent à la première ouverture
           for (const n of U.$$('.course-stats .stat-n', el)) {
@@ -140,9 +141,24 @@
         intro = false;
       };
       const stat = (n, l) => h('div.stat', h('span.stat-n', String(n)), h('span.stat-l', l));
+      /* barre d'actions du cours, à sa couleur (toolbar vibrante) : Réviser en forte emphase,
+         puis les actions secondaires. Sur compact, elle remplace la navigation (page de détail). */
+      const actions = () => {
+        const c = S.course(route.id);
+        if (!c) { R.app.setActions(null); return; }
+        const st = S.courseStats(c.id);
+        const items = [];
+        if (st.reviewable) items.push({ icon: 'play', label: st.due ? `Réviser · ${st.due}` : 'Réviser', primary: true, onClick: () => R.app.go('#/reviser/cours/' + c.id + (st.due ? '' : '?all=1')) });
+        items.push({ icon: 'plus', label: 'Nouvelle carte', primary: !st.reviewable, onClick: (e, b) => R.actions.newMap(c.id, { from: b }) });
+        items.push({ icon: 'edit', label: 'Modifier le cours', onClick: () => R.actions.editCourse(c) });
+        items.push({ icon: 'download', label: 'Exporter le cours', onClick: () => { U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id)); ui.snack('Cours exporté · à importer avec Réglages › Importer'); } });
+        items.push({ icon: 'more', label: 'Options du cours', onClick: (e, b) => R.actions.courseMenu(b, c, () => R.app.go('#/', { replace: true })) });
+        R.app.setActions({ items, vibrant: true, course: c, replaceNav: true });
+      };
       draw();
+      actions();
       R.app.setFab({ icon: 'plus', label: 'Nouvelle carte', onClick: () => R.actions.newMap(route.id) });
-      const off = S.on((t) => { if (t === 'change' || t === 'import' || t === 'review' || t === 'readonly') draw(); });
+      const off = S.on((t) => { if (t === 'change' || t === 'import' || t === 'review' || t === 'readonly') { draw(); actions(); } });
       return { unmount: off };
     },
   };

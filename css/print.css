@@ -2,7 +2,7 @@
 @page { margin: 18mm 16mm; }
 html, body { height: auto !important; overflow: visible !important; background: #fff !important; color: #111 !important; }
 .app { display: block !important; height: auto !important; opacity: 1 !important; }
-.rail, .navbar, .topbar, .vtoolbar, .ctx-bar, .bottombar, .pane, .canvas, .ed-banner, .coach, .fab-float, .snack-host, #overlays, .no-print, .skip-link { display: none !important; }
+.rail, .dock, .navbar, .topbar, .vtoolbar, .ctx-bar, .bottombar, .pane, .canvas, .ed-banner, .coach, .fab-float, .snack-host, #overlays, .no-print, .skip-link { display: none !important; }
 .view, .page-wrap, .page, .page-editor, .ed-body, .ed-stage, .plan-host { position: static !important; display: block !important; height: auto !important; overflow: visible !important; animation: none !important; transform: none !important; }
 .plan { max-width: none; padding: 0; }
 .plan * { animation: none !important; color: #111 !important; }
