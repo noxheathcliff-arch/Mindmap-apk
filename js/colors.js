@@ -98,6 +98,9 @@
     exemple: 292, retenir: 92, idee: 312,
     piege: 18, question: 236, methode: 214, comparaison: 222,
     citation: 165, personne: 190, date: 128, chiffre: 112, formule: 140,
+    cause: 38, consequence: 62, condition: 4, probleme: 352, solution: 150,
+    argument: 244, critique: 336, nuance: 318, avantage: 136, inconvenient: 26,
+    caracteristique: 44, categorie: 56, signe: 82, etape: 208, conseil: 176, exercice: 196, objectif: 260, etude: 186, theorie: 230,
   };
   const family = {};
   for (const [t, h] of Object.entries(FAMILY_HUES)) family[t] = oklchToHex({ L: 0.64, C: 0.14, h });

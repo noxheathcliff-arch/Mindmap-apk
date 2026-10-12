@@ -1344,6 +1344,10 @@
         doctrine: 'Auteur, position…', exemple: 'Exemple…', retenir: 'À retenir…',
         question: 'Question…', methode: 'Méthode…', comparaison: 'A ou B ?…', piege: 'Piège…',
         citation: '« … »', personne: 'Nom…', date: '1789…', chiffre: '42 %…', formule: 'E = mc²…',
+        cause: 'Cause…', consequence: 'Conséquence…', condition: 'Condition…', probleme: 'Problème…', solution: 'Solution…',
+        argument: 'Argument…', critique: 'Critique, limite…', nuance: 'Nuance…', avantage: 'Avantage…', inconvenient: 'Inconvénient…',
+        caracteristique: 'Caractéristique…', categorie: 'Catégorie…', signe: 'Signe…', etape: 'Étape…', conseil: 'Conseil…',
+        exercice: 'Exercice…', objectif: 'Objectif…', etude: 'Auteur, année — objet…', theorie: 'Théorie, modèle…',
       }[n.type];
     }
 

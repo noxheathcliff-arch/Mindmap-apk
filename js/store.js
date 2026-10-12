@@ -119,19 +119,44 @@
     date:       { label: 'Date',               kicker: 'Date',          prompt: 'Que s’est-il passé, et pourquoi est-ce important ?' },
     chiffre:    { label: 'Chiffre clé',        kicker: 'Chiffre',       prompt: 'Que mesure ce chiffre et que montre-t-il ?' },
     formule:    { label: 'Formule',            kicker: 'Formule',       prompt: 'Restitue la formule et le sens de chaque terme' },
+    // vocabulaire universel (toutes matières) : cause et effet, raisonnement, action, description
+    cause:      { label: 'Cause',              kicker: 'Cause',         prompt: 'Explique cette cause : pourquoi produit-elle cet effet ?' },
+    consequence:{ label: 'Conséquence',        kicker: 'Conséquence',   prompt: 'Quelle est cette conséquence, et d’où vient-elle ?' },
+    condition:  { label: 'Condition',          kicker: 'Condition',     prompt: 'Quelle est cette condition, et pourquoi est-elle nécessaire ?' },
+    probleme:   { label: 'Problème',           kicker: 'Problème',      prompt: 'Quel est ce problème, et qu’est-ce qui le rend difficile ?' },
+    solution:   { label: 'Solution',           kicker: 'Solution',      prompt: 'Quelle est cette solution, et comment l’appliquer ?' },
+    argument:   { label: 'Argument',           kicker: 'Argument',      prompt: 'Développe cet argument' },
+    critique:   { label: 'Critique / Limite',  kicker: 'Critique',      prompt: 'Quelle est cette critique ou cette limite ?' },
+    nuance:     { label: 'Nuance',             kicker: 'Nuance',        prompt: 'Quelle nuance faut-il apporter ?' },
+    avantage:   { label: 'Avantage',           kicker: 'Avantage',      prompt: 'Quel est cet avantage ?' },
+    inconvenient:{ label: 'Inconvénient',      kicker: 'Inconvénient',  prompt: 'Quel est cet inconvénient ?' },
+    caracteristique:{ label: 'Caractéristique', kicker: 'Caractéristique', prompt: 'Décris cette caractéristique' },
+    categorie:  { label: 'Catégorie',          kicker: 'Catégorie',     prompt: 'Que regroupe cette catégorie ?' },
+    signe:      { label: 'Signe / Indice',     kicker: 'Signe',         prompt: 'À quoi le reconnaît-on ?' },
+    etape:      { label: 'Étape',              kicker: 'Étape',         prompt: 'Que fait-on à cette étape ?' },
+    conseil:    { label: 'Conseil',            kicker: 'Conseil',       prompt: 'Quel est ce conseil, et comment l’appliquer ?' },
+    exercice:   { label: 'Exercice',           kicker: 'Exercice',      prompt: 'Fais l’exercice : que faut-il faire ?' },
+    objectif:   { label: 'Objectif',           kicker: 'Objectif',      prompt: 'Quel est cet objectif, et comment l’atteindre ?' },
+    etude:      { label: 'Étude / Expérience', kicker: 'Étude',         prompt: 'Que montre cette étude ?' },
+    theorie:    { label: 'Théorie / Modèle',   kicker: 'Théorie',       prompt: 'Que dit cette théorie, et qu’explique-t-elle ?' },
   };
   /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–3 */
   const TYPE_ORDER = ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'juris', 'texte', 'idee', 'chapitre', 'lecon', 'section', 'doctrine', 'exemple', 'retenir',
-    'question', 'methode', 'comparaison', 'piege', 'citation', 'personne', 'date', 'chiffre', 'formule'];
+    'question', 'methode', 'comparaison', 'piege', 'citation', 'personne', 'date', 'chiffre', 'formule',
+    'cause', 'consequence', 'condition', 'probleme', 'solution', 'argument', 'critique', 'nuance', 'avantage', 'inconvenient',
+    'caracteristique', 'categorie', 'signe', 'etape', 'conseil', 'exercice', 'objectif', 'etude', 'theorie'];
   const STRUCT_ORDER = ['chapitre', 'lecon', 'section'];
   /** Regroupement du menu « Type » (divulgation par familles) */
   const TYPE_GROUPS = [
     { label: 'Structure du cours', types: STRUCT_ORDER },
-    { label: 'Notion', types: ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'piege'] },
-    { label: 'Raisonner', types: ['question', 'methode', 'comparaison'] },
-    { label: 'Sources', types: ['texte', 'juris', 'doctrine', 'citation', 'personne'] },
+    { label: 'Notion', types: ['notion', 'definition', 'caracteristique', 'categorie', 'signe'] },
+    { label: 'Cause et effet', types: ['cause', 'consequence', 'condition', 'probleme', 'solution'] },
+    { label: 'Raisonner', types: ['question', 'theorie', 'argument', 'critique', 'nuance', 'comparaison', 'avantage', 'inconvenient'] },
+    { label: 'Agir', types: ['methode', 'etape', 'conseil', 'exercice', 'objectif'] },
     { label: 'Repères', types: ['date', 'chiffre', 'formule'] },
-    { label: 'Compléments', types: ['exemple', 'retenir', 'idee'] },
+    { label: 'Sources', types: ['etude', 'citation', 'personne', 'texte', 'juris', 'doctrine'] },
+    { label: 'Droit', types: ['fond', 'forme', 'effet', 'exception'] },
+    { label: 'Compléments', types: ['exemple', 'piege', 'retenir', 'idee'] },
   ];
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */

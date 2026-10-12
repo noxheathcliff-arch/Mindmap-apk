@@ -3,14 +3,14 @@
   "type": "portable_ai_skill_specification",
   "id": "ratio_book_to_course_compiler",
   "name": "Ratio — Compilateur Livre → Cours",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "language": "fr",
   "purpose": {
     "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio complet, prêt à importer : un fichier JSON unique contenant un cours, ses cartes mentales, leurs nœuds typés, leurs notes rédigées en Markdown, leurs liens hiérarchiques et transversaux étiquetés.",
     "secondary": [
       "Produire des cartes faites pour la révision active : chaque nœud est une question que l'on peut se poser, sa note et ses enfants en sont la réponse.",
       "Restituer fidèlement le livre (plan, notions, définitions, conditions, exceptions, exemples, sources, auteurs) sans rien inventer.",
-      "Utiliser intelligemment tout ce que l'application permet : 24 types de nœuds, logique ET/OU, renvois étiquetés, fourches, surligneur, tableaux, citations, listes, liens [[internes]].",
+      "Utiliser intelligemment tout ce que l'application permet : 43 types de nœuds, logique ET/OU, renvois étiquetés, fourches, surligneur, tableaux, citations, listes, liens [[internes]].",
       "Rester valide au premier import : schéma exact, identifiants uniques, aucune référence cassée."
     ],
     "not_for": [
@@ -128,7 +128,7 @@
     },
     "node": {
       "id": "chaîne unique DANS LA CARTE (ex. \"n1\", \"n2\"…)",
-      "type": "un des 24 types de node_types (minuscules, sans accent)",
+      "type": "un des 43 types de node_types (minuscules, sans accent)",
       "title": "indice de rappel, ≤ 80 caractères (idéalement ≤ 50)",
       "note": "Markdown (markdown_spec), \"\" si aucune",
       "logic": "\"et\" (enfants cumulatifs), \"ou\" (enfants alternatifs) ou null",
@@ -152,7 +152,7 @@
       "Chaque carte a UNE racine (le nœud de type chapitre), tous les autres nœuds y sont rattachés par des arêtes tree. Aucun nœud isolé.",
       "Pas de cycle dans l'arbre ; pas d'arête d'un nœud vers lui-même.",
       "from et to désignent des nœuds de la MÊME carte (il n'existe pas de lien entre cartes).",
-      "Types inconnus → convertis en « Idée » à l'import : n'utiliser que les 24 types.",
+      "Types inconnus → convertis en « Idée » à l'import : n'utiliser que les 43 types.",
       "Les champs inconnus sont ignorés ; les champs omis prennent leur valeur par défaut."
     ],
     "skeleton": {
@@ -202,7 +202,7 @@
     }
   },
   "node_types": {
-    "principle": "Le type est un signal visuel (sur-titre) ET la question posée en révision. Prompt affiché = review_prompt, suivi de « — N éléments (cumulatifs|alternatifs) à retrouver » si le nœud a des enfants et une logique. Un nœud n'est révisable que s'il a un titre ET (une note OU des enfants).",
+    "principle": "Le type est un signal visuel (sur-titre, silhouette) ET la question posée en révision. Prompt affiché = review_prompt (+ « — N éléments (cumulatifs|alternatifs) à retrouver » si le nœud a des enfants et une logique). Un nœud n'est révisable que s'il a un titre ET (une note OU des enfants). 43 types, en familles ; le vocabulaire juridique (famille « droit ») est réservé aux cours de droit.",
     "types": [
       {
         "type": "chapitre",
@@ -215,179 +215,331 @@
         "type": "lecon",
         "label": "Leçon",
         "review_prompt": "Retrouve le plan de cette leçon",
-        "use": "Grande partie d'un chapitre (I, II…). Numérotée automatiquement entre sœurs.",
+        "use": "Grande partie d'un chapitre (I, II…), seulement s'il existe deux niveaux de parties.",
         "family": "structure"
       },
       {
         "type": "section",
         "label": "Section",
         "review_prompt": "Retrouve le plan de cette section",
-        "use": "Sous-partie (A, B…) ou section du livre. Numérotée automatiquement entre sœurs.",
+        "use": "Partie du chapitre (A, B…) ou section du livre.",
         "family": "structure"
       },
       {
         "type": "notion",
         "label": "Notion",
         "review_prompt": "Décompose cette notion",
-        "use": "Concept central qui se décompose en éléments (enfants). Le nœud-pivot d'une branche.",
+        "use": "Concept central qui se décompose en éléments (enfants).",
         "family": "notion"
       },
       {
         "type": "definition",
         "label": "Définition",
         "review_prompt": "Donne la définition",
-        "use": "Titre = le terme ; note = la définition (fidèle, citée si le livre la formule).",
+        "use": "Titre = le terme ; note = la définition, fidèle au livre.",
         "family": "notion"
       },
       {
-        "type": "fond",
-        "label": "Condition de fond",
-        "review_prompt": "Explique cette condition de fond",
-        "use": "Droit : condition de fond. Hors droit : condition nécessaire, prérequis, cause, facteur, critère.",
+        "type": "caracteristique",
+        "label": "Caractéristique",
+        "review_prompt": "Décris cette caractéristique",
+        "use": "Propriété, trait, critère qui décrit une notion (« Inépuisables », « Gratuite »).",
+        "not_for": "une condition à remplir (→ condition)",
         "family": "notion"
       },
       {
-        "type": "forme",
-        "label": "Condition de forme",
-        "review_prompt": "Explique cette condition de forme",
-        "use": "Droit : formalité, procédure, délai. Hors droit : modalité pratique, étape d'une méthode, manière de faire.",
+        "type": "categorie",
+        "label": "Catégorie",
+        "review_prompt": "Que regroupe cette catégorie ?",
+        "use": "Type, sorte, famille, classe : un élément d'une typologie (« Les énergies renouvelables »).",
         "family": "notion"
       },
       {
-        "type": "effet",
-        "label": "Effet / Régime",
-        "review_prompt": "Quels sont les effets ?",
-        "use": "Conséquences, résultats, sanctions, bénéfices, coûts, symptômes.",
+        "type": "signe",
+        "label": "Signe / Indice",
+        "review_prompt": "À quoi le reconnaît-on ?",
+        "use": "Symptôme, signe distinctif, indice qui permet de reconnaître une situation (« 10 signes que… »).",
         "family": "notion"
       },
       {
-        "type": "exception",
-        "label": "Exception",
-        "review_prompt": "Explique cette exception",
-        "use": "Exception, limite, nuance, piège, contre-exemple, erreur fréquente à éviter.",
-        "family": "notion"
+        "type": "cause",
+        "label": "Cause",
+        "review_prompt": "Explique cette cause : pourquoi produit-elle cet effet ?",
+        "use": "Origine, raison, facteur, ce qui provoque (« Une éducation qui fuit les émotions »).",
+        "not_for": "une condition nécessaire (→ condition), une condition juridique (→ fond)",
+        "family": "cause-effet"
       },
       {
-        "type": "texte",
-        "label": "Texte",
-        "review_prompt": "Que prévoit ce texte ?",
-        "use": "Article de loi, règlement, ou source primaire / citation-clé à connaître (note = le texte en citation >).",
-        "family": "sources"
+        "type": "consequence",
+        "label": "Conséquence",
+        "review_prompt": "Quelle est cette conséquence, et d’où vient-elle ?",
+        "use": "Effet, résultat, impact, coût, bénéfice concret d'une cause ou d'un comportement.",
+        "not_for": "le régime juridique d'une règle (→ effet)",
+        "family": "cause-effet"
       },
       {
-        "type": "juris",
-        "label": "Jurisprudence",
-        "review_prompt": "Que retient cette décision ?",
-        "use": "Droit : arrêt (titre « Cass. 1re civ., 3 mai 2000, Baldus »). Hors droit : étude, expérience, enquête, cas réel documenté (titre = auteur + objet).",
-        "family": "sources"
+        "type": "condition",
+        "label": "Condition",
+        "review_prompt": "Quelle est cette condition, et pourquoi est-elle nécessaire ?",
+        "use": "Ce qu'il faut pour que quelque chose arrive ou réussisse ; prérequis (« Une coopération mondiale »).",
+        "not_for": "une condition de validité juridique (→ fond / forme)",
+        "family": "cause-effet"
       },
       {
-        "type": "doctrine",
-        "label": "Doctrine",
-        "review_prompt": "Quelle est cette position doctrinale ?",
-        "use": "Position d'un auteur, d'une école, d'une théorie nommée (titre = « Auteur — idée »).",
-        "family": "sources"
+        "type": "probleme",
+        "label": "Problème",
+        "review_prompt": "Quel est ce problème, et qu’est-ce qui le rend difficile ?",
+        "use": "Difficulté, obstacle, situation à résoudre ; souvent parent de causes, conséquences et solutions.",
+        "family": "cause-effet"
       },
       {
-        "type": "exemple",
-        "label": "Exemple",
-        "review_prompt": "Qu'illustre cet exemple ?",
-        "use": "Cas, histoire, anecdote, exercice corrigé, dialogue type. Titre = l'exemple ; note = ce qu'il illustre.",
-        "family": "compléments"
-      },
-      {
-        "type": "retenir",
-        "label": "À retenir",
-        "review_prompt": "Restitue l'essentiel",
-        "use": "Synthèse d'une branche ou du chapitre, formule à mémoriser, méthode en une ligne. 1 à 3 par carte, pas plus.",
-        "family": "compléments"
-      },
-      {
-        "type": "idee",
-        "label": "Idée",
-        "review_prompt": "Développe cette idée",
-        "use": "Élément d'une énumération, argument, conseil, étape sans autre type plus précis. Type par défaut.",
-        "family": "compléments"
+        "type": "solution",
+        "label": "Solution",
+        "review_prompt": "Quelle est cette solution, et comment l’appliquer ?",
+        "use": "Remède, réponse, moyen de résoudre un problème (« Dire non poliment »).",
+        "not_for": "une liste d'actions ordonnées (→ methode + etape)",
+        "family": "cause-effet"
       },
       {
         "type": "question",
         "label": "Question",
         "review_prompt": "Réponds à cette question",
-        "use": "Problématique, question que le livre pose et résout (« Pourquoi… ? »). Titre = la question (« ? » permis) ; note ou enfants = la réponse.",
+        "use": "Problématique que le livre pose et résout (« Pourquoi… ? »). Titre = la question ; note ou enfants = la réponse.",
         "family": "raisonner"
       },
       {
-        "type": "methode",
-        "label": "Méthode",
-        "review_prompt": "Retrouve les étapes de cette méthode",
-        "use": "Procédure en étapes ordonnées. Enfants = étapes (forme ou idee, titres ≤ 34 caractères, verbes d'action) : 3 à 6 étapes feuilles s'affichent en FRISE fléchée. logic \"et\".",
+        "type": "theorie",
+        "label": "Théorie / Modèle",
+        "review_prompt": "Que dit cette théorie, et qu’explique-t-elle ?",
+        "use": "Modèle, théorie, cadre explicatif nommé (« La CNV », « La pyramide de Maslow »).",
+        "not_for": "la position d'un auteur en droit (→ doctrine)",
+        "family": "raisonner"
+      },
+      {
+        "type": "argument",
+        "label": "Argument",
+        "review_prompt": "Développe cet argument",
+        "use": "Raison avancée pour soutenir une thèse ou une position.",
+        "family": "raisonner"
+      },
+      {
+        "type": "critique",
+        "label": "Critique / Limite",
+        "review_prompt": "Quelle est cette critique ou cette limite ?",
+        "use": "Objection, faiblesse, limite d'une idée, d'une méthode ou d'une théorie.",
+        "not_for": "un cas où une règle ne s'applique pas (→ exception)",
+        "family": "raisonner"
+      },
+      {
+        "type": "nuance",
+        "label": "Nuance",
+        "review_prompt": "Quelle nuance faut-il apporter ?",
+        "use": "Précision qui tempère une idée sans la contredire (« Pas toujours », « Cela dépend de… »).",
+        "not_for": "une vraie exception à une règle énoncée (→ exception), une erreur à éviter (→ piege)",
         "family": "raisonner"
       },
       {
         "type": "comparaison",
         "label": "Comparaison",
         "review_prompt": "Compare : points communs et différences",
-        "use": "Distinction entre 2 à 4 notions (« A ou B ? »). Note = tableau comparatif ; enfants = les notions comparées si elles sont développées.",
+        "use": "Distinction entre 2 à 4 notions (« A ou B ? ») ; note = tableau comparatif.",
         "family": "raisonner"
       },
       {
-        "type": "piege",
-        "label": "Piège",
-        "review_prompt": "Quel est le piège à éviter ?",
-        "use": "Erreur fréquente, confusion, faux ami, idée reçue réfutée. Plus fort qu'une exception : ce que l'élève risque de faire de travers.",
-        "family": "notion"
+        "type": "avantage",
+        "label": "Avantage",
+        "review_prompt": "Quel est cet avantage ?",
+        "use": "Point fort, bénéfice d'une option (souvent sous une comparaison ou une solution).",
+        "family": "raisonner"
       },
       {
-        "type": "citation",
-        "label": "Citation",
-        "review_prompt": "Que dit cette citation, et qu'en retenir ?",
-        "use": "Phrase célèbre ou formule marquante d'un auteur (hors texte de loi : texte). Titre = la citation courte entre « » ; note = auteur, contexte, sens. S'affiche en annotation.",
-        "family": "sources"
+        "type": "inconvenient",
+        "label": "Inconvénient",
+        "review_prompt": "Quel est cet inconvénient ?",
+        "use": "Point faible, coût, risque d'une option.",
+        "family": "raisonner"
       },
       {
-        "type": "personne",
-        "label": "Personne",
-        "review_prompt": "Qui est-ce et quel est son apport ?",
-        "use": "Auteur, personnage historique, chercheur, témoin. Titre = le nom ; note = qui, quand, apport. Pour une thèse d'auteur, préférer doctrine. S'affiche en annotation.",
-        "family": "sources"
+        "type": "methode",
+        "label": "Méthode",
+        "review_prompt": "Retrouve les étapes de cette méthode",
+        "use": "Procédure ordonnée ; enfants = etape (3 à 6 étapes feuilles ≤ 34 caractères → frise fléchée). logic \"et\".",
+        "family": "agir"
+      },
+      {
+        "type": "etape",
+        "label": "Étape",
+        "review_prompt": "Que fait-on à cette étape ?",
+        "use": "Une étape d'une méthode ou d'un processus, titre = verbe d'action (« Observer sans juger »).",
+        "not_for": "une condition juridique de forme (→ forme)",
+        "family": "agir"
+      },
+      {
+        "type": "conseil",
+        "label": "Conseil",
+        "review_prompt": "Quel est ce conseil, et comment l’appliquer ?",
+        "use": "Recommandation, astuce, bonne pratique que le livre donne (« Attendre avant de répondre »).",
+        "family": "agir"
+      },
+      {
+        "type": "exercice",
+        "label": "Exercice",
+        "review_prompt": "Fais l’exercice : que faut-il faire ?",
+        "use": "Exercice, défi, mise en pratique proposée par le livre ; note = consigne + cases - [ ].",
+        "family": "agir"
+      },
+      {
+        "type": "objectif",
+        "label": "Objectif",
+        "review_prompt": "Quel est cet objectif, et comment l’atteindre ?",
+        "use": "But visé, résultat recherché (« Neutralité carbone en 2050 », « Liberté émotionnelle »).",
+        "family": "agir"
       },
       {
         "type": "date",
         "label": "Date",
-        "review_prompt": "Que s'est-il passé, et pourquoi est-ce important ?",
-        "use": "Événement daté. Titre = la date (+ 2 à 4 mots) ; note = l'événement et sa portée. 3 à 6 dates sœurs feuilles, dans l'ordre chronologique, s'affichent en FRISE chronologique.",
+        "review_prompt": "Que s’est-il passé, et pourquoi est-ce important ?",
+        "use": "Événement daté ; 3 à 6 dates sœurs feuilles → frise chronologique.",
         "family": "repères"
       },
       {
         "type": "chiffre",
         "label": "Chiffre clé",
         "review_prompt": "Que mesure ce chiffre et que montre-t-il ?",
-        "use": "Statistique, ordre de grandeur, résultat d'étude chiffré. Titre = le chiffre (« 70 % des… ») ; note = source et interprétation.",
+        "use": "Statistique, ordre de grandeur. Titre = le chiffre.",
         "family": "repères"
       },
       {
         "type": "formule",
         "label": "Formule",
         "review_prompt": "Restitue la formule et le sens de chaque terme",
-        "use": "Formule, équation, règle de calcul, moyen mnémotechnique littéral. Titre = la formule ; note = chaque terme expliqué.",
+        "use": "Formule, équation, règle de calcul, phrase-type à retenir mot pour mot.",
         "family": "repères"
+      },
+      {
+        "type": "etude",
+        "label": "Étude / Expérience",
+        "review_prompt": "Que montre cette étude ?",
+        "use": "Étude, expérience, enquête, recherche (« Levenson, 1994 — couples »). Annotation sous l'idée qu'elle prouve.",
+        "not_for": "une décision de justice (→ juris)",
+        "family": "sources"
+      },
+      {
+        "type": "citation",
+        "label": "Citation",
+        "review_prompt": "Que dit cette citation, et qu’en retenir ?",
+        "use": "Phrase célèbre d'un auteur ; titre = la citation courte entre « ». Annotation.",
+        "family": "sources"
+      },
+      {
+        "type": "personne",
+        "label": "Personne",
+        "review_prompt": "Qui est-ce et quel est son apport ?",
+        "use": "Auteur, chercheur, personnage historique. Annotation.",
+        "family": "sources"
+      },
+      {
+        "type": "texte",
+        "label": "Texte",
+        "review_prompt": "Que prévoit ce texte ?",
+        "use": "Article de loi, règlement, ou source primaire à connaître (note = le texte en citation >).",
+        "family": "sources"
+      },
+      {
+        "type": "juris",
+        "label": "Jurisprudence",
+        "review_prompt": "Que retient cette décision ?",
+        "use": "DROIT : décision de justice (« Cass. 1re civ., 3 mai 2000, Baldus »).",
+        "not_for": "une étude ou une expérience (→ etude)",
+        "family": "sources"
+      },
+      {
+        "type": "doctrine",
+        "label": "Doctrine",
+        "review_prompt": "Quelle est cette position doctrinale ?",
+        "use": "DROIT : position d'un auteur ou d'une école juridique.",
+        "not_for": "une théorie hors droit (→ theorie), un auteur (→ personne)",
+        "family": "sources"
+      },
+      {
+        "type": "fond",
+        "label": "Condition de fond",
+        "review_prompt": "Explique cette condition de fond",
+        "use": "DROIT UNIQUEMENT : condition de validité de fond (consentement, capacité, contenu…).",
+        "not_for": "toute condition hors droit (→ condition), une cause (→ cause)",
+        "family": "droit"
+      },
+      {
+        "type": "forme",
+        "label": "Condition de forme",
+        "review_prompt": "Explique cette condition de forme",
+        "use": "DROIT UNIQUEMENT : formalité, procédure, délai exigés par la loi.",
+        "not_for": "une étape ou une manière de faire (→ etape, conseil)",
+        "family": "droit"
+      },
+      {
+        "type": "effet",
+        "label": "Effet / Régime",
+        "review_prompt": "Quels sont les effets ?",
+        "use": "DROIT UNIQUEMENT : effets juridiques, régime, sanction d'une règle.",
+        "not_for": "une conséquence hors droit (→ consequence)",
+        "family": "droit"
+      },
+      {
+        "type": "exception",
+        "label": "Exception",
+        "review_prompt": "Explique cette exception",
+        "use": "Un cas où une RÈGLE ÉNONCÉE ne s'applique pas (« sauf si… »). Test : on peut écrire « La règle X s'applique, SAUF dans ce cas ». Toutes matières, mais rare.",
+        "not_for": "une nuance (→ nuance), une limite (→ critique), une erreur à éviter (→ piege), une condition (→ condition)",
+        "family": "droit"
+      },
+      {
+        "type": "exemple",
+        "label": "Exemple",
+        "review_prompt": "Qu’illustre cet exemple ?",
+        "use": "Cas, histoire, anecdote, dialogue type. Note = « Illustre : … » puis le récit. Annotation.",
+        "family": "compléments"
+      },
+      {
+        "type": "piege",
+        "label": "Piège",
+        "review_prompt": "Quel est le piège à éviter ?",
+        "use": "Erreur fréquente, confusion, idée reçue, mauvais réflexe.",
+        "family": "compléments"
+      },
+      {
+        "type": "retenir",
+        "label": "À retenir",
+        "review_prompt": "Restitue l’essentiel",
+        "use": "Synthèse d'une partie ou de la carte ; en dernier. 1 à 3 par carte.",
+        "family": "compléments"
+      },
+      {
+        "type": "idee",
+        "label": "Idée",
+        "review_prompt": "Développe cette idée",
+        "use": "DERNIER RECOURS : aucun autre type ne dit mieux ce qu'est ce nœud. Au plus 25 % des nœuds d'une carte.",
+        "family": "compléments"
       }
     ],
     "selection_heuristic": [
-      "Décide dans cet ordre (le premier « oui » l'emporte) :",
-      "1. Est-ce une partie du plan ? → chapitre (racine) / lecon / section.",
-      "2. Le livre pose-t-il une question à laquelle il répond ? → question.",
-      "3. Le livre définit-il un terme ? → definition.",
-      "4. Est-ce une suite d'étapes à suivre dans l'ordre ? → methode (étapes en enfants).",
-      "5. Le livre oppose-t-il ou distingue-t-il 2 à 4 notions ? → comparaison (tableau dans la note).",
-      "6. Est-ce une erreur fréquente, une confusion, une idée reçue ? → piege ; une limite ou un « sauf » ? → exception.",
-      "7. Est-ce une condition, une cause, un prérequis ? → fond ; une modalité, une étape, une manière de faire ? → forme.",
-      "8. Est-ce une conséquence, un bénéfice, un coût, un symptôme ? → effet.",
-      "9. Est-ce un événement daté ? → date ; un chiffre ? → chiffre ; une formule ? → formule.",
-      "10. Est-ce une source ? texte de loi / source primaire → texte ; décision, étude, expérience → juris ; thèse d'un auteur → doctrine ; phrase célèbre → citation ; personne → personne.",
-      "11. Une histoire, un cas, un exemple → exemple ; la synthèse d'une partie → retenir.",
-      "12. Un concept qui se décompose en éléments → notion ; sinon → idee.",
-      "Ne pas forcer un type juridique (fond, forme, juris, texte) sur un livre non juridique quand un type plus juste existe."
+      "Pour CHAQUE nœud, réponds dans l'ordre ; le premier « oui » donne le type :",
+      "1. Partie du plan ? → chapitre / lecon / section.",
+      "2. Question que le livre pose et résout ? → question.",
+      "3. Terme défini ? → definition. Modèle ou théorie nommé ? → theorie.",
+      "4. Suite d'actions ordonnées ? → methode (parent) et etape (chaque action).",
+      "5. Ce qui PROVOQUE quelque chose ? → cause. Ce qui en RÉSULTE ? → consequence. Ce qu'il FAUT pour que ça marche ? → condition.",
+      "6. Une difficulté à résoudre ? → probleme ; sa réponse ? → solution ; un but ? → objectif.",
+      "7. Une recommandation ? → conseil ; une mise en pratique ? → exercice.",
+      "8. Une raison pour une thèse ? → argument ; une objection, une limite ? → critique ; une précision qui tempère ? → nuance ; une erreur à éviter ? → piege.",
+      "9. Deux notions mises face à face ? → comparaison (+ avantage / inconvenient pour chaque option).",
+      "10. Un trait qui décrit ? → caracteristique ; une sorte de… ? → categorie ; un indice pour reconnaître ? → signe.",
+      "11. Une date ? → date ; un chiffre ? → chiffre ; une formule à restituer ? → formule.",
+      "12. Une source : étude/expérience → etude ; phrase célèbre → citation ; personne → personne ; texte de loi / source primaire → texte ; (droit) décision → juris, position d'auteur → doctrine.",
+      "13. Une règle + le cas où elle ne s'applique pas ? → exception (test « … SAUF … »).",
+      "14. (droit uniquement) condition de validité → fond / forme ; régime, sanction → effet.",
+      "15. Un cas, une histoire → exemple ; la synthèse → retenir ; un concept qui se décompose → notion.",
+      "16. Seulement si rien ne convient → idee."
     ],
     "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance."
   },
@@ -421,6 +573,7 @@
         "name": "CADRER",
         "do": [
           "Identifier le genre : manuel juridique, manuel scientifique, essai, développement personnel, ouvrage technique, recueil, polycopié.",
+          "Classer le document « juridique » ou « hors droit » (domain_mode) : cela décide des types permis.",
           "Identifier le public, le niveau, l'objectif (operating_contract.input).",
           "Estimer la taille (mots, chapitres) → décider : livraison en une fois ou en parties (long_document_strategy)."
         ],
@@ -486,6 +639,7 @@
         "name": "VALIDER",
         "do": [
           "Passer TOUTES les quality_gates. Si un environnement d'exécution de code est disponible, exécuter self_check.validator_python sur le JSON et corriger jusqu'à zéro erreur.",
+          "Audit des types : pour chaque nœud, lire la question de révision (review_prompt) suivie du titre. Si la note n'y répond pas, ou si un type plus précis existe (selection_heuristic, faux_amis), changer le type. Vérifier en particulier chaque exception (test « … SAUF … ») et chaque idee.",
           "Relire 5 nœuds au hasard en mode « révision » : la question (review_prompt + titre) a-t-elle une réponse claire dans la note/les enfants ?",
           "Vérifier la couverture : chaque chapitre/section du plan P1 apparaît quelque part ; chaque énumération a son cardinal.",
           "Le rapport signale aussi les défauts du livre rencontrés (modeling_patterns.defective_sources)."
@@ -786,7 +940,7 @@
     {
       "id": "G1",
       "name": "Validité du schéma",
-      "check": "format/version/kind présents ; 1 cours ; chaque carte a id unique, courseId = id du cours, needsLayout true ; ids de nœuds et d'arêtes uniques par carte ; types ∈ 24 types ; from/to existent ; ≤ 1 parent tree par nœud ; 1 seule racine par carte ; aucun nœud isolé ; pas de cycle.",
+      "check": "format/version/kind présents ; 1 cours ; chaque carte a id unique, courseId = id du cours, needsLayout true ; ids de nœuds et d'arêtes uniques par carte ; types ∈ 43 types ; from/to existent ; ≤ 1 parent tree par nœud ; 1 seule racine par carte ; aucun nœud isolé ; pas de cycle.",
       "blocking": true
     },
     {
@@ -810,7 +964,7 @@
     {
       "id": "G5",
       "name": "Richesse d'expression",
-      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds NON structurels (une carte isolée peut descendre à 20 %) ; un seul par note, deux seulement si la note dépasse 12 lignes ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds. Types : au moins 6 types différents par carte de plus de 20 nœuds, choisis par node_types.selection_heuristic (pas de type juridique forcé hors droit).",
+      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds NON structurels (une carte isolée peut descendre à 20 %) ; un seul par note, deux seulement si la note dépasse 12 lignes ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds. Types : au moins 6 types différents par carte de plus de 20 nœuds, choisis par node_types.selection_heuristic ; aucun type de la famille droit hors droit (domain_mode) ; idee ≤ 25 % des nœuds d'une carte ; chaque exception passe le test « … SAUF … ».",
       "blocking": false
     },
     {
@@ -839,9 +993,10 @@
       "Pour chaque carte : 1 racine chapitre ; toute arête tree a un parent existant ; aucun nœud sans parent sauf la racine.",
       "Les [[liens]] pointent vers des titres existants de la même carte.",
       "Lire 5 cartes de révision au hasard : question → réponse ?",
-      "Lisibilité (G8) : racine à 3–7 branches, renvois ≤ 4 et proches, aucun exemple directement sous la racine, titres courts."
+      "Lisibilité (G8) : racine à 3–7 branches, renvois ≤ 4 et proches, aucun exemple directement sous la racine, titres courts.",
+      "Audit des types : chaque question de révision a du sens pour son nœud ; aucun type juridique hors droit ; exception seulement au test « SAUF » ; idee ≤ 25 %."
     ],
-    "validator_python": "import json,sys\nT={'notion','definition','fond','forme','effet','exception','juris','texte','idee','chapitre','lecon','section','doctrine','exemple','retenir','question','methode','comparaison','piege','citation','personne','date','chiffre','formule'}\nd=json.load(open(sys.argv[1]));E=[]\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=6 if len(ids)>30 else 4\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1:W.append(p+': renvoi lointain '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (→ [[Titre]] dans la note ?)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2:W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
+    "validator_python": "import json,sys\nT={'chapitre','lecon','section','notion','definition','caracteristique','categorie','signe','cause','consequence','condition','probleme','solution','question','theorie','argument','critique','nuance','comparaison','avantage','inconvenient','methode','etape','conseil','exercice','objectif','date','chiffre','formule','etude','citation','personne','texte','juris','doctrine','fond','forme','effet','exception','exemple','piege','retenir','idee'}\nd=json.load(open(sys.argv[1]));E=[];HORS='--hors-droit' in sys.argv\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=6 if len(ids)>30 else 4\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1:W.append(p+': renvoi lointain '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (→ [[Titre]] dans la note ?)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2:W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nfor m in d['maps']:\n  p=m['id'];ns=m['nodes'];N=len(ns)\n  if HORS:\n    for n in ns:\n      if n['type'] in ('fond','forme','effet','juris','doctrine'):W.append(p+': type juridique « '+n['type']+' » hors droit : '+n['title'][:40]+' (voir faux_amis)')\n  for n in ns:\n    if n['type']=='exception' and not re.search(r\"sauf|except|hormis|à moins|ne s.applique pas|sauf si|en dehors de\",(n['title']+' '+n.get('note','')).lower()):W.append(p+': exception sans règle écartée (test « SAUF ») : '+n['title'][:40]+' → nuance, critique, piege ?')\n  idees=sum(1 for n in ns if n['type']=='idee')\n  if N>=12 and idees>0.25*N:W.append(p+': %d %% de nœuds « idee » (≤ 25 %%) — choisir des types précis'%(100*idees//N))\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
   },
   "anti_patterns": [
     {
@@ -951,6 +1106,18 @@
       "name": "chronologie_en_vrac",
       "description": "Des dates éparpillées dans plusieurs branches ou dans le désordre.",
       "correction": "3 à 6 dates sœurs feuilles, dans l'ordre chronologique, sous un parent (frise)."
+    },
+    {
+      "id": "AP19",
+      "name": "vocabulaire_juridique_plaqué",
+      "description": "Condition de fond, Condition de forme, Effet, Jurisprudence employés dans un livre qui n'est pas juridique : la question de révision devient absurde.",
+      "correction": "domain_mode + faux_amis : condition, cause, etape, conseil, consequence, etude, theorie."
+    },
+    {
+      "id": "AP20",
+      "name": "exception_fourre_tout",
+      "description": "Tout ce qui « tempère » ou « limite » devient une exception.",
+      "correction": "exception seulement si une règle énoncée ne s'applique pas (test « … SAUF … ») ; sinon nuance, critique, piege ou condition."
     }
   ],
   "example": {
@@ -1187,9 +1354,9 @@
   },
   "implementation_notes": {
     "format_note": "Spécification JSON portable, dans le même esprit que universal_problem_solving_invention_engine. Pour Claude (Skills natifs), le fichier SKILL.md voisin sert de point d'entrée et renvoie à ce JSON. Pour ChatGPT, Gemini, Mistral… : joindre ce fichier au début de la conversation avec le document et écrire « Applique ce skill à ce livre ».",
-    "app_compatibility": "Format vérifié avec Ratio ≥ 2.6 (24 types : les 9 types question, methode, comparaison, piege, citation, personne, date, chiffre, formule demandent Ratio 2.6 ; une version antérieure les importe en « Idée »).",
+    "app_compatibility": "Format vérifié avec Ratio ≥ 2.7 (43 types ; une version antérieure importe les types inconnus en « Idée »).",
     "privacy": "Le JSON ne contient que le cours : aucun historique de révision, aucun réglage.",
-    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins. La v1.3 ajoute 9 types (au-delà du droit), la création de libellés sur mesure, les constructions visuelles de Ratio (frises, peignes, annotations) et une grille de décision pour découper le livre en cartes."
+    "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins. La v1.3 ajoute 9 types (au-delà du droit), la création de libellés sur mesure, les constructions visuelles de Ratio (frises, peignes, annotations) et une grille de décision pour découper le livre en cartes. La v1.4 ajoute 19 types universels (cause, conséquence, condition, problème, solution, argument, critique, nuance, avantage, inconvénient, caractéristique, catégorie, signe, étape, conseil, exercice, objectif, étude, théorie), le mode hors droit et l'audit des types."
   },
   "course_design": {
     "why": "Découper un livre en cartes, c'est décider où l'élève s'arrêtera pour réviser. On note chaque découpage candidat sur des critères pondérés.",
@@ -1228,5 +1395,42 @@
     ],
     "decision": "Garder le découpage au meilleur total ; à égalité, celui qui suit le plan du livre.",
     "map_title": "Le titre d'une carte est la question ou l'idée qu'elle traite, en 2 à 7 mots (« Pourquoi on ne sait pas dire non »), pas « Chapitre 5 »."
-  }
+  },
+  "domain_mode": {
+    "why": "Les types de la famille « droit » (fond, forme, effet, juris, doctrine) ont un sens juridique précis : les utiliser ailleurs trompe l'élève et pose une question de révision fausse (« Explique cette condition de fond » pour une cause psychologique).",
+    "decide_in_P0": "Classer le document : « juridique » (cours de droit, manuel juridique, code commenté) ou « hors droit » (tout le reste).",
+    "hors_droit": "Interdits : fond, forme, effet, juris, doctrine. Utiliser à la place : condition, cause, etape, conseil, consequence, etude, theorie, personne (voir faux_amis). exception reste permise mais seulement au test « … SAUF … ».",
+    "juridique": "Tous les types sont permis ; les types universels servent pour ce qui n'est pas strictement juridique (contexte historique → date, critique doctrinale → critique, statistique → chiffre).",
+    "validator_flag": "Lancer le validateur avec --hors-droit pour un document hors droit : il signale toute utilisation d'un type juridique."
+  },
+  "faux_amis": [
+    {
+      "au_lieu_de": "fond",
+      "hors_droit": "condition (ce qu'il faut) ou cause (ce qui provoque)"
+    },
+    {
+      "au_lieu_de": "forme",
+      "hors_droit": "etape (une action d'une méthode) ou conseil (une manière de faire recommandée)"
+    },
+    {
+      "au_lieu_de": "effet",
+      "hors_droit": "consequence (résultat, impact, coût, bénéfice)"
+    },
+    {
+      "au_lieu_de": "exception",
+      "hors_droit": "nuance (tempère), critique (limite), piege (erreur à éviter), condition (cas où ça marche) — exception seulement si une règle énoncée ne s'applique pas"
+    },
+    {
+      "au_lieu_de": "juris",
+      "hors_droit": "etude (étude, expérience, enquête)"
+    },
+    {
+      "au_lieu_de": "doctrine",
+      "hors_droit": "theorie (modèle nommé) ou personne + citation (un auteur et sa phrase)"
+    },
+    {
+      "au_lieu_de": "idee",
+      "partout": "le type précis : conseil, argument, caracteristique, signe, cause… idee ≤ 25 % d'une carte"
+    }
+  ]
 }

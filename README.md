@@ -32,7 +32,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 |---|---|
 | **Cours** | Le dossier d'un enseignement (ex. *Droit des obligations*). Sur l'accueil, chaque cours est une **fiche** à sa teinte, marquée d'une **empreinte** générée depuis ses cartes, qui montre la prochaine question à réviser. |
 | **Carte** | Une notion à décomposer, ou un chapitre entier (choix à la création). |
-| **Nœud** | Un élément typé : Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée — et, au-delà du droit : Question, Méthode, Comparaison, Piège, Citation, Personne, Date, Chiffre clé, Formule. |
+| **Nœud** | Un élément typé, parmi 43 types rangés en familles : **Notion** (Notion, Définition, Caractéristique, Catégorie, Signe), **Cause et effet** (Cause, Conséquence, Condition, Problème, Solution), **Raisonner** (Question, Théorie, Argument, Critique, Nuance, Comparaison, Avantage, Inconvénient), **Agir** (Méthode, Étape, Conseil, Exercice, Objectif), **Repères** (Date, Chiffre clé, Formule), **Sources** (Étude, Citation, Personne, Texte, Jurisprudence, Doctrine), **Droit** (Condition de fond, Condition de forme, Effet / Régime, Exception), **Compléments** (Exemple, Piège, À retenir, Idée). Chaque type a sa silhouette et sa question de révision. |
 | **Structure** | **Chapitre › Leçon › Section** : des nœuds plus grands et numérotés automatiquement (« Leçon 2 »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
 | **Note** | Le bloc-notes de chaque nœud (Markdown), avec aperçu. |
 | **Lien** | Hiérarchique (décomposition, trait plein) ou renvoi (« voir », « sauf », « implique »… en pointillé fléché). |
@@ -127,7 +127,7 @@ Un import s'annule depuis la barre qui suit (*Annuler*).
 
 ### Transformer un livre en cours (skill pour IA)
 
-Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.3.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), renvois étiquetés et fourches, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v1.4.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
 
 ## Structure
 

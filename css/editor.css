@@ -168,6 +168,30 @@
 .node.t-chiffre .node-title { font: 700 18px/24px var(--font-plain); font-variant-numeric: tabular-nums; }
 .node.t-formule .node-title { font: 500 14px/20px var(--font-mono); }
 .node.t-formule { background: var(--surface-container-low); }
+/* vocabulaire universel — chaque type garde une silhouette propre, sans couleur imposée */
+.node.t-cause { border-color: var(--on-surface-variant); border-radius: 4px 16px 16px 4px; }
+.node.t-consequence { border-color: var(--on-surface-variant); border-radius: 16px 4px 4px 16px; }
+.node.t-condition { border-left: 4px solid var(--on-surface-variant); padding-left: 12px; }
+.node.t-probleme { background: var(--surface-container-high); border-color: transparent; border-left: 4px dashed var(--on-surface); padding-left: 12px; }
+.node.t-solution { border: 2px solid var(--on-surface); border-radius: 14px; }
+.node.t-argument { border-left: 3px solid var(--on-surface); border-radius: 4px 12px 12px 4px; padding-left: 13px; }
+.node.t-critique { border-right: 3px solid var(--on-surface); border-radius: 12px 4px 4px 12px; padding-right: 13px; }
+.node.t-nuance { border-style: dashed; border-color: var(--outline-variant); }
+.node.t-nuance .node-title { font-style: italic; }
+.node.t-avantage { border-top: 3px solid var(--on-surface); }
+.node.t-inconvenient { border-bottom: 3px solid var(--on-surface); }
+.node.t-caracteristique { border-color: var(--outline); border-radius: 6px; }
+.node.t-categorie { border-color: var(--on-surface-variant); box-shadow: 4px 4px 0 -1px var(--surface), 4px 4px 0 0 var(--outline); }
+.node.t-signe { border-left: 3px dotted var(--on-surface); padding-left: 13px; }
+.node.t-etape { border-color: var(--outline); border-radius: 4px; }
+.node.t-etape .node-title { font-weight: 600; }
+.node.t-conseil { background: var(--surface-container-low); border-color: transparent; border-radius: 14px 4px 14px 4px; }
+.node.t-exercice { border: 2px solid var(--outline); border-radius: 6px; background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--on-surface) 6%, transparent) 19px 20px), var(--surface-container-lowest); }
+.node.t-objectif { border-color: var(--on-surface-variant); outline: 1.5px solid var(--outline); outline-offset: 3px; }
+.node.t-etude .node-title { font: italic 400 15px/21px var(--font-brand); }
+.node.t-etude { border-color: var(--outline); border-radius: 4px 4px 14px 4px; }
+.node.t-theorie { border: 1.5px solid var(--on-surface); border-radius: 4px 16px 4px 16px; }
+.node.t-theorie .node-title { font: 500 15px/21px var(--font-brand); }
 
 /* Structure du cours : Chapitre › Leçon › Section. La hiérarchie se lit au premier regard
    (taille, graisse, encre), toujours sans couleur ; le sur-titre numéroté est surligné. */

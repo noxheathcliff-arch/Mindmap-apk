@@ -33,7 +33,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 |---|---|---|
 | **Cours** | titre, description (ex. « M1 · S1 · Pr. X »), dates | Le « dossier unique » demandé. Un seul niveau : pas de sous-dossiers (loi de Tesler : on absorbe la complexité, l'utilisatrice n'a qu'un rangement à faire). |
 | **Carte** | titre, cours, nœuds, liens, vue (zoom/position), dates | Une carte = une notion ou un chapitre. |
-| **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 24 types (voir §4.4), dont 3 de structure. |
+| **Nœud** | titre, **type**, note (Markdown), position, replié, **logique des enfants (ET/OU)**, état de révision | 43 types (voir §4.4), dont 3 de structure. |
 | **Tableau, source** | vivent **dans la note** (Markdown : `| a | b |`, `[titre](https://…)`) | Aucun champ nouveau : export, import, plan, recherche et révision les reçoivent tels quels. Saisie en grille (Loi de Tesler : la syntaxe reste cachée) ; rubrique « Sources » = liens de la note extraits à l'affichage. |
 | **Lien** | source, cible, **nature** (hiérarchique / renvoi), libellé, groupe | Hiérarchique = décomposition (trait plein). Renvoi = « voir aussi », « sauf », « implique » (pointillé + flèche). |
 | **Fourche** | liens partageant un `group` (même source, même nature, un libellé) | Un tronc, un libellé posé sur le point de séparation, une branche par élément. Chaque branche reste un lien ordinaire : hiérarchie, révision, plan et import n'en dépendent pas. Les enfants d'un nœud ET/OU sont dessinés en fourche implicite (« ET » une seule fois). |
@@ -163,7 +163,17 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 | Chiffre clé | CHIFFRE | grand chiffre gras tabulaire |
 | Formule | FORMULE | mono, fond `surface-container-low` |
 
-Les 9 derniers ouvrent l'app au-delà du droit (histoire, sciences, essais, développement personnel) ; ils sont regroupés dans le menu *Type* en **Raisonner**, **Sources** et **Repères**.
+| Cause / Conséquence | CAUSE / CONSÉQUENCE | coins arrondis côté sortie / côté entrée (la forme « pointe » dans le sens de la causalité) |
+| Condition | CONDITION | filet gauche 4 px |
+| Problème / Solution | PROBLÈME / SOLUTION | fond appuyé + filet tireté / bordure encre 2 px arrondie |
+| Argument / Critique | ARGUMENT / CRITIQUE | filet à gauche / filet à droite (pour / contre) |
+| Nuance | NUANCE | tirets clairs, titre en italique |
+| Avantage / Inconvénient | AVANTAGE / INCONVÉNIENT | filet en haut / filet en bas |
+| Caractéristique / Catégorie / Signe | … | bordure fine / cartes empilées / filet pointillé |
+| Étape / Conseil / Exercice / Objectif | … | titre semi-gras / coins alternés sur fond doux / lignes de cahier / anneau de cible |
+| Étude / Théorie | ÉTUDE / THÉORIE | serif italique (annotation) / serif, coins alternés |
+
+Le menu *Type* range les 43 types en familles : **Structure**, **Notion**, **Cause et effet**, **Raisonner**, **Agir**, **Repères**, **Sources**, **Droit** (Condition de fond, Condition de forme, Effet / Régime, Exception — vocabulaire juridique, réservé aux cours de droit) et **Compléments**. Les types universels évitent de plaquer le vocabulaire juridique sur un cours d'histoire, de sciences ou de développement personnel.
 
 **Structure d'un cours** (`rank` 1 → 3) — la hiérarchie se lit au premier regard par la taille, la graisse et l'encre, toujours sans couleur :
 

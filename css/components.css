@@ -449,6 +449,11 @@
 .cp-date { border-top-width: 4px; }
 .cp-chiffre .cp-t { font-weight: 700; }
 .cp-formule .cp-t { font-family: var(--font-mono); font-size: 13px; }
+.cp-cause { border-radius: 4px 14px 14px 4px; } .cp-consequence { border-radius: 14px 4px 4px 14px; }
+.cp-condition { border-left-width: 4px; } .cp-probleme { border-left: 4px dashed; } .cp-solution { border-width: 2px; }
+.cp-argument { border-left-width: 3px; } .cp-critique { border-right-width: 3px; } .cp-nuance { border-style: dashed; }
+.cp-avantage { border-top-width: 3px; } .cp-inconvenient { border-bottom-width: 3px; } .cp-signe { border-left: 3px dotted; }
+.cp-etape .cp-t { font-weight: 600; } .cp-conseil { border-radius: 14px 4px 14px 4px; } .cp-exercice { border-width: 2px; }
 .cp-pick { display: grid; gap: 6px; min-width: 0; }
 .cp-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .cp-sw { width: 26px; height: 26px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform var(--dur-xs) var(--ease-out), box-shadow var(--dur-xs) var(--ease-out); }

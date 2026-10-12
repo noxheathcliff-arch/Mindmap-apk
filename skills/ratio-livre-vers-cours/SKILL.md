@@ -5,17 +5,18 @@ description: Transforme un livre, un PDF de cours, un polycopié ou des notes en
 
 # Ratio — Compilateur Livre → Cours
 
-La spécification complète est dans `ratio_book_to_course_compiler_v1.3.json` (même dossier). **Lis-la en entier avant de commencer**, puis applique son `pipeline` (P0 → P7) sans sauter de phase, avec ses `modeling_patterns` (énumérations, exemples, questionnaires, méthodes, sources défectueuses).
+La spécification complète est dans `ratio_book_to_course_compiler_v1.4.json` (même dossier). **Lis-la en entier avant de commencer**, puis applique son `pipeline` (P0 → P7) sans sauter de phase, avec ses `modeling_patterns` (énumérations, exemples, questionnaires, méthodes, sources défectueuses).
 
 ## L'essentiel
 
 - **Sortie** : un bloc ```json au format `{"format":"ratio","version":2,"kind":"course","courses":[…1 cours…],"maps":[…]}`, suivi d'un court rapport en français.
 - **Une carte = un chapitre** (ou une unité de révision). Racine de type `chapitre` dont la note dit la thèse.
-- **Un nœud = une idée rappelable.** Le titre est l'indice ; la note et les enfants sont la réponse. Le type choisit la question posée en révision : 24 types, choisis par l'arbre de décision `node_types.selection_heuristic` (dont, au-delà du droit : question, methode, comparaison, piege, citation, personne, date, chiffre, formule).
+- **Un nœud = une idée rappelable.** Le titre est l'indice ; la note et les enfants sont la réponse. Le type choisit la question posée en révision : 43 types en familles (notion, cause-effet, raisonner, agir, repères, sources, droit, compléments), choisis nœud par nœud par l'arbre de décision `node_types.selection_heuristic`.
+- **Hors droit** (`domain_mode`) : jamais fond, forme, effet, juris, doctrine → condition, cause, étape, conseil, conséquence, étude, théorie (`faux_amis`). `exception` seulement si une règle énoncée ne s'applique pas (test « … SAUF … ») ; sinon nuance, critique, piège. `idee` en dernier recours (≤ 25 %). Audit des types en P6 : la question de révision doit avoir du sens pour chaque nœud.
 - **Énumérations du livre → nœuds enfants**, avec le cardinal exact, et `logic: "et"` (cumulatifs) ou `"ou"` (alternatifs).
 - **Notes** : réponse d'abord, 2–10 lignes, une seule idée en `==surligné==`, `**gras**` pour 2–5 mots-clés, `>` pour les citations exactes, tableaux pour les comparaisons, `- [ ]` pour les exercices, `[[Titre]]` pour renvoyer à un nœud de la même carte.
 - **Libellés** : la relation exacte en 1–3 mots ; crée ton propre libellé si aucun préréglage ne convient (`edge_rules.labels`, test de la phrase « source — libellé → cible »).
-- **Constructions** (R11) : 3–6 étapes feuilles sous une `methode` ou 3–6 `date` sœurs → frise fléchée ; 4+ enfants → liste en peigne ; exemples et sources → annotations en retrait ; branches principales numérotées dans l'ordre du JSON.
+- **Constructions** (R11) : 3–6 `etape` feuilles sous une `methode` ou 3–6 `date` sœurs → frise fléchée ; 4+ enfants → liste en peigne ; exemples et sources → annotations en retrait ; branches principales numérotées dans l'ordre du JSON.
 - **Découpage** : compare deux découpages candidats par partie avec `course_design` (cohérence, taille, autonomie, équilibre, mémorisabilité).
 - **Renvois** : 0–4 liens `kind:"link"` par carte (6 max au-delà de 30 nœuds), entre parties voisines, toujours étiquetés (`implique`, `s'oppose à`, `remédie à`, `sauf`, `voir`…), fourches avec `group`.
 - **Omettre** `x`, `y`, `review`, `viewport` ; mettre `"needsLayout": true` sur chaque carte ; nœuds dans l'ordre de lecture.
