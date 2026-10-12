@@ -1,87 +1,34 @@
-/* Ratio — identité visuelle d'un cours : dossier (forme), empreinte générative, schéma de couleur Material
+/* Ratio — identité visuelle d'un cours : sa couleur (un schéma Material par teinte) et ses repères
  *
- * L'empreinte est dessinée à partir de la vraie structure du cours : un centre, une branche
- * par carte (plus longue quand la carte grossit), des points pour ses nœuds, et en surligneur
- * la branche qui a le plus de fiches à réviser. La silhouette (orientation, écarts) ne dépend
- * que des identifiants : elle reste reconnaissable d'une visite à l'autre et se densifie
- * à mesure que le cours grandit. Aucun asset : du SVG généré, qui suit le thème (currentColor).
+ * Hors de « Mes cours » (où le cours est un dossier, js/views/library.js), un cours se reconnaît
+ * à sa couleur seule : une pastille (rail, bande de révision) ou un carré tonal à son conteneur
+ * portant l'icône « cours » (recherche, révision par cours, choix d'un cours).
  */
 (function (R) {
   'use strict';
   const { U, store: S } = R;
 
-  /* ---- Aléa déterministe (FNV-1a + xorshift) ---- */
+  /* ---- Aléa déterministe (FNV-1a) ---- */
   function hash(str) {
     let h = 2166136261;
     for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
     return h >>> 0;
   }
-  function rng(seed) {
-    let x = hash(seed) || 1;
-    return () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 100000) / 100000; };
-  }
 
-  const SIZES = { xs: 28, sm: 32, md: 44, lg: 72 };
-  const MAX_BRANCHES = 12;
+  const SIZES = { xs: 28, sm: 32, md: 40, lg: 56 };
 
-  /** Géométrie de l'empreinte (indépendante de la taille d'affichage) */
-  function geometry(course) {
-    const maps = S.mapsOf(course.id).slice().sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1));
-    const r = rng(course.id);
-    const offset = r() * Math.PI * 2;
-    const list = maps.slice(0, MAX_BRANCHES);
-    let hot = -1, hotDue = 0;
-    const branches = list.map((m, i) => {
-      const rb = rng(m.id);
-      const st = S.mapStats(m);
-      if (st.due > hotDue && st.reviewable) { hotDue = st.due; hot = i; }
-      const a = offset + (i / list.length) * Math.PI * 2 + (rb() - 0.5) * (list.length > 2 ? 0.32 : 0.8);
-      // longueur : grandit avec le contenu (log), bornée pour rester dans le sceau (r 46)
-      const len = 22 + Math.min(10, Math.log2(st.nodes + 1) * 2.4) + rb() * 2;
-      const bend = (rb() - 0.5) * 14;
-      const ex = 50 + Math.cos(a) * len, ey = 50 + Math.sin(a) * len;
-      const mx = 50 + Math.cos(a) * len * 0.5 + Math.cos(a + Math.PI / 2) * bend;
-      const my = 50 + Math.sin(a) * len * 0.5 + Math.sin(a + Math.PI / 2) * bend;
-      const leaves = [];
-      const count = Math.max(0, Math.min(5, Math.round(Math.log2(st.nodes + 1)) - 1));
-      for (let k = 0; k < count; k++) {
-        const la = a + (rb() - 0.5) * 1.3, ll = len + 3 + rb() * 7;
-        leaves.push({ x: 50 + Math.cos(la) * ll, y: 50 + Math.sin(la) * ll, r: 1.3 + rb() * 1.2 });
-      }
-      return { d: `M50 50Q${mx.toFixed(1)} ${my.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`, ex, ey, leaves };
-    });
-    return { branches, hot, more: Math.max(0, maps.length - list.length) };
-  }
-
-  /**
-   * Dossier d'un cours → <span class="cmark"> contenant un SVG (direction « Barre contextuelle »).
-   * L'onglet prend l'accent du cours, le rabat son conteneur ; sur les grandes tailles (md, lg),
-   * l'empreinte du cours (une branche par carte) est tracée dans le rabat, à l'encre du conteneur.
-   * size : xs | sm | md | lg ; draw : jouer le tracé (première apparition seulement)
-   */
-  const FOLDER_BACK = 'M6 24a9 9 0 0 1 9-9h19.5c2.5 0 4.8 1 6.5 2.8l4.2 4.4c1 1 2.3 1.6 3.7 1.6H85a9 9 0 0 1 9 9v44a9 9 0 0 1-9 9H15a9 9 0 0 1-9-9z';
-  const FOLDER_FRONT = 'M6 39a9 9 0 0 1 9-9h70a9 9 0 0 1 9 9v38a9 9 0 0 1-9 9H15a9 9 0 0 1-9-9z';
-  function mark(course, { size = 'md', draw = false, hero = false } = {}) {
+  /** Carré tonal du cours (conteneur du cours, icône « cours ») — size : xs | sm | md | lg */
+  function mark(course, { size = 'md', hero = false } = {}) {
     const px = SIZES[size] || SIZES.md;
-    const big = px >= 44;
-    const parts = [`<path class="mk-back" d="${FOLDER_BACK}"/>`, `<path class="mk-front" d="${FOLDER_FRONT}"/>`];
-    const g = geometry(course);
-    if (big && g.branches.length) {
-      // l'empreinte, réduite et centrée dans le rabat (centre 50,58 ; rayon utile ≈ 22)
-      parts.push('<g class="mk-print" transform="translate(50 58) scale(.4) translate(-50 -50)">');
-      g.branches.forEach((b, i) => {
-        const hot = i === g.hot;
-        parts.push(`<path class="mk-b${hot ? ' mk-hot' : ''}" d="${b.d}" pathLength="1" stroke-width="${hot ? 6 : 4.2}" style="--k:${i}"/>`);
-        parts.push(`<circle class="mk-e${hot ? ' mk-hot' : ''}" cx="${b.ex.toFixed(1)}" cy="${b.ey.toFixed(1)}" r="${hot ? 7 : 5.5}" style="--k:${i}"/>`);
-      });
-      parts.push('<circle class="mk-c" cx="50" cy="50" r="10"/></g>');
-    }
-    const label = g.branches.length ? `Dossier du cours : ${U.plural(g.branches.length + g.more, 'carte')}` : 'Dossier du cours : aucune carte';
-    const el = U.h('span.cmark', { class: 'cmark-' + size + (draw ? ' draw' : ''), role: 'img', 'aria-label': label });
+    const el = U.h('span.cmark', { class: 'cmark-' + size, role: 'img', 'aria-label': 'Cours : ' + course.title },
+      R.icon('library', Math.round(px * 0.55)));
     if (hero) el.dataset.hero = 'course:' + course.id + ':mono';
-    el.innerHTML = `<svg viewBox="0 0 100 100" width="${px}" height="${px}" aria-hidden="true">${parts.join('')}</svg>`;
     tint(el, course);
     return el;
+  }
+  /** Pastille de la couleur du cours */
+  function dot(course) {
+    return tint(U.h('span.cdot', { 'aria-hidden': 'true' }), course);
   }
 
   /* ---- Couleur d'un cours : un schéma Material par teinte (8 teintes, jamais le jaune,
@@ -150,5 +97,5 @@
   /** Les mêmes rôles, prêts pour app.setActions({ style }) : la barre d'actions prend la couleur du cours */
   function vars(course) { return paper(course); }
 
-  R.courseArt = { mark, tint, paper, vars };
+  R.courseArt = { mark, dot, tint, paper, vars };
 })(window.R);

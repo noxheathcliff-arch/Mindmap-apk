@@ -209,6 +209,7 @@ body.immersive .rail, body.immersive .dock { display: none; }
 .ctx-primary { min-width: 0; }
 .ctx-primary-l, .ctx-primary-s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctx-primary-s { display: none; }
+@media (min-width: 600px) { .ctxbar .only-compact { display: none; } }
 .dock > * { min-width: 0; }
 @media (max-width: 599.98px) {
   .dock.has-actions .fab-float, .dock.replace-nav .navbar { display: none; }

@@ -89,10 +89,11 @@
         const more = ui.iconBtn('more', { title: 'Options du cours' });
         more.addEventListener('click', () => R.actions.courseMenu(more, course, () => R.app.go('#/', { replace: true })));
 
-        const topbar = h('header.topbar',
+        // barre haute à la couleur du cours : elle prolonge l'en-tête (une seule surface)
+        const topbar = R.courseArt.tint(h('header.topbar.course-topbar',
           ui.iconBtn('back', { title: 'Cours', onClick: () => R.app.go('#/') }),
           h('div.topbar-title.crumbs', h('a.crumb', { href: '#/' }, 'Cours'), R.icon('chevronRight', 16), h('span.crumb.current', course.title)),
-          h('div.topbar-actions', more));
+          h('div.topbar-actions', more)), course);
 
         const grid = h('div.map-grid');
         maps.forEach((m) => grid.appendChild(mapCard(m, draw)));
@@ -100,28 +101,25 @@
           h('span.add-ic', R.icon('plus', 20)), h('span.add-txt', h('span.add-l', 'Nouvelle carte'), h('span.add-s', 'Une notion ou un chapitre'))));
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
 
-        // l'en-tête est le dossier du cours, agrandi (même onglet, même rabat, même empreinte) :
-        // la bande de la carte d'accueil s'y transforme (container transform)
+        // en-tête de section (direction « Barre contextuelle ») : un bandeau pleine largeur au
+        // conteneur du cours, sous la barre haute ; les chiffres viennent dessous, sur la surface
+        const hero = R.courseArt.tint(h('header.course-hero', { dataset: { hero: 'course:' + course.id + ':band' } },
+          h('div.course-hero-in',
+            h('p.overline', 'Cours'),
+            h('h1.course-title', h('span', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
+            course.description ? h('p.course-desc', course.description) : null)), course);
         const header = h('div.course-head',
-          R.courseArt.tint(h('div.course-head-main.course-band.course-scope', { dataset: { hero: 'course:' + course.id + ':band' } },
-            h('span.fiche-tab', { 'aria-hidden': 'true' }),
-            h('div.course-band-top',
-              R.courseArt.mark(course, { size: 'lg', hero: true }), // pas de tracé ici : l'empreinte arrive déjà de la carte (élément partagé)
-              h('div.course-band-id',
-                h('p.overline', 'Cours'),
-                h('h1.course-title', h('span', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
-                course.description ? h('p.course-desc', course.description) : null)),
-            h('div.course-stats',
-              stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),
-              stat(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'),
-              stat(st.due, 'à réviser'),
-              h('div.stat.stat-progress',
-                h('span.stat-n', Math.round(st.progress * 100) + ' %'),
-                h('span.stat-l', 'maîtrise'),
-                ui.progress(st.progress)))), course));
+          h('div.course-stats',
+            stat(st.maps, st.maps > 1 ? 'cartes' : 'carte'),
+            stat(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'),
+            stat(st.due, 'à réviser'),
+            h('div.stat.stat-progress',
+              h('span.stat-n', Math.round(st.progress * 100) + ' %'),
+              h('span.stat-l', 'maîtrise'),
+              ui.progress(st.progress))));
 
         // la page du cours est la zone du cours : ses rôles Material s'y appliquent (boutons, progression)
-        el.appendChild(h('div.page.page-course', { class: intro ? 'intro' : '' }, topbar, h('div.page-scroll',
+        el.appendChild(h('div.page.page-course', { class: intro ? 'intro' : '' }, topbar, h('div.page-scroll', hero,
           R.courseArt.tint(h('div.course-layout.course-scope', header,
             maps.length ? h('section.lib-sec', h('div.sec-head', h('h2.sec-title', 'Cartes'), h('span.sec-count', String(maps.length))), grid)
               : h('section.lib-sec', ui.emptyState({
@@ -149,7 +147,8 @@
         const st = S.courseStats(c.id);
         const items = [];
         if (st.reviewable) items.push({ icon: 'play', label: st.due ? `Réviser · ${st.due}` : 'Réviser', primary: true, onClick: () => R.app.go('#/reviser/cours/' + c.id + (st.due ? '' : '?all=1')) });
-        items.push({ icon: 'plus', label: 'Nouvelle carte', primary: !st.reviewable, onClick: (e, b) => R.actions.newMap(c.id, { from: b }) });
+        // grand écran : « Nouvelle carte » est déjà le FAB du rail, la barre ne le répète pas
+        items.push({ icon: 'plus', label: 'Nouvelle carte', primary: !st.reviewable, cls: st.reviewable ? 'only-compact' : '', onClick: (e, b) => R.actions.newMap(c.id, { from: b }) });
         items.push({ icon: 'edit', label: 'Modifier le cours', onClick: () => R.actions.editCourse(c) });
         items.push({ icon: 'download', label: 'Exporter le cours', onClick: () => { U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id)); ui.snack('Cours exporté · à importer avec Réglages › Importer'); } });
         items.push({ icon: 'more', label: 'Options du cours', onClick: (e, b) => R.actions.courseMenu(b, c, () => R.app.go('#/', { replace: true })) });

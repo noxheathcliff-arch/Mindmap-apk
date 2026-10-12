@@ -137,10 +137,10 @@ Direction retenue : **« Contexte »** (n° 8 des dix pistes) — l'Expressif M3
 - Cibles tactiles ≥ 48 × 48 dp.
 
 ### 4.3 bis Navigation et actions — rail, dock, barre contextuelle
-- **≥ 1200 px** : rail étendu 260 dp — logo, Extended FAB (« Nouveau cours »), destinations (indicateur pilule `secondary-container`), **Mes cours** (un dossier par cours, nombre de fiches dues, cours courant surligné), Réglages en bas.
+- **≥ 1200 px** : rail étendu 260 dp — logo, Extended FAB (« Nouveau cours »), destinations (indicateur pilule `secondary-container`), **Mes cours** (pastille de couleur, nombre de fiches dues, cours courant surligné), Réglages en bas.
 - **600–1199 px** : rail replié 80 dp, FAB en tête.
 - **< 600 px** : le **dock** — la navigation est une barre d'outils flottante (pilule, élévation 2, boutons ronds 48 dp) ; à côté, le FAB ou l'action de la page. *Écart assumé* aux recommandations M3 (qui réservent la barre flottante aux actions) : elle libère la hauteur d'une barre de navigation et reste dans la zone du pouce. Elle s'efface au défilement vers le bas.
-- **Barre contextuelle** (`app.setActions`) : chaque page déclare ses actions ; l'action principale est un bouton plein. Seule, elle flotte comme un FAB étendu (56 dp, coins 16). Sur un cours, la barre est **vibrante** et prend les couleurs du cours ; sur mobile elle remplace la navigation (`replaceNav`). À côté de la navigation, l'action garde un libellé court (« Commencer »).
+- **Barre contextuelle** (`app.setActions`) : les pages qui en ont besoin (cours, Réviser, éditeur) déclarent leurs actions ; l'onglet Cours n'en a pas (« Réviser » est dans le héros, « Nouveau cours » est le FAB) ; l'action principale est un bouton plein. Seule, elle flotte comme un FAB étendu (56 dp, coins 16). Sur un cours, la barre est **vibrante** et prend les couleurs du cours ; sur mobile elle remplace la navigation (`replaceNav`). À côté de la navigation, l'action garde un libellé court (« Commencer »).
 - **Éditeur** : barre verticale flottante (grand écran) et barre vibrante flottante (mobile) ; panneau de note en *side sheet* tonal sans filet.
 
 ### 4.4 Types de nœuds (différenciation monochrome)
@@ -209,13 +209,13 @@ Monochrome par défaut (60/30/10 intact). L'option **Couleurs des nœuds** (Rég
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).
 
-### 4.6 Cours — des dossiers
-Un cours est un **dossier** : la forme dit « ce qui contient tes cartes et tes fiches », partout où le cours apparaît.
-- **Marque** (`js/mark.js`) : un dossier SVG à deux plans (dos `--c-pri`, rabat `--c-pc`). À partir de 44 px, le rabat porte l'**empreinte** générative du cours (une branche par carte mentale, des points pour ses nœuds) ; la silhouette ne dépend que des identifiants. Tailles xs → lg (rail, recherche, carte, en-tête). Sur une surface déjà teintée du cours, la marque s'inverse pour rester visible.
-- **Carte de cours** (`.fiche`) : un onglet (`.fiche-tab`) à congé concave posé sur le corps du dossier (`--c-pc`, coins 0 · 28 · 28 · 28) ; dedans, une feuille claire avec la prochaine fiche à réviser et le bouton Réviser. Pas de contour, pas de pile décorative.
-- **En-tête du cours** : le même dossier en grand (onglet + bande), marque et statistiques dedans ; les actions passent dans la barre contextuelle vibrante.
-- **Quatre états** inchangés : *Prochaine fiche* · *À jour* · *À compléter* · *Dossier vide* (→ Nouvelle carte).
-- **Emplacement « Nouveau cours / Nouvelle carte »** : surface tonale, sans pointillés.
+### 4.6 Cours — des dossiers (dans « Mes cours » seulement)
+Dans « Mes cours », un cours est un **dossier entrouvert** ; partout ailleurs il se reconnaît à sa couleur seule (pastille dans le rail et la bande de révision, carré tonal à icône « cours » dans la recherche et la révision par cours), comme dans la maquette.
+- **Dossier** (`.fiche`, `js/views/library.js`) : le dos (conteneur du cours assombri) avec son onglet à congé concave ; la **prochaine fiche** en dépasse comme une feuille, légèrement de biais, son bas glissé sous le rabat ; le rabat (conteneur du cours) porte le titre, l'avancement et « Réviser », et projette une ombre sur la feuille (le dossier est entrouvert). Ni contour ni icône sur le dossier.
+- **Interaction** : survoler tire la feuille hors du dossier ; toucher la feuille lance la révision sur cette fiche ; le titre (lien étiré) ouvre le cours.
+- **États de la feuille** : *Prochaine fiche* · *À jour* (prochaine échéance) · *À compléter* · *Dossier vide* (→ Nouvelle carte).
+- **Compact** : deux dossiers par ligne (titres 15 px, question sur 3 lignes, « Réviser » réduit à ▶ + nombre).
+- **Page d'un cours** : en-tête de section pleine largeur au conteneur du cours, prolongé par la barre haute de la même couleur (« Cours », titre, description) ; les chiffres viennent dessous sur la surface ; les actions dans la barre vibrante du cours.
 
 ### 4.7 Réviser — paquet du jour, session, relevé
 - **Paquet du jour** : héros `primary-container` (coins 48), le nombre de fiches dans un *cookie 12* `primary` ; taille de session en groupe de boutons connecté (choix en `primary`, lisible sur le conteneur). « Commencer » vit dans la barre contextuelle.

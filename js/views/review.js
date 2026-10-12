@@ -164,7 +164,7 @@
         // élément partagé : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la
         // fiche ; le bloc « Commencer » devient la première fiche d'une session tous cours
         const band = h('header.rcard-band', { dataset: scope.courseId ? { hero: 'course:' + scope.courseId + ':band' } : {} },
-          course ? (() => { const mk = R.courseArt.mark(course, { size: 'xs' }); if (scope.courseId) mk.dataset.hero = 'course:' + scope.courseId + ':mono'; return mk; })() : null,
+          course ? (() => { const mk = R.courseArt.dot(course); if (scope.courseId) mk.dataset.hero = 'course:' + scope.courseId + ':mono'; return mk; })() : null,
           h('span.rcard-ctx', [course ? course.title : null, map.title].filter(Boolean).join(' › ')),
           cardState(node));
         // pendant une transition de page (View Transitions), la première fiche est portée par

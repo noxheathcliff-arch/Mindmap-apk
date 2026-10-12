@@ -207,7 +207,7 @@
     for (const c of courses) {
       const due = S.courseStats(c.id).due;
       const a = h('a.rail-course', { href: '#/cours/' + c.id, class: c.id === cur ? 'active' : '', 'aria-current': c.id === cur ? 'page' : null },
-        R.courseArt.mark(c, { size: 'xs' }), h('span.rail-course-t', c.title), due ? h('span.rail-course-n', String(due)) : null);
+        R.courseArt.dot(c), h('span.rail-course-t', c.title), due ? h('span.rail-course-n', String(due)) : null);
       box.appendChild(a);
     }
   }
@@ -310,8 +310,8 @@
 
   function logo() {
     const s = h('span.logo', { 'aria-hidden': 'true' });
-    // un dossier (la forme des cours) qui porte l'initiale
-    s.innerHTML = '<svg viewBox="0 0 32 32" width="32" height="32"><path d="M3 9.5A4.5 4.5 0 0 1 7.5 5h5.4c1 0 1.9.4 2.6 1.1l1.2 1.3c.4.4.9.6 1.4.6h6.4A4.5 4.5 0 0 1 29 12.5v12A4.5 4.5 0 0 1 24.5 29h-17A4.5 4.5 0 0 1 3 24.5z" style="fill:var(--primary)"/><text x="16" y="25" text-anchor="middle" style="fill:var(--on-primary);font:800 15px \'Plus Jakarta Sans\', system-ui, sans-serif">R</text></svg>';
+    // l'initiale sur un carré arrondi primary (le dossier reste réservé aux cours de « Mes cours »)
+    s.innerHTML = '<svg viewBox="0 0 32 32" width="32" height="32"><rect x="2" y="2" width="28" height="28" rx="9" style="fill:var(--primary)"/><text x="16" y="22.5" text-anchor="middle" style="fill:var(--on-primary);font:800 17px \'Plus Jakarta Sans\', system-ui, sans-serif">R</text></svg>';
     return s;
   }
   app.logo = logo;

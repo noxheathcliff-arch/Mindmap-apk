@@ -353,27 +353,13 @@
 }
 
 /* ---- Dossier d'un cours (js/mark.js) ---------------------------------- */
-.cmark { display: inline-grid; place-items: center; flex: none; line-height: 0; }
-.cmark svg { display: block; overflow: visible; }
-.cmark .mk-back { fill: var(--c-pri); }
-.cmark .mk-front { fill: var(--c-pc); }
-.cmark .mk-b { fill: none; stroke: var(--c-onpc); stroke-linecap: round; opacity: .9; }
-.cmark .mk-e, .cmark .mk-c { fill: var(--c-onpc); }
-.cmark .mk-hot.mk-e { fill: var(--c-pc); stroke: var(--c-onpc); stroke-width: 4; }
-/* le dossier s'ouvre (première apparition de la session) : le rabat se pose, l'empreinte se trace */
-.cmark.draw .mk-front { animation: mk-flap var(--dur-lg) var(--spring-default) both; transform-box: fill-box; transform-origin: 50% 100%; }
-.cmark.draw .mk-b { stroke-dasharray: 1; animation: mk-draw 420ms var(--ease-out) calc(160ms + min(var(--k, 0), 6) * 35ms) both; }
-.cmark.draw .mk-e { animation: mk-pop var(--dur-sm) var(--ease-out) calc(380ms + min(var(--k, 0), 6) * 35ms) both; transform-box: fill-box; transform-origin: center; }
-@keyframes mk-flap { from { transform: scaleY(.82); } }
-@keyframes mk-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@keyframes mk-pop { from { opacity: 0; transform: scale(.4); } }
-:root[data-motion="reduce"] .cmark.draw * { animation: none !important; }
-/* posé sur le dossier du cours (carte, en-tête) : le petit dossier s'inverse pour rester visible */
-:is(.fiche-band, .course-band) .cmark .mk-front { fill: var(--c-onpc); }
-:is(.fiche-band, .course-band) .cmark .mk-back { fill: color-mix(in srgb, var(--c-onpc) 55%, var(--c-pc)); }
-:is(.fiche-band, .course-band) .cmark .mk-b { stroke: var(--c-pc); }
-:is(.fiche-band, .course-band) .cmark :is(.mk-e, .mk-c) { fill: var(--c-pc); }
-:is(.fiche-band, .course-band) .cmark .mk-hot.mk-e { fill: var(--c-onpc); stroke: var(--c-pc); }
+/* repères d'un cours hors de « Mes cours » : carré tonal à son conteneur, ou pastille */
+.cmark { display: inline-grid; place-items: center; flex: none; background: var(--c-pc); color: var(--c-onpc); }
+.cmark-xs { width: 28px; height: 28px; border-radius: var(--shape-s); }
+.cmark-sm { width: 32px; height: 32px; border-radius: 10px; }
+.cmark-md { width: 40px; height: 40px; border-radius: var(--shape-m); }
+.cmark-lg { width: 56px; height: 56px; border-radius: var(--shape-l); }
+.cdot { display: inline-block; flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c-pri); }
 
 /* ---- Markdown rendu -------------------------------------------------- */
 .md { font: var(--body-l); color: var(--on-surface); overflow-wrap: anywhere; }

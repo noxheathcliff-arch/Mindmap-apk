@@ -46,6 +46,8 @@
 .today-sub { font: var(--body-l); }
 .today-streak { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; font: var(--label-l); }
 .today-streak .flame { display: inline-flex; }
+.today-cta { justify-self: start; margin-top: var(--sp-1); height: 48px; padding: 0 var(--sp-6) 0 var(--sp-5); font: var(--title-s); }
+.today-cta.btn-filled { background: var(--primary); color: var(--on-primary); }
 .today-streak.lit .flame svg { fill: currentColor; }
 .intro .today-streak.lit .flame { animation: flicker 1.6s cubic-bezier(0.37, 0, 0.63, 1) 400ms 2; transform-origin: 50% 90%; }
 @keyframes flicker { 0%, 100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.04, .97) rotate(-3deg); } 60% { transform: scale(.98, 1.03) rotate(2deg); } }
@@ -70,74 +72,119 @@
 .tip-text mark { background: var(--hl-mark); color: var(--on-hl-mark); padding: 0 3px; border-radius: 2px; }
 
 /* ==========================================================================
-   Carte de cours : un dossier (DESIGN.md §4.6)
-   Onglet (conteneur du cours) · rabat (conteneur) portant l'identité · la prochaine fiche dépasse
-   comme une feuille (surface claire) · pied : état du cours et action.
+   Carte de cours : un dossier entrouvert (DESIGN.md §4.6)
+   Le dos (avec l'onglet), la prochaine fiche qui dépasse comme une feuille qu'on va tirer,
+   puis le rabat (titre, avancement, Réviser). Ni contour ni icône : la forme suffit.
    ========================================================================== */
-.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: var(--sp-5) var(--sp-4); }
-@media (max-width: 599.98px) { .course-grid { grid-template-columns: 1fr; gap: var(--sp-4); } }
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: var(--sp-6) var(--sp-4); }
 
-.fiche { position: relative; isolation: isolate; display: grid; padding-top: 18px; min-width: 0; }
-.fiche-tab, .course-band > .fiche-tab {
-  position: absolute; left: 0; top: 0; z-index: 1;
-  width: min(42%, 168px); height: 20px;
-  background: var(--c-pc); border-radius: 14px 14px 0 0;
+.fiche {
+  --tab-h: 18px;
+  /* dos du dossier : le conteneur du cours, assombri (l'intérieur du dossier est dans l'ombre) */
+  --fold-back: color-mix(in oklab, var(--c-pc) 78%, #000);
+  position: relative; isolation: isolate; min-width: 0;
+  display: grid; grid-template-areas: "paper" "front"; grid-template-rows: auto 1fr;
+  padding-top: var(--tab-h);
 }
-/* raccord concave entre l'onglet et le haut du dossier */
-.fiche-tab::after {
-  content: ""; position: absolute; right: -16px; bottom: 0; width: 16px; height: 16px;
-  background: radial-gradient(circle at 100% 0, transparent 15.5px, var(--c-pc) 16px);
-}
-.fiche-sheet {
-  position: relative; z-index: 1; min-width: 0;
-  display: grid; grid-template-rows: auto 1fr auto;
-  min-height: 252px;
-  background: var(--c-pc); color: var(--c-onpc);
+.fiche-back {
+  position: absolute; inset: var(--tab-h) 0 0 0; z-index: 0;
+  background: var(--fold-back);
   border-radius: 0 var(--shape-xl) var(--shape-xl) var(--shape-xl);
-  transition: transform var(--dur-sm) var(--ease-out), box-shadow var(--dur-sm) var(--ease-out);
 }
-.fiche-band { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-3); align-items: start; padding: var(--sp-4) var(--sp-2) var(--sp-3) var(--sp-4); }
-.fiche-id { display: grid; gap: 2px; min-width: 0; padding-top: 1px; }
-.fiche-sub { font: var(--label-m); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fiche-title { font: var(--title-l); letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.fiche-link { color: inherit; text-decoration: none; outline: none; }
-/* lien étiré : le titre couvre tout le dossier ; Réviser / Options passent au-dessus */
-.fiche-link::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
-.fiche-more { position: relative; z-index: 3; margin: -8px 0 0; color: var(--c-onpc); }
-.fiche:has(.fiche-link:focus-visible) .fiche-sheet { outline: 3px solid var(--on-surface); outline-offset: 2px; }
-/* la prochaine fiche, une feuille qui dépasse du dossier */
+/* l'onglet, posé sur le dos, raccordé par un congé concave */
+.fiche-back::before {
+  content: ""; position: absolute; left: 0; bottom: 100%;
+  width: min(44%, 150px); height: var(--tab-h);
+  background: var(--fold-back); border-radius: 12px 12px 0 0;
+}
+.fiche-back::after {
+  content: ""; position: absolute; left: min(44%, 150px); bottom: 100%; width: 14px; height: 14px;
+  background: radial-gradient(circle at 100% 0, transparent 13.5px, var(--fold-back) 14px);
+}
+/* la feuille : surface claire, légèrement de biais, son bas glissé sous le rabat */
 .fiche-body {
-  display: grid; align-content: start; gap: 2px; min-width: 0;
-  margin: 0 var(--sp-3); padding: var(--sp-3) var(--sp-4) var(--sp-4);
-  border-radius: var(--shape-l);
+  grid-area: paper; position: relative; z-index: 1; min-width: 0;
+  display: grid; align-content: start; gap: 2px;
+  margin: var(--sp-3) var(--sp-4) -36px var(--sp-5);
+  padding: var(--sp-3) var(--sp-4) 44px;
+  border-radius: var(--shape-s) var(--shape-s) 0 0;
   background: var(--surface-container-lowest); color: var(--on-surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .18);
+  transform: rotate(-1.5deg); transform-origin: 0 100%;
+  cursor: pointer;
+  transition: transform 350ms var(--spring-fast);
 }
-:root[data-theme="dark"] .fiche-body { background: var(--surface-container-high); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche-body { background: var(--surface-container-high); } }
-.fiche-k { font: var(--label-m); color: var(--on-surface-variant); }
-.fiche-q { font: var(--title-m); color: var(--on-surface); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.fiche-p { font: var(--body-m); color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fiche-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4); }
+:root[data-theme="dark"] .fiche-body { background: var(--surface-container-highest); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche-body { background: var(--surface-container-highest); } }
+.fiche-k { font: var(--label-s); font-weight: 600; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fiche-q { font: var(--title-s); color: var(--on-surface); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+/* le rabat : l'ombre portée sur la feuille dit que le dossier est entrouvert */
+.fiche-front {
+  grid-area: front; position: relative; z-index: 2; min-width: 0;
+  display: grid; grid-template-rows: 1fr auto;
+  min-height: 148px;
+  background: var(--c-pc); color: var(--c-onpc);
+  border-radius: var(--shape-l) var(--shape-l) var(--shape-xl) var(--shape-xl);
+  box-shadow: 0 -3px 8px -3px rgb(0 0 0 / .28);
+  transition: transform var(--dur-sm) var(--ease-out);
+}
+.fiche-band { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2); align-items: start; padding: var(--sp-4) var(--sp-1) 0 var(--sp-5); }
+.fiche-id { display: grid; gap: 2px; min-width: 0; }
+.fiche-title { font: var(--title-l); letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.fiche-sub { font: var(--body-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fiche-link { color: inherit; text-decoration: none; outline: none; }
+/* lien étiré : le titre couvre le rabat ; Réviser / Options passent au-dessus */
+.fiche-link::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
+.fiche-more { position: relative; z-index: 3; margin-top: -6px; color: var(--c-onpc); }
+.fiche:has(.fiche-link:focus-visible) .fiche-front { outline: 3px solid var(--on-surface); outline-offset: 2px; }
+.fiche-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-5); }
 .fiche-stats { display: grid; gap: 6px; min-width: 0; }
 .fiche-meta { font: var(--label-m); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fiche-meter { display: block; width: 96px; height: 4px; border-radius: var(--shape-full); background: color-mix(in srgb, var(--c-onpc) 26%, transparent); overflow: hidden; }
+.fiche-meter { display: block; width: 88px; max-width: 100%; height: 4px; border-radius: var(--shape-full); background: color-mix(in srgb, var(--c-onpc) 26%, transparent); overflow: hidden; }
 .fiche-meter i { display: block; height: 100%; background: var(--c-onpc); border-radius: inherit; transform-origin: left; }
 .fiche-cta { position: relative; z-index: 3; flex: none; height: 40px; padding: 0 6px 0 12px; gap: 6px; }
 .fiche-cta .ic svg { width: 18px; height: 18px; }
 .fiche-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--shape-full); background: color-mix(in srgb, var(--on-primary) 18%, transparent); font: 700 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; }
-.btn-text.fiche-cta { padding: 0 12px 0 8px; color: var(--c-onpc); }
+.btn-tonal.fiche-cta { padding: 0 14px 0 10px; }
+/* au survol, on tire la feuille hors du dossier */
 @media (hover: hover) {
-  .fiche:hover .fiche-sheet { transform: translateY(-2px); box-shadow: var(--elev-2); }
-  .fiche:hover .fiche-tab { transform: translateY(-2px); transition: transform var(--dur-sm) var(--ease-out); }
+  .fiche:hover .fiche-body { transform: translateY(-8px) rotate(-2.5deg); }
 }
-.fiche-tab { transition: transform var(--dur-sm) var(--ease-out); }
-.fiche:has(.fiche-link:active) .fiche-sheet { transform: scale(.985); transition-duration: var(--dur-xs); }
+.fiche-body:active { transform: translateY(-4px) rotate(-2deg); transition-duration: var(--dur-xs); }
+.fiche:has(.fiche-link:active) .fiche-front { transform: scale(.985); transition-duration: var(--dur-xs); }
+:root[data-motion="reduce"] .fiche-body { transition: none; }
+
+/* compact : deux dossiers par ligne (titres et commandes resserrés) */
+@media (max-width: 599.98px) {
+  .course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
+  .fiche { --tab-h: 14px; }
+  .fiche-back { border-radius: 0 var(--shape-l) var(--shape-l) var(--shape-l); }
+  .fiche-back::before { border-radius: 10px 10px 0 0; }
+  .fiche-body { margin: var(--sp-2) var(--sp-2) -30px var(--sp-3); padding: var(--sp-2) var(--sp-3) 36px; }
+  .fiche-k { font-size: 10px; line-height: 14px; }
+  .fiche-q { font: 600 12px/16px var(--font-plain); -webkit-line-clamp: 3; }
+  .fiche-front { min-height: 124px; border-radius: var(--shape-m) var(--shape-m) var(--shape-l) var(--shape-l); }
+  .fiche-band { padding: var(--sp-3) 0 0 var(--sp-3); gap: 0; }
+  .fiche-title { font: var(--title-s); font-size: 15px; line-height: 20px; }
+  .fiche-sub { font-size: 11px; line-height: 16px; }
+  .fiche-more { width: 36px; height: 36px; margin-top: -8px; }
+  .fiche-foot { padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3); gap: var(--sp-2); }
+  .fiche-meta { font-size: 11px; }
+  .fiche-meta-n { display: none; }
+  .fiche-meter { width: 100%; }
+  .fiche-stats { flex: 1; }
+  .fiche-cta { height: 32px; padding: 0 4px 0 8px; gap: 2px; }
+  .fiche-cta-l { display: none; }
+  .fiche-count { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; }
+  .btn-tonal.fiche-cta { padding: 0 10px 0 6px; font-size: 12px; }
+  .btn-tonal.fiche-cta .btn-label, .btn-tonal.fiche-cta > span:not(.ic) { display: none; }
+}
 
 /* emplacement « Nouveau cours / Nouvelle carte » : une surface tonale, sans pointillés */
 .course-card, .map-card { text-align: left; }
 .course-card.course-add, .map-card.map-add {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
-  min-height: 252px; margin-top: 18px; padding: var(--sp-5);
+  min-height: 220px; margin-top: 18px; padding: var(--sp-5);
   border-radius: var(--shape-xl);
   background: var(--surface-container-low); color: var(--on-surface); text-align: center;
   transition: background-color 200ms var(--effects), transform var(--dur-sm) var(--ease-out), border-radius 350ms var(--spring-fast);
@@ -158,6 +205,7 @@
 .course-card.course-add:active, .map-card.map-add:active { transform: scale(.985); transition-duration: var(--dur-xs); }
 :root[data-motion="reduce"] :is(.course-add, .map-add) .add-ic svg { transform: none !important; }
 @media (max-width: 599.98px) {
+  .course-card.course-add { grid-column: 1 / -1; }
   .course-card.course-add, .map-card.map-add { min-height: 80px; margin-top: 0; flex-direction: row; justify-content: flex-start; gap: var(--sp-4); padding: var(--sp-3) var(--sp-4); text-align: left; border-radius: var(--shape-l); }
 }
 
@@ -175,34 +223,37 @@
 .map-row-end { padding-right: var(--sp-2); }
 .thumb svg { width: 100%; height: 100%; }
 
-/* ---- Cours : l'en-tête est le dossier du cours, agrandi ------------------ */
-.course-head { display: grid; gap: var(--sp-6); margin-bottom: var(--sp-8); }
-.course-band {
-  position: relative; display: grid; gap: var(--sp-6);
-  margin-top: 20px; padding: var(--sp-6) var(--sp-8) var(--sp-8);
-  border-radius: 0 var(--shape-xxl) var(--shape-xxl) var(--shape-xxl);
-  background: var(--c-pc); color: var(--c-onpc);
+/* ---- Cours : en-tête de section pleine largeur au conteneur du cours ---------
+   La barre haute prend la même couleur : barre + bandeau forment une seule surface. */
+.course-topbar { background: var(--c-pc); color: var(--c-onpc); }
+.course-topbar .crumb, .course-topbar .icon-btn { color: inherit; }
+.course-topbar .crumbs, .course-topbar .crumbs .ic { color: inherit; }
+.course-hero { background: var(--c-pc); color: var(--c-onpc); }
+.course-hero-in {
+  max-width: 1200px; margin: 0 auto;
+  padding: var(--sp-2) var(--margin) var(--sp-8);
+  display: grid; gap: var(--sp-2);
 }
-.course-band > .fiche-tab { top: -20px; width: min(32%, 220px); }
-.course-band-top { display: flex; gap: var(--sp-5); align-items: center; min-width: 0; }
-.course-band-id { min-width: 0; }
-.course-band .overline, .course-band .course-desc, .course-band .stat-l { color: inherit; }
-.course-title { font: var(--headline-m); margin-top: var(--sp-1); overflow-wrap: anywhere; letter-spacing: -.01em; }
+@media (min-width: 1200px) { .course-hero-in { padding-left: var(--sp-10); padding-right: var(--sp-10); } }
+.course-hero .overline, .course-hero .course-desc { color: inherit; }
+.course-title { font: var(--headline-l); overflow-wrap: anywhere; letter-spacing: -.01em; }
 @media (min-width: 840px) { .course-title { font: var(--display-s); letter-spacing: var(--tracking-display); } }
-.course-desc { font: var(--body-l); margin-top: var(--sp-1); }
+.course-desc { font: var(--body-l); }
+.course-head { display: grid; gap: var(--sp-6); margin-bottom: var(--sp-8); }
 .course-stats { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-8); align-items: flex-end; }
 .stat { display: grid; gap: 2px; }
 .stat-n { font: 700 28px/36px var(--font-brand); font-variant-numeric: tabular-nums; }
-.stat-l { font: var(--label-m); color: var(--on-surface-variant); }
+.stat-l { font: var(--body-m); color: var(--on-surface-variant); }
 .stat-progress { flex: 1; min-width: 180px; grid-template-columns: auto 1fr; column-gap: var(--sp-2); align-items: baseline; }
 .stat-progress .progress { grid-column: 1 / -1; margin-top: var(--sp-2); }
-.course-band .progress { background: color-mix(in srgb, var(--c-onpc) 26%, transparent); }
-.course-band .progress-bar, .course-band .progress::after { background: var(--c-onpc); }
 @media (max-width: 599.98px) {
   .course-stats { gap: var(--sp-2) var(--sp-6); }
-  .course-band { gap: var(--sp-5); padding: var(--sp-5); border-radius: 0 var(--shape-xli) var(--shape-xli) var(--shape-xli); }
-  .course-band .cmark-lg svg { width: 56px; height: 56px; }
+  .course-hero-in { padding-bottom: var(--sp-6); }
+  .course-title { font: var(--headline-m); }
 }
+.page-course .course-layout { padding-top: var(--sp-6); }
+/* la bande de couleur va jusqu'au bord (pas de gouttière de défilement réservée) */
+.page-course .page-scroll { scrollbar-gutter: auto; }
 
 .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--sp-3); }
 @media (max-width: 599.98px) { .map-grid { grid-template-columns: 1fr; } }
@@ -585,7 +636,7 @@
 .mr-track, .mr-val { fill: none; stroke-width: 3.5; }
 .mr-track { stroke: var(--c-sc); }
 .mr-val { stroke: var(--c-pri); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: calc(100 - var(--p, 0) * 100); }
-.mring .cmark svg { width: 28px; height: 28px; }
+.mring .cmark { width: 36px; height: 36px; border-radius: 50%; }
 .intro .mr-val { animation: ring-in var(--dur-xl) var(--ease-out) 300ms both; }
 @keyframes ring-in { from { stroke-dashoffset: 100; } }
 .due-stamp { display: inline-flex; align-items: baseline; gap: 4px; height: 32px; padding: 0 12px; align-items: center; border-radius: var(--shape-full); background: var(--c-pc); color: var(--c-onpc); }
