@@ -308,6 +308,7 @@
     const slot = U.$('#nav-center');
     if (!slot) return;
     const old = slot.querySelector('.nav-cta');
+    const had = !!old;
     if (old) old.remove();
     const it = cfg && !cfg.replaceNav && cfg.items && cfg.items.length === 1 && cfg.items[0].primary ? cfg.items[0] : null;
     slot.closest('.navbar').classList.toggle('has-cta', !!it);
@@ -315,6 +316,8 @@
     const el = h(it.href ? 'a.nav-cta' : 'button.nav-cta', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '', 'aria-label': it.label },
       R.icon(it.icon, 22), h('span.nav-cta-l', it.short || it.label));
     if (it.onClick) el.addEventListener('click', (e) => it.onClick(e, el));
+    // une mise à jour (même page) ne rejoue pas l'entrée : seul le libellé « tique »
+    if (had) el.classList.add('no-enter');
     slot.appendChild(el);
   }
 

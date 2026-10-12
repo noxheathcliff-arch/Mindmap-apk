@@ -274,6 +274,13 @@
           h('span.add-ic', R.icon('plus', 24)), h('span.add-txt', h('span.add-l', 'Nouveau cours'), h('span.add-s', 'Un dossier par matière')));
         grid.appendChild(add);
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
+        if (intro && !R.motion.reduced()) for (const f of grid.querySelectorAll('.fiche')) {
+          // la feuille sort après le dossier ; la classe part à la fin (sinon « both » figerait la
+          // feuille et couperait le survol)
+          f.classList.add('emerge');
+          const body = f.querySelector('.fiche-body');
+          body.addEventListener('animationend', function done(e) { if (e.target !== body) return; f.classList.remove('emerge'); body.removeEventListener('animationend', done); });
+        }
 
         const recents = S.recentMaps(5);
         const main = h('div.lib-main',

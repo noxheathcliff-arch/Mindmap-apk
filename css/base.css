@@ -120,13 +120,13 @@ body.immersive .rail, body.immersive .dock { display: none; }
 .nav-indicator {
   position: relative; display: grid; place-items: center;
   width: 56px; height: 32px; border-radius: var(--shape-full);
-  transition: background-color 200ms var(--effects);
+  transition: background-color var(--dur-effects) var(--effects);
 }
 .nav-indicator::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   background: var(--secondary-container);
   transform: scaleX(.3); opacity: 0;
-  transition: transform 350ms var(--spring-fast), opacity var(--dur-sm) var(--ease-out);
+  transition: transform var(--dur-spring-fast) var(--spring-fast), opacity var(--dur-sm) var(--ease-out);
 }
 .nav-indicator > .ic { position: relative; transition: transform var(--dur-sm) var(--ease-out); }
 .nav-item:hover .nav-indicator { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
@@ -166,7 +166,7 @@ body.immersive .rail, body.immersive .dock { display: none; }
   .rail-spacer { flex: 0 0 var(--sp-2); }
 }
 .rail-sec { padding: var(--sp-3) var(--sp-4) var(--sp-2); font: var(--title-s); color: var(--on-surface-variant); }
-.rail-course { display: flex; align-items: center; gap: var(--sp-3); min-height: 44px; padding: 0 var(--sp-4); border-radius: var(--shape-full); font: var(--label-l); color: var(--on-surface); transition: background-color 200ms var(--effects); }
+.rail-course { display: flex; align-items: center; gap: var(--sp-3); min-height: 44px; padding: 0 var(--sp-4); border-radius: var(--shape-full); font: var(--label-l); color: var(--on-surface); transition: background-color var(--dur-effects) var(--effects); }
 .rail-course:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
 .rail-course.active { background: var(--secondary-container); color: var(--on-secondary-container); }
 .rail-course-t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -207,7 +207,7 @@ body.immersive .rail, body.immersive .dock { display: none; }
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   background: var(--secondary-container);
   transform: scaleX(.6); opacity: 0;
-  transition: transform 350ms var(--spring-fast), opacity var(--dur-sm) var(--ease-out);
+  transition: transform var(--dur-spring-fast) var(--spring-fast), opacity var(--dur-sm) var(--ease-out);
 }
 .navbar .nav-item.active::before { transform: none; opacity: 1; }
 .navbar .nav-item.active { color: var(--on-secondary-container); font-weight: 700; }
@@ -224,17 +224,24 @@ body.immersive .rail, body.immersive .dock { display: none; }
   height: 56px; border-radius: 18px;
   background: var(--primary); color: var(--on-primary);
   box-shadow: none;
-  transition: border-radius 350ms var(--spring-fast), transform var(--dur-sm) var(--ease-out);
+  transition: border-radius var(--dur-spring-fast) var(--spring-fast), transform var(--dur-spring-default) var(--spring-default);
 }
 .navbar .fab.nav-fab { width: 56px; }
-.navbar .fab.nav-fab:active, .nav-cta:active { border-radius: var(--shape-full); transform: scale(.96); transition-duration: 350ms, var(--dur-xs); }
-.nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-5) 0 var(--sp-4); font: var(--title-s); white-space: nowrap; animation: fab-in var(--dur-md) var(--ease-out) both; }
+.navbar .fab.nav-fab:active, .nav-cta:active { border-radius: var(--shape-full); transform: scale(.95); transition-duration: var(--dur-sm), var(--dur-xs); }
+.nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-5) 0 var(--sp-4); font: var(--title-s); white-space: nowrap; animation: fab-in var(--dur-spring-default) var(--spring-default) both; }
+.navbar .nav-cta.no-enter { animation: none; }
+.nav-cta-l { display: inline-block; }
+.nav-cta.tick .nav-cta-l { animation: tick var(--dur-sm) var(--ease-out); }
 .navbar.has-cta .nav-fab { display: none; }
 /* avec une action au centre, les destinations se réduisent à leur icône (la barre tient sur 360 dp) */
 .navbar.has-cta .nav-item { width: 52px; padding: 0; justify-content: center; }
 .navbar.has-cta .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 599.98px) { .navbar.has-cta ~ .ctxbar { display: none !important; } }
 .ctxbar { color: var(--on-surface-variant); }
+/* une barre qui apparaît (display: none → flex) monte de 16 px en fondu ; les mises à jour de
+   contenu ne la rejouent pas (l'élément reste affiché) */
+.navbar, .ctxbar { animation: dock-bar-in var(--dur-md) var(--ease-out) both; }
+@keyframes dock-bar-in { from { opacity: 0; transform: translateY(16px) scale(.96); } }
 .ctxbar.vibrant { background: var(--primary-container); color: var(--on-primary-container); }
 .ctxbar .icon-btn { color: inherit; }
 .ctx-primary { height: 48px; padding: 0 var(--sp-5) 0 var(--sp-4); font: var(--label-l); }
@@ -389,9 +396,14 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 :root[data-motion="reduce"] .empty, :root[data-motion="reduce"] .today, :root[data-motion="reduce"] .tip-card,
 :root[data-motion="reduce"] .onb.swap > *, :root[data-motion="reduce"] .fab, :root[data-motion="reduce"] .node.born,
 :root[data-motion="reduce"] .vtoolbar, :root[data-motion="reduce"] .bottombar.swap .ctx-btn,
-:root[data-motion="reduce"] .pane-inner.swap .pane-body > *, :root[data-motion="reduce"] .review-end > * {
+:root[data-motion="reduce"] .pane-inner.swap .pane-body > *, :root[data-motion="reduce"] .review-end > *,
+:root[data-motion="reduce"] .today-shape, :root[data-motion="reduce"] .daydeck .dd-top, :root[data-motion="reduce"] .end-flame,
+:root[data-motion="reduce"] .nav-cta, :root[data-motion="reduce"] .fiche.emerge .fiche-body,
+:root[data-motion="reduce"] .navbar, :root[data-motion="reduce"] .ctxbar {
   animation-name: rm-fade !important;
 }
+/* rotations des formes cookie : supprimées (la silhouette est la même à chaque lobe) */
+:root[data-motion="reduce"] :is(.today-shape, .dd-top, .end-flame)::before { animation: none !important; transition: none !important; }
 :root[data-motion="reduce"] .page-wrap.leaving, :root[data-motion="reduce"] .dialog.out,
 :root[data-motion="reduce"] .rcard.leaving, :root[data-motion="reduce"] .node.dying {
   animation-name: rm-fade-out !important;

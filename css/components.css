@@ -37,12 +37,13 @@
   border-radius: var(--shape-full);
   font: var(--label-l); letter-spacing: var(--tracking-label);
   white-space: nowrap;
-  transition: transform var(--dur-sm) var(--ease-out), box-shadow var(--dur-sm) var(--ease-out), background-color var(--dur-xs) var(--ease-out),
-    border-radius 350ms var(--spring-fast);
+  /* relâchement au ressort (settle) ; l'enfoncement, lui, est immédiat (100 ms, :active) */
+  transition: transform var(--dur-spring-default) var(--spring-default), box-shadow var(--dur-sm) var(--ease-out), background-color var(--dur-xs) var(--ease-out),
+    border-radius var(--dur-spring-fast) var(--spring-fast);
 }
 .btn:has(> .ic) { padding-left: var(--sp-3); }
 /* M3 Expressive : à l'appui, la forme se resserre (pilule → coins 12) */
-.btn:active:not(:disabled) { transform: scale(.98); border-radius: var(--shape-m); transition-duration: var(--dur-xs), var(--dur-xs), var(--dur-xs), 200ms; }
+.btn:active:not(:disabled) { transform: scale(.97); border-radius: var(--shape-m); transition-duration: var(--dur-xs), var(--dur-xs), var(--dur-xs), var(--dur-sm); transition-timing-function: var(--ease-out); }
 .btn:disabled { opacity: .38; cursor: default; }
 .btn-filled { background: var(--primary); color: var(--on-primary); }
 .btn-filled:hover:not(:disabled) { box-shadow: var(--elev-1); }
@@ -65,12 +66,12 @@
   width: 48px; height: 48px; flex: none;
   border-radius: var(--shape-full);
   color: var(--on-surface-variant);
-  transition: transform var(--dur-sm) var(--ease-out), color var(--dur-xs) var(--ease-out);
+  transition: transform var(--dur-spring-default) var(--spring-default), color var(--dur-xs) var(--ease-out);
 }
 .icon-btn::before { inset: 4px; }
 .icon-btn .ripple-wave { display: none; }
 .icon-btn:hover { color: var(--on-surface); }
-.icon-btn:active:not(:disabled) { transform: scale(.92); transition-duration: var(--dur-xs); }
+.icon-btn:active:not(:disabled) { transform: scale(.9); transition-duration: var(--dur-xs); transition-timing-function: var(--ease-out); }
 .icon-btn:disabled { opacity: .38; cursor: default; }
 .icon-btn[aria-pressed="true"] { color: var(--on-secondary-container); background: var(--secondary-container); }
 .icon-btn-sm { width: 36px; height: 36px; }
@@ -84,13 +85,14 @@
   background: var(--primary-container); color: var(--on-primary-container);
   box-shadow: var(--elev-3);
   font: var(--label-l);
-  transition: transform var(--dur-sm) var(--ease-out), box-shadow var(--dur-sm) var(--ease-out),
-    translate var(--dur-md) var(--ease-out), opacity var(--dur-md) var(--ease-out);
-  animation: fab-in var(--dur-md) var(--ease-out) both;
+  transition: transform var(--dur-spring-default) var(--spring-default), box-shadow var(--dur-sm) var(--ease-out),
+    translate var(--dur-md) var(--ease-out), opacity var(--dur-md) var(--ease-out), border-radius var(--dur-spring-fast) var(--spring-fast);
+  /* naît de son centre (jamais depuis 0) et se pose au ressort */
+  animation: fab-in var(--dur-spring-default) var(--spring-default) both;
 }
 .fab:hover { box-shadow: var(--elev-4); }
-.fab:active { transform: scale(.96); transition-duration: var(--dur-xs); }
-@keyframes fab-in { from { transform: scale(.9); opacity: 0; } }
+.fab:active { transform: scale(.95); border-radius: var(--shape-xl); transition-duration: var(--dur-xs); transition-timing-function: var(--ease-out); }
+@keyframes fab-in { from { transform: scale(.8); opacity: 0; } }
 .fab.hide { translate: 0 calc(100% + 32px); opacity: 0; pointer-events: none; transition-duration: var(--dur-sm); transition-timing-function: var(--ease-in); }
 .fab-extended { width: auto; padding: 0 var(--sp-5) 0 var(--sp-4); }
 /* FAB flottant : sur compact, il accompagne la barre flottante (dans le dock), sinon il vit dans le rail */
@@ -124,7 +126,7 @@
   font: var(--label-l); color: var(--on-surface);
   background: var(--surface-container-high);
   border-radius: var(--shape-s);
-  transition: color var(--dur-sm) var(--ease-out), background-color 200ms var(--effects), border-radius 350ms var(--spring-fast);
+  transition: color var(--dur-sm) var(--ease-out), background-color var(--dur-effects) var(--effects), border-radius var(--dur-spring-fast) var(--spring-fast);
   position: relative; z-index: 1;
 }
 .segmented > .seg-btn:first-of-type { border-radius: var(--shape-full) var(--shape-s) var(--shape-s) var(--shape-full); }
@@ -409,7 +411,7 @@
 .dialog-table .dialog-actions .danger { margin-right: auto; }
 .tbl-ed { display: grid; gap: var(--sp-3); min-width: 0; }
 .tbl-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1); }
-.tbl-tool { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px 0 8px; border-radius: var(--shape-full); font: var(--label-l); color: var(--on-secondary-container); background: var(--secondary-container); transition: border-radius 350ms var(--spring-fast); }
+.tbl-tool { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px 0 8px; border-radius: var(--shape-full); font: var(--label-l); color: var(--on-secondary-container); background: var(--secondary-container); transition: border-radius var(--dur-spring-fast) var(--spring-fast); }
 .tbl-tool:active { border-radius: var(--shape-m); }
 .tbl-count { margin-left: auto; font: var(--label-m); color: var(--on-surface-variant); }
 .tbl-scroll { max-width: 100%; max-height: min(52dvh, 420px); overflow: auto; border: 1px solid var(--outline-variant); border-radius: var(--shape-s); background: var(--surface-container-lowest); overscroll-behavior: contain; }

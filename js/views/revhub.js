@@ -162,7 +162,7 @@
     for (let i = layersFor(take, size); i >= 1; i--) deck.appendChild(sheet(i));
     deck.appendChild(top);
 
-    let shown = take, token = 0;
+    let shown = take, token = 0, rot = 0;
     deck.update = (n, sz) => {
       if (!due) return;
       // feuilles : on ajoute par-dessous (glisse depuis sous la fiche), on retire par le fond (se range)
@@ -186,6 +186,9 @@
       unit.textContent = n > 1 ? 'cartes' : 'carte';
       if (time) time.textContent = minutes(n);
       deck.setAttribute('aria-label', `Commencer : ${n} cartes`);
+      // changement d'état : le cookie tourne d'un lobe (30°, symétrie d'ordre 12 → même silhouette),
+      // dans le sens de la variation ; le chiffre, lui, défile
+      if (from !== n && !motion.reduced()) { rot += n > from ? 30 : -30; top.style.setProperty('--rot', rot + 'deg'); }
       if (motion.reduced() || from === n) { num.textContent = String(n); return; }
       motion.tween({ duration: 320, ease: motion.ease.expo, onUpdate: (p, e) => { if (my === token) num.textContent = String(Math.round(from + (n - from) * e(p))); } });
     };

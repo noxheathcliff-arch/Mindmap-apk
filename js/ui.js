@@ -429,11 +429,14 @@
       const v = vt.get().x;
       if (Math.abs(dx) > 90 || Math.abs(v) > 0.5) {
         const dir = Math.sign(dx || v);
+        // la vitesse du geste se prolonge : durée = distance restante / vitesse (120–260 ms)
+        const rest = Math.abs(dir * (el.offsetWidth + 40) - dx);
+        const ms = motion.reduced() ? 1 : Math.round(U.clamp(rest / Math.max(Math.abs(v), 0.6), 120, 260));
         el.animate([{ translate: dx + 'px 0', opacity: el.style.opacity }, { translate: dir * (el.offsetWidth + 40) + 'px 0', opacity: 0 }],
-          { duration: motion.reduced() ? 1 : 180, easing: motion.css.in, fill: 'forwards' });
-        dismiss(true, 180);
+          { duration: ms, easing: 'cubic-bezier(0.2, 0, 0.6, 1)', fill: 'forwards' });
+        dismiss(true, ms);
       } else {
-        el.animate([{ translate: dx + 'px 0' }, { translate: '0 0' }], { duration: 240, easing: motion.css.settle });
+        el.animate([{ translate: dx + 'px 0' }, { translate: '0 0' }], motion.springCss.std);
         el.style.translate = ''; el.style.opacity = '';
         resume();
       }
@@ -536,7 +539,7 @@
     in: motion.bezier(0.55, 0.055, 0.675, 0.19),
     inOut: motion.bezier(0.645, 0.045, 0.355, 1),
     drawer: motion.bezier(0.32, 0.72, 0, 1),
-    pop: motion.bezier(0.175, 0.885, 0.32, 1.275),
+    pop: motion.bezier(0.34, 1.56, 0.64, 1),
     expo: motion.bezier(0.16, 1, 0.3, 1),
   };
   const supportsLinear = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('transition-timing-function', 'linear(0, 1)');
@@ -545,12 +548,22 @@
     in: 'cubic-bezier(0.55, 0.055, 0.675, 0.19)',
     inOut: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
     drawer: 'cubic-bezier(0.32, 0.72, 0, 1)',
-    pop: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    pop: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
     settle: supportsLinear
       ? 'linear(0, 0.157 4.6%, 0.508 10.6%, 0.784 16.7%, 0.932 22.7%, 1.006 29.4%, 1.026 35.6%, 1.019 43.5%, 1.003 57%, 0.999 72%, 1)'
       : 'cubic-bezier(0.23, 1, 0.32, 1)',
   };
   motion.dur = { xs: 100, sm: 160, md: 240, lg: 360, xl: 560 };
+  /* Ressorts M3 : les courbes linear() de tokens.css (une seule source), avec leur temps
+     d'établissement — pour WAAPI (element.animate) */
+  const cssVar = (n, fb) => { try { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb; } catch (e) { return fb; } };
+  motion.springCss = {
+    fast: { easing: cssVar('--spring-fast', 'cubic-bezier(0.34, 1.56, 0.64, 1)'), duration: 400 },
+    default: { easing: cssVar('--spring-default', 'cubic-bezier(0.3, 1.25, 0.5, 1)'), duration: 460 },
+    stdFast: { easing: cssVar('--spring-std-fast', 'cubic-bezier(0.2, 0, 0, 1)'), duration: 200 },
+    std: { easing: cssVar('--spring-std', 'cubic-bezier(0.2, 0, 0, 1)'), duration: 260 },
+    stdSlow: { easing: cssVar('--spring-std-slow', 'cubic-bezier(0.2, 0, 0, 1)'), duration: 390 },
+  };
 
   /** Durée proportionnée à la distance (racine), plafonnée — cf. timing.rules */
   motion.durationFor = (distancePx, { min = 160, max = 480 } = {}) =>

@@ -235,17 +235,36 @@ Dans « Mes cours », un cours est un **dossier entrouvert** ; partout ailleurs 
 - **Règle de fréquence** : plus une animation est vue souvent, plus elle est courte et discrète. Les actions clavier répétées ne s'animent pas (sélection au clavier sans balayage).
 
 ### 5.2 Tokens (un seul système, CSS et JS)
+**Personnalité** : précise et calme (≈ 90 % productif : 100–260 ms, aucun rebond visible), avec des accents expressifs M3 réservés aux formes et aux moments rares. Curseurs : plutôt léger · précis · calme.
+
 | Token | Valeur | Rôle |
 |---|---|---|
 | `--ease-out` | `cubic-bezier(0.23, 1, 0.32, 1)` (out-quint) | entrées, réponses au geste |
-| `--ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` (in-cubic) | sorties définitives |
-| `--ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | déplacement visible (caméra, Ranger, indicateurs) |
-| `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | panneaux, feuilles, morphing de page |
-| `--ease-pop` | `cubic-bezier(0.175, 0.885, 0.32, 1.275)` | **expressif uniquement** (flamme, badge, révélation) |
-| `--ease-settle` | ressort `linear()` ζ ≈ 0.85 | dépôt d'un nœud |
-| `--dur-xs / sm / md / lg / xl` | 100 / 160 / 240 / 360 / 560 ms | press · hover/menus · composants · panneaux/pages · expressif |
+| `--ease-in` | `cubic-bezier(0.55, 0.055, 0.675, 0.19)` (in-cubic) | sorties définitives (≈ 70 % de l'entrée) |
+| `--ease-in-out` | `cubic-bezier(0.645, 0.045, 0.355, 1)` | déplacement visible (caméra, Ranger) |
+| `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | feuilles, container transform |
+| `--ease-pop` | `cubic-bezier(0.34, 1.56, 0.64, 1)` (out-back) | **expressif uniquement** (badge, succès) |
+| `--effects` | `cubic-bezier(0.34, 0.8, 0.34, 1)`, `--dur-effects` 200 ms | couleur, opacité (jamais de ressort) |
+| `--dur-xs / sm / md / lg / xl` | 100 / 160 / 240 / 360 / 560 ms | appui · sorties, menus · composants · dialogues, pages · expressif |
 
-Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 500/36, `drawer` 380/38. Inertie : décroissance exponentielle (0.994/ms).
+**Ressorts M3 Expressive**, calculés par un solveur physique (masse 1) puis exportés en `linear()` ; chaque token a sa durée = temps d'établissement réel (repli Bézier sans `linear()`). JS les lit dans le CSS (`R.motion.springCss`) : une seule source.
+
+| Ressort | ζ · raideur | Durée | Dépassement | Usage |
+|---|---|---|---|---|
+| `--spring-fast` | 0,6 · 800 | 400 ms | 9 % | morphose de forme (coins d'un bouton, FAB), pastille active |
+| `--spring-default` | 0,8 · 380 | 460 ms | 1,4 % | relâchement d'un appui, FAB qui naît, feuille du dossier, cookie qui tourne |
+| `--spring-std-fast` | 0,9 · 1400 | 200 ms | ≈ 0 | petits déplacements de layout |
+| `--spring-std` | 0,9 · 700 | 260 ms | ≈ 0 | retour d'un geste (snackbar), cartes |
+| `--spring-std-slow` | 0,9 · 300 | 390 ms | ≈ 0 | grandes surfaces |
+
+Règle : **entrées en ease-out** (un ressort parti du repos démarre lentement, il paraît en retard sur une entrée) ; **ressorts pour les changements d'état et le retour d'un geste** (interruptibles, ils gardent la vélocité). Ressorts JS (geste) : `ui` 400/40, `snappy` 500/36, `drawer` 380/38 ; inertie : décroissance exponentielle.
+
+**Chorégraphies ajoutées avec la DA « Contexte »** :
+- **Appui** : enfoncement immédiat (scale .97, 100 ms out) et coins qui se resserrent ; au relâchement, retour au ressort par défaut, coins au ressort rapide (seul rebond de l'interface, sur la forme).
+- **Dossiers (1re visite)** : chaque dossier monte (12 px, 300 ms, décalage 40 ms, 8 max), puis **la feuille sort du dossier** (+200 ms, translateY 26 → 0 et se met de biais, ressort par défaut) : action secondaire qui raconte « voici la prochaine fiche ». Survol : on tire la feuille (−8 px, −2,5°).
+- **Cookies** (session du jour, paquet, flamme de fin) : la forme grandit (scale .72 → 1, ressort) et tourne d'un lobe et demi (−45° → 0, 560 ms out) ; le chiffre, lui, reste droit (la rotation est portée par `::before`). Changer la taille de session fait tourner le cookie **d'un lobe (30°)** dans le sens de la variation : même silhouette, état lisible ; le compte défile.
+- **Barre flottante** : elle monte en fondu quand elle apparaît (16 px, 240 ms) ; le FAB / « Commencer » naît de son centre (scale .8 → 1, ressort) ; une mise à jour de la même page ne rejoue pas l'entrée, seul le libellé « tique ».
+- **Snackbar balayée** : la vitesse du doigt se prolonge (durée = distance restante / vitesse, 120–260 ms).
 
 ### 5.3 Spécification
 | Élément | Propriété | De → à | Durée | Courbe | Principe |
