@@ -265,6 +265,7 @@ Règle : **entrées en ease-out** (un ressort parti du repos démarre lentement,
 - **Cookies** (session du jour, paquet, flamme de fin) : la forme grandit (scale .72 → 1, ressort) et tourne d'un lobe et demi (−45° → 0, 560 ms out) ; le chiffre, lui, reste droit (la rotation est portée par `::before`). Changer la taille de session fait tourner le cookie **d'un lobe (30°)** dans le sens de la variation : même silhouette, état lisible ; le compte défile.
 - **Barre flottante** : elle monte en fondu quand elle apparaît (16 px, 240 ms) ; le FAB / « Commencer » naît de son centre (scale .8 → 1, ressort) ; une mise à jour de la même page ne rejoue pas l'entrée, seul le libellé « tique ».
 - **Snackbar balayée** : la vitesse du doigt se prolonge (durée = distance restante / vitesse, 120–260 ms).
+- **Transitions de page** : axe Z pour avant / arrière (scale ± 2–3 %, sortie 160 ms in, entrée 240 ms out +60 ms) ; **fade-through** entre destinations voisines (sortie 90 ms, entrée 210 ms, scale .96 → 1) ; container transform pour les éléments partagés (dossier → en-tête du cours, fiche → carte de révision).
 
 ### 5.3 Spécification
 | Élément | Propriété | De → à | Durée | Courbe | Principe |

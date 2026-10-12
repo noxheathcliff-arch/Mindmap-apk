@@ -298,7 +298,11 @@ body.has-ctxbar .page-scroll { scroll-padding-bottom: 120px; }
 @keyframes vt-in { from { opacity: 0; transform: scale(var(--vt-in, 1)); } }
 :root[data-vt="forward"] { --vt-out: 1.02; --vt-in: 0.97; }
 :root[data-vt="back"] { --vt-out: 0.98; --vt-in: 1.03; }
-:root[data-vt="peer"] { --vt-out: 1; --vt-in: 0.98; }
+:root[data-vt="peer"] { --vt-out: 1; --vt-in: 0.96; }
+/* entre destinations voisines (Cours ↔ Réviser) : fade-through M3 — l'ancien s'efface vite
+   (90 ms), le nouveau apparaît en grandissant à peine (210 ms) ; pas d'axe, pas de relation */
+:root[data-vt="peer"]::view-transition-old(root) { animation-duration: 90ms; }
+:root[data-vt="peer"]::view-transition-new(root) { animation-duration: 210ms; animation-delay: 90ms; }
 /* les héros (carte → en-tête, vignette → canvas) se transforment, leur image se fond */
 ::view-transition-old(hero-title), ::view-transition-new(hero-title),
 ::view-transition-old(hero-mono), ::view-transition-new(hero-mono) {
