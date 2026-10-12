@@ -87,7 +87,7 @@
         const st = S.courseStats(course.id);
 
         const more = ui.iconBtn('more', { title: 'Options du cours' });
-        more.addEventListener('click', () => R.actions.courseMenu(more, course, () => R.app.go('#/', { replace: true })));
+        more.addEventListener('click', () => R.actions.courseMenu(more, course, () => R.app.go('#/', { replace: true }), { inCourse: true }));
 
         // barre haute à la couleur du cours : elle prolonge l'en-tête (une seule surface)
         const topbar = R.courseArt.tint(h('header.topbar.course-topbar',
@@ -139,19 +139,17 @@
         intro = false;
       };
       const stat = (n, l) => h('div.stat', h('span.stat-n', String(n)), h('span.stat-l', l));
-      /* barre d'actions du cours, à sa couleur (toolbar vibrante) : Réviser en forte emphase,
-         puis les actions secondaires. Sur compact, elle remplace la navigation (page de détail). */
+      /* barre d'actions du cours, à sa couleur (toolbar vibrante) : les deux actions fréquentes,
+         Réviser en forte emphase et Nouvelle carte. Le reste (modifier, exporter, supprimer) vit
+         une seule fois, dans le menu ⋮ de la barre haute. Sur compact, la barre remplace la
+         navigation ; sur grand écran, « Nouvelle carte » est déjà le FAB du rail. */
       const actions = () => {
         const c = S.course(route.id);
         if (!c) { R.app.setActions(null); return; }
         const st = S.courseStats(c.id);
         const items = [];
         if (st.reviewable) items.push({ icon: 'play', label: st.due ? `Réviser · ${st.due}` : 'Réviser', primary: true, onClick: () => R.app.go('#/reviser/cours/' + c.id + (st.due ? '' : '?all=1')) });
-        // grand écran : « Nouvelle carte » est déjà le FAB du rail, la barre ne le répète pas
-        items.push({ icon: 'plus', label: 'Nouvelle carte', primary: !st.reviewable, cls: st.reviewable ? 'only-compact' : '', onClick: (e, b) => R.actions.newMap(c.id, { from: b }) });
-        items.push({ icon: 'edit', label: 'Modifier le cours', onClick: () => R.actions.editCourse(c) });
-        items.push({ icon: 'download', label: 'Exporter le cours', onClick: () => { U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id)); ui.snack('Cours exporté · à importer avec Réglages › Importer'); } });
-        items.push({ icon: 'more', label: 'Options du cours', onClick: (e, b) => R.actions.courseMenu(b, c, () => R.app.go('#/', { replace: true })) });
+        items.push({ icon: 'plus', label: 'Nouvelle carte', primary: !st.reviewable, cls: 'only-compact', onClick: (e, b) => R.actions.newMap(c.id, { from: b }) });
         R.app.setActions({ items, vibrant: true, course: c, replaceNav: true });
       };
       draw();

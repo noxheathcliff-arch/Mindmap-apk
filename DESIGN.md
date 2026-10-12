@@ -215,7 +215,7 @@ Dans « Mes cours », un cours est un **dossier entrouvert** ; partout ailleurs 
 - **Interaction** : survoler tire la feuille hors du dossier ; toucher la feuille lance la révision sur cette fiche ; le titre (lien étiré) ouvre le cours.
 - **États de la feuille** : *Prochaine fiche* · *À jour* (prochaine échéance) · *À compléter* · *Dossier vide* (→ Nouvelle carte).
 - **Compact** : deux dossiers par ligne (titres 15 px, question sur 3 lignes, « Réviser » réduit à ▶ + nombre).
-- **Page d'un cours** : en-tête de section pleine largeur au conteneur du cours, prolongé par la barre haute de la même couleur (« Cours », titre, description) ; les chiffres viennent dessous sur la surface ; les actions dans la barre vibrante du cours.
+- **Page d'un cours** : en-tête de section pleine largeur au conteneur du cours, prolongé par la barre haute de la même couleur (« Cours », titre, description) ; les chiffres viennent dessous sur la surface. **Chaque action à un seul endroit** : la barre vibrante porte les deux actions fréquentes (« ▶ Réviser » en forte emphase, « + Nouvelle carte » — sur grand écran, c'est le FAB du rail) ; le menu ⋮ de la barre haute porte le reste (Modifier, Exporter, Supprimer).
 
 ### 4.7 Réviser — paquet du jour, session, relevé
 - **Paquet du jour** : héros `primary-container` (coins 48), le nombre de fiches dans un *cookie 12* `primary` ; taille de session en groupe de boutons connecté (choix en `primary`, lisible sur le conteneur). « Commencer » vit dans la barre contextuelle.

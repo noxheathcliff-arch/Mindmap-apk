@@ -105,17 +105,18 @@
     R.app.go('#/carte/' + m.id + '?new=1');
   };
 
-  R.actions.courseMenu = function (anchor, c, after) {
+  /** Menu d'un cours. Sur la page du cours (inCourse), « Réviser » est déjà dans sa barre d'actions. */
+  R.actions.courseMenu = function (anchor, c, after, { inCourse = false } = {}) {
     ui.menu(anchor, [
       { label: 'Modifier', icon: 'edit', onClick: () => R.actions.editCourse(c) },
-      { label: 'Réviser ce cours', icon: 'cards', onClick: () => R.app.go('#/reviser/cours/' + c.id) },
+      inCourse ? null : { label: 'Réviser ce cours', icon: 'cards', onClick: () => R.app.go('#/reviser/cours/' + c.id) },
       { label: 'Exporter le cours (JSON)', icon: 'download', onClick: () => {
         U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id));
         ui.snack('Cours exporté · à importer avec Réglages › Importer');
       } },
       { divider: true },
       { label: 'Supprimer', icon: 'trash', danger: true, onClick: () => R.actions.deleteCourse(c, after) },
-    ]);
+    ].filter(Boolean));
   };
 
   /** Les 7 derniers jours : une pastille pleine par jour de révision (partagé avec Réviser) */
