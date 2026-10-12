@@ -678,7 +678,9 @@
             "ce qui nous empêche",
             "frein",
             "nous retient",
-            "vient de"
+            "vient de",
+            "motif",
+            "ce que ça m'apporte (quand le livre veut s'en défaire)"
           ],
           "parents_typiques": [
             "question",
@@ -1052,7 +1054,7 @@
         },
         {
           "type": "objectif",
-          "fonction": "VISER : le but recherché (après, « pour… »)",
+          "fonction": "VISER : un but que le cours veut faire atteindre (la question « comment l'atteindre ? » doit avoir du sens)",
           "lien_parent": "« [enfant] » est ce que l'on cherche à obtenir par « [parent] »",
           "indices": [
             "pour",
@@ -1069,7 +1071,8 @@
             "question"
           ],
           "pas_si": {
-            "ce qui pousse, avant": "cause"
+            "ce qui pousse, avant": "cause",
+            "motif caché qu'on veut faire DÉPASSER (« pourquoi je fais plaisir : éviter la confrontation, noyer l'anxiété »)": "cause"
           }
         },
         {
@@ -1402,7 +1405,7 @@
         },
         {
           "groupe": "cause · condition · objectif · conséquence",
-          "question_discriminante": "Où est l'enfant dans le temps par rapport au parent ? AVANT et il POUSSE → cause ; AVANT et il PERMET (nécessaire) → condition ; APRÈS et il est VOULU → objectif ; APRÈS et il ARRIVE (voulu ou non) → conséquence. Un FREIN (« ce qui nous empêche de… ») est une cause : il explique pourquoi on n'y arrive pas. C'est un problème seulement s'il est une situation à résoudre pour elle-même.",
+          "question_discriminante": "Où est l'enfant dans le temps par rapport au parent ? AVANT et il POUSSE → cause ; AVANT et il PERMET (nécessaire) → condition ; APRÈS et il est VOULU → objectif ; APRÈS et il ARRIVE (voulu ou non) → conséquence. Un FREIN (« ce qui nous empêche de… ») est une cause : il explique pourquoi on n'y arrive pas. C'est un problème seulement s'il est une situation à résoudre pour elle-même. Un MOTIF caché (ce qu'on cherche sans le dire et que le livre veut faire dépasser) est une cause, pas un objectif : la question « comment l'atteindre ? » serait contraire à la thèse.",
           "phrase_test": "cause : « [enfant] provoque [parent] » ; condition : « sans [enfant], pas de [parent] » ; objectif : « on fait [parent] pour [enfant] » ; conséquence : « [parent] entraîne [enfant] »"
         },
         {
@@ -1640,6 +1643,15 @@
             "type": "formule",
             "pourquoi": "phrase-type à restituer mot pour mot",
             "tentation": "citation"
+          },
+          {
+            "domaine": "dev perso",
+            "parent": "question: Pourquoi est-ce que je fais plaisir à tout le monde ?",
+            "titre": "Éviter la confrontation",
+            "extrait": "On fait plaisir pour ne jamais avoir à affronter un désaccord.",
+            "type": "cause",
+            "pourquoi": "motif caché que le livre veut faire dépasser ; « comment atteindre cet objectif ? » contredirait la thèse",
+            "tentation": "objectif"
           }
         ]
       },
@@ -1952,7 +1964,7 @@
     "structure_levels": "La racine chapitre peut avoir directement des section (sans lecon) si le chapitre n'a qu'un niveau de parties. N'utiliser lecon que s'il existe deux niveaux.",
     "defective_sources": [
       "Erreur manifeste de traduction ou coquille gênante : reformuler fidèlement au sens et ajouter *(sic)* ou *(complément : …)* ; ne jamais corriger silencieusement un fait.",
-      "Contradiction interne du livre : modéliser les deux positions (en général deux nuance, ou un conseil et une nuance) reliées par un renvoi « contredit », et la signaler dans le rapport.",
+      "Contradiction interne du livre : modéliser les deux positions avec leur type NATUREL (conseil, nuance, critique… — jamais une nuance pour adoucir la contradiction), les relier par un renvoi « contredit », commencer leurs notes par « ⚠ Le livre se contredit : » et le signaler dans le rapport.",
       "Section annoncée mais absente du texte : ne rien inventer ; la signaler dans le rapport (« Laissé de côté / manquant »).",
       "Passage répété mot pour mot : ne le modéliser qu'une fois."
     ]
