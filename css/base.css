@@ -206,9 +206,16 @@ body.immersive .rail, body.immersive .dock { display: none; }
 .ctxbar > .ctx-primary:only-child { height: 56px; padding: 0 var(--sp-6) 0 var(--sp-5); font: var(--title-m); box-shadow: var(--elev-3); border-radius: var(--shape-l); }
 .ctxbar > .ctx-primary:only-child:hover { box-shadow: var(--elev-4); }
 .ctx-primary .ic svg { width: 20px; height: 20px; }
+.ctx-primary { min-width: 0; }
+.ctx-primary-l, .ctx-primary-s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-primary-s { display: none; }
+.dock > * { min-width: 0; }
 @media (max-width: 599.98px) {
   .dock.has-actions .fab-float, .dock.replace-nav .navbar { display: none; }
   .ctx-primary { padding: 0 var(--sp-4) 0 var(--sp-3); }
+  /* à côté de la navigation, l'action garde un libellé court (le long reste en aria-label) */
+  .dock:not(.replace-nav) .ctx-primary.has-short .ctx-primary-l { display: none; }
+  .dock:not(.replace-nav) .ctx-primary.has-short .ctx-primary-s { display: inline; }
 }
 @media (min-width: 600px) {
   .dock { left: calc(var(--rail-w) + (100vw - var(--rail-w)) / 2); bottom: calc(var(--sp-6) + env(safe-area-inset-bottom)); }

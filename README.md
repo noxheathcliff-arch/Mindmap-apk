@@ -6,7 +6,7 @@ Décompose tes cours de droit en cartes mentales **typées** (définition, condi
 - Fonctionne **hors-ligne** et s'**installe** comme une application (PWA) sur Android, iOS et desktop.
 - Composition propre à chaque écran : barre basse et bottom sheet sur mobile, rail et feuille latérale sur tablette, panneau de note docké sur desktop.
 
-Le raisonnement de conception (architecture de l'information, Material Design 3, 60/30/10, motion, lois de l'UX, Hooked, Lean UX) est détaillé dans [`DESIGN.md`](DESIGN.md).
+Le raisonnement de conception (architecture de l'information, Material 3 Expressive, cours en dossiers, barre d'outils flottante, motion, lois de l'UX, Hooked, Lean UX) est détaillé dans [`DESIGN.md`](DESIGN.md).
 
 ## Lancer
 
@@ -136,14 +136,14 @@ index.html              coque de l'application
 manifest.webmanifest    PWA (installation)
 sw.js                   service worker (hors-ligne)
 css/tokens.css          tokens Material Design 3 (couleurs, typo, forme, motion)
-css/base.css            coque : rail, barre de navigation, pages, transitions
+css/base.css            coque : rail 80/260, dock flottant, barre contextuelle, pages, transitions
 css/components.css      boutons, chips, segmentés, dialogues, menus, snackbar…
 css/views.css           bibliothèque, cours, révision, recherche, plan
 css/editor.css          canvas, nœuds, liens, panneau de note, barres d'outils
 js/store.js             modèle de données, persistance (IndexedDB + miroir), répétition espacée
 js/layout.js            moteur de rangement : dispositions, contours, trajets des renvois, libellés, note de lisibilité
 js/colors.js            couleurs des nœuds par type (OKLCH, contraste garanti)
-js/mark.js              identité d'un cours : empreinte générative (SVG) + teinte papier
+js/mark.js              identité d'un cours : dossier + empreinte générative (SVG), rôles de couleur M3 par teinte
 js/markdown.js          rendu des notes
 js/ui.js                composants et moteur de motion
 js/views/*.js           bibliothèque, cours, éditeur, plan, révision

@@ -306,7 +306,7 @@
         const any = S.data.maps.some((m) => S.mapStats(m).reviewable);
         R.app.setActions(any ? { items: [
           due ? { icon: 'play', label: `Réviser · ${due}`, primary: true, cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout', { from: el.querySelector('.today') }) }
-            : { icon: 'cards', label: 'Réviser quand même', primary: true, cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') },
+            : { icon: 'cards', label: 'Réviser quand même', short: 'Réviser', primary: true, cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') },
         ] } : null);
       };
       draw();

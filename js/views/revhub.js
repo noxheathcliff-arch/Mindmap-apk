@@ -227,8 +227,8 @@
             : ['Rien n’est dû aujourd’hui. Une série d’entraînement ne change pas tes échéances… sauf ce que tu notes.']);
           // l'action de la page vit dans la barre flottante (une seule action en forte emphase)
           const ctaFor = (n, tick) => R.app.setActions({ items: [due
-            ? { icon: 'play', label: `Commencer · ${n} carte${n > 1 ? 's' : ''}`, primary: true, cls: 'hub-cta' + (tick ? ' tick' : ''), onClick: () => R.app.go(sessionHref('#/reviser/tout'), { from: el.querySelector('.dd-top') }) }
-            : { icon: 'cards', label: 'Réviser quand même', primary: true, cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) }] });
+            ? { icon: 'play', label: `Commencer · ${n} carte${n > 1 ? 's' : ''}`, short: 'Commencer', primary: true, cls: 'hub-cta' + (tick ? ' tick' : ''), onClick: () => R.app.go(sessionHref('#/reviser/tout'), { from: el.querySelector('.dd-top') }) }
+            : { icon: 'cards', label: 'Réviser quand même', short: 'Réviser', primary: true, cls: 'hub-cta', onClick: () => R.app.go(sessionHref('#/reviser/tout', { all: true })) }] });
           const meta = h('p.hub-meta', metaFor(take));
           ctaFor(take);
           const start = () => R.app.go(sessionHref('#/reviser/tout', { all: !due }));

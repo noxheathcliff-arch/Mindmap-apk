@@ -94,54 +94,54 @@ Toute notion est à **≤ 3 interactions** de l'accueil.
 ### 4.0 Règle permanente — pas de surlignage de contour
 - **Aucun contour décoratif** (outline, bordure, liseré) autour des cartes, des sections, des groupes de réglages ni des composants « carte blanche ». Un contour n'embellit pas l'interface : il la charge.
 - **Il n'est pas nécessaire pour rendre un élément visible** : le contraste tonal entre l'élément et son fond (paliers `surface-container-*`) suffit, et au besoin l'élévation (ombre douce en clair, palier plus clair en sombre).
-- Les contours restent réservés à ce qui est fonctionnel : champ de saisie (`outlined text field`), focus clavier, chip de filtre non sélectionnée, nœud de carte dont la forme encode le type.
+- Les contours restent réservés à ce qui est fonctionnel : anneau de focus clavier, nœud de carte dont la forme encode le type, guides de niveau du Plan, grilles des tableaux. Les champs sont **remplis** (M3 *filled text field* : `surface-container-highest` + indicateur bas), les chips et filtres sont tonals.
 
-### 4.1 Couleur — règle 60 / 30 / 10, monochrome
-| Part | Rôle M3 | Clair | Sombre | Usage |
-|---|---|---|---|---|
-| **60 %** | `surface`, `surface-container-*` | blancs cassés / gris très clairs | noirs profonds | fonds, canvas, cartes |
-| **30 %** | `on-surface`, `inverse-surface`, `outline` | encre quasi noire, gris | blanc cassé, gris | texte, nœud « Notion » plein, traits, icônes |
-| **10 %** | `primary` = **Surligneur** `#FFD60A` | | | sélection, action principale (FAB, bouton plein), surlignage `==texte==`, progression |
+### 4.1 Couleur — Material 3 Expressive, rôles tonals
+Direction retenue : **« Contexte »** (n° 8 des dix pistes) — l'Expressif M3 avec la barre d'outils flottante, la bibliothèque rangée en dossiers.
 
-Le jaune est un **surligneur** : le geste même de l'étudiant en droit. Il n'est jamais utilisé pour du texte sur fond clair (contraste) — toujours en **fond** sous un texte encre (`on-primary` ≈ noir, contraste ≈ 15:1). Effet Von Restorff : la seule couleur de l'écran désigne la seule chose qui compte. Rôle `error` (rouge sourd) réservé à la suppression.
+**Schéma de l'application** : *tonal spot* généré par `material-color-utilities` depuis la graine `#4A5BD9` (indigo d'encre), puis chaque rôle ajusté en tonalité HCT jusqu'à **WCAG AA et APCA Lc ≥ 75** pour tout texte courant (le schéma M3 standard en sombre plafonnait à Lc 72 pour `on-surface-variant`).
 
-Les types de nœuds et les états de révision sont différenciés **sans couleur** : forme, bordure (pleine / pointillée / double), sur-titre typographique et pastilles de remplissage (○ ◔ ◑ ●) — accessible aux daltoniens et fidèle au monochrome.
+| Rôle | Clair | Sombre | Usage |
+|---|---|---|---|
+| `primary` / `on-primary` | `#424980` / `#fff` | `#caceff` / `#192056` | action principale, valeur active |
+| `primary-container` | `#dfe0ff` | `#3b4279` | héros (session du jour, paquet), FAB, barre vibrante |
+| `secondary-container` | `#e0e0f9` | `#444559` | état sélectionné (rail, groupes de boutons, menus) |
+| `surface` → `surface-container-highest` | `#fbf8ff` → `#e4e1e9` | `#131318` → `#34343a` | fonds ; une surface posée est un palier plus haut |
+| `error-container` | `#ffdad6` | `#93000a` | « À revoir », suppression |
 
-**Thème clair — échelle des surfaces et contraste perceptuel** (mesures OKLCH + APCA, la méthode perceptuelle de la future WCAG 3 ; 0 défaut WCAG 2) :
-- **Décollement des cartes** : la page passe de L 0,985 à 0,966 (`#f5f4ef`), les cartes et nœuds restent blancs. L'écart page/carte double (0,015 → 0,034) : les éléments se détachent sans ombre lourde ni bordure plus épaisse. Même teinte et même saturation que les gris d'origine : l'identité ne change pas.
-- **Paliers réguliers** des conteneurs (~0,014 de luminance) : `#f0efea` · `#ecebe6` · `#e7e6e1` · `#e1e0db`. Les nœuds « Idée » (sans bordure) passent sur le palier `container` pour rester visibles sur le canevas.
-- **Texte secondaire** `#3c3c39` : APCA Lc ≥ 80 jusque dans les dialogues (petits sur-titres 11–12 px), sans écraser la hiérarchie avec le texte principal (`#1b1b19`, Lc ≈ 99).
-- **Rouge d'action destructrice** `#9e1f18` : Lc 72–74 sur fonds gris (était 67).
-- **Sur le jaune**, aucun texte en transparence (il vire au brun-olive) : texte plein, graisse plus légère pour la hiérarchie.
-- Les nœuds colorés en intensité douce ont un fond plus clair que la page (L 0,978) : ils restent « posés dessus ».
+- **Séparer par la tonalité, jamais par un filet** (§4.0) : rail `surface-container-low`, page `surface`, cartes `surface-container-lowest` (clair) ou `-high` (sombre), lignes de liste segmentée séparées par 2 dp de vide.
+- **Couleur du cours, limitée aux zones du cours** : 8 teintes (`HUES` 28 · 58 · 150 · 186 · 214 · 248 · 284 · 332). Clair : *SchemeContent* ; sombre : tonalités HCT dédiées (conteneur T30 chroma ≤ 44, texte T92) — le *content* officiel éclaircissait les dossiers en pastel, le *vibrant* devenait fluo. Six rôles par teinte (`--c-pc/onpc/pri/onpri/sc/onsc`, `js/mark.js`) ; la classe `.course-scope` remappe `primary`, `primary-container` et `secondary-container` sur ceux du cours. Hors d'un cours, l'interface reste indigo.
+- **Le surligneur devient un contenu** : `--hl-mark` (`#ffe171` / `#554600` en sombre) sert uniquement à `==texte==` dans les notes et aux passages trouvés par la recherche. Il ne décore plus aucun titre ni bouton.
+- **États de révision et types de nœuds** restent lisibles sans couleur (forme, pastilles ○ ◔ ◑ ●).
 
-**Thème sombre — règles vérifiées** (audit automatisé de chaque texte, icône et contour de contrôle, 13 écrans × mobile/desktop × clair/sombre : 0 défaut WCAG restant) :
-- **Élévation tonale** : en sombre, ce qui est posé dessus (cartes, nœuds, champs : `surface-container-lowest`) est *plus clair* que la page (`#1b1b19` sur `#121211`), puis les conteneurs montent (`#1f1f1d` → `#343432`). Jamais plus foncé : un élément plus sombre que son fond paraît creusé, et les ombres ne se voient pas la nuit.
-- **Encre inversée adoucie** (`inverse-surface` `#cfcec8` au lieu de `#e5e4de`) : nœuds « Notion », infobulles, snackbar n'éblouissent plus.
-- **Surligneur sous un titre** : en clair, bande large derrière le texte encre ; en sombre, **même jaune vif en trait fin sous la ligne de base** (`--hl-size` / `--hl-pos`). Un texte clair sur du jaune est illisible, et un jaune assombri ou translucide devient kaki.
-- **États sélectionnés** (élément coché d'un menu, case active d'un tableau) : `primary-container` / `on-primary-container` (ambre profond + texte jaune pâle en sombre), jamais un jaune translucide.
-- **Contours de contrôles** (chips) en `outline` ≥ 3:1 (WCAG 1.4.11).
-
-### 4.2 Typographie — échelle M3 (taille / interlignage)
-Deux familles comme le prévoit M3 (*brand* / *plain*) :
-- **Brand** : *Source Serif 4* → Display & Headline (registre éditorial / juridique).
-- **Plain** : *Inter* → Title, Body, Label (lisibilité UI).
+### 4.2 Typographie — échelle M3 Expressive
+- **Interface** : *Plus Jakarta Sans* (une seule famille, *brand* = *plain*) — Display / Headline 700 avec un approche de −0,02 em, Title 600, Label 600, Body 400.
+- **Contenu juridique** : *Source Serif 4* (`--font-serif`) pour la jurisprudence, la doctrine, les citations, les études, les théories et les blocs cités : le registre éditorial reste là où il a un sens.
+- **Code et articles** : *JetBrains Mono*.
+- Sur-titres en casse de phrase, plus aucune capitale forcée (`text-transform: uppercase` retiré de toute l'interface).
 
 | Rôle | L | M | S |
 |---|---|---|---|
 | Display | 57/64 | 45/52 | 36/44 |
 | Headline | 32/40 | 28/36 | 24/32 |
-| Title | 22/28 | 16/24 (500) | 14/20 (500) |
+| Title | 22/28 | 16/24 | 14/20 |
 | Body | 16/24 | 14/20 | 12/16 |
-| Label | 14/20 (500) | 12/16 (500) | 11/16 (500) |
+| Label | 14/20 | 12/16 | 11/16 |
 
-### 4.3 Grille de base, espacement, forme, élévation
-- **Grille 4 dp**, rythme vertical sur 8 dp ; tous les interlignages sont multiples de 4.
-- Espacements : 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64.
-- Marges de fenêtre M3 : 16 dp (compact), 24 dp (medium / expanded+).
-- Forme : none 0 · xs 4 · s 8 · m 12 · l 16 · xl 28 · full.
-- Élévation 0–5 (0/1/3/6/8/12 dp) + couches d'état (hover 8 %, focus 10 %, pressed 10 %, drag 16 %).
+### 4.3 Grille, forme, mouvement des composants
+- **Grille 4 dp**, espacements 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 ; marges 16 dp (compact) / 24 dp.
+- **Formes** : xs 4 · s 8 · m 12 · l 16 · li 20 · xl 28 · xli 32 · xxl 48 · full. Bibliothèque de formes M3 (*cookie 9*, *cookie 12*) réservée aux **chiffres et illustrations** (nombre de fiches du jour, série, page d'accueil) — jamais à un conteneur de texte.
+- **Morphose au toucher** : un bouton plein passe de `full` à `m` en ressort (`--spring-fast` 350 ms) ; l'option choisie d'un groupe de boutons connecté devient ronde.
+- **Composants** : groupe de boutons connecté (2 dp, coins intérieurs 8) à la place des boutons segmentés · champs remplis · chips tonales · listes segmentées (2 dp, coins 16 / 4) · FAB `primary-container` · menus coins 16 · voile 32 %.
+- Élévation 0–5 en clair ; en sombre, la profondeur se lit au palier tonal (une carte du dessous est plus sombre que celle du dessus).
 - Cibles tactiles ≥ 48 × 48 dp.
+
+### 4.3 bis Navigation et actions — rail, dock, barre contextuelle
+- **≥ 1200 px** : rail étendu 260 dp — logo, Extended FAB (« Nouveau cours »), destinations (indicateur pilule `secondary-container`), **Mes cours** (un dossier par cours, nombre de fiches dues, cours courant surligné), Réglages en bas.
+- **600–1199 px** : rail replié 80 dp, FAB en tête.
+- **< 600 px** : le **dock** — la navigation est une barre d'outils flottante (pilule, élévation 2, boutons ronds 48 dp) ; à côté, le FAB ou l'action de la page. *Écart assumé* aux recommandations M3 (qui réservent la barre flottante aux actions) : elle libère la hauteur d'une barre de navigation et reste dans la zone du pouce. Elle s'efface au défilement vers le bas.
+- **Barre contextuelle** (`app.setActions`) : chaque page déclare ses actions ; l'action principale est un bouton plein. Seule, elle flotte comme un FAB étendu (56 dp, coins 16). Sur un cours, la barre est **vibrante** et prend les couleurs du cours ; sur mobile elle remplace la navigation (`replaceNav`). À côté de la navigation, l'action garde un libellé court (« Commencer »).
+- **Éditeur** : barre verticale flottante (grand écran) et barre vibrante flottante (mobile) ; panneau de note en *side sheet* tonal sans filet.
 
 ### 4.4 Types de nœuds (différenciation monochrome)
 | Type | Sur-titre | Traitement |
@@ -157,7 +157,7 @@ Deux familles comme le prévoit M3 (*brand* / *plain*) :
 | Idée | — | discret, sans bordure |
 | Doctrine | DOCTRINE | serif droit, coins alternés |
 | Exemple | EXEMPLE | bordure pointillée fine (points) |
-| À retenir | À RETENIR | fond surligneur pâle (`primary-container`) — seul type « accent », car c'est littéralement ce qu'on surligne |
+| À retenir | À RETENIR | fond `primary-container` — seul type « accent », car c'est ce qu'on retient |
 | Question | QUESTION | bulle (coin inférieur gauche cassé) |
 | Méthode | MÉTHODE | filet épais à gauche ; ses étapes s'affichent en frise fléchée |
 | Comparaison | COMPARAISON | doubles filets gauche et droite |
@@ -184,7 +184,7 @@ Le menu *Type* range les 43 types en familles : **Structure**, **Notion**, **Cau
 
 | Type | Sur-titre | Traitement |
 |---|---|---|
-| Chapitre | CHAPITRE *n* (pastille surligneur) | plein inversé, serif 26 px, angles 10 px, élévation 2 |
+| Chapitre | Chapitre *n* (pastille `secondary-container`) | plein inversé, serif 26 px, angles 10 px, élévation 2 |
 | Leçon | LEÇON *n* | bordure encre 2,5 px, serif 21 px |
 | Section | SECTION *n* | bordure 2 px, sans-serif 16 px semi-gras |
 
@@ -209,28 +209,20 @@ Monochrome par défaut (60/30/10 intact). L'option **Couleurs des nœuds** (Rég
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).
 
-### 4.7 Réviser — un bureau de révision, pas un tableau de bord
-Chaque section reprend un objet de l'étudiant en droit, sans quitter le vocabulaire de la fiche :
-- **Le paquet du jour** : la session à venir en vrai paquet ; feuilles dessous aux teintes des cours les plus chargés, épaisseur = taille de session (10 · 20 · toutes) ; la fiche bristol du dessus porte le compte au surligneur et le temps sur un petit tampon. Elle devient la première fiche de la session.
-- **Carte de régularité** : 7 cases, un tampon encré (nombre de fiches, inclinaison propre au jour) par jour révisé ; aujourd'hui au surligneur.
-- **Échéancier** : chaque jour est une pile de fiches vue de profil (une tranche tous les 4 px) ; aujourd'hui en jaune.
-- **Par cours** : l'empreinte au centre de son anneau de maîtrise ; le nombre dû en tampon de la teinte du cours.
-- **À retravailler** : des fiches cornées (le coin plié = « à reprendre »), en bande horizontale.
-- **Session** : la fiche est un bristol (marge rouge, réponse posée sur une réglure de 28 px) ; noter au clavier ou au bouton fait frapper le tampon de la note avant le départ.
-- **Fin** : un relevé de session (ticket perforé, points de conduite, total, tampon de la série).
-- **Trousse d'encres** (les cartes restent blanches, la couleur vit dans les données et a toujours le même sens) : **bleue** = ce que tu as fait (tampons de régularité, « Compris », tampon du relevé) · **rouge de correction** = à reprendre (« À revoir ») · **encre du cours** = d'où vient la fiche (piles de l'échéancier empilées par cours avec légende, répartition du paquet du jour) · **surligneur** = maintenant (aujourd'hui, le compte).
-  Contrastes calculés (WCAG 2.2) : bleue #244d9e / #97c1f7 de 6,9 à 10,1:1, rouge #b02b27 / #ef958e de 5,7 à 8,4:1 sur carte, page et fond bas ; bord des piles ≥ 11:1 quelle que soit la teinte du cours. Le surligneur seul ne fait que 1,4:1 sur blanc : il ne porte jamais seul une forme (toujours sous un texte noir, 12:1, ou cerclé d'encre).
+### 4.6 Cours — des dossiers
+Un cours est un **dossier** : la forme dit « ce qui contient tes cartes et tes fiches », partout où le cours apparaît.
+- **Marque** (`js/mark.js`) : un dossier SVG à deux plans (dos `--c-pri`, rabat `--c-pc`). À partir de 44 px, le rabat porte l'**empreinte** générative du cours (une branche par carte mentale, des points pour ses nœuds) ; la silhouette ne dépend que des identifiants. Tailles xs → lg (rail, recherche, carte, en-tête). Sur une surface déjà teintée du cours, la marque s'inverse pour rester visible.
+- **Carte de cours** (`.fiche`) : un onglet (`.fiche-tab`) à congé concave posé sur le corps du dossier (`--c-pc`, coins 0 · 28 · 28 · 28) ; dedans, une feuille claire avec la prochaine fiche à réviser et le bouton Réviser. Pas de contour, pas de pile décorative.
+- **En-tête du cours** : le même dossier en grand (onglet + bande), marque et statistiques dedans ; les actions passent dans la barre contextuelle vibrante.
+- **Quatre états** inchangés : *Prochaine fiche* · *À jour* · *À compléter* · *Dossier vide* (→ Nouvelle carte).
+- **Emplacement « Nouveau cours / Nouvelle carte »** : surface tonale, sans pointillés.
 
-### 4.6 Carte de cours — la fiche et l'empreinte
-Une carte de cours n'est pas un dossier décoratif : c'est **la prochaine fiche à réviser**, posée sur la pile du cours.
-- **Pile** : 0, 1 ou 2 feuilles dessous selon le nombre de cartes mentales (0, 1–2, 3 et plus). L'épaisseur dit la taille du cours sans un chiffre.
-- **Bande papier** (en-tête) : teinte propre au cours, choisie parmi 8 teintes OKLCH (jamais le jaune, réservé au surligneur). Attribution dans l'ordre de création, chaque nouveau cours prend la teinte libre la plus éloignée des autres : les 8 premiers cours sont tous distincts, et la teinte ne change jamais. Encre ≥ 7:1, sous-titre ≥ 4,5:1, en clair comme en sombre.
-- **Empreinte** (`js/mark.js`) : sceau génératif dessiné depuis la vraie structure : une branche par carte mentale (plus longue quand elle grossit), des points pour ses nœuds, et **au surligneur la branche qui a le plus de fiches dues**. La silhouette ne dépend que des identifiants : stable d'une visite à l'autre, elle se densifie avec le cours. SVG en `currentColor`, aucun asset. Tailles xs 28 / sm 32 / md 44 / lg 72 (recherche, déplacement, carte, en-tête du cours).
-- **Corps réglé** (marge rouge pâle, lignes tous les 28 px) : la question de la prochaine fiche (`store.nextCard` : la plus en retard, sinon la première nouvelle de la plus ancienne carte). « Réviser » ouvre la révision **sur cette fiche-là** (`?start=carte.nœud`).
-- **Quatre états** : *Prochaine fiche* (question + Réviser + nombre dû) · *À jour* (prochaine échéance, maîtrise) · *À compléter* (des cartes, aucune note) · *Fiche blanche* (aucune carte → Nouvelle carte).
-- **En-tête du cours** : la bande papier seule, sans contour ni surligneur sur le titre (la teinte et l'empreinte suffisent à identifier le cours ; le jaune sur une teinte pastel brouillait la lecture).
-- **Emplacement « Nouveau cours / Nouvelle carte »** : la place de la prochaine feuille, en pointillés, sans fond ; pastille + cerclée, libellé et une ligne d'aide. Mouvement : voir §5.3 (« Emplacement d'ajout »).
-- **Accessibilité** : un seul lien (le titre, étiré sur toute la fiche) ; Options et Réviser restent au-dessus et atteignables au clavier ; anneau de focus sur la feuille.
+### 4.7 Réviser — paquet du jour, session, relevé
+- **Paquet du jour** : héros `primary-container` (coins 48), le nombre de fiches dans un *cookie 12* `primary` ; taille de session en groupe de boutons connecté (choix en `primary`, lisible sur le conteneur). « Commencer » vit dans la barre contextuelle.
+- **Carte de régularité, échéancier, par cours** : cartes tonales ; l'échéancier empile les fiches par couleur de cours ; chaque cours a sa marque dans un anneau de maîtrise.
+- **Session** : la fiche est une carte tonale à bande de la couleur du cours (`--c-sc`), sans réglure ; les cartes restantes sont deux paliers dessous. Les notes forment une barre flottante : *À revoir* `error-container`, *Compris* `secondary-container`, *Maîtrisé* `primary`.
+- **Fin** : série dans un *cookie 12*, relevé tonal.
+- Contrastes vérifiés par audit automatisé (WCAG 2.2, 13 écrans × mobile / bureau × clair / sombre) : 0 défaut réel.
 
 ---
 
@@ -303,7 +295,7 @@ Ressorts (JS, interruptibles, conservent la vélocité) : `ui` 400/40, `snappy` 
 | Nouveau lien | stroke-dashoffset | 0 → longueur | 240 | out | tracé synchrone |
 | Repli / dépli | translate + scale vers / depuis le parent | — | 200 / 240 | in / out | relation parent-enfant |
 | Suppression | scale + opacité | 1 → 0.92 | 160 | in | pas d'anticipation (fréquent) |
-| Sélection | trait de surligneur | 0 → 100 % | 200 (0 au clavier) | out | signature |
+| Sélection | trait `primary` sous le titre | 0 → 100 % | 200 (0 au clavier) | out | signature |
 | Prise / dépôt d'un nœud | élévation (ombre du pseudo-élément), **taille fixe** | ombre 0 → 1 | 160 | out | les liens restent accrochés au bord (M3 : un élément déplacé s'élève, il ne grossit pas) |
 | Ranger (et changement de disposition) | x, y | pose → pose, +24 ms par niveau | 440 (+120) | x out, y in-out | **arcs**, overlap |
 | Caméra (ajuster, centrer) | transform | durée ∝ √distance | 200–480 | in-out | — |

@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#FFD60A"/>
-  <text x="256" y="368" text-anchor="middle" font-family="'Source Serif 4', Georgia, 'Times New Roman', serif" font-size="320" font-weight="600" fill="#1a1600">R</text>
-  <rect x="144" y="398" width="224" height="22" rx="11" fill="#1a1600"/>
+  <rect width="512" height="512" rx="120" fill="#dfe0ff"/>
+  <g transform="translate(64 52) scale(12)">
+    <path d="M3 9.5A4.5 4.5 0 0 1 7.5 5h5.4c1 0 1.9.4 2.6 1.1l1.2 1.3c.4.4.9.6 1.4.6h6.4A4.5 4.5 0 0 1 29 12.5v12A4.5 4.5 0 0 1 24.5 29h-17A4.5 4.5 0 0 1 3 24.5z" fill="#424980"/>
+    <text x="16" y="25" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="15" font-weight="800" fill="#ffffff">R</text>
+  </g>
 </svg>

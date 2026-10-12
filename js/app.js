@@ -283,7 +283,8 @@
       let el;
       if (it.primary) {
         el = h(it.href ? 'a.btn.btn-filled.ctx-primary' : 'button.btn.btn-filled.ctx-primary', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '' },
-          R.icon(it.icon, 20), h('span.ctx-primary-l', it.label));
+          R.icon(it.icon, 20), h('span.ctx-primary-l', it.label), it.short ? h('span.ctx-primary-s', it.short) : null);
+        if (it.short) el.classList.add('has-short');
       } else {
         el = h(it.href ? 'a.icon-btn.ctx-ic' : 'button.icon-btn.ctx-ic', { type: it.href ? null : 'button', href: it.href || null, 'aria-label': it.label, 'data-tip': it.label, class: it.cls || '' }, R.icon(it.icon, 24));
       }
@@ -426,7 +427,7 @@
             ui.snack('Sauvegarde téléchargée');
           } })),
           row('upload', 'Importer', h('span.set-d', 'Une sauvegarde, un cours exporté ou un cours généré par une IA (fichier ou texte collé).'),
-            ui.btn('Importer…', { icon: 'upload', variant: 'outlined', onClick: () => { closeFn(); setTimeout(() => openImport(), 220); } })))),
+            ui.btn('Importer…', { icon: 'upload', variant: 'tonal', onClick: () => { closeFn(); setTimeout(() => openImport(), 220); } })))),
       h('section.set-group', h('h3.settings-h', 'Aide'),
         h('div.set-card',
           row('keyboard', 'Raccourcis clavier', null, ui.btn('Afficher', { variant: 'text', onClick: () => { closeFn(); setTimeout(showShortcuts, 220); } })),

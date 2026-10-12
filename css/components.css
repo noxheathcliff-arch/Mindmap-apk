@@ -56,7 +56,7 @@
 .btn-lg:active:not(:disabled) { border-radius: var(--shape-l); }
 .btn-text:has(> .ic) { padding-left: var(--sp-3); }
 .btn.danger, .menu-item.danger, .ctx-btn.danger { color: var(--error); }
-.btn-kbd { margin-left: var(--sp-1); background: transparent; border-color: color-mix(in srgb, currentColor 30%, transparent); color: inherit; opacity: .7; }
+.btn-kbd { margin-left: var(--sp-1); background: transparent; border-color: color-mix(in srgb, currentColor 30%, transparent); color: inherit; }
 /* sur le jaune, pas de transparence (elle vire au brun-olive) : texte plein, plus fin */
 .btn-filled .btn-kbd, .rate-btn.btn-filled .rate-next, .rate-btn.btn-filled .rate-kbd { opacity: 1; font-weight: 400; }
 
@@ -216,7 +216,7 @@
 /* élément coché : le conteneur « surligneur » du thème (pâle en clair, ambre profond en sombre),
    jamais un jaune translucide qui devient olive sur fond noir */
 .menu-item.checked { background: var(--secondary-container); color: var(--on-secondary-container); border-radius: var(--shape-l); }
-.menu-item.checked .ic, .menu-item.checked .menu-hint { color: inherit; opacity: .78; }
+.menu-item.checked .ic, .menu-item.checked .menu-hint { color: inherit; }
 .menu-check { width: 20px; display: inline-flex; }
 .menu-label { flex: 1; }
 .menu-hint { font: var(--label-m); color: var(--on-surface-variant); }
