@@ -80,6 +80,8 @@
 @keyframes label-pop { from { scale: .8; opacity: 0; } }
 .edge-label.logic { background: var(--on-surface); color: var(--surface); border-color: transparent; font-weight: 600; letter-spacing: .04em; padding: 0 6px; }
 .edge-label.sel { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+/* conflit non résolu : le libellé reste lisible (fond plein, détaché par une ombre douce) — jamais caché */
+.edge-label.clash:not(.sel) { background: var(--surface-container-highest); color: var(--on-surface); box-shadow: 0 1px 3px rgb(0 0 0 / .18); z-index: 1; }
 /* Fourche : un tronc, une étiquette posée sur le point de séparation, puis les branches */
 .edge.trunk { stroke-linecap: round; }
 .edge-label.junction { box-shadow: 0 0 0 3px var(--surface); }
@@ -673,4 +675,8 @@
 .org-note .choice-l { display: grid; gap: 2px; font: var(--body-m); }
 .org-note .choice-l b { font: var(--title-s); }
 .org-note > svg { flex: none; margin-top: 2px; color: var(--on-surface-variant); }
+/* journal : ce que le rangement a déjà fait — même surface que les signalements, en retrait */
+.org-done { display: flex; width: 100%; text-align: start; border-radius: var(--shape-m, 12px); background: var(--surface-container-low); color: var(--on-surface-variant); margin-bottom: var(--sp-1); }
+.org-done .choice-l { display: grid; gap: 2px; font: var(--body-m); }
+.org-done .choice-l b { font: var(--title-s); color: var(--on-surface); }
 .org-stat { margin: var(--sp-2) 0 0; font: var(--label-l); color: var(--on-surface-variant); }

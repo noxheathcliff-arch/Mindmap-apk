@@ -1,0 +1,108 @@
+{
+ "title": "V5 contournement",
+ "layout": "right",
+ "nodes": [
+  {
+   "id": "a",
+   "type": "idee",
+   "title": "Départ",
+   "note": "",
+   "x": 0,
+   "y": 200
+  },
+  {
+   "id": "b",
+   "type": "idee",
+   "title": "Arrivée",
+   "note": "",
+   "x": 700,
+   "y": 200
+  },
+  {
+   "id": "w0",
+   "type": "idee",
+   "title": "Mur 1",
+   "note": "",
+   "x": 340,
+   "y": 0
+  },
+  {
+   "id": "w1",
+   "type": "idee",
+   "title": "Mur 2",
+   "note": "",
+   "x": 340,
+   "y": 64
+  },
+  {
+   "id": "w2",
+   "type": "idee",
+   "title": "Mur 3",
+   "note": "",
+   "x": 340,
+   "y": 128
+  },
+  {
+   "id": "w3",
+   "type": "idee",
+   "title": "Mur 4",
+   "note": "",
+   "x": 340,
+   "y": 192
+  },
+  {
+   "id": "w4",
+   "type": "idee",
+   "title": "Mur 5",
+   "note": "",
+   "x": 340,
+   "y": 256
+  },
+  {
+   "id": "w5",
+   "type": "idee",
+   "title": "Mur 6",
+   "note": "",
+   "x": 340,
+   "y": 320
+  },
+  {
+   "id": "w6",
+   "type": "idee",
+   "title": "Mur 7",
+   "note": "",
+   "x": 340,
+   "y": 384
+  },
+  {
+   "id": "z",
+   "type": "idee",
+   "title": "Hors du mur",
+   "note": "",
+   "x": 340,
+   "y": 520
+  }
+ ],
+ "edges": [
+  {
+   "id": "l27",
+   "from": "a",
+   "to": "b",
+   "kind": "link",
+   "label": "mène à"
+  },
+  {
+   "id": "l28",
+   "from": "z",
+   "to": "b",
+   "kind": "link",
+   "label": "contourne"
+  }
+ ],
+ "_verifier": [
+  "le renvoi Départ→Arrivée ne traverse AUCUN des 7 nœuds du mur (hits = 0)",
+  "détour raisonnable : longueur < 2,2 × distance à vol d’oiseau",
+  "libellé dans une zone libre, pas dans le mur",
+  "les points de passage (V4) restent hors des nœuds après un léger déplacement"
+ ]
+}

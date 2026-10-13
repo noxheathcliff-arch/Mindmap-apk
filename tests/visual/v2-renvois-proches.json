@@ -1,0 +1,143 @@
+{
+ "title": "V2 renvois proches",
+ "layout": "right",
+ "nodes": [
+  {
+   "id": "a0",
+   "type": "idee",
+   "title": "Source 1",
+   "note": "",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": "b0",
+   "type": "idee",
+   "title": "Cible 1",
+   "note": "",
+   "x": 420,
+   "y": 10
+  },
+  {
+   "id": "a1",
+   "type": "idee",
+   "title": "Source 2",
+   "note": "",
+   "x": 0,
+   "y": 62
+  },
+  {
+   "id": "b1",
+   "type": "idee",
+   "title": "Cible 2",
+   "note": "",
+   "x": 420,
+   "y": 72
+  },
+  {
+   "id": "a2",
+   "type": "idee",
+   "title": "Source 3",
+   "note": "",
+   "x": 0,
+   "y": 124
+  },
+  {
+   "id": "b2",
+   "type": "idee",
+   "title": "Cible 3",
+   "note": "",
+   "x": 420,
+   "y": 134
+  },
+  {
+   "id": "a3",
+   "type": "idee",
+   "title": "Source 4",
+   "note": "",
+   "x": 0,
+   "y": 186
+  },
+  {
+   "id": "b3",
+   "type": "idee",
+   "title": "Cible 4",
+   "note": "",
+   "x": 420,
+   "y": 196
+  },
+  {
+   "id": "a4",
+   "type": "idee",
+   "title": "Source 5",
+   "note": "",
+   "x": 0,
+   "y": 248
+  },
+  {
+   "id": "b4",
+   "type": "idee",
+   "title": "Cible 5",
+   "note": "",
+   "x": 420,
+   "y": 258
+  }
+ ],
+ "edges": [
+  {
+   "id": "l5",
+   "from": "a0",
+   "to": "b0",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l6",
+   "from": "a1",
+   "to": "b1",
+   "kind": "link",
+   "label": "se distingue de"
+  },
+  {
+   "id": "l7",
+   "from": "a2",
+   "to": "b2",
+   "kind": "link",
+   "label": "≠"
+  },
+  {
+   "id": "l8",
+   "from": "a3",
+   "to": "b3",
+   "kind": "link",
+   "label": "résulte de la combinaison de"
+  },
+  {
+   "id": "l9",
+   "from": "a4",
+   "to": "b4",
+   "kind": "link",
+   "label": "permet"
+  },
+  {
+   "id": "l10",
+   "from": "a0",
+   "to": "b4",
+   "kind": "link",
+   "label": "fait appel à"
+  },
+  {
+   "id": "l11",
+   "from": "a4",
+   "to": "b0",
+   "kind": "link",
+   "label": "illustre"
+  }
+ ],
+ "_verifier": [
+  "5 traits parallèles à 62 px : libellés en escalier sans se chevaucher",
+  "les 2 diagonales se croisent au plus une fois",
+  "chaque libellé reste à < 40 px de SON trait (pas repoussé près du voisin)",
+  "ordre des libellés = ordre des traits (pas d’inversion visuelle)"
+ ]
+}

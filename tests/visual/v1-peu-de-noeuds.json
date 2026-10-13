@@ -1,0 +1,74 @@
+{
+ "title": "V1 peu de nœuds",
+ "layout": "right",
+ "nodes": [
+  {
+   "id": "r",
+   "type": "notion",
+   "title": "Photosynthèse",
+   "note": "",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": "a",
+   "type": "condition",
+   "title": "Lumière",
+   "note": "",
+   "x": 260,
+   "y": -80
+  },
+  {
+   "id": "b",
+   "type": "consequence",
+   "title": "Glucose",
+   "note": "",
+   "x": 260,
+   "y": 80
+  },
+  {
+   "id": "c",
+   "type": "notion",
+   "title": "Respiration",
+   "note": "",
+   "x": 520,
+   "y": 0
+  }
+ ],
+ "edges": [
+  {
+   "id": "t1",
+   "from": "r",
+   "to": "a",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t2",
+   "from": "r",
+   "to": "b",
+   "kind": "tree",
+   "label": "produit"
+  },
+  {
+   "id": "l3",
+   "from": "b",
+   "to": "c",
+   "kind": "link",
+   "label": "consommé par"
+  },
+  {
+   "id": "l4",
+   "from": "a",
+   "to": "c",
+   "kind": "link",
+   "label": "s’oppose à"
+  }
+ ],
+ "_verifier": [
+  "tracé le plus court sans traverser de nœud",
+  "libellés centrés sur leur trait (distance au trait < 12 px)",
+  "aucun libellé sur un nœud",
+  "aucune flèche sur le côté où arrive la hiérarchie"
+ ]
+}

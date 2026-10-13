@@ -1,0 +1,1122 @@
+{
+  "schema_version": "1.0.0",
+  "type": "portable_ai_skill_specification",
+  "id": "ratio_book_to_course_compiler",
+  "name": "Ratio — Compilateur Livre → Cours",
+  "version": "3.0.0",
+  "language": "fr",
+  "how_to_read": "normative_core d'abord (il l'emporte) ; puis pipeline P0 → P7 sans sauter de phase (P3 Carte de compréhension et P3c Passe transversale AVANT tout nœud, P6a Audit interne AVANT le JSON final) ; comprehension_map, construction, modular_decomposition, note_rules, edge_rules pour lire puis écrire les relations ; node_types, readability_rules, target_format, quality_gates, self_check pour typer et valider ; example (hors droit, de bout en bout). Les annexes étalonnent, elles ne priment jamais.",
+  "purpose": {
+    "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio prêt à importer : un JSON unique avec un cours, ses cartes mentales, leurs nœuds typés, leurs notes Markdown, leurs arêtes d'arbre et renvois libellés.",
+    "secondary": "Révision active (le titre est l'indice, la note et les enfants la réponse) ; RELATIONS du texte restituées fidèlement (ce que la source dit est encodé, ce qu'elle ne dit pas ne l'est jamais) ; valide au premier import.",
+    "not_for": [
+      "Résumer un livre en prose continue.",
+      "Ajouter des connaissances extérieures non signalées.",
+      "Recopier le livre phrase par phrase dans les notes."
+    ]
+  },
+  "normative_core": {
+    "rule": "En cas de désaccord entre deux passages de cette spécification, normative_core l'emporte. Les tables rules, relation_by_type, lexicon_by_direction et causal_pairs sont recopiées du moteur d'audit de Ratio (js/organize.js) par tests/skill-rules.cjs : le skill et l'application appliquent les mêmes règles. Les annexes et l'historique ne sont jamais des règles.",
+    "decisions": [
+      "COMPRENDRE AVANT DE CONSTRUIRE : aucun nœud d'une carte n'est créé avant sa carte de compréhension (P3 : lignes U, R, A, X) et sa passe transversale (P3c).",
+      "RELATIONS : chaque ligne R est encodée — arête d'arbre libellée, renvoi libellé, logic ET/OU, rattachement (exemple sous l'élément illustré, exception sous la règle) ou phrase de note lisible par le moteur — ou son abstention est justifiée par une ligne A. Pas de quota : on encode ce que le texte dit, rien de plus, rien de moins.",
+      "PREUVE : un lien seulement si la source dit la relation (connecteur explicite) ou si deux preuves indépendantes concordent. Débat, négation, hypothèse, question, croyance rapportée, corrélation présentée comme telle → pas de lien causal (ligne A ; « Relation discutée : … » dans la note si utile).",
+      "RÔLE PAR RELATION : un élément peut être effet dans une relation et cause dans une autre. Le rôle se lit relation par relation (lignes R), jamais d'après le type. Le type ne dit que la relation au PARENT.",
+      "ORDRE FIXE de construction d'un nœud : rôle → place → type → note → libellé (construction). On ne revient jamais en arrière d'un pas pour justifier le précédent.",
+      "LIBELLÉS : des verbes ou des questions (entraîne, suppose, sauf, illustré par, de qui ?), 1 à 3 mots, ≤ 20 caractères (viser ≤ 14). Jamais un nom qui redit le type (« conseil », « définition », « avantage »). Jamais « voir », « cf. », « lien », « rapport », « lié à » : le verbe exact, sinon [[Titre]] dans la note.",
+      "INTITULÉS : sous un chapitre, une leçon, une section, un nœud-question ou une liste nommée par son parent (« Les 5 regrets », « 9 coûts de… »), les arêtes restent sans libellé. Sous un nœud ET/OU aussi : la logique parle. Les relations se posent ENTRE les idées.",
+      "RELATIONS NOMMÉES : viser rules.labelledTarget des arêtes de contenu (hors intitulés, listes nommées, ET/OU, méthode → étapes, composantes de définition). Un libellé creux pour atteindre le taux est pire qu'une arête nue ; zéro libellé sur une carte de 8 nœuds ou plus est une erreur.",
+      "RENVOIS (kind link) : budget = round(n ÷ rules.linkBudgetPerNodes), borné à [rules.linkBudgetMin, rules.linkBudgetMax] (n = nœuds de la carte ; une fourche compte pour UN renvoi) ; au plus rules.linksPerNodeMax vers une même notion. Une relation EXPLICITE du texte (ligne R ou X avec connecteur cité) peut dépasser le budget, jusqu'au double, comme le moteur. Au-delà : [[Titre]] précédé de son verbe dans la note.",
+      "BRANCHE LIBELLÉE (group sur des arêtes d'arbre) seulement si le parent mêle au moins deux familles (causes ET conséquences) ; jamais une branche qui réunit tous les enfants.",
+      "SOUS UNE NOTION, ses causes et ses conséquences se relient à elle, pas entre elles par raccourci ; sous une SECTION, une cause se relie à la conséquence qu'elle produit si le texte le dit (causal_pairs).",
+      "TAILLES : racine à 3 à 7 enfants (viser 4 à 6) ; carte de 15 à 35 nœuds (12 minimum, 45 maximum, au-delà scinder) ; 2 à 7 enfants par nœud (12 au plus) ; profondeur 2 à 5 sous la racine (6 au plus) ; titres ≤ 80 caractères (viser 15 à 40) ; notes de 2 à 10 lignes (25 au plus).",
+      "TYPES : les 43 types de node_types ; hors droit, jamais fond, forme, effet, juris, doctrine (domain_mode) ; exception seulement au test « la règle X s'applique, SAUF … » ; idee ≤ 25 % des nœuds (composantes de définition non comptées).",
+      "CAS DE CONTRÔLE : validation_cases A à P, tous, avant livraison."
+    ],
+    "rules": {
+      "labelledTarget": 0.6,
+      "flatMin": 5,
+      "defMinChars": 80,
+      "defMinParts": 3,
+      "linkBudgetPerNodes": 5,
+      "linkBudgetMin": 2,
+      "linkBudgetMax": 8,
+      "linksPerNodeMax": 3,
+      "commonWordShare": 0.15
+    },
+    "relation_by_type": {
+      "cause": {
+        "one": "a pour cause",
+        "many": "causes"
+      },
+      "consequence": {
+        "one": "entraîne",
+        "many": "conséquences"
+      },
+      "effet": {
+        "one": "produit",
+        "many": "effets"
+      },
+      "condition": {
+        "one": "suppose",
+        "many": "conditions"
+      },
+      "fond": {
+        "one": "suppose",
+        "many": "conditions de fond"
+      },
+      "forme": {
+        "one": "exige",
+        "many": "conditions de forme"
+      },
+      "exception": {
+        "one": "sauf",
+        "many": "exceptions"
+      },
+      "exemple": {
+        "one": "illustré par",
+        "many": "exemples"
+      },
+      "juris": {
+        "one": "appliqué par",
+        "many": "jurisprudence"
+      },
+      "texte": {
+        "one": "fondé sur",
+        "many": "textes"
+      },
+      "doctrine": {
+        "one": "selon",
+        "many": "doctrine"
+      },
+      "critique": {
+        "one": "critiqué par",
+        "many": "critiques"
+      },
+      "argument": {
+        "one": "justifié par",
+        "many": "arguments"
+      },
+      "nuance": {
+        "one": "nuancé par",
+        "many": "nuances"
+      },
+      "caracteristique": {
+        "one": "se caractérise par",
+        "many": "caractères"
+      },
+      "signe": {
+        "one": "se reconnaît à",
+        "many": "signes"
+      },
+      "categorie": {
+        "one": "comprend",
+        "many": "catégories"
+      },
+      "solution": {
+        "one": "résolu par",
+        "many": "solutions"
+      },
+      "probleme": {
+        "one": "pose",
+        "many": "problèmes"
+      },
+      "objectif": {
+        "one": "vise",
+        "many": "objectifs"
+      },
+      "citation": {
+        "one": "selon",
+        "many": "citations"
+      },
+      "etude": {
+        "one": "montré par",
+        "many": "études"
+      },
+      "avantage": {
+        "one": null,
+        "many": "avantages"
+      },
+      "inconvenient": {
+        "one": null,
+        "many": "inconvénients"
+      },
+      "conseil": {
+        "one": null,
+        "many": "conseils"
+      },
+      "piege": {
+        "one": null,
+        "many": "pièges"
+      },
+      "definition": {
+        "one": null,
+        "many": null
+      }
+    },
+    "lexicon_by_direction": {
+      "forward": [
+        "entraîne",
+        "provoque",
+        "produit",
+        "cause",
+        "engendre",
+        "aboutit à",
+        "mène à",
+        "rend possible",
+        "permet",
+        "implique",
+        "donc",
+        "favorise",
+        "contribue à",
+        "suffit à",
+        "nourrit",
+        "entretient",
+        "aggrave"
+      ],
+      "backward": [
+        "a pour cause",
+        "résulte de",
+        "découle de",
+        "naît de",
+        "provient de",
+        "est causé par",
+        "suppose",
+        "exige",
+        "dépend de",
+        "nécessite",
+        "seulement si"
+      ],
+      "inhibit": [
+        "empêche",
+        "évite",
+        "réduit",
+        "affaiblit",
+        "protège de",
+        "remédie à",
+        "résout",
+        "limite",
+        "exclut"
+      ],
+      "symmetric": [
+        "s’oppose à",
+        "se distingue de",
+        "≠",
+        "ressemble à",
+        "contraire de",
+        "va de pair avec",
+        "est associé à",
+        "corrélé à",
+        "voir aussi"
+      ],
+      "vague": [
+        "lié à",
+        "lien",
+        "rapport",
+        "relation",
+        "en lien avec",
+        "concerne",
+        "cf",
+        "cf.",
+        "?",
+        "-",
+        "→"
+      ]
+    },
+    "causal_pairs": {
+      "cause>consequence": "entraîne",
+      "cause>effet": "entraîne",
+      "condition>consequence": "permet",
+      "condition>effet": "permet",
+      "fond>effet": "permet",
+      "forme>effet": "permet",
+      "fond>consequence": "permet",
+      "forme>consequence": "permet",
+      "probleme>solution": "résolu par",
+      "probleme>consequence": "entraîne"
+    }
+  },
+  "pipeline": {
+    "principle": "Lire tout, comprendre les relations, puis seulement modéliser. Chaque phase produit quelque chose ; la suivante s'appuie dessus et ne la refait pas.",
+    "phases": [
+      {
+        "id": "P0",
+        "name": "CADRER",
+        "do": [
+          "Genre (manuel juridique, scientifique, essai, développement personnel, technique, polycopié) et domaine : « juridique » ou « hors droit » (domain_mode).",
+          "Public, niveau, objectif (operating_contract.input) ; taille → une livraison ou des parties (long_document_strategy)."
+        ]
+      },
+      {
+        "id": "P1",
+        "name": "LIRE ET RELEVER LE PLAN",
+        "do": [
+          "Lire le document EN ENTIER (par blocs pour un très long document) ; reconstituer le plan réel, même si la table des matières est absente ou trompeuse.",
+          "Registre : concepts définis, énumérations avec leur cardinal (« 5 regrets »), auteurs et études, tests, exercices, histoires, citations, renvois internes (« comme vu plus haut »).",
+          "Thèse du livre et thèse de chaque chapitre."
+        ]
+      },
+      {
+        "id": "P2",
+        "name": "DÉCOUPER EN CARTES",
+        "do": [
+          "course_design : comparer au moins deux découpages par partie ; 1 carte = 1 unité de révision (souvent un chapitre) ; 6 à 20 cartes pour un livre ; ordre du livre.",
+          "Carte d'ouverture « Vue d'ensemble » si utile (thèse, plan, notions transversales). Titres de cartes parlants, jamais « Chapitre 4 »."
+        ]
+      },
+      {
+        "id": "P3",
+        "name": "CARTE DE COMPRÉHENSION (obligatoire, avant tout nœud)",
+        "do": [
+          "Pour la portion du livre de CETTE carte, écrire (table de travail, hors JSON) les lignes U, R, A, X au format de comprehension_map.",
+          "U = unités rappelables avec le wording EXACT ; R = relations lues (connecteur cité, sens, famille, encodage prévu) ; A = relations apparentes à ne pas tracer, avec le motif ; X = renvois transversaux (préparés en P3c).",
+          "Contrôle de couverture : relever TOUS les connecteurs explicites de la portion (comprehension_map.connector_scan) ; chacun donne une ligne R ou une ligne A. Un connecteur sans ligne = relire le passage."
+        ]
+      },
+      {
+        "id": "P3c",
+        "name": "PASSE TRANSVERSALE",
+        "do": [
+          "Relire les lignes R et X qui relient deux sections de la carte (ou deux cartes) et décider pour chacune : arbre (si l'élément se révise avec l'autre), renvoi (link) ou [[Titre]] précédé du verbe dans la note (relation entre cartes : il n'existe pas de lien entre cartes).",
+          "Respecter le budget de renvois (normative_core : n ÷ 5 borné à [2, 8], fourche = un) ; une relation explicite du texte peut aller jusqu'au double. Priorité : explicite > implicite à deux preuves ; cause/condition/exception > illustration > opposition.",
+          "Une relation transversale ne devient jamais une arête d'arbre pour être visible, et une hiérarchie réelle ne devient jamais un renvoi."
+        ]
+      },
+      {
+        "id": "P4",
+        "name": "CONSTRUIRE NŒUD PAR NŒUD",
+        "do": [
+          "Racine : nœud chapitre, titre = titre de la carte, note = thèse en 1 à 3 phrases. Niveau 1 : les parties (section ; lecon seulement s'il y a deux niveaux) ou directement les notions si le chapitre est court.",
+          "Pour chaque unité U retenue, dans cet ORDRE FIXE (construction) : 1. rôle → 2. place → 3. type → 4. note → 5. libellé.",
+          "Énumérations : cardinal exact ; logic « et » (cumulatif) ou « ou » (alternatif) ; gabarits de modular_decomposition pour définitions, règles, mécanismes, raisonnements, distinctions."
+        ]
+      },
+      {
+        "id": "P5",
+        "name": "RENVOIS",
+        "do": [
+          "Encoder les lignes R/X retenues en P3c comme renvois (kind link) : titres exacts, verbe exact, sens de la flèche vérifié (edge_rules.orientation).",
+          "Fourche (group) quand une même source mène, par la même relation, à plusieurs cibles voisines. Le reste en [[Titre]] précédé du verbe (« remédie à [[X]] »)."
+        ]
+      },
+      {
+        "id": "P6a",
+        "name": "AUDIT INTERNE (avant le JSON final)",
+        "do": [
+          "Relire la carte de compréhension ligne par ligne. Pour chaque R : où est-elle encodée (arête e?, renvoi l?, logic, rattachement, phrase de note) ? Le sens, la famille et le verbe sont-ils justes ? Corriger tout de suite ce qui manque ou est faux.",
+          "Pour chaque A : aucune arête ni phrase de note ne trace la relation écartée.",
+          "Relations aplaties : une note qui contient « donc », « ce qui », « parce que », « car », « entraîne », « sauf », « d'où », « que si », « plus… plus », « soit… soit », « en conclusion », « spirale » alors qu'aucune arête libellée ne touche son nœud — encoder ou justifier.",
+          "Compter et reporter dans le rapport : relations lues / encodées (arbre, renvois, logic, notes) / abstentions justifiées / non encodées (doit valoir 0). Pas de quota de renvois : un nombre juste vaut mieux qu'un nombre rond."
+        ]
+      },
+      {
+        "id": "P6b",
+        "name": "VALIDER",
+        "do": [
+          "Passer quality_gates. Si du code peut s'exécuter : self_check.validator_python (avec --hors-droit hors droit) jusqu'à zéro erreur ; lire chaque avertissement.",
+          "Audit des types : rejouer les passes 3 et 4 du typage (lien au parent, question de révision) sur tous les nœuds ; types incertains au rapport.",
+          "Relire 5 nœuds au hasard en mode révision ; vérifier la couverture (chaque partie du plan P1, chaque cardinal) ; validation_cases A à P."
+        ]
+      },
+      {
+        "id": "P7",
+        "name": "LIVRER",
+        "do": [
+          "Un bloc ```json par partie, rien d'autre dans le bloc ; puis le rapport (report_template), avec les comptes de P6a."
+        ]
+      }
+    ]
+  },
+  "comprehension_map": {
+    "why": "Audit de la v2.2 sur 3 chapitres réels : sur 40 relations dites par le texte, 7,5 % codées correctement, 75 % absentes ou aplaties, validateur « OK ». Cause : les nœuds étaient créés avant que les relations soient lues. La carte de compréhension les relève d'abord ; la carte mentale ne fait ensuite que les écrire.",
+    "format": {
+      "U": "U<n> · <genre : idée | concept | définition | règle | exception | exemple | étape | chiffre | source | citation> · « wording exact de la source »",
+      "R": "R<n> · U<a> → U<b> · <famille> · « connecteur cité » · <remarque : rôle, sujet de « ce qui », réserve, ET/OU> · <encodage prévu : arbre a —verbe→ b | renvoi | logic | note>",
+      "A": "A<n> · « passage » · <motif : débat | négation | hypothèse | croyance rapportée | question | corrélation | sens inconnu | une seule preuve> · <décision : aucun lien ; « Relation discutée » en note ; nœud piège si le livre réfute>",
+      "X": "X<n> · U<a> (section ou carte) → U<b> (autre section ou carte) · <famille> · « connecteur » ou deux preuves · <renvoi | [[Titre]] avec verbe | rapport>"
+    },
+    "families": [
+      "cause — « parce que », « car », « à cause de », « en raison de », « du fait de », « résulte de », « découle de », « provient de », « est dû à », « s'explique par » (l'effet est cité d'abord) ; « entraîne », « provoque », « cause » (verbe), « engendre », « conduit à », « mène à », « déclenche », « suscite », « stimule », « renforce », « augmente », « donc », « c'est pourquoi », « si bien que », « de sorte que », « d'où », « ce qui » → libellé « entraîne », « provoque », « favorise » (facteur parmi d'autres, « peut », « plus… plus »), « entretient », « aggrave » ; de l'effet vers la cause : « a pour cause », « résulte de ».",
+      "permet — « permet », « rend possible », « nécessaire à », « pour obtenir », « ouvre droit à » → « permet » (de la condition vers ce qu'elle rend possible).",
+      "suppose — « seulement si », « ne… que si », « à condition que », « suppose », « nécessite », « exige », « requiert », « dépend de » → « suppose », « nécessite », « seulement si » (de ce qui dépend vers la condition). « il suffit de » → « suffit à » (condition suffisante, de la condition vers l'effet).",
+      "sauf — « sauf », « sauf si », « excepté », « hormis », « à moins que », « fait exception à », « déroge à » → « sauf » (de la règle vers l'exception, placée sous l'élément qu'elle neutralise).",
+      "illustre — « par exemple », « ainsi » (au sens d'exemple), « illustre », « comme dans le cas de » → arbre « illustré par » (élément → exemple), renvoi « illustre » (exemple → autre élément illustré).",
+      "s'oppose à — « à l'inverse », « contrairement à », « s'oppose à », « antagoniste », « alors que » (opposition), « se distingue de », « à la différence de » → « s’oppose à », « se distingue de » (symétriques : une seule flèche).",
+      "fait partie de — « comprend », « se compose de », « X du / de la Y », « l'un des » → « comprend » (tout → partie, en arbre le plus souvent).",
+      "puis — « puis », « ensuite », « quand », « lorsque », « une fois que », « dès que », « après » → ordre des étapes (methode + etape, frise) ; « puis » / « précède » entre deux étapes hors d'une même méthode.",
+      "selon — « selon X », « d'après X », « X a montré que » → « selon » vers une personne, « montré par » vers une étude.",
+      "remédie à — « pour lutter contre », « pour vaincre », « remède à », « combat », « corrige », « empêche », « évite », « réduit », « limite », « protège de » → « remédie à », « empêche », « réduit », « limite », « protège de ».",
+      "corrélation — « est associé à », « va de pair avec », « corrélé à », une co-occurrence observée par une étude → « est associé à », jamais « entraîne »."
+    ],
+    "connector_scan": "Avant d'écrire R et A : relever dans la portion chaque connecteur des familles ci-dessus (et « mais », « donc », « en conclusion », « spirale », « soit… soit »), numéroté. Objectif : 100 % des connecteurs explicites → une ligne R ou une ligne A. Écrire le compte en fin de carte de compréhension (« 12 connecteurs → 10 R + 2 A »).",
+    "rules": [
+      "RÔLES MULTIPLES : le rôle est propre à chaque relation. « La hausse de la glycémie stimule l'insuline, qui favorise le stockage » : l'insuline est EFFET dans R1 et CAUSE dans R2. Deux lignes R, chacune avec son sens ; aucun type ne fige le rôle.",
+      "ET / OU : conditions cumulatives (« et », « à la fois », « cumulativement ») → logic « et » ; alternatives (« ou », « soit… soit », « l'un ou l'autre ») → logic « ou » ; « ni… ni » est une négation : aucune relation positive.",
+      "PLUSIEURS CAUSES : « A, B et C entraînent D » → trois lignes R (A→D, B→D, C→D) ; si elles n'agissent qu'ensemble (« la conjonction de », « à la fois ») → une ligne R avec logic « et » sous D. Une énumération de causes nommée par son parent (« 3 causes de D ») garde des arêtes nues.",
+      "CHAÎNES : « A entraîne B, ce qui provoque C », « A ; donc B ; d'où C » → A→B puis B→C. Le sujet de « ce qui » est le RÉSULTAT de la proposition précédente, pas son sujet. Jamais de raccourci A→C. Une boucle (« spirale », « cercle vicieux », « qui à son tour renforce A ») → chaîne + renvoi de retour « entretient ».",
+      "EXCEPTIONS : « sauf si », « à moins que » → famille sauf, de la règle vers l'exception ; « ne… que si » → famille suppose (condition nécessaire), pas une exception ; « mais », « toutefois » → nuance, pas une exception.",
+      "IMPLICITE : une relation non dite n'est tracée que si DEUX preuves indépendantes concordent (une définition dit qui produit X et un exemple montre l'absence de X) ; écrire les deux preuves dans la ligne R ou X et marquer la note *(déduit : …)*. Une seule preuve → ligne A.",
+      "CONTRE-SIGNAUX → ligne A : négation (« n'entraîne pas », « aucun lien », « ne pas confondre »), question, hypothèse (« si l'on croit », « supposons »), croyance rapportée ou idée reçue (« on pense à tort que »), débat (« selon les uns… selon les autres », « reste discuté »), citation d'un autre auteur que le cours ne reprend pas. Si le livre réfute la croyance : nœud piege, pas de lien positif.",
+      "RÉSERVE : « peut », « souvent », « tend à », « en partie » → garder la nuance dans le libellé (« favorise » plutôt que « entraîne »), sans s'abstenir. Inversement, une source catégorique ne reçoit pas de réserve inventée ; « surtout » désigne la cause principale, pas un doute.",
+      "FAUX AMIS LEXICAUX : « cause » nom (« la cause des femmes ») ≠ « cause » verbe ; « pour » = but (objectif), « pour vaincre » = remède, « pour X, … » = selon : jamais une cause ; « partie » : « fait partie de » = composition, « en partie » = réserve, « la partie adverse » = rien ; « donc » rhétorique (« voyons donc ») ≠ conséquence ; « ainsi » = donc OU par exemple ; « alors que » = opposition OU simultanéité ; « selon que » = condition, pas une source ; « sauf erreur » n'écarte aucune règle ; homonymes (« la cellule » de prison / de biologie) : vérifier que la mention désigne bien l'unité U.",
+      "PORTÉE : garder les quantificateurs et modalités exacts (« une ou plusieurs », « exclusivement », « de plein droit », « seulement ») dans le wording U ; ils iront dans le titre ou dans em."
+    ],
+    "mini_example": "Source : « Le stress chronique entraîne une hausse du cortisol, ce qui affaiblit l'immunité ; sauf si la personne dort assez. Certains pensent qu'il cause aussi le diabète, mais le lien reste discuté. » → U1 stress chronique, U2 hausse du cortisol, U3 immunité affaiblie, U4 sommeil suffisant. R1 U1→U2 cause « entraîne » ; R2 U2→U3 cause « ce qui affaiblit » (sujet = U2, pas U1) ; R3 U3 —sauf→ U4 « sauf si » (exception à R2 : U4 sous U3, libellé « sauf ») ; A1 « cause aussi le diabète » : débat → aucun lien. Couverture : 4 connecteurs (entraîne, ce qui, sauf si, pensent / reste discuté) → 3 R + 1 A."
+  },
+  "construction": {
+    "why": "La v2.2 demandait de typer « après avoir écrit la note » tout en écrivant la note « selon le type » : un cercle. L'ordre est désormais fixe et chaque pas s'appuie sur le précédent.",
+    "order": [
+      "1. RÔLE — Lire les lignes R et A de l'unité : de quelles relations est-elle la source, la cible ? Décider si elle mérite un nœud (une idée rappelable) ou une ligne de la note d'un autre nœud (détail, énumération secondaire non développée).",
+      "2. PLACE — Choisir le parent : l'élément avec lequel elle se révise, donné par la relation la plus étroite (exemple sous l'élément illustré, exception sous ce qu'elle neutralise, effet sous la cause qui le produit, condition sous la règle, composante sous la définition) ; à défaut, la partie (intitulé, arête sans libellé). Un seul parent : les autres relations de l'unité deviennent des renvois (P5) ou des phrases de note.",
+      "3. TYPE — La fonction du passage ET la relation au parent choisi (node_types.selection : 6 passes). Le type ne décrit que la relation au parent ; si le test de lien au parent échoue pour tous les candidats, revenir au pas 2 (place), jamais modifier une ligne R pour sauver un type.",
+      "4. NOTE — Répondre à la question de révision du type ; écrire les relations de l'unité en phrases lisibles par le moteur (note_rules.engine_readable).",
+      "5. LIBELLÉ — Le verbe de la ligne R qui relie l'unité à son parent (famille → libellé, sens de la flèche vérifié) ; \"\" sous un intitulé, une liste nommée, un nœud ET/OU, une méthode → étapes."
+    ],
+    "tie_breaks": [
+      "Deux parents possibles : celui avec lequel la question de révision a le plus de sens ; l'autre relation devient un renvoi.",
+      "Une unité cause d'une chose et effet d'une autre : sous sa cause (type consequence, libellé de la relation au parent), puis sa propre conséquence sous elle (libellé « entraîne ») — la chaîne se lit de haut en bas. Le moteur reconnaît ce maillon et ne signale aucun conflit de types.",
+      "Une énumération de N causes d'un même effet : les N sous l'effet (« a pour cause », ou arêtes nues si le parent les nomme : « 3 causes de… »)."
+    ]
+  },
+  "modular_decomposition": {
+    "principle": "Un passage dense (définition, règle, mécanisme, raisonnement, distinction) ne se récite pas d'un bloc : on le découpe en composantes reliées par les relations du texte. La note du nœud porteur garde le passage intégral ; les titres des composantes reprennent les mots EXACTS de la source (seule la première lettre change) ; une reformulation va en note marquée *(reformulation)*, une inférence *(complément)*. Ne jamais réduire une portée ni inventer une condition.",
+    "definition": "Voir modular_definitions (procédure, liens-questions, exemple contrôlé par les tests de Ratio).",
+    "templates": [
+      {
+        "name": "règle",
+        "pattern": "« Si/Lorsque C1 et C2, alors E, sauf X »",
+        "structure": "Nœud de la règle (notion ; texte en droit) ; conditions : si la règle n'a QUE des conditions, enfants avec logic « et » / « ou » et arêtes nues ; si elle a aussi un effet ou des exceptions, nœud intermédiaire « Conditions de … » (logic « et » / « ou ») relié par « suppose ». Effet sous la règle (« entraîne » ; « produit » en droit). Chaque exception SOUS l'élément qu'elle neutralise, libellé « sauf », titre sans « Sauf ». Fondement en premier (« fondé sur »). « soit… soit » = classification : enfants en logic « ou ».",
+        "example": "« Le contrat est nul si le consentement est vicié, sauf confirmation par la victime » → Nullité du contrat —suppose→ Consentement vicié —sauf→ Confirmation par la victime."
+      },
+      {
+        "name": "mécanisme",
+        "pattern": "« A entraîne B, ce qui provoque C » ; « plusieurs causes produisent un effet »",
+        "structure": "Chaîne en enfilade : A —entraîne→ B —entraîne→ C, chaque maillon un nœud, chacun SOUS le précédent (profondeur ≤ 5 ; au-delà, couper en deux branches reliées par un renvoi). Boucle (cercle vicieux, spirale) : renvoi de retour « entretient ». Causes multiples d'un effet : sous l'effet (« a pour cause »), logic « et » si elles n'agissent qu'ensemble. Ne jamais tasser une chaîne dans une seule note.",
+        "example": "« Le réchauffement fait fondre la banquise ; l'océan, plus sombre, absorbe plus de chaleur, ce qui accélère le réchauffement » → Réchauffement —entraîne→ Fonte de la banquise —entraîne→ Absorption de chaleur accrue, renvoi Absorption de chaleur accrue —entretient→ Réchauffement."
+      },
+      {
+        "name": "raisonnement",
+        "pattern": "« P1 ; or P2 ; donc / en conclusion / d'où C »",
+        "structure": "Conclusion = nœud parent (argument, theorie, notion ou idee) ; prémisses en enfants de type argument, libellé « justifié par » ; logic « et » si toutes sont nécessaires. Objection : critique (« critiqué par ») ; tempérament : nuance (« nuancé par »). Le marqueur (« donc », « en conclusion ») désigne la conclusion : ne pas inverser.",
+        "example": "« Toute émotion vient d'une pensée ; or la colère est une émotion ; donc la colère vient d'une pensée » → La colère vient d'une pensée —justifié par→ Toute émotion vient d'une pensée · La colère est une émotion (logic « et »)."
+      },
+      {
+        "name": "distinction",
+        "pattern": "« A se distingue de B par C » ; « contrairement à B, A … »",
+        "structure": "A et B sont deux nœuds (chacun à sa place) reliés par un renvoi « se distingue de » ; le critère C est dit dans la note de l'un (« A se distingue de B par C ») ; tableau A | B × critères seulement si la source donne au moins deux critères (sinon une phrase). Pour 3 notions ou plus : nœud comparaison parent avec le tableau en note.",
+        "example": "« Le stimulus déclenche la colère, mais sa cause est un besoin insatisfait » → Stimulus —se distingue de→ Cause réelle de la colère ; note : « Le stimulus se distingue de la cause réelle par son rôle : il déclenche, il ne cause pas »."
+      }
+    ]
+  },
+  "modular_definitions": {
+    "when": "Définition de plus de rules.defMinChars caractères qui contient au moins rules.defMinParts composantes RÉELLES (cœur + compléments qui répondent à une question). Ne pas décomposer : « soit… soit » (classification → enfants en logic « ou »), relative complexe (« par lequel »), définition négative, énumération qui ne répond à aucune question.",
+    "procedure": [
+      "1. Nœud definition : titre = le terme ; note = la définition intégrale, citée (> …).",
+      "2. Le verbe qui porte le sens (désigne, est, consiste en, permet) donne la 1re composante : libellé « désigne », « c'est », « consiste en ».",
+      "3. Chaque complément devient une composante : enfant de type idee, arête libellée par la QUESTION à laquelle il répond (de qui ? à qui ? par quoi ? dans quel but ? quand ?) ; « notamment » / « comme » sous la composante qu'ils précisent ; « sauf » / « à condition que » sous le cœur.",
+      "4. em : le fragment qu'un élève omet en récitant (« une ou plusieurs », « exclusivement », « de plein droit »), présent tel quel dans le titre.",
+      "5. Lire la chaîne à voix haute ; un morceau qui ne répond à aucune question reste dans la note (pas de composante « et »)."
+    ],
+    "question_labels": "désigne · c'est · consiste en · permet · de qui ? · de quoi ? · à qui ? · à quoi ? · par quoi ? · comment ? · dans quel but ? · pour ? · quand ? · résulte de · sauf · notamment · mais · comme",
+    "example": {
+      "definition": "« La succession est une notion juridique qui désigne la transmission du patrimoine d'une personne décédée à une ou plusieurs personnes appelées à lui succéder, notamment ses héritiers. »",
+      "nodes": [
+        {
+          "id": "d1",
+          "type": "definition",
+          "title": "Succession",
+          "note": "> La succession est une notion juridique qui désigne la transmission du patrimoine d'une personne décédée à ==une ou plusieurs personnes== appelées à lui succéder, notamment ses héritiers."
+        },
+        {
+          "id": "d2",
+          "type": "idee",
+          "title": "Une notion juridique",
+          "note": ""
+        },
+        {
+          "id": "d3",
+          "type": "idee",
+          "title": "La transmission du patrimoine",
+          "note": ""
+        },
+        {
+          "id": "d4",
+          "type": "idee",
+          "title": "Une personne décédée",
+          "note": ""
+        },
+        {
+          "id": "d5",
+          "type": "idee",
+          "title": "Une ou plusieurs personnes appelées à lui succéder",
+          "em": "Une ou plusieurs",
+          "note": "Pas seulement les héritiers : la portée est plus large. *(reformulation)*"
+        },
+        {
+          "id": "d6",
+          "type": "idee",
+          "title": "Ses héritiers",
+          "note": ""
+        }
+      ],
+      "edges": [
+        {
+          "from": "d1",
+          "to": "d2",
+          "kind": "tree",
+          "label": "c'est"
+        },
+        {
+          "from": "d1",
+          "to": "d3",
+          "kind": "tree",
+          "label": "désigne"
+        },
+        {
+          "from": "d3",
+          "to": "d4",
+          "kind": "tree",
+          "label": "de qui ?"
+        },
+        {
+          "from": "d3",
+          "to": "d5",
+          "kind": "tree",
+          "label": "à qui ?"
+        },
+        {
+          "from": "d5",
+          "to": "d6",
+          "kind": "tree",
+          "label": "notamment"
+        }
+      ],
+      "reading": "Succession, c'est une notion juridique ; elle désigne la transmission du patrimoine — de qui ? d'une personne décédée — à qui ? à UNE OU PLUSIEURS personnes appelées à lui succéder — notamment ses héritiers."
+    },
+    "notes": "Les composantes n'ont pas besoin de note : Ratio révise la définition d'un seul tenant (la consigne pose la chaîne : c'est · désigne · de qui ? · à qui ?). idee ≤ 25 % ne compte pas les composantes."
+  },
+  "note_rules": {
+    "general": [
+      "La note RÉPOND à la question du type pour ce titre : la réponse d'abord, le détail ensuite ; 2 à 10 lignes.",
+      "Une note de parent ne répète pas ses enfants : un chapeau de 1 à 3 lignes, ou rien. Exception : un tableau qui compare les enfants entre eux.",
+      "==surligné== : une seule idée-force par note (deux au-delà de 12 lignes), ≤ 15 mots ; **gras** : 2 à 5 mots-clés ; > : citation exacte (« > — Auteur » si ce n'est pas l'auteur du livre) ; tableau dès qu'on compare ≥ 2 notions sur ≥ 2 critères ; - [ ] pour les exercices.",
+      "Chiffres, noms propres, dates, références : EXACTS. Pas de remplissage ni de méta-commentaire (« l'auteur explique que… »).",
+      "Exemple : première ligne « Illustre : <titre exact de l'élément illustré>. », puis le cas en 2 à 5 lignes. Exception : la note commence par la règle écartée.",
+      "Complément indispensable absent du livre : *(complément)* ; déduction à deux preuves : *(déduit : …)* ; relation non tranchée : « Relation discutée : … »."
+    ],
+    "engine_readable": {
+      "why": "Ratio relit les notes : une phrase affirmative qui nomme un autre nœud par son titre exact et les relie par un connecteur devient une relation (libellé d'une arête, rattachement ou renvoi). Une note bien écrite confirme la carte ; une note qui dit une relation que la carte n'encode pas déclenche une correction ou un signalement.",
+      "rules": [
+        "UNE relation par proposition : le moteur découpe aux , ; : — ( ). « A entraîne B, ce qui provoque C » se lit A→B puis B→C ; « A entraîne B et C » relie A aux deux.",
+        "Nommer l'autre nœud par son TITRE EXACT (casse et accents ignorés), sans pronom : « La sécrétion d'insuline favorise le stockage du glucose en glycogène », pas « elle favorise ce stockage ». Le nœud qui porte la note est le sujet implicite quand la phrase ne nomme pas de sujet.",
+        "Connecteurs lus : entraîne, provoque, déclenche, conduit à, stimule, renforce, donc, c'est pourquoi, de sorte que (cause) ; parce que, car, à cause de, en raison de, du fait de, résulte de, découle de, provient de, est dû à (cause citée après l'effet) ; favorise, entretient, aggrave ; permet, rend possible, nécessaire à ; suppose, nécessite, exige, dépend de, seulement si, ne… que si, à condition que ; sauf, sauf si, à moins que, hormis ; fait exception à ; illustre, est un exemple de ; empêche, évite, réduit, atténue, compense, freine, corrige, limite ; pour lutter contre, pour vaincre, remédie à ; se distingue de, à la différence de, contrairement à, s'oppose à ; selon, d'après (vers une personne ou une étude ; un nom de famille seul — « selon Freud » — désigne la personne « Sigmund Freud » si elle est la seule de ce nom) ; les infinitifs favoriser, entraîner, provoquer, empêcher, éviter, réduire, permettre sont lus comme les formes conjuguées ; « quand / lorsque / une fois / dès que / après » en tête de phrase pour une étape (l'étape nommée précède) ; « ce qui … » enchaîne sur ce que la proposition précédente vient de produire.",
+        "Phrases IGNORÉES par le moteur (donc à réserver à ce qui ne doit PAS devenir un lien) : négation (« n'entraîne pas », « aucun », « ni », « ne pas confondre », « loin de »), question, hypothèse (« si l'on croit », « supposons », « idée reçue », « on pense à tort »), débat (« selon les uns… selon les autres », « reste discuté », « controverse »), passages entre « … » ou \"…\", et TOUTE la note dès qu'une de ses lignes commence par > (citation). Une relation à encoder ne va donc pas dans une note-citation : l'écrire dans la note de l'autre nœud, ou hors de la citation dans un nœud sans ligne >.",
+        "Pas de réserve inventée quand la source est catégorique : « peut », « souvent », « tend à », « généralement », « semble », « en partie » rendent la relation seulement « probable ». Garder la réserve seulement si la source l'a.",
+        "Une partie d'un tout : première phrase « <titre> du / de la <tout> » (« Prolongements courts du neurone »).",
+        "[[Titre]] dans une note : précédé de son verbe (« remédie à [[Épuisement]] ») — sans verbe, c'est un simple rappel."
+      ]
+    }
+  },
+  "edge_rules": {
+    "tree": "Parent → enfant, un seul parent par nœud. Libellé = verbe de la relation entre deux IDÉES (normative_core.relation_by_type ou la famille de la ligne R) ; \"\" sous un intitulé, une liste nommée, un nœud ET/OU, une méthode → étapes.",
+    "link": "Toute autre relation réelle entre deux nœuds qui ne sont pas parent et enfant, dans la même section ou ailleurs ; libellé obligatoire. Un nœud peut avoir un parent ET des renvois, tant que chaque lien dit une relation différente.",
+    "labels": {
+      "presets": [
+        "ET",
+        "OU",
+        "sauf",
+        "entraîne",
+        "suppose",
+        "permet",
+        "illustré par",
+        "a pour cause",
+        "s’oppose à",
+        "se distingue de",
+        "remédie à"
+      ],
+      "custom_allowed": true,
+      "rule": "Le libellé dit la relation EXACTE de la ligne R : 1 à 3 mots, verbe au présent, préposition ou question, minuscules (sauf ET/OU). Un libellé sur mesure plus juste est permis (« aggrave », « protège de », « naît de », « précède », « sert à », « justifié par »). Test : la phrase « source — libellé → cible » est vraie et compréhensible par un élève qui ne connaît pas le livre.",
+      "precision": [
+        "Corrélation (étude observationnelle, statistique, co-occurrence) → « est associé à », jamais « entraîne ».",
+        "Condition nécessaire « nécessite » / « seulement si » ; suffisante « suffit à » ; facteur « favorise » ; à défaut de marqueur, « suppose ».",
+        "« sauf » écarte une règle (de la règle vers l'exception) ; « nuancé par » / « limité par » la module.",
+        "Relation niée (« n'entraîne pas », « ne pas confondre avec ») : jamais le lien positif ; « se distingue de » si c'est une distinction."
+      ],
+      "forbidden": "« voir », « voir aussi », « cf. », « lien », « lié à », « rapport », « relation », « concerne », « → », « - », « ? » seul ; un nom qui redit le type."
+    },
+    "orientation": [
+      "La phrase « source — libellé → cible » est vraie dans le sens de la flèche.",
+      "Production (entraîne, provoque, produit, permet, favorise) : la cause est la source. Provenance (a pour cause, résulte de, découle de) : l'effet est la source. Jamais « Fonte de la banquise —entraîne→ Réchauffement » quand le texte dit l'inverse.",
+      "Condition : condition —permet→ effet, ou règle —suppose→ condition. Exception : règle —sauf→ exception. Illustration : élément —illustré par→ exemple (arbre), exemple —illustre→ autre élément (renvoi). Symétriques (s’oppose à, se distingue de) : une seule flèche."
+    ],
+    "groups": "Branche (fourche) : ≥ 2 arêtes du MÊME nœud source, même kind, même group et même libellé. tree : famille de même relation sous un parent qui en mêle plusieurs (libellé au pluriel : « causes », « conséquences »). link : une source → plusieurs cibles voisines, même relation.",
+    "never": "Renvoi qui double une arête d'arbre ou relie parent et enfant ; renvoi « illustre » vers un voisin (l'exemple devient son enfant) ; deux renvois qui disent la même chose dans les deux sens ; relation transversale changée en arête d'arbre ou hiérarchie changée en renvois ; lien sans ligne R ou X."
+  },
+  "node_types": {
+    "principle": "Le type est un repère visuel ET la question posée en révision (review_prompt, suivi des libellés des liens sortants). Il ne dit que la relation au PARENT ; les autres relations passent par les libellés et les renvois. Un nœud n'est révisable que s'il a un titre ET (une note OU des enfants). Format : type · libellé · question de révision · usage (→ type à prendre à la place).",
+    "types": [
+      "chapitre · Chapitre · Retrouve le plan de ce chapitre · racine de chaque carte, titre sans numéro",
+      "lecon · Leçon · Retrouve le plan de cette leçon · grande partie (I, II), seulement s'il y a deux niveaux de parties",
+      "section · Section · Retrouve le plan de cette section · partie du chapitre (A, B)",
+      "notion · Notion · Décompose cette notion · concept central qui se décompose en enfants (sans enfants → definition ou caracteristique)",
+      "definition · Définition · Donne la définition · titre = le terme, note = la définition fidèle (trait → caracteristique ; sorte → categorie)",
+      "caracteristique · Caractéristique · Décris cette caractéristique · trait, propriété, critère de ce que la chose EST (condition à remplir → condition ; indice observable → signe)",
+      "categorie · Catégorie · Que regroupe cette catégorie ? · une sorte, un type, un niveau, un profil d'une typologie",
+      "signe · Signe / Indice · À quoi le reconnaît-on ? · symptôme, comportement observable qui fait reconnaître (erreur de l'élève → piege)",
+      "cause · Cause · Explique cette cause : pourquoi produit-elle cet effet ? · ce qui PROVOQUE (avant, pousse) ; un frein est la cause d'un échec ; un motif caché que le livre veut faire dépasser (nécessaire sans pousser → condition ; but → objectif)",
+      "consequence · Conséquence · Quelle est cette conséquence, et d’où vient-elle ? · ce qui en RÉSULTE (après, arrive) : effet, coût, impact (droit : régime → effet ; point fort d'une option → avantage)",
+      "condition · Condition · Quelle est cette condition, et pourquoi est-elle nécessaire ? · ce qu'il FAUT, sans pousser (« seulement si », « il faut ») (droit : validité → fond / forme ; cas qui écarte une règle → exception)",
+      "probleme · Problème · Quel est ce problème, et qu’est-ce qui le rend difficile ? · difficulté à résoudre pour elle-même (explique un autre fait → cause ; erreur de l'élève → piege)",
+      "solution · Solution · Quelle est cette solution, et comment l’appliquer ? · répond à un problème NOMMÉ (sans problème → conseil ; suite d'actions → methode)",
+      "question · Question · Réponds à cette question · problématique que le livre pose et résout ; note ou enfants = la réponse",
+      "theorie · Théorie / Modèle · Que dit cette théorie, et qu’explique-t-elle ? · modèle nommé (droit : position d'auteur → doctrine ; résultat d'expérience → etude)",
+      "argument · Argument · Développe cet argument · raison qui SOUTIENT une thèse (« car », « en effet »)",
+      "critique · Critique / Limite · Quelle est cette critique ou cette limite ? · objection, défaut d'une idée ou d'une théorie (tempère sans attaquer → nuance)",
+      "nuance · Nuance · Quelle nuance faut-il apporter ? · tempère sans contredire (« pas toujours », « cela dépend ») (règle écartée → exception ; erreur → piege)",
+      "comparaison · Comparaison · Compare : points communs et différences · 2 à 4 notions face à face, tableau ≥ 2 critères en note",
+      "avantage · Avantage · Quel est cet avantage ? · point fort d'une OPTION choisie (résultat d'une cause → consequence)",
+      "inconvenient · Inconvénient · Quel est cet inconvénient ? · point faible d'une option (défaut d'une théorie → critique)",
+      "methode · Méthode · Retrouve les étapes de cette méthode · procédure ordonnée, logic « et », enfants etape",
+      "etape · Étape · Que fait-on à cette étape ? · une action à sa place dans une méthode, titre = verbe d'action ≤ 34 caractères (pas de suite → conseil)",
+      "conseil · Conseil · Quel est ce conseil, et comment l’appliquer ? · recommandation générale (problème nommé → solution ; consigne à pratiquer → exercice)",
+      "exercice · Exercice · Fais l’exercice : que faut-il faire ? · activité avec consigne (durée, tâche), cases - [ ]",
+      "objectif · Objectif · Quel est cet objectif, et comment l’atteindre ? · but que le cours veut faire ATTEINDRE (motif à dépasser → cause)",
+      "date · Date · Que s’est-il passé, et pourquoi est-ce important ? · événement daté ; de 3 à 6 dates sœurs feuilles → frise",
+      "chiffre · Chiffre clé · Que mesure ce chiffre et que montre-t-il ? · statistique, ordre de grandeur ; titre = le chiffre",
+      "formule · Formule · Restitue la formule et le sens de chaque terme · équation, phrase-type que l'élève DIRA mot pour mot",
+      "etude · Étude / Expérience · Que montre cette étude ? · étude, expérience, enquête ; annotation sous l'idée qu'elle prouve (corrélation → « est associé à »)",
+      "citation · Citation · Que dit cette citation, et qu’en retenir ? · maxime d'un auteur ; titre = la citation courte entre « »",
+      "personne · Personne · Qui est-ce et quel est son apport ? · auteur, chercheur, personnage ; annotation",
+      "texte · Texte · Que prévoit ce texte ? · article de loi, source primaire (note = le texte en >)",
+      "juris · Jurisprudence · Que retient cette décision ? · DROIT : décision de justice (hors droit → etude)",
+      "doctrine · Doctrine · Quelle est cette position doctrinale ? · DROIT : position d'un auteur juridique (hors droit → theorie, personne)",
+      "fond · Condition de fond · Explique cette condition de fond · DROIT UNIQUEMENT : consentement, capacité, contenu (hors droit → condition, cause)",
+      "forme · Condition de forme · Explique cette condition de forme · DROIT UNIQUEMENT : formalité, délai (hors droit → etape, conseil)",
+      "effet · Effet / Régime · Quels sont les effets ? · DROIT UNIQUEMENT : régime, sanction (hors droit → consequence)",
+      "exception · Exception · Explique cette exception · une RÈGLE ÉNONCÉE ne s'applique pas : « la règle X s'applique, SAUF … » ; toutes matières, rare (sinon nuance, critique, piege, condition)",
+      "exemple · Exemple · Qu’illustre cet exemple ? · cas, histoire, dialogue ; note « Illustre : … » ; annotation sous l'élément illustré",
+      "piege · Piège · Quel est le piège à éviter ? · erreur fréquente, confusion, idée reçue que l'élève risque de reprendre",
+      "retenir · À retenir · Restitue l’essentiel · synthèse en dernier ; 1 à 3 par carte",
+      "idee · Idée · Développe cette idée · DERNIER RECOURS (≤ 25 % des nœuds) ; type des composantes de définition"
+    ],
+    "selection": {
+      "passes": [
+        "1. Fonction : nommer en un verbe ce que fait le passage (définir, décrire, classer, faire reconnaître, expliquer pourquoi, dire ce qui en résulte, poser ce qu'il faut, signaler une difficulté, y répondre, viser, prescrire, ordonner, entraîner, soutenir, objecter, tempérer, écarter une règle, prévenir une erreur, comparer, illustrer, prouver, citer, situer, mesurer, résumer). Une image ou un slogan prend le type de ce qu'il DÉCRIT.",
+        "2. Indices : repérer les mots du texte, sans jamais décider sur un mot seul (« sauf », « pour », « problème » sont souvent employés au sens courant) ; au plus 3 candidats.",
+        "3. Lien au parent : pour chaque candidat, écrire la phrase avec les vrais titres (« [enfant] provoque [parent] », « [parent] s'applique, SAUF [enfant] », « sans [enfant], pas de [parent] ») ; éliminer ceux dont la phrase est fausse. Test le plus fort.",
+        "4. Question de révision : review_prompt + titre ; la note doit y répondre directement, sinon éliminer le candidat.",
+        "5. Départage : question discriminante du groupe (clusters) ; doute réel → type de repli plus général (fallback) et rapport « types incertains ».",
+        "6. Cohérence : frères de même nature → même type, sauf fonction différente (une fausse croyance parmi des signes reste un piège)."
+      ],
+      "clusters": [
+        "exception · nuance · critique · piège · problème — une RÈGLE énoncée et un cas qui l'écarte → exception ; une affirmation adoucie → nuance ; une IDÉE attaquée → critique ; une ERREUR que l'élève risque → piège ; une DIFFICULTÉ du monde réel → problème.",
+        "cause · condition · objectif · conséquence — AVANT et pousse → cause ; AVANT et permet (nécessaire) → condition ; APRÈS et voulu → objectif ; APRÈS et arrive → conséquence. Un frein (« ce qui nous empêche ») et un motif caché à dépasser sont des causes.",
+        "conseil · solution · étape · exercice · méthode — problème nommé → solution ; place dans une suite → étape ; consigne à pratiquer → exercice ; suite d'actions avec enfants → méthode ; sinon conseil.",
+        "définition · caractéristique · catégorie · signe · notion — ce qu'EST le terme → définition ; un trait → caractéristique ; une sorte → catégorie ; un indice observable → signe ; un concept à enfants → notion.",
+        "argument · théorie · étude · citation · personne — raison pour une thèse → argument ; modèle nommé → théorie ; observation → étude ; phrase exacte → citation ; une personne → personne.",
+        "avantage · inconvénient · conséquence — le parent est une OPTION choisie → avantage / inconvénient ; sinon → conséquence."
+      ],
+      "fallback": "Doute irréductible : exception → nuance ; piege → nuance ; critique → nuance ; probleme → notion ; signe → caracteristique ; categorie → caracteristique ; solution → conseil ; etape → conseil ; objectif → consequence ; condition → caracteristique ; cause → idee ; theorie → notion ; argument → idee. Jamais l'inverse.",
+      "special_cases": [
+        "Nœud qui regroupe une énumération (« 9 coûts de… ») : le type de ce qu'il NOMME (notion, question, probleme), les enfants portent le type précis.",
+        "Objectif ou motif ? « Le cours veut-il que l'élève OBTIENNE cela ? » Oui → objectif ; non, il veut qu'il s'en défasse → cause.",
+        "Contradiction du livre : les deux positions avec leur type naturel, un renvoi « contredit », notes commençant par « ⚠ Le livre se contredit : », signalement au rapport. Tension conciliable (situations différentes) : nuance ou exception, sans ⚠.",
+        "Formule (ce que l'élève dira) ≠ citation (pensée d'un auteur). Bénéfice caché d'un comportement nuisible → avantage. Constat placé sous une étude → consequence, chiffre ou idee, jamais critique.",
+        "Personne qui source une étude : enfant de l'étude ; sans nœud d'étude, sœur placée juste après l'idée qu'elle appuie."
+      ],
+      "ledger": "Table de travail (hors JSON) pendant P4 : id · titre · fonction · candidats · phrase de lien retenue · type. Elle sert au rapport (types incertains)."
+    }
+  },
+  "domain_mode": {
+    "decide_in_P0": "« juridique » (cours de droit, manuel juridique, code commenté) ou « hors droit » (tout le reste).",
+    "hors_droit": "Interdits : fond, forme, effet, juris, doctrine — à la place : condition ou cause (fond), etape ou conseil (forme), consequence (effet), etude (juris), theorie ou personne + citation (doctrine). exception reste permise au seul test « … SAUF … ». Validateur : --hors-droit.",
+    "juridique": "Tous les types ; fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. », auto-liés à Légifrance) ; les types universels pour le reste (contexte → date, critique doctrinale → critique, statistique → chiffre)."
+  },
+  "readability_rules": [
+    "R1 Racine : 3 à 7 enfants (viser 4 à 6), homogènes ; exemples, arrêts et anecdotes jamais directement sous la racine ; seul un texte fondateur peut venir en premier.",
+    "R2 Frères homogènes ; « À retenir » en DERNIER enfant de la racine ou de la partie qu'il résume.",
+    "R3 L'ordre du JSON est l'ordre de lecture (définition d'abord, puis conditions, effets, exceptions, exemples, à retenir) : Ratio ne permute jamais les frères.",
+    "R4 Pas de chaîne d'enfants uniques SANS libellé (fusionner ou remonter) ; une chaîne LIBELLÉE (cause —entraîne→ effet —illustré par→ exemple) est voulue.",
+    "R5 Renvois : budget et exception explicite de normative_core ; jamais parent ↔ enfant ; relation vague ou lointaine → [[Titre]] précédé du verbe dans la note.",
+    "R6 Fourches seulement entre cibles voisines ; sinon Ratio les dessine en renvois séparés.",
+    "R7 Titres de 15 à 40 caractères de préférence (80 au plus), uniques dans la carte, sans point final ni numéro ; « ? » pour une vraie question.",
+    "R8 Libellés de 1 à 3 mots, 14 caractères de préférence, 20 au plus.",
+    "R9 15 à 35 nœuds par carte (12 minimum, 45 maximum) ; au-delà, scinder.",
+    "R10 Ne pas fournir x, y : Ratio range la carte (needsLayout). Facultatif : layoutPick « right » (défaut conseillé), « balanced » (4 à 6 branches équilibrées), « down » (≤ 24 nœuds, ≤ 3 niveaux).",
+    "R11 Constructions : FRISE (methode avec de 3 à 6 etape feuilles ≤ 34 caractères, ou de 3 à 6 date sœurs dans l'ordre) ; PEIGNE (parent à 4 enfants ou plus, titres parallèles) ; ANNOTATIONS (exemple, juris, doctrine, texte, citation, personne feuilles, juste après l'élément) ; NUMÉROS des branches principales dans l'ordre du JSON ; une branche = une idée suivie de bout en bout."
+  ],
+  "target_format": {
+    "envelope": "{\"format\":\"ratio\",\"version\":2,\"kind\":\"course\",\"courses\":[UN cours],\"maps\":[cartes]} — importé par Réglages › Données › Importer, ou collé dans la boîte d'import.",
+    "course": "id unique préfixé c- ; title ≤ 60 caractères (titre du livre ou de la matière) ; description : une phrase (auteur, édition, périmètre).",
+    "map": "id unique préfixé m- ; courseId ; title ≤ 60 caractères ; needsLayout: true ; nodes dans l'ORDRE DE LECTURE (parcours en profondeur) ; edges ; facultatif layoutPick. Omettre x, y, viewport, createdAt, updatedAt, readOnly.",
+    "node": "id unique dans la carte (n1, n2…) ; type (43 types, minuscules sans accent) ; title ≤ 80 caractères ; note Markdown (\"\" si aucune) ; logic \"et\" | \"ou\" | null ; facultatif em = fragment EXACT du titre (≤ 60 caractères) mis en relief. Omettre x, y, collapsed, review.",
+    "edge": "id unique dans la carte ; from, to (même carte) ; kind \"tree\" (parent → enfant) ou \"link\" (renvoi) ; label (tree : verbe ou \"\" ; link : obligatoire ; ≤ 20 caractères) ; facultatif group (même valeur sur ≥ 2 arêtes du même source, même kind, même libellé).",
+    "hard_constraints": [
+      "Au plus UN parent tree par nœud (un second parent devient un renvoi à l'import : modéliser un link).",
+      "UNE racine par carte (le chapitre) ; tous les autres nœuds rattachés par des arêtes tree ; aucun nœud isolé ; aucun cycle ; aucune arête d'un nœud vers lui-même.",
+      "from et to dans la MÊME carte : il n'existe pas de lien entre cartes.",
+      "Types inconnus convertis en Idée ; champs inconnus ignorés ; em hors du titre ignoré.",
+      "Pas de commentaires // ou /* */, pas de « … » ni « etc. » pour abréger, pas de valeurs inventées pour review, x, y, viewport."
+    ]
+  },
+  "markdown_spec": [
+    "**gras** : 2 à 5 mots-clés · *italique* : nuance, terme étranger, titre d'œuvre · ==surligné== : l'idée-force, une par note, ≤ 15 mots · ~~barré~~ : idée reçue réfutée · `code` : formule, phrase exacte à dire.",
+    "[[Titre d'un nœud]] : renvoi cliquable vers un nœud de la MÊME carte (texte identique au titre, casse et accents ignorés) ; [texte](https://…) : source en ligne réelle seulement ; « art. 1128 » : auto-lié à Légifrance.",
+    "Blocs : listes - / 1. (2 espaces pour imbriquer) ; - [ ] / - [x] ; > citation puis « > — Auteur » ; tableau | a | b | avec ligne | --- | ; ### intertitre (rare) ; --- séparateur ; ``` code.",
+    "Échappement JSON : \\n pour les retours à la ligne, \\\" pour les guillemets ; préférer « » et ’ ; apostrophes droite et typographique équivalentes pour Ratio, mais constantes."
+  ],
+  "modeling_patterns": [
+    "Énumération STRUCTURANTE (annoncée, développée, à restituer) → parent titré avec le cardinal + un enfant par élément, chacun avec au moins une ligne de note. Énumération nue en passant → liste à puces dans la note.",
+    "logic : « et » si tous les éléments sont requis ensemble ; « ou » si un seul suffit ; null pour une liste de signes, conséquences, conseils ou exemples — le TITRE porte alors le cardinal.",
+    "Exemple : jamais enfant d'un nœud ET/OU ni d'une énumération (il serait compté parmi les éléments) ; enfant de l'élément précis qu'il illustre (« illustré par ») ; frère juste après l'énumération seulement s'il illustre CHACUN de ses éléments.",
+    "Questionnaire : section « Test : … » (ou carte entière) ; une question = un nœud question (réponses et points en tableau) ; profils de résultat = categorie sous « Résultats » ; plus de 7 questions → sections de 3 à 6 questions ; seuils de types et de surlignage non applicables.",
+    "Méthode : methode (logic « et ») + etape dans l'ordre, titres = verbes d'action ≤ 34 caractères ; plus de 6 étapes : nombre exact du livre.",
+    "Nœud mixte (une notion avec causes ET conséquences) : branches libellées (group « causes » / « conséquences ») ; sous-sections seulement si chaque moitié a ≥ 5 éléments ; chaîne si chaque conséquence a sa cause.",
+    "Prérequis : un terme est défini avant sa première utilisation, sinon rappeler sa définition en une ligne dans la note qui l'emploie.",
+    "Source défectueuse : coquille ou erreur de traduction → reformuler fidèlement + *(sic)* ou *(complément : …)* ; section annoncée mais absente → rapport ; passage répété → une seule fois."
+  ],
+  "course_design": {
+    "candidates": "Pour chaque partie du livre, comparer au moins deux découpages (1 carte par chapitre, chapitres courts regroupés, chapitre long scindé) et garder le meilleur total ; à égalité, celui qui suit le plan du livre.",
+    "criteria": "C1 Cohérence 0,30 (toute la carte répond à UNE question) · C2 Taille 0,20 (15–35 nœuds ; 0 au-delà de 45 ou sous 12) · C3 Autonomie 0,15 (se révise sans ouvrir une autre carte) · C4 Équilibre 0,15 (3 à 7 branches de poids comparables) · C5 Mémorisabilité 0,20 (énumérations entières, titres rappelables).",
+    "map_title": "La question ou l'idée de la carte en 2 à 7 mots (« Pourquoi on ne sait pas dire non »), jamais « Chapitre 5 »."
+  },
+  "long_document_strategy": {
+    "trigger": "Le JSON complet dépasserait la longueur de réponse (repère : plus de ~8 cartes standard ou ~60 000 caractères).",
+    "procedure": [
+      "P0–P2 sur le livre entier ; plan complet des cartes annoncé dans le rapport de la partie 1.",
+      "Partie k : JSON complet avec le MÊME cours (même id) et les cartes de la partie ; ids de cartes uniques sur l'ensemble (m-<slug>-01, -02…).",
+      "Fin de chaque partie sauf la dernière : « Partie k/N — réponds “suite” pour la partie suivante ». Si tu écris dans un fichier, tout en un JSON."
+    ],
+    "import_instructions_for_user": "Importer la partie 1, puis chaque suite : Ratio reconnaît le cours et propose « Compléter « Titre du cours » »."
+  },
+  "operating_contract": {
+    "input": "Le document source (obligatoire) ; facultatif : matière et niveau, objectif, parties à privilégier, granularité (fiche 8–15 nœuds par carte · standard 15–35 · exhaustif jusqu'à 45). Par défaut : étudiant sérieux, restituer le plan et les notions sans le livre, granularité standard.",
+    "output": [
+      "UN bloc ```json contenant l'objet d'import (target_format), complet et valide, puis un court rapport en français (report_template).",
+      "Si tu peux écrire des fichiers : le JSON dans un .json (sans balises), le rapport dans un .md voisin ; la réponse donne les chemins et un résumé.",
+      "La carte de compréhension est un travail interne : elle ne va pas dans le JSON ; ses comptes vont dans le rapport (et la carte elle-même si l'utilisateur la demande)."
+    ]
+  },
+  "quality_gates": [
+    "G1 Schéma (bloquant) : format/version/kind ; 1 cours ; cartes à id unique, courseId juste, needsLayout true ; ids uniques par carte ; 43 types ; from/to existants ; ≤ 1 parent ; 1 racine ; aucun isolé ; aucun cycle.",
+    "G2 Couverture (bloquant) : chaque partie du plan réel représentée ; chaque énumération avec son cardinal exact ; chaque définition explicite a un nœud definition.",
+    "G3 Révisabilité (bloquant, par carte) : ≥ 85 % des nœuds non structurels ont une note ou des enfants ; aucun nœud structurel vide ; thèse en racine ou nœud retenir.",
+    "G4 Fidélité (bloquant) : aucun fait, chiffre, auteur, citation ou référence absent du livre (hors *(complément)*).",
+    "G5 Relations (bloquant) : P6a fait ; chaque ligne R encodée ou justifiée (ligne A) ; aucune relation aplatie ; aucun lien sans ligne R ou X ; zéro libellé sur une carte de 8 nœuds ou plus = échec.",
+    "G6 Orientation et preuve (bloquant) : chaque phrase « source — libellé → cible » vraie dans le sens de la flèche ; aucun libellé vague ni « voir » ; aucune relation niée, débattue ou corrélative tracée comme une cause ; aucun renvoi en double ou parallèle à l'arbre.",
+    "G7 Maillage : renvois dans le budget (double pour les relations explicites) ; relations nommées ≥ rules.labelledTarget des arêtes de contenu ; aucun verbe sous un intitulé ; branches seulement pour un parent qui mêle deux familles.",
+    "G8 Lisibilité : racine à 3 à 7 enfants ; aucun exemple ni arrêt directement sous la racine ; titres ≤ 80 (médiane ≤ 40) et uniques ; libellés ≤ 20 ; notes ≤ 25 lignes ; profondeur ≤ 6 ; 12 à 45 nœuds.",
+    "G9 Expression (sur le cours) : tableaux pour les comparaisons ; > pour les formules marquantes ; ==surligné== dans 30–70 % des notes (20 % minimum par carte), un par note ; logic sur les énumérations cumulatives/alternatives ; ≥ 4 types par carte de plus de 15 nœuds ; aucun type de droit hors droit ; idee ≤ 25 % ; chaque exception au test SAUF.",
+    "G10 Décomposition : définitions longues décomposées (modular_definitions) avec em quand un fragment s'oublie ; règles, mécanismes, raisonnements, distinctions selon leur gabarit ; chaque exemple sous l'élément qu'il illustre ; effets sous la cause qui les produit."
+  ],
+  "validation_cases": {
+    "why": "Cas à relire avant livraison ; les cas A à M sont aussi exécutés sur le moteur d'audit de Ratio (tests/organize.test.cjs).",
+    "cases": [
+      "A Cause et conséquences : cause —entraîne→ chaque conséquence (ou conséquences sous la cause) ; jamais trois nœuds côte à côte sous une section sans relation.",
+      "B Condition et effet : condition —permet→ effet, ou règle —suppose→ condition ; la condition n'est jamais typée ni libellée comme un effet.",
+      "C Définition modulaire : modular_definitions.example — composantes en chaîne, « une ou plusieurs » en em, « notamment » sous les destinataires, définition intégrale en note.",
+      "D Exemple contextualisé : enfant de l'élément qu'il illustre (« illustré par ») et renvoi « illustre » vers la notion générale s'il l'illustre aussi.",
+      "E Relation transversale : élément d'une section —dépend de / fait appel à→ notion d'une autre section (renvoi), hiérarchie inchangée.",
+      "F Liste plate : aucune section dont les éléments pendent sans relation alors que la source dit lequel produit, suppose ou illustre l'autre.",
+      "G Relation ambiguë : sens causal discuté → aucun lien ; « Relation discutée » en note ou au rapport.",
+      "H Second passage : relire le JSON ; aucune relation à ajouter, aucun lien en double ; le moteur de Ratio ne propose plus de correction établie.",
+      "I Négation : « L'activité solaire n'entraîne pas la montée des océans » → aucun lien « entraîne ».",
+      "J Intitulé : sous la section « Débat », arêtes sans libellé ; les relations relient les idées entre elles.",
+      "K Corrélation : une étude montre que A et B vont ensemble → « est associé à », jamais « entraîne ».",
+      "L Cercle vicieux : A —entraîne→ B —entraîne→ C et un renvoi C —entretient→ A ; rien n'est dédoublonné.",
+      "M Règle complète : modular_decomposition règle — conditions ET/OU, effet, exception sous ce qu'elle neutralise, fondement.",
+      "N Chaîne « ce qui » : « A entraîne B, ce qui provoque C » → A→B et B→C, jamais A→C ; B est effet puis cause (rôle par relation).",
+      "O Causes multiples : « A, B et C entraînent D » → trois relations vers D (ou logic « et » si elles n'agissent qu'ensemble) ; pas une seule arête vers un nœud-liste.",
+      "P Faux amis : « pour réussir », « la cause des femmes », « en partie », « voyons donc » ne créent aucune relation causale ; « sauf erreur » aucune exception."
+    ]
+  },
+  "self_check": {
+    "manual_checklist": [
+      "JSON.parse passe (pas de virgule finale, pas de commentaire) ; compter cartes, nœuds, renvois par carte.",
+      "Chaque carte : 1 racine chapitre, toute arête tree a un parent existant ; les [[Titre]] pointent vers des titres de la carte.",
+      "P6a : chaque ligne R encodée (où ?) ou justifiée (ligne A) ; comptes reportés au rapport ; aucune note à connecteur (donc, ce qui, car, parce que, entraîne, sauf, d'où, que si…) sur un nœud sans relation libellée.",
+      "Orientation : chaque phrase « source — libellé → cible » vraie dans le sens de la flèche ; aucun libellé vague, nom ou « voir » ; aucun verbe sous un intitulé.",
+      "Notes lisibles par le moteur : une relation par proposition, titre exact de l'autre nœud, pas de réserve inventée, pas de relation à encoder dans une note-citation (ligne >).",
+      "Lisibilité : racine à 3 à 7 branches ; renvois dans le budget (n ÷ 5, entre 2 et 8, double pour l'explicite) ; aucun exemple sous la racine ; titres courts.",
+      "Types : chaque question de révision a du sens ; aucun type de droit hors droit ; exception au test SAUF ; idee ≤ 25 %.",
+      "Lire 5 nœuds au hasard en révision ; relire validation_cases A à P."
+    ],
+    "validator_usage": "python3 validateur.py cours.json [--hors-droit] — erreurs (bloquantes, code de sortie 1) et avertissements « ⚠ » à lire un par un ; corriger jusqu'à zéro erreur.",
+    "validator_python": "import json,sys\nRULES={\"rules\":{\"labelledTarget\":0.6,\"flatMin\":5,\"defMinChars\":80,\"defMinParts\":3,\"linkBudgetPerNodes\":5,\"linkBudgetMin\":2,\"linkBudgetMax\":8,\"linksPerNodeMax\":3,\"commonWordShare\":0.15},\"lex\":{\"forward\":[\"entraîne\",\"provoque\",\"produit\",\"cause\",\"engendre\",\"aboutit à\",\"mène à\",\"rend possible\",\"permet\",\"implique\",\"donc\",\"favorise\",\"contribue à\",\"suffit à\",\"nourrit\",\"entretient\",\"aggrave\"],\"backward\":[\"a pour cause\",\"résulte de\",\"découle de\",\"naît de\",\"provient de\",\"est causé par\",\"suppose\",\"exige\",\"dépend de\",\"nécessite\",\"seulement si\"],\"inhibit\":[\"empêche\",\"évite\",\"réduit\",\"affaiblit\",\"protège de\",\"remédie à\",\"résout\",\"limite\",\"exclut\"],\"symmetric\":[\"s’oppose à\",\"se distingue de\",\"≠\",\"ressemble à\",\"contraire de\",\"va de pair avec\",\"est associé à\",\"corrélé à\",\"voir aussi\"],\"vague\":[\"lié à\",\"lien\",\"rapport\",\"relation\",\"en lien avec\",\"concerne\",\"cf\",\"cf.\",\"?\",\"-\",\"→\"]}}\nT={'chapitre','lecon','section','notion','definition','caracteristique','categorie','signe','cause','consequence','condition','probleme','solution','question','theorie','argument','critique','nuance','comparaison','avantage','inconvenient','methode','etape','conseil','exercice','objectif','date','chiffre','formule','etude','citation','personne','texte','juris','doctrine','fond','forme','effet','exception','exemple','piege','retenir','idee'}\nd=json.load(open(sys.argv[1]));E=[];HORS='--hors-droit' in sys.argv\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link']\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1 and e.get('label','').lower() in ('voir','cf.','lien','rapport'):W.append(p+': renvoi lointain et vague '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (libellé précis ou [[Titre]] dans la note)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2 and not m['title'].lower().startswith('test'):W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nfor m in d['maps']:\n  p=m['id'];ns=m['nodes'];N=len(ns)\n  if HORS:\n    for n in ns:\n      if n['type'] in ('fond','forme','effet','juris','doctrine'):W.append(p+': type juridique « '+n['type']+' » hors droit : '+n['title'][:40]+' (domain_mode)')\n  for n in ns:\n    if n['type']=='exception' and not re.search(r\"sauf|except|hormis|à moins|ne s.applique pas|sauf si|en dehors de\",(n['title']+' '+n.get('note','')).lower()):W.append(p+': exception sans règle écartée (test « SAUF ») : '+n['title'][:40]+' → nuance, critique, piege ?')\n  dpar={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};nm={x['id']:x for x in ns}\n  idees=sum(1 for n in ns if n['type']=='idee' and nm.get(dpar.get(n['id']),{}).get('type')!='definition')\n  if N>=12 and idees>0.25*N:W.append(p+': %d %% de nœuds « idee » (≤ 25 %%) — choisir des types précis'%(100*idees//N))\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  def txt(n): return (n['title']+' '+n.get('note','')).lower()\n  for n in m['nodes']:\n    t=n['type'];P=T.get(par.get(n['id']));pt=P['type'] if P else None;x=txt(n);ti=n['title'][:38]\n    if t=='etape' and pt!='methode':W.append(p+': étape hors méthode : '+ti+' → conseil ?')\n    if t=='solution' and pt not in ('probleme','question','solution','section','lecon','chapitre'):W.append(p+': solution sans problème nommé au-dessus : '+ti+' → conseil ?')\n    if t in ('avantage','inconvenient') and pt not in ('solution','comparaison','categorie','theorie','methode','notion'):W.append(p+': '+t+' sans option au-dessus : '+ti+' → consequence ?')\n    if t=='consequence' and re.search(r\"\\bpour que\\b|\\bafin de\\b|\\bafin que\\b|\\bbut\\b\",x):W.append(p+': conséquence formulée comme un but : '+ti+' → objectif ?')\n    if t=='cause' and re.search(r\"\\bil faut\\b|\\bà condition\\b|\\bseulement si\\b|\\bnécessaire\\b\",x) and not re.search(r\"parce que|à cause|provoque|entraîne\",x):W.append(p+': cause formulée comme une condition : '+ti+' → condition ?')\n    if t in ('nuance','critique','piege','probleme') and re.search(r\"\\bsauf (si|dans|lorsque|quand)\\b|à moins que|\\bexcepté\\b\",x) and pt in ('fond','forme','texte'):W.append(p+': '+t+' qui écarte une règle juridique : '+ti+' → exception ?')\n    if t=='piege' and not re.search(r\"erreur|croi|confond|faux|idée reçue|éviter|ne pas|≠|attention|piège|pense\",x):W.append(p+': piège sans erreur nommée : '+ti+' → nuance ?')\nSTOP={'dans','pour','avec','sans','sous','entre','leur','leurs','cette','celle','celui','ainsi','comme','plus','moins','tout','tous','toute','toutes','être','avoir','fait','faire','droit'}\ndef mots(t): return {w for w in re.findall(r\"[a-zà-ÿ]{5,}\",t.lower()) if w not in STOP}\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  ch={}\n  for e in m['edges']:\n    if e['kind']=='tree':ch.setdefault(e['from'],[]).append(e['to'])\n  for pid,ks in ch.items():\n    for i,k in enumerate(ks):\n      if i==0 or T[k]['type']!='exemple':continue\n      prev=T[ks[i-1]];ex=mots(T[k]['title']+' '+T[k].get('note',''));pm=mots(prev['title'])-mots(T[pid]['title'])\n      if prev['type']!='exemple' and ex & pm:W.append(p+': exemple « '+T[k]['title'][:30]+' » frère de « '+prev['title'][:30]+' » dont il reprend les mots ('+', '.join(sorted(ex & pm))[:40]+') → en faire l\\'enfant de ce frère ?')\nimport unicodedata\nRU=RULES['rules'];LX=RULES['lex']\ndef nz(t): return ''.join(c for c in unicodedata.normalize('NFD',str(t).lower()) if unicodedata.category(c)!='Mn').replace('’',\"'\").strip()\nSETS=[(set(nz(x) for x in LX['backward']),'back'),(set(nz(x) for x in LX['inhibit']),'inh'),(set(nz(x) for x in LX['symmetric']),'sym'),(set(nz(x) for x in LX['forward']),'fwd')]\nVAG=set(nz(x) for x in LX['vague'])\ndef pol(l):\n  l=nz(l).rstrip(' :')\n  if not l:return None\n  if l in VAG:return 'vague'\n  for s,p in SETS:\n    for w in s:\n      if l==w or l.startswith(w+' '):return p\n  return None\nMARK=[(\"d'où\",r\"\\bd'ou\\b\"),('donc',r'\\bdonc\\b'),('plus… plus',r'\\bplus\\b[^.;!?]{1,80}\\bplus\\b'),('spirale',r'\\bspirale'),('soit… soit',r'\\bsoit\\b[^.!?]{1,120}\\bsoit\\b'),('que si',r'\\bque si\\b'),('en conclusion',r'\\ben conclusion\\b'),('sauf',r'\\bsauf\\b'),('ce qui',r'\\bce qui\\b'),('parce que',r'\\bparce qu'),('car',r'\\bcar\\b'),('entraîne',r'\\bentrain')]\nSTRUCT={'chapitre','lecon','section'};NOUNS={'conseil','definition','avantage','inconvenient','attention','conseils'}\ndef heading(n):return n['type'] in STRUCT or n['title'].strip().endswith('?')\ndef budget(n):return max(RU['linkBudgetMin'],min(RU['linkBudgetMax'],round(n/RU['linkBudgetPerNodes'])))\ndef against(a,b,l):\n  p=pol(l);return (p=='fwd' and a['type'] in ('consequence','effet') and b['type']=='cause') or (p=='back' and a['type']=='cause' and b['type'] in ('consequence','effet') and not re.match(r'^(suppose|exige|depend|necessite)',nz(l)))\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};ch={};te=[e for e in m['edges'] if e['kind']=='tree'];L=[e for e in m['edges'] if e['kind']=='link'];par={e['to']:e['from'] for e in te}\n  for e in te:ch.setdefault(e['from'],[]).append(e)\n  tree={(e['from'],e['to']) for e in te}\n  for n in m['nodes']:\n    if n.get('em') and n['em'].lower() not in n['title'].lower():W.append(p+': em « '+n['em'][:30]+' » absent du titre « '+n['title'][:30]+' »')\n  G={}\n  for e in m['edges']:\n    if e.get('group'):G.setdefault(e['group'],[]).append(e)\n  for g,es in G.items():\n    if len(es)<2 or len({(e['from'],e['kind'],e.get('label','')) for e in es})>1:E.append(p+': branche '+g+' invalide (≥ 2 arêtes, même source, même kind, même libellé)')\n  content=[];seen={}\n  for e in m['edges']:\n    a=T.get(e['from']);b=T.get(e['to']);l=e.get('label','')\n    if not a or not b:continue\n    if len(l)>20:W.append(p+': libellé long « '+l+' »')\n    if l and not e.get('group') and heading(a) and pol(l) in ('fwd','back','inh'):W.append(p+': verbe « '+l+' » posé depuis un intitulé ('+a['title'][:25]+') — relier les idées entre elles')\n    if l and not e.get('group') and nz(l).rstrip(' :') in NOUNS:W.append(p+': libellé-nom « '+l+' » ('+a['title'][:20]+' → '+b['title'][:20]+') — un verbe, ou rien')\n    if nz(l).rstrip(' :') in ('voir','voir aussi'):W.append(p+': libellé « '+l+' » interdit ('+a['title'][:20]+' → '+b['title'][:20]+') — le verbe exact de la relation, sinon [[Titre]] dans la note')\n    if pol(l)=='vague':W.append(p+': libellé vague « '+l+' » ('+a['title'][:20]+' → '+b['title'][:20]+') — dire la relation exacte')\n    if l and against(a,b,l):W.append(p+': sens inversé ? '+a['title'][:22]+' —'+l+'→ '+b['title'][:22])\n    if a['type']=='definition' and b['type']=='idee' and nz(l)=='et':W.append(p+': composante de définition libellée « et » ('+b['title'][:25]+') — elle reste dans la note')\n    if e['kind']=='tree' and not heading(a) and b['type'] not in STRUCT and not a.get('logic') and not (a['type']=='methode' and b['type']=='etape') and not re.search(r'(^|\\s)\\d+\\s',' '+a['title']) and not (a['type'] in ('definition','idee') and b['type']=='idee'):content.append(e)\n    if e['kind']=='link':\n      if (e['from'],e['to']) in tree or (e['to'],e['from']) in tree:W.append(p+': renvoi qui double une arête d\\'arbre ('+a['title'][:22]+' ↔ '+b['title'][:22]+')')\n      k=(tuple(sorted((e['from'],e['to']))) if pol(l)=='sym' else (e['from'],e['to']))+(nz(l),)\n      if k in seen:W.append(p+': renvoi répété '+a['title'][:22]+' —'+l+'→ '+b['title'][:22])\n      seen[k]=1\n  for x in L:\n    for y in L:\n      if x['from']==y['to'] and x['to']==y['from'] and pol(x.get('label',''))=='fwd' and pol(y.get('label',''))=='fwd' and x['from']<y['from']:W.append(p+': boucle '+T[x['from']]['title'][:22]+' ⇄ '+T[x['to']]['title'][:22]+' — cercle vicieux voulu ?')\n      if x is not y and x['from']==y['from'] and x['to']==y['to'] and pol(x.get('label',''))=='fwd' and pol(y.get('label',''))=='inh':W.append(p+': contradiction '+T[x['from']]['title'][:22]+' produit et empêche '+T[x['to']]['title'][:22])\n  nv=sum(1 for e in content if e.get('label') and pol(e['label'])!='vague')\n  if len(content)>=3 and nv<RU['labelledTarget']*len(content):W.append(p+': taux de relations %d %% (%d/%d arêtes de contenu nommées par un verbe ; viser %d %%, sans libellé creux) → relire les lignes R de la carte de compréhension'%(100*nv//len(content),nv,len(content),100*RU['labelledTarget']))\n  if len(m['nodes'])>=8 and not any(e.get('label') for e in m['edges']):E.append(p+': aucune relation libellée sur %d nœuds — carte aplatie : encoder les lignes R (P3, P6a)'%len(m['nodes']))\n  touch={i for e in m['edges'] if e.get('label') and pol(e['label'])!='vague' and nz(e['label'])not in('voir','voir aussi') for i in (e['from'],e['to'])}|{n['id'] for n in m['nodes'] if n.get('logic')}\n  for n in m['nodes']:\n    if n['type'] in STRUCT or n['type']=='retenir' or n['id'] not in par or n['id'] in touch:continue\n    t=' '.join(s for s in re.split(r'(?<=[.!?;])\\s+|\\n+',nz(re.sub(r'[#*=`_\\[\\]]','',n.get('note','')))) if not re.search(r'relation discutee|reste discute|debat|controvers',s))\n    hit=[k for k,r in MARK if re.search(r,t)]\n    if hit:W.append(p+': relation aplatie ? « '+n['title'][:30]+' » : la note dit « '+', '.join(hit)+' » mais aucune relation libellée ne touche ce nœud → encoder la ligne R (arête libellée, renvoi, logic) ou justifier l\\'abstention (ligne A)')\n  for pid,es in ch.items():\n    P=T[pid];ks=[T[e['to']] for e in es if T[e['to']]['type'] not in STRUCT];ids={k['id'] for k in ks}\n    if P['type'] in STRUCT and not m['title'].lower().startswith('test') and len(ks)>=RU['flatMin'] and not any(k['id'] in ch for k in ks) and not any(e['from'] in ids or e['to'] in ids for e in L) and not (len({k['type'] for k in ks})==1 and re.search(r'(^|\\s)\\d+\\s',' '+P['title'])):W.append(p+': liste plate « '+P['title'][:30]+' » (%d éléments sans relation entre eux) → chaînes, exemples sous leur élément, renvois'%len(ks))\n  for n in m['nodes']:\n    if n['type']=='definition' and not any(T[e['to']]['type']=='idee' for e in ch.get(n['id'],[])) and len(re.sub(r'[#*=>`_\\[\\]]','',n.get('note','')))>=2*RU['defMinChars']:W.append(p+': définition longue non décomposée « '+n['title'][:30]+' » → modular_definitions (si ≥ %d composantes réelles)'%RU['defMinParts'])\n  nl=len([e for e in L if not e.get('group')])+len({e['group'] for e in L if e.get('group')});B=budget(len(m['nodes']))\n  if nl>2*B:W.append(p+': %d renvois (budget %d, double %d pour les relations explicites ; une fourche compte pour un) → [[Titre]] précédé du verbe dans la note'%(nl,B,2*B))\n  elif nl>B:W.append(p+': %d renvois au-delà du budget %d : chacun doit être une relation EXPLICITE du texte (ligne R, connecteur cité), jusqu\\'à %d'%(nl,B,2*B))\n  if len(m['nodes'])>=20 and not L:W.append(p+': aucun renvoi dans une carte de %d nœuds'%len(m['nodes']))\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds, %d avertissement(s)'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps']),len(W)))\nsys.exit(1 if E else 0)"
+  },
+  "report_template": [
+    "Plan du cours : cartes numérotées (titre — nœuds — idée centrale).",
+    "Relations (P6a), par carte puis au total : relations lues N · encodées N (arbre n, renvois n, logic n, notes n) · abstentions justifiées N (motifs) · non encodées 0. Connecteurs relevés N → R + A.",
+    "Choix de modélisation : correspondance des types (hors droit), regroupements et scissions de chapitres, gabarits utilisés.",
+    "Laissé de côté : passages non repris et pourquoi.",
+    "Types incertains : titre, candidats, type retenu, raison.",
+    "Points d'attention : relations discutées, contradictions ou erreurs du livre, compléments et déductions signalés.",
+    "Importer : Réglages › Données › Importer ; parties suivantes → « Compléter le cours »."
+  ],
+  "activation": {
+    "auto_trigger_when": [
+      "l'utilisateur fournit un livre, un PDF de cours, un polycopié ou des notes et demande des cartes, des fiches, un cours ou un JSON Ratio",
+      "l'utilisateur demande de « transformer ce document en cours » pour Ratio"
+    ],
+    "do_not_trigger_when": [
+      "simple question sur le contenu du livre",
+      "résumé en prose sans mention de Ratio ni de cartes"
+    ]
+  },
+  "execution_algorithm": [
+    "FRAME(document, goals) # P0",
+    "plan, registry = READ_ALL(document) # P1",
+    "maps_plan = DESIGN_COURSE(plan, registry) # P2",
+    "for part in SPLIT_IF_LONG(maps_plan):",
+    "  for map in part:",
+    "    cmap = COMPREHENSION_MAP(document, map) # P3 : U, R, A, X + scan des connecteurs",
+    "    cmap = CROSS_PASS(cmap, maps_plan) # P3c : arbre / renvoi / [[Titre]], budget",
+    "    for u in cmap.U: BUILD(u) # P4 : rôle → place → type → note → libellé",
+    "    LINKS(map, cmap) # P5",
+    "    until AUDIT(map, cmap).missing == 0: FIX # P6a : chaque R encodée ou justifiée",
+    "  json = SERIALIZE(course, part)",
+    "  until VALIDATE(json).errors == 0: FIX(json) # P6b",
+    "  DELIVER(json, report) # P7"
+  ],
+  "example": {
+    "description": "Exemple travaillé HORS DROIT, de bout en bout : un extrait de manuel de SVT → carte de compréhension (P3) → JSON. Petit à dessein (une vraie carte compte 15 à 35 nœuds). Le moteur d'audit de Ratio n'y trouve aucune correction à faire : toutes les relations qu'il lit dans les notes sont déjà encodées.",
+    "source": "La glycémie est le taux de glucose dans le sang ; chez l’humain, elle se maintient autour de 1 g/L. Après un repas, la glycémie augmente, ce qui stimule la sécrétion d’insuline par les cellules bêta du pancréas. L’insuline favorise le stockage du glucose sous forme de glycogène dans le foie, ce qui fait baisser la glycémie. À l’inverse, à jeun, la baisse de la glycémie déclenche la sécrétion de glucagon, qui permet la libération du glucose stocké. Insuline et glucagon sont donc des hormones antagonistes. Le diabète de type 1 résulte de la destruction des cellules bêta ; par exemple, un patient atteint doit s’injecter de l’insuline à chaque repas. Le diabète de type 2 s’explique surtout par une résistance des cellules à l’insuline. Certains chercheurs pensent que le stress aggrave le diabète de type 2, mais le lien reste discuté.",
+    "comprehension_map": {
+      "U": [
+        "U1 · définition · « La glycémie est le taux de glucose dans le sang » · « autour de 1 g/L »",
+        "U2 · idée · « Après un repas, la glycémie augmente »",
+        "U3 · idée · « la sécrétion d’insuline par les cellules bêta du pancréas »",
+        "U4 · idée · « le stockage du glucose sous forme de glycogène dans le foie »",
+        "U5 · idée · « à jeun, la baisse de la glycémie »",
+        "U6 · idée · « la sécrétion de glucagon »",
+        "U7 · idée · « la libération du glucose stocké »",
+        "U8 · concept · « hormones antagonistes »",
+        "U9 · concept · « Le diabète de type 1 »",
+        "U10 · idée · « la destruction des cellules bêta »",
+        "U11 · exemple · « un patient atteint doit s’injecter de l’insuline à chaque repas »",
+        "U12 · concept · « Le diabète de type 2 »",
+        "U13 · idée · « une résistance des cellules à l’insuline »"
+      ],
+      "R": [
+        "R1 · U2 → U3 · cause · « ce qui stimule » · sujet de « ce qui » = U2 · arbre U2 —entraîne→ U3",
+        "R2 · U3 → U4 · cause (facteur) · « favorise » · U3 effet dans R1, cause ici · arbre U3 —favorise→ U4",
+        "R3 · U4 → U1 · réduit · « ce qui fait baisser la glycémie » · renvoi U4 —réduit→ U1",
+        "R4 · U5 → U6 · cause · « déclenche » · arbre U5 —entraîne→ U6",
+        "R5 · U6 → U7 · permet · « qui permet » · arbre U6 —permet→ U7",
+        "R6 · U3 ↔ U6 · s’oppose à · « À l’inverse » + « donc des hormones antagonistes » · renvoi U3 —s’oppose à→ U6",
+        "R7 · U10 → U9 · cause · « résulte de » · arbre U9 —a pour cause→ U10",
+        "R8 · U11 → U9 · illustre · « par exemple » · arbre U9 —illustré par→ U11",
+        "R9 · U13 → U12 · cause · « s’explique surtout par » · « surtout » = cause principale · arbre U12 —a pour cause→ U13"
+      ],
+      "A": [
+        "A1 · « le stress aggrave le diabète de type 2 » · « Certains chercheurs pensent… le lien reste discuté » : débat → aucun lien ; « Relation discutée » dans la note de U12"
+      ],
+      "X": [
+        "X1 · U10 (section Diabètes) → U3 (section Après un repas) · empêche · implicite, deux preuves concordantes : « sécrétion d’insuline par les cellules bêta » + « doit s’injecter de l’insuline » · renvoi U10 —empêche→ U3"
+      ],
+      "couverture": "9 relations explicites (ce qui ×2, favorise, déclenche, qui permet, à l’inverse + donc… antagonistes, résulte de, par exemple, s’explique par) + 1 débat (pensent / reste discuté) → 9 lignes R + 1 ligne A. « ce qui fait baisser » (R3) et « ce qui stimule » (R1) : deux « ce qui », deux sujets différents."
+    },
+    "json": {
+      "format": "ratio",
+      "version": 2,
+      "kind": "course",
+      "courses": [
+        {
+          "id": "c-glycemie",
+          "title": "Physiologie — la glycémie",
+          "description": "Exemple travaillé du skill : extrait d’un manuel de SVT (hors droit)"
+        }
+      ],
+      "maps": [
+        {
+          "id": "m-glycemie-01",
+          "courseId": "c-glycemie",
+          "title": "La régulation de la glycémie",
+          "needsLayout": true,
+          "nodes": [
+            {
+              "id": "n1",
+              "type": "chapitre",
+              "title": "La régulation de la glycémie",
+              "note": "La glycémie se maintient autour de 1 g/L grâce à deux hormones antagonistes : ==l’insuline après un repas, le glucagon à jeun.=="
+            },
+            {
+              "id": "n2",
+              "type": "definition",
+              "title": "Glycémie",
+              "note": "Taux de **glucose** dans le sang : chez l’humain, ==autour de 1 g/L==."
+            },
+            {
+              "id": "n3",
+              "type": "section",
+              "title": "Après un repas : l’insuline",
+              "note": ""
+            },
+            {
+              "id": "n4",
+              "type": "cause",
+              "title": "Hausse de la glycémie après un repas",
+              "note": "Après un repas, la glycémie augmente, ==ce qui stimule la sécrétion d’insuline==."
+            },
+            {
+              "id": "n5",
+              "type": "consequence",
+              "title": "Sécrétion d’insuline",
+              "note": "Les **cellules bêta** du pancréas sécrètent l’insuline. La sécrétion d’insuline ==favorise le stockage du glucose en glycogène==."
+            },
+            {
+              "id": "n6",
+              "type": "consequence",
+              "title": "Stockage du glucose en glycogène",
+              "note": "Le foie stocke le glucose sous forme de **glycogène**, ==ce qui réduit la glycémie==."
+            },
+            {
+              "id": "n7",
+              "type": "section",
+              "title": "À jeun : le glucagon",
+              "note": ""
+            },
+            {
+              "id": "n8",
+              "type": "cause",
+              "title": "Baisse de la glycémie à jeun",
+              "note": "À jeun, la glycémie diminue. La baisse de la glycémie à jeun ==entraîne la sécrétion de glucagon==."
+            },
+            {
+              "id": "n9",
+              "type": "consequence",
+              "title": "Sécrétion de glucagon",
+              "note": "La sécrétion de glucagon ==permet la libération du glucose stocké==. Insuline et glucagon sont donc **antagonistes** : la sécrétion de glucagon s’oppose à la sécrétion d’insuline."
+            },
+            {
+              "id": "n10",
+              "type": "consequence",
+              "title": "Libération du glucose stocké",
+              "note": "À jeun, ==le glucose stocké est libéré==."
+            },
+            {
+              "id": "n11",
+              "type": "section",
+              "title": "Les diabètes",
+              "note": ""
+            },
+            {
+              "id": "n12",
+              "type": "notion",
+              "title": "Diabète de type 1",
+              "note": "Le diabète de type 1 ==résulte de la destruction des cellules bêta==."
+            },
+            {
+              "id": "n13",
+              "type": "cause",
+              "title": "Destruction des cellules bêta",
+              "note": "La destruction des cellules bêta ==empêche la sécrétion d’insuline== *(déduit : l’insuline est sécrétée par les cellules bêta ; le patient doit s’en injecter)*."
+            },
+            {
+              "id": "n14",
+              "type": "exemple",
+              "title": "Injection d’insuline à chaque repas",
+              "note": "Illustre : Diabète de type 1. Un patient atteint ==doit s’injecter de l’insuline à chaque repas==."
+            },
+            {
+              "id": "n15",
+              "type": "notion",
+              "title": "Diabète de type 2",
+              "note": "Cause principale (« surtout ») : le diabète de type 2 ==résulte de la résistance des cellules à l’insuline==.\n\nRelation discutée : certains chercheurs pensent que le stress aggrave ce diabète ; le lien reste discuté."
+            },
+            {
+              "id": "n16",
+              "type": "cause",
+              "title": "Résistance des cellules à l’insuline",
+              "note": "Les cellules résistent à l’insuline : ==cause principale du diabète de type 2==."
+            },
+            {
+              "id": "n17",
+              "type": "retenir",
+              "title": "À retenir",
+              "note": "- Repas → glycémie ↑ → **insuline** → stockage → glycémie ↓.\n- Jeûne → glycémie ↓ → **glucagon** → libération du glucose stocké.\n- ==Type 1 : cellules bêta détruites ; type 2 : résistance à l’insuline.=="
+            }
+          ],
+          "edges": [
+            {
+              "id": "e1",
+              "from": "n1",
+              "to": "n2",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e2",
+              "from": "n1",
+              "to": "n3",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e3",
+              "from": "n3",
+              "to": "n4",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e4",
+              "from": "n4",
+              "to": "n5",
+              "kind": "tree",
+              "label": "entraîne"
+            },
+            {
+              "id": "e5",
+              "from": "n5",
+              "to": "n6",
+              "kind": "tree",
+              "label": "favorise"
+            },
+            {
+              "id": "e6",
+              "from": "n1",
+              "to": "n7",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e7",
+              "from": "n7",
+              "to": "n8",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e8",
+              "from": "n8",
+              "to": "n9",
+              "kind": "tree",
+              "label": "entraîne"
+            },
+            {
+              "id": "e9",
+              "from": "n9",
+              "to": "n10",
+              "kind": "tree",
+              "label": "permet"
+            },
+            {
+              "id": "e10",
+              "from": "n1",
+              "to": "n11",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e11",
+              "from": "n11",
+              "to": "n12",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e12",
+              "from": "n12",
+              "to": "n13",
+              "kind": "tree",
+              "label": "a pour cause"
+            },
+            {
+              "id": "e13",
+              "from": "n12",
+              "to": "n14",
+              "kind": "tree",
+              "label": "illustré par"
+            },
+            {
+              "id": "e14",
+              "from": "n11",
+              "to": "n15",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "e15",
+              "from": "n15",
+              "to": "n16",
+              "kind": "tree",
+              "label": "a pour cause"
+            },
+            {
+              "id": "e16",
+              "from": "n1",
+              "to": "n17",
+              "kind": "tree",
+              "label": ""
+            },
+            {
+              "id": "l1",
+              "from": "n6",
+              "to": "n2",
+              "kind": "link",
+              "label": "réduit"
+            },
+            {
+              "id": "l2",
+              "from": "n5",
+              "to": "n9",
+              "kind": "link",
+              "label": "s’oppose à"
+            },
+            {
+              "id": "l3",
+              "from": "n13",
+              "to": "n5",
+              "kind": "link",
+              "label": "empêche"
+            }
+          ]
+        }
+      ]
+    },
+    "commentary": [
+      "Rôle par relation : « Sécrétion d’insuline » est conséquence de la hausse (sa place) et cause du stockage (libellé « favorise » vers son enfant).",
+      "R3, R6 et X1 relient deux sections : 3 renvois pour 17 nœuds = le budget (round(17 ÷ 5) = 3) ; X1, implicite, a deux preuves et est marqué *(déduit : …)*.",
+      "A1 (débat) : ni nœud ni lien, une phrase « Relation discutée » que le moteur ignore. Chaque note nomme l'autre nœud par son titre exact avec un connecteur lu par le moteur.",
+      "Rapport P6a : 10 relations lues (9 R + 1 X) · 10 encodées (arbre 7, renvois 3) · 1 abstention justifiée · 0 non encodée."
+    ]
+  },
+  "annexes": {
+    "note": "Matériaux d'étalonnage et d'historique : ils illustrent les règles, ils n'en créent aucune.",
+    "type_calibration": [
+      "droit · parent fond: Consentement · « Majeur protégé » — Toute personne peut contracter, sauf les majeurs protégés dans les cas prévus par la loi. → exception (tentation : nuance) : la règle « toute personne peut contracter » est écartée → SAUF passe",
+      "dev perso · parent conseil: Exprimer sa colère · « Ce n'est pas toujours facile » — Exprimer sa colère calmement demande de l'entraînement ; les premières fois, on échoue souvent. → nuance (tentation : exception) : aucune règle écartée : on adoucit le conseil",
+      "dev perso · parent notion: Dire oui à tout · « Croire qu'on sera plus aimé » — On pense que dire oui fera qu'on nous aimera davantage ; c'est l'inverse. → piege (tentation : nuance) : erreur de croyance que l'élève risque de reprendre",
+      "sociologie · parent theorie: La reproduction sociale (Bourdieu) · « Elle sous-estime la mobilité » — On reproche à cette théorie d'oublier les parcours de réussite. → critique (tentation : nuance) : on attaque la théorie",
+      "physique · parent notion: La fusion de la glace · « Atteindre 0 °C » — La glace ne fond que si sa température atteint 0 °C. → condition (tentation : cause) : AVANT et nécessaire, ne pousse pas seul",
+      "dev perso · parent solution: Rationner les sourires · « Être pris au sérieux » — On sourit moins pour que nos refus soient pris au sérieux. → objectif (tentation : consequence) : APRÈS et voulu (« pour que »)",
+      "économie · parent solution: Le salaire minimum · « Moins de pauvreté au travail » — Les bas salaires augmentent. → avantage (tentation : consequence) : le parent est une option choisie : point fort",
+      "histoire · parent question: Pourquoi la Révolution ? · « La crise financière » — L'État ne peut plus rembourser sa dette. → cause (tentation : probleme) : AVANT et ça pousse vers la Révolution (à cette place, c'est une cause, même si c'est une difficulté)",
+      "dev perso · parent question: Pourquoi est-ce que je fais plaisir à tout le monde ? · « Éviter la confrontation » — On fait plaisir pour ne jamais avoir à affronter un désaccord. → cause (tentation : objectif) : motif caché que le livre veut faire dépasser ; « comment atteindre cet objectif ? » contredirait la thèse"
+    ],
+    "law_example": [
+      "Carte réduite d'un manuel de droit des contrats (une vraie carte compte 15 à 35 nœuds), en arbre indenté — type, titre, libellé de l'arête venant du parent :",
+      "chapitre « Les vices du consentement » (note : ==Un seul vice déterminant suffit à faire annuler le contrat.==)",
+      "  texte « Art. 1130 C. civ. » (note : l'article en citation >) — premier sous la racine : texte fondateur",
+      "  notion « Les 3 vices », logic « ou » (note : tableau Vice × élément matériel × élément psychologique)",
+      "    fond « Erreur » — fond « Erreur » —sauf→ exception « Erreur inexcusable » (note : « L'erreur inexcusable n'est pas une cause de nullité, sauf si elle a été provoquée par un dol »)",
+      "    fond « Dol » —appliqué par→ juris « Cass. 1re civ., 3 mai 2000, Baldus »",
+      "    fond « Violence »",
+      "  effet « Sanction des vices » (note : ==**Nullité relative**== (art. 1131) ; prescription de 5 ans)",
+      "  retenir « Méthode du cas pratique »",
+      "Renvois : Erreur inexcusable —sauf→ Dol (l'erreur inexcusable n'annule pas, sauf provoquée par un dol) ; fourche g1 : Sanction des vices —s'applique à→ Erreur · Dol · Violence (une source, même relation, trois cibles = un seul renvoi au budget).",
+      "Sous le nœud OU, les enfants restent sans libellé (la logique parle) ; sous la racine, arêtes nues (intitulé)."
+    ],
+    "anti_patterns": "Résumé déguisé (notes de 30 lignes) · squelette (titres sans notes) · titre-réponse · type unique · surlignage fluo · liste à puces au lieu de nœuds · structure vide · libellé passe-partout (« voir », « lien ») · invention · x/y inventés · JSON tronqué · histoire sans « Illustre : » · énumération tronquée · toile d'araignée de renvois · racine fourre-tout · vocabulaire juridique plaqué · exception fourre-tout · liste plate · RELATION APLATIE (la note dit « donc », « ce qui », « parce que », la carte range les deux idées côte à côte) · causalité de vraisemblance · type à la place de la relation · définition d'un bloc.",
+    "history": "v1.x : format, 43 types, typage en 6 passes, lisibilité, découpage (testé sur un livre de 27 500 mots : 16 cartes, 359 nœuds). v2.0 : relations d'abord, définitions modulaires. v2.1 : preuve et orientation des relations. v2.2 : normative_core recopié du moteur. v3.0 : voir changelog_3_0.",
+    "implementation_notes": "Spécification portable : pour Claude, SKILL.md (même dossier) sert de point d'entrée ; pour d'autres IA, joindre ce fichier avec le document et écrire « Applique ce skill à ce livre ». Ratio ≥ 3.6 : arêtes d'arbre libellées, branches, em, audit d'organisation (établi / probable / signalé) qui relit aussi les phrases des notes. Le JSON ne contient que le cours (aucun historique de révision ni réglage). Toute modification change le numéro de version."
+  },
+  "changelog_3_0": [
+    "P3 Carte de compréhension avant tout nœud (U, R, A, X ; chaque connecteur → R ou A), P3c Passe transversale, P6a Audit interne avec comptes au rapport.",
+    "Rôle par relation ; ET/OU, chaînes « ce qui », causes multiples, exceptions, implicite à deux preuves, faux amis.",
+    "Ordre fixe rôle → place → type → note → libellé ; gabarits règle, mécanisme, raisonnement, distinction ; notes lisibles par le moteur.",
+    "Contradictions levées : un seul budget de renvois (n ÷ 5 borné à [2, 8], fourche = un, double pour l'explicite), « voir » interdit, racine à 3 à 7 enfants, cas A à P.",
+    "Validateur : relations aplaties, taux de relations, erreur à zéro libellé (≥ 8 nœuds), budget double, code de sortie. Spécification condensée, annexes, exemple hors droit."
+  ]
+}

@@ -1,0 +1,127 @@
+{
+ "title": "V4 convergence",
+ "layout": "right",
+ "nodes": [
+  {
+   "id": "k",
+   "type": "consequence",
+   "title": "Excès de masse grasse",
+   "note": "",
+   "x": 400,
+   "y": 300
+  },
+  {
+   "id": "c0",
+   "type": "cause",
+   "title": "Sédentarité",
+   "note": "",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": "c1",
+   "type": "cause",
+   "title": "Alimentation",
+   "note": "",
+   "x": 0,
+   "y": 300
+  },
+  {
+   "id": "c2",
+   "type": "cause",
+   "title": "Génétique",
+   "note": "",
+   "x": 0,
+   "y": 600
+  },
+  {
+   "id": "c3",
+   "type": "cause",
+   "title": "Sommeil court",
+   "note": "",
+   "x": 800,
+   "y": 0
+  },
+  {
+   "id": "c4",
+   "type": "cause",
+   "title": "Stress",
+   "note": "",
+   "x": 800,
+   "y": 300
+  },
+  {
+   "id": "c5",
+   "type": "cause",
+   "title": "Médicaments",
+   "note": "",
+   "x": 800,
+   "y": 600
+  },
+  {
+   "id": "c6",
+   "type": "cause",
+   "title": "Pauvreté",
+   "note": "",
+   "x": 400,
+   "y": 0
+  }
+ ],
+ "edges": [
+  {
+   "id": "l20",
+   "from": "c0",
+   "to": "k",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l21",
+   "from": "c1",
+   "to": "k",
+   "kind": "link",
+   "label": "favorise"
+  },
+  {
+   "id": "l22",
+   "from": "c2",
+   "to": "k",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l23",
+   "from": "c3",
+   "to": "k",
+   "kind": "link",
+   "label": "favorise"
+  },
+  {
+   "id": "l24",
+   "from": "c4",
+   "to": "k",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l25",
+   "from": "c5",
+   "to": "k",
+   "kind": "link",
+   "label": "favorise"
+  },
+  {
+   "id": "l26",
+   "from": "c6",
+   "to": "k",
+   "kind": "link",
+   "label": "entraîne"
+  }
+ ],
+ "_verifier": [
+  "7 flèches convergent : points d’arrivée répartis sur les 4 côtés, pas empilés au même pixel",
+  "libellés identiques (« entraîne ») non superposés près de la cible",
+  "option : faisceau (fourche) si même libellé — compté comme un renvoi",
+  "pointes de flèche visibles (non masquées par un libellé)"
+ ]
+}

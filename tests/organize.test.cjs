@@ -101,7 +101,8 @@ test('E — renvoi entre sections proposé sans toucher la hiérarchie', () => {
     ['a', 'idee', 'Nullité relative', 's2', 'Elle sanctionne un vice du consentement ; seule la partie protégée peut l’invoquer.'],
   ]);
   const tree = JSON.stringify(map.edges.filter((e) => e.kind === 'tree'));
-  const f = fixesOf(map, 'cross');
+  // « Elle sanctionne un vice du consentement » : le verbe dit un usage, pas une cause — toujours à confirmer
+  const f = O.audit(map).fixes.filter((x) => x.kind === 'cross' || x.kind === 'phrase');
   ok(f.length === 1 && f[0].certainty === 'probable', 'une mention n’est pas une dépendance prouvée : probable');
   f[0].apply(map);
   ok(edge(map, 'a', 'd') && edge(map, 'a', 'd').label === 'fait appel à', 'Nullité relative —fait appel à→ Vice du consentement');
@@ -173,8 +174,8 @@ test('Négation — « n’entraîne pas » ne prouve aucune causalité', () => 
 test('Couple de types — un problème n’est pas « résolu par » sa conséquence ; une cause n’« entraîne » pas une solution', () => {
   const m1 = makeMap([['r', 'chapitre', 'Travail'], ['s', 'section', 'Le surmenage', 'r'],
     ['p', 'probleme', 'Surcharge de travail', 's', 'Trop de dossiers.'], ['k', 'consequence', 'Épuisement', 's', 'La surcharge de travail mène à l’épuisement.']]);
-  const f1 = fixesOf(m1, 'causal');
-  ok(f1.length === 1 && f1[0].preview[0].includes('—entraîne→'), 'problème —entraîne→ conséquence : ' + f1.map((f) => f.preview));
+  const f1 = O.audit(m1).fixes.filter((f) => f.link);
+  ok(f1.length === 1 && f1[0].preview[0].includes('—entraîne→') && f1[0].ids[0] === 'p', 'problème —entraîne→ conséquence : ' + f1.map((f) => f.preview));
   const m2 = makeMap([['r', 'chapitre', 'Dire non'], ['s', 'section', 'Sortir de la gentillesse', 'r'],
     ['c', 'cause', 'Peur du rejet', 's', 'On craint l’abandon.'], ['so', 'solution', 'Exposition progressive', 's', 'Pour vaincre la peur du rejet, refuser de petites demandes.']]);
   ok(!fixesOf(m2, 'causal').length, 'cause / solution : aucun lien causal');
@@ -224,7 +225,7 @@ test('Exemples — troncature, deux éléments nommés, exemple en tête, jamais
   ok(!fixesOf(two, 'example').length, 'il illustre deux éléments : il reste à la partie');
   const head = makeMap([['r', 'chapitre', 'Psycho'], ['s', 'section', 'Le soi', 'r'],
     ['x', 'exemple', 'Julie', 's', 'Julie illustre la peur du conflit.'], ['a', 'idee', 'Peur du conflit', 's'], ['b', 'idee', 'Estime de soi', 's']]);
-  ok(sure(head, 'example').length === 1, 'un exemple placé en premier est examiné aussi');
+  ok(sure(head).filter((f) => f.ids[0] === 'x' && f.ids[1] === 'a' && (f.kind === 'example' || f.kind === 'reparent')).length === 1, 'un exemple placé en premier est examiné aussi');
   const def = makeMap([['r', 'chapitre', 'Valeurs'], ['s', 'section', 'Notions', 'r'],
     ['d', 'definition', 'Valeur personnelle', 's', 'Ce qui compte pour soi.'], ['b', 'idee', 'Choisir ses priorités', 's'],
     ['x', 'exemple', 'Julie', 's', 'Julie découvre sa valeur personnelle.']]);
@@ -294,7 +295,7 @@ test('Renvois [[Titre]] — promus seulement quand la phrase dit la relation ; t
     ['s2', 'section', 'Agir', 'r'], ['b', 'methode', 'Faire STOP', 's2', 'Respirer. Voir aussi [[Frustration durable]].']]);
   ok(!fixesOf(vague, 'link').length, '« voir aussi » reste un renvoi écrit');
   const verb = makeMap([['r', 'chapitre', 'X'], ['a', 'idee', 'Gentillesse excessive', 'r'], ['b', 'idee', 'Assertivité', 'r', 'Elle s’oppose à [[Gentillesse excessive]].']]);
-  const f = fixesOf(verb, 'link');
+  const f = O.audit(verb).fixes.filter((x) => x.link);
   ok(f.length === 1 && f[0].certainty === 'sure' && f[0].preview[0].includes('s’oppose à'), 'verbe repris : ' + f.map((x) => x.preview));
   const dup = makeMap([['r', 'chapitre', 'X'], ['s1', 'section', 'Partie 1', 'r'], ['c1', 'idee', 'Conclusion', 's1'], ['s2', 'section', 'Partie 2', 'r'], ['c2', 'idee', 'Conclusion', 's2'], ['z', 'idee', 'Bilan', 's1', 'Contredit [[Conclusion]].']]);
   ok(!fixesOf(dup, 'link').length && O.audit(dup).notes.some((n) => n.key.startsWith('wk-dup')), 'titre en double : signalé, pas relié');

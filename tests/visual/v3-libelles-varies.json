@@ -1,0 +1,142 @@
+{
+ "title": "V3 libellés variés",
+ "layout": "centre",
+ "nodes": [
+  {
+   "id": "h",
+   "type": "notion",
+   "title": "Notion pivot",
+   "note": "",
+   "x": 300,
+   "y": 240
+  },
+  {
+   "id": "n0",
+   "type": "idee",
+   "title": "Élément 1",
+   "note": "",
+   "x": 630,
+   "y": 240
+  },
+  {
+   "id": "n1",
+   "type": "idee",
+   "title": "Élément 2",
+   "note": "",
+   "x": 533,
+   "y": 396
+  },
+  {
+   "id": "n2",
+   "type": "idee",
+   "title": "Élément 3",
+   "note": "",
+   "x": 300,
+   "y": 460
+  },
+  {
+   "id": "n3",
+   "type": "idee",
+   "title": "Élément 4",
+   "note": "",
+   "x": 67,
+   "y": 396
+  },
+  {
+   "id": "n4",
+   "type": "idee",
+   "title": "Élément 5",
+   "note": "",
+   "x": -30,
+   "y": 240
+  },
+  {
+   "id": "n5",
+   "type": "idee",
+   "title": "Élément 6",
+   "note": "",
+   "x": 67,
+   "y": 84
+  },
+  {
+   "id": "n6",
+   "type": "idee",
+   "title": "Élément 7",
+   "note": "",
+   "x": 300,
+   "y": 20
+  },
+  {
+   "id": "n7",
+   "type": "idee",
+   "title": "Élément 8",
+   "note": "",
+   "x": 533,
+   "y": 84
+  }
+ ],
+ "edges": [
+  {
+   "id": "l12",
+   "from": "h",
+   "to": "n0",
+   "kind": "link",
+   "label": "≠"
+  },
+  {
+   "id": "l13",
+   "from": "h",
+   "to": "n1",
+   "kind": "link",
+   "label": "si"
+  },
+  {
+   "id": "l14",
+   "from": "h",
+   "to": "n2",
+   "kind": "link",
+   "label": "sauf"
+  },
+  {
+   "id": "l15",
+   "from": "h",
+   "to": "n3",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l16",
+   "from": "h",
+   "to": "n4",
+   "kind": "link",
+   "label": "a pour cause"
+  },
+  {
+   "id": "l17",
+   "from": "h",
+   "to": "n5",
+   "kind": "link",
+   "label": "se caractérise par"
+  },
+  {
+   "id": "l18",
+   "from": "h",
+   "to": "n6",
+   "kind": "link",
+   "label": "à condition que la riposte soit proportionnée"
+  },
+  {
+   "id": "l19",
+   "from": "h",
+   "to": "n7",
+   "kind": "link",
+   "label": "est sanctionné, sauf exception légale expresse, par la nullité relative du contrat"
+  }
+ ],
+ "_verifier": [
+  "libellés de 1 à 80 caractères : jamais tronqués sans infobulle",
+  "les longs libellés ne recouvrent ni nœud ni autre libellé",
+  "les très courts (≠, si) restent lisibles sur le trait",
+  "aucun libellé à plus de 40 px de son trait"
+ ]
+}

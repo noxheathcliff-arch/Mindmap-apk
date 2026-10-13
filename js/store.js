@@ -279,6 +279,11 @@
         // disposition : celle en place (layout) et celle choisie par l'utilisateur (layoutPick, sinon automatique)
         ...(LAYOUTS.includes(m.layout) ? { layout: m.layout } : {}),
         ...(LAYOUTS.includes(m.layoutPick) ? { layoutPick: m.layoutPick } : {}),
+        // rangement : journal des corrections appliquées et corrections refusées (elles ne reviennent pas)
+        ...(Array.isArray(m.organizeLog) && m.organizeLog.length ? { organizeLog: m.organizeLog.filter((x) => x && x.key && x.title).slice(-60).map((x) => ({
+          at: +x.at || 0, key: String(x.key), kind: String(x.kind || ''), title: String(x.title), detail: String(x.detail || '').slice(0, 240),
+          preview: Array.isArray(x.preview) ? x.preview.slice(0, 3).map(String) : [] })) } : {}),
+        ...(Array.isArray(m.organizeDeclined) && m.organizeDeclined.length ? { organizeDeclined: [...new Set(m.organizeDeclined.map(String))].slice(-200) } : {}),
       };
     }).filter((m) => {
       if (courseIds.has(m.courseId)) return true;
@@ -317,6 +322,8 @@
       out.settings.lastExport = +d.settings.lastExport || 0;
       // aides à la lecture (fils teintés par branche, numéros d'ordre) : actives par défaut
       out.settings.readingAids = d.settings.readingAids !== false;
+      // Ranger applique de lui-même les corrections d'organisation établies (vérifiées, annulables)
+      out.settings.autoOrganize = d.settings.autoOrganize !== false;
     }
     return out;
   }
@@ -325,6 +332,7 @@
     TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, RATINGS, INTERVALS,
     isStruct,
     normalizeGroups,
+    sanitize, // exposé pour les tests (journal et refus du rangement survivent à l’export)
     /** Branches d'une fourche (liens du même groupe) — [] si le lien n'est pas groupé */
     groupOf(map, e) { return e && e.group ? map.edges.filter((x) => x.group === e.group) : []; },
     data: blank(),

@@ -90,7 +90,7 @@
     const h = M.base + top + lines * M.lh + M.bar;
     return { w, h };
   }
-  const labelSize = (text) => ({ w: Math.round(String(text).length * 6.3 + 18), h: 19 });
+  const labelSize = (text) => ({ w: Math.round(String(text).length * 5.6 + 18), h: 19 }); // recalibré sur les libellés mesurés (11 px)
 
   /* ------------------------------------------------------------------ */
   /* Géométrie des liens (partagée par l'éditeur, les vignettes et la note) */
@@ -232,10 +232,105 @@
     const d1 = o(a, b, c), d2 = o(a, b, d), d3 = o(c, d, a), d4 = o(c, d, b);
     return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
   }
-  function polyCross(A, B) {
+  const bboxOf = (P) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const p of P) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; } return [x0, y0, x1, y1]; };
+  function polyCross(A, B, bA, bB) {
+    bA = bA || bboxOf(A); bB = bB || bboxOf(B);
+    if (bA[2] < bB[0] || bB[2] < bA[0] || bA[3] < bB[1] || bB[3] < bA[1]) return 0;
     let n = 0;
-    for (let i = 0; i < A.length - 1; i++) for (let j = 0; j < B.length - 1; j++) if (segCross(A[i], A[i + 1], B[j], B[j + 1])) n++;
+    for (let i = 0; i < A.length - 1; i++) {
+      const a = A[i], b = A[i + 1];
+      const ax0 = Math.min(a[0], b[0]), ax1 = Math.max(a[0], b[0]), ay0 = Math.min(a[1], b[1]), ay1 = Math.max(a[1], b[1]);
+      if (ax1 < bB[0] || ax0 > bB[2] || ay1 < bB[1] || ay0 > bB[3]) continue;
+      for (let j = 0; j < B.length - 1; j++) {
+        const c = B[j], d = B[j + 1];
+        if (Math.max(c[0], d[0]) < ax0 || Math.min(c[0], d[0]) > ax1 || Math.max(c[1], d[1]) < ay0 || Math.min(c[1], d[1]) > ay1) continue;
+        if (segCross(a, b, c, d)) n++;
+      }
+    }
     return n;
+  }
+  /** Grille des segments des liens déjà tracés (cellules de 64 px), tenue à jour au fil des appels :
+      le comptage des croisements ne teste que les segments voisins (cartes de 1 000 nœuds). */
+  function segGrid(polys) {
+    const C = 64;
+    const g = polys._sgrid || (polys._sgrid = { cells: new Map(), n: 0 });
+    for (; g.n < polys.length; g.n++) {
+      const pts = polys[g.n].pts;
+      for (let i = 1; i < pts.length; i++) {
+        const p = pts[i - 1], q = pts[i];
+        const cx0 = Math.floor(Math.min(p[0], q[0]) / C), cx1 = Math.floor(Math.max(p[0], q[0]) / C);
+        const cy0 = Math.floor(Math.min(p[1], q[1]) / C), cy1 = Math.floor(Math.max(p[1], q[1]) / C);
+        for (let x = cx0; x <= cx1; x++) for (let y = cy0; y <= cy1; y++) {
+          const k = x + ',' + y;
+          let list = g.cells.get(k);
+          if (!list) g.cells.set(k, (list = []));
+          list.push([g.n, p, q]);
+        }
+      }
+    }
+    return g.cells;
+  }
+  /** Croisements d'une polyligne avec les liens tracés : au plus `cap` par lien, liens exclus par skipPoly(i) */
+  function crossCount(pts, polys, skipPoly, cap = 2) {
+    const cells = segGrid(polys), C = 64;
+    const per = new Map(), seen = new Set();
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const cx0 = Math.floor(Math.min(a[0], b[0]) / C), cx1 = Math.floor(Math.max(a[0], b[0]) / C);
+      const cy0 = Math.floor(Math.min(a[1], b[1]) / C), cy1 = Math.floor(Math.max(a[1], b[1]) / C);
+      seen.clear();
+      for (let x = cx0; x <= cx1; x++) for (let y = cy0; y <= cy1; y++) {
+        const list = cells.get(x + ',' + y);
+        if (!list) continue;
+        for (const seg of list) {
+          if (seen.has(seg) || skipPoly(seg[0]) || (per.get(seg[0]) || 0) >= cap) continue;
+          seen.add(seg);
+          if (segCross(a, b, seg[1], seg[2])) per.set(seg[0], (per.get(seg[0]) || 0) + 1);
+        }
+      }
+    }
+    let n = 0;
+    for (const v of per.values()) n += v;
+    return n;
+  }
+  /** Index spatial des nœuds (cellules de 96 px), mis en cache sur le tableau de rectangles */
+  const rectGrids = new WeakMap();
+  function rectsNear(all, pts, pad) {
+    const C = 96;
+    let g = rectGrids.get(all);
+    if (!g) {
+      g = new Map();
+      for (const r of all) for (let x = Math.floor(r.x / C); x <= Math.floor((r.x + r.w) / C); x++) for (let y = Math.floor(r.y / C); y <= Math.floor((r.y + r.h) / C); y++) {
+        const k = x + ',' + y; if (!g.has(k)) g.set(k, []); g.get(k).push(r);
+      }
+      rectGrids.set(all, g);
+    }
+    const out = new Set();
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i - 1], q = pts[i];
+      for (let x = Math.floor((Math.min(p[0], q[0]) - pad) / C); x <= Math.floor((Math.max(p[0], q[0]) + pad) / C); x++)
+        for (let y = Math.floor((Math.min(p[1], q[1]) - pad) / C); y <= Math.floor((Math.max(p[1], q[1]) + pad) / C); y++) {
+          const list = g.get(x + ',' + y); if (list) for (const r of list) out.add(r);
+        }
+    }
+    return out;
+  }
+  /** Une polyligne touche-t-elle le rectangle r agrandi de pad ? (Liang–Barsky, segment par segment) */
+  function segsHitRect(pts, r, pad) {
+    const x0 = r.x - pad, y0 = r.y - pad, x1 = r.x + r.w + pad, y1 = r.y + r.h + pad;
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i - 1], q = pts[i];
+      if (Math.max(p[0], q[0]) < x0 || Math.min(p[0], q[0]) > x1 || Math.max(p[1], q[1]) < y0 || Math.min(p[1], q[1]) > y1) continue;
+      const dx = q[0] - p[0], dy = q[1] - p[1];
+      let t0 = 0, t1 = 1, ok = true;
+      for (const [pp, qq] of [[-dx, p[0] - x0], [dx, x1 - p[0]], [-dy, p[1] - y0], [dy, y1 - p[1]]]) {
+        if (pp === 0) { if (qq < 0) { ok = false; break; } continue; }
+        const t = qq / pp;
+        if (pp < 0) { if (t > t1) { ok = false; break; } if (t > t0) t0 = t; } else { if (t < t0) { ok = false; break; } if (t < t1) t1 = t; }
+      }
+      if (ok) return true;
+    }
+    return false;
   }
   /** Nombre de nœuds (hors extrémités) traversés par une polyligne */
   function nodeHits(pts, rects, skip, pad = 5) {
@@ -252,7 +347,7 @@
    * qui contournent une colonne), notées sur les nœuds traversés, les croisements avec les
    * autres liens et la longueur. ctx : { rects:[{id,x,y,w,h}], polys:[{pts, ends:Set}], fast }
    */
-  function route(a, sa, b, sb, ctx = {}) {
+  function routeOrth(a, sa, b, sb, ctx = {}) {
     const rects = ctx.rects || [];
     const skip = new Set([a.id, b.id]);
     const cands = [];
@@ -312,12 +407,10 @@
     let best = cands[0];
     if (!ctx.fast) {
       // départage des meilleurs trajets : croisements, et place pour le libellé
-      for (const k of cands.slice(0, 10)) {
-        let cross = 0;
-        for (const P2 of ctx.polys || []) {
-          if (P2.ends && (P2.ends.has(a.id) || P2.ends.has(b.id))) continue;
-          cross += Math.min(1, polyCross(k.pts, P2.pts));
-        }
+      const polys = ctx.polys || [];
+      const mine = (i) => polys[i].ends && (polys[i].ends.has(a.id) || polys[i].ends.has(b.id));
+      for (const k of cands.slice(0, ctx.noGrid ? 5 : 10)) {
+        const cross = crossCount(k.pts, polys, mine, 1);
         k.cross = cross;
         k.cost2 = k.cost + cross * 300; // 1 croisement ≈ 300 px de détour (même échelle que la note globale)
         if (ctx.label) {
@@ -329,12 +422,160 @@
     }
     // dernier recours : aucun tracé candidat n'est propre → recherche de chemin orthogonal (A*)
     // sur une grille fine, nœuds interdits, coudes pénalisés : s'il existe un passage, on le trouve
-    if (best.hits && !ctx.fast) {
+    if (best.hits && !ctx.fast && !ctx.noGrid) {
       const g = gridRoute(a, sa, b, sb, rects, skip, ctx.busy);
       if (g) return { ...g.cv, pts: g.pts, hits: 0, len: g.len, cross: 0, cost: 0 };
     }
     // cost - len : pénalités seules (côtés de la hiérarchie, détours…)
     return { ...best.cv, pts: best.pts, hits: best.hits, len: best.len, cross: best.cross || 0, cost: best.cost - best.len };
+  }
+
+  /* ---- Renvois : liberté contrôlée ----
+     Candidats : courbes directes (deux tensions), courbes à un point de passage (déviation de part
+     et d'autre de la corde, ±12 / 25 / 45 % plafonnés à 360 px), contournement par les coins du
+     premier nœud gênant, et le tracé orthogonal. Tous notés sur les MÊMES critères, mesurés :
+       nœuds traversés (test exact, un point tous les 8 px)  10 000 chacun
+       croisements avec les autres liens                     300 chacun
+       chevauchement (trait collé à un autre sur sa longueur) 2 par px
+       frôlement d'un nœud (< 14 px)                        40 chacun
+       longueur + courbure (un détour se paie)               px, et ∫|virage| × longueur
+       arrivée par le côté de la hiérarchie                  240
+       tracé orthogonal                                      +70 (il reste choisi quand il est net)
+       sortie du cadre de la carte                           6 par px
+     Élagage : note grossière (16 points, nœuds proches seulement) de tous les candidats, note
+     exacte des 10 meilleurs. Stabilité : le trajet retenu au rendu précédent (ctx.prev) reçoit
+     un bonus de 120 ; le tracé précédent lui-même, extrémités immobiles, 450 — il
+     ne cède qu'à un nœud traversé ou à plus d'un croisement évité (pas de bascule pour un détail) ; départage déterministe par l'identifiant. */
+  const RW = { hit: 10000, cross: 300, overlap: 2, near: 40, busy: 240, bend: 0.6, orth: 70, out: 6, label: 420, keep: 120, stay: 450 };
+  const turning = (P) => { let s = 0; for (let i = 2; i < P.length; i++) { const a = Math.atan2(P[i - 1][1] - P[i - 2][1], P[i - 1][0] - P[i - 2][0]), b = Math.atan2(P[i][1] - P[i - 1][1], P[i][0] - P[i - 1][0]); let d = Math.abs(b - a); if (d > Math.PI) d = 2 * Math.PI - d; s += d; } return s; };
+  /** deux cubiques raccordées en M (tangente continue) */
+  function via(p1, d1, M, tM, p2, d2) {
+    const a = cubic(p1, d1, M, [-tM[0], -tM[1]], handle(p1, M) * 0.8), b = cubic(M, tM, p2, d2, handle(M, p2) * 0.8);
+    return { d: a.d + ' ' + b.d.replace(/^M[^C]*/, ''), at: (t) => (t < 0.5 ? a.at(t * 2) : b.at(t * 2 - 1)), p1, p2 };
+  }
+  const hash01 = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return ((h >>> 0) % 1000) / 1000; };
+  /** grille des points des liens déjà tracés (chevauchement) : cellule → indices des tracés ;
+      tenue à jour au fil des appels (les tracés s'ajoutent un à un) */
+  function pointGrid(polys) {
+    const C = 8;
+    const g = polys._grid || (polys._grid = { cells: new Map(), n: 0 });
+    for (; g.n < polys.length; g.n++) {
+      const pts = polys[g.n].pts;
+      for (let i = 1; i < pts.length; i++) {
+        const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+        const n = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 6));
+        for (let k = 0; k <= n; k++) {
+          const key = Math.floor((x1 + (x2 - x1) * k / n) / C) + ',' + Math.floor((y1 + (y2 - y1) * k / n) / C);
+          let list = g.cells.get(key);
+          if (!list) g.cells.set(key, (list = []));
+          if (list[list.length - 1] !== g.n) list.push(g.n);
+        }
+      }
+    }
+    return g.cells;
+  }
+  function route(a, sa, b, sb, ctx = {}) {
+    if (ctx.fast) return routeOrth(a, sa, b, sb, ctx);
+    const skip = new Set([a.id, b.id]);
+    const ca = [a.x + sa.w / 2, a.y + sa.h / 2], cb = [b.x + sb.w / 2, b.y + sb.h / 2];
+    const D0 = Math.hypot(cb[0] - ca[0], cb[1] - ca[1]);
+    // seuls les nœuds proches de la corde peuvent gêner (cartes de 1 000 nœuds)
+    const reach = Math.min(D0, 360) * 0.5 + 80;
+    const bx0 = Math.min(a.x, b.x) - reach, by0 = Math.min(a.y, b.y) - reach, bx1 = Math.max(a.x + sa.w, b.x + sb.w) + reach, by1 = Math.max(a.y + sa.h, b.y + sb.h) + reach;
+    const all = ctx.rects || [];
+    const rects = all.filter((r) => !skip.has(r.id) && r.x < bx1 && r.x + r.w > bx0 && r.y < by1 && r.y + r.h > by0);
+    let frame = null;
+    if (all.length) { frame = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }; for (const r of all) { frame.x0 = Math.min(frame.x0, r.x - 40); frame.y0 = Math.min(frame.y0, r.y - 40); frame.x1 = Math.max(frame.x1, r.x + r.w + 40); frame.y1 = Math.max(frame.y1, r.y + r.h + 40); } }
+    const busyAt = (id, side) => !!(ctx.busy && (ctx.busy.get(id) || '').includes(side));
+    const cands = [];
+    const rough = (cv, key, s1, s2, style) => {
+      const pts = sample(cv, 16);
+      let hits = 0;
+      for (const r of rects) if (pts.some((p) => inRect(p, r, 4))) hits++;
+      const len = polyLen(pts);
+      const busy = (busyAt(a.id, s1) && !ctx.fromJ) + busyAt(b.id, s2);
+      const turn = style === 'orth' ? 0 : turning(pts); // un coude arrondi n'est pas une courbure : son coût est RW.orth
+      cands.push({ cv, key, s1, s2, style, turn, cost: hits * RW.hit + len + turn * len * RW.bend / Math.PI + busy * RW.busy + (style === 'orth' ? RW.orth : 0) });
+    };
+    for (const s1 of ctx.side || 'rlbt') for (const s2 of 'rlbt') {
+      const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2), d1 = DIRS[s1], d2 = DIRS[s2];
+      // sortie vers la cible, entrée depuis la source (pas de demi-tour contre son propre nœud)
+      if ((p2[0] - p1[0]) * d1[0] + (p2[1] - p1[1]) * d1[1] < -40 || (p1[0] - p2[0]) * d2[0] + (p1[1] - p2[1]) * d2[1] < -40) continue;
+      const D = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
+      rough(cubic(p1, d1, p2, d2, handle(p1, p2)), s1 + s2 + 'c', s1, s2, 'curve');
+      rough(cubic(p1, d1, p2, d2, handle(p1, p2) * 0.5), s1 + s2 + 'c2', s1, s2, 'curve');
+      const t = [(p2[0] - p1[0]) / D, (p2[1] - p1[1]) / D], n = [-t[1], t[0]], mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+      for (const k of [-0.45, -0.25, -0.12, 0.12, 0.25, 0.45]) {
+        const off = Math.sign(k) * Math.min(Math.abs(k) * D, Math.abs(k) * 360);
+        rough(via(p1, d1, [mid[0] + n[0] * off, mid[1] + n[1] * off], t, p2, d2), s1 + s2 + 'v' + k, s1, s2, 'via');
+      }
+    }
+    cands.sort((x, y) => x.cost - y.cost);
+    // contournement : points de passage aux coins du premier nœud gênant de la meilleure courbe
+    const top = cands[0];
+    if (top && top.cost >= RW.hit) {
+      const pts = sample(top.cv, 16);
+      const r = rects.find((q) => pts.some((p) => inRect(p, q, 4)));
+      if (r) for (const s1 of ctx.side || 'rlbt') for (const s2 of 'rlbt') {
+        const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
+        const D = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1, t = [(p2[0] - p1[0]) / D, (p2[1] - p1[1]) / D];
+        [[r.x - 22, r.y - 22], [r.x + r.w + 22, r.y - 22], [r.x - 22, r.y + r.h + 22], [r.x + r.w + 22, r.y + r.h + 22]]
+          .forEach((M, i) => rough(via(p1, DIRS[s1], M, t, p2, DIRS[s2]), s1 + s2 + 'k' + i, s1, s2, 'via'));
+      }
+    }
+    // le tracé orthogonal reste un candidat (sans A* : il n'est pris que s'il est propre)
+    const o = routeOrth(a, sa, b, sb, { ...ctx, fast: false, noGrid: true, label: null }); // son meilleur tracé (croisements compris) rejoint la note exacte
+    rough({ d: o.d, at: o.at, p1: o.p1, p2: o.p2 }, 'orth', 'x', 'x', 'orth');
+    cands.sort((x, y) => x.cost - y.cost);
+    // note exacte des meilleurs
+    const polys = ctx.polys || [];
+    const grid = pointGrid(polys);
+    const mine = (i) => polys[i].ends && (polys[i].ends.has(a.id) || polys[i].ends.has(b.id));
+    // les 10 meilleurs, plus le trajet précédent et le tracé orthogonal s'ils n'y sont pas
+    const fine = cands.slice(0, 10);
+    for (const k of cands.slice(10)) if (k.style === 'orth' || (ctx.prev && k.key === ctx.prev)) fine.push(k);
+    // le trajet du rendu précédent, si ses extrémités n'ont pas bougé : il concourt tel quel (même tracé au pixel)
+    const sig = [a.x, a.y, sa.w, sa.h, b.x, b.y, sb.w, sb.h].map(Math.round).join(',');
+    const pr = ctx.prevRoute;
+    if (pr && pr.sig === sig && pr.pts) fine.push({ cv: pr, pts: pr.pts, key: 'prev', s1: pr.s1 || 'x', s2: pr.s2 || 'x', style: pr.style, turn: pr.turn || 0, keep: true });
+    let labelled = 0;
+    fine.sort((x, y) => x.cost - y.cost);
+    const exact = (k) => {
+      // polyligne fine (un segment tous les ~16 px, 24 à 96 segments) et test EXACT segment / rectangle
+      const pts = k.pts || sample(k.cv, Math.min(96, Math.max(24, Math.ceil(polyLen(sample(k.cv, 16)) / 16))));
+      let hits = 0, near = 0;
+      for (const r of rectsNear(all, pts, 14)) { if (skip.has(r.id) || !segsHitRect(pts, r, 14)) continue; if (segsHitRect(pts, r, 4)) hits++; else near++; }
+      // croisements sur un échantillon de 32 points (une courbe lisse ne cache pas de croisement entre deux)
+      let cross = 0;
+      const cp = k.style === 'orth' || k.style === 'grid' ? (k.cv.pts || pts) : sample(k.cv, 32);
+      cross = crossCount(cp, polys, mine, 2);
+      // chevauchement : points du trajet posés sur le trait d'un autre lien (hors extrémités)
+      let over = 0;
+      for (let i = 2; i < pts.length - 2; i++) { const list = grid.get(Math.floor(pts[i][0] / 8) + ',' + Math.floor(pts[i][1] / 8)); if (list && list.some((j) => !mine(j))) over += 8; }
+      const len = polyLen(pts);
+      let out = 0;
+      if (frame) for (const p of pts) out = Math.max(out, frame.x0 - p[0], p[0] - frame.x1, frame.y0 - p[1], p[1] - frame.y1);
+      const busy = (busyAt(a.id, k.s1) && !ctx.fromJ) + busyAt(b.id, k.s2);
+      k.pts = pts; k.hits = hits; k.len = len; k.cross = cross;
+      k.cost2 = hits * RW.hit + len + cross * RW.cross + Math.max(0, over - 24) * RW.overlap + near * RW.near + busy * RW.busy
+        + (k.turn != null ? k.turn : turning(sample(k.cv, 16))) * len * RW.bend / Math.PI + (k.style === 'orth' || k.style === 'grid' ? RW.orth : 0) + Math.max(0, out) * RW.out
+        - (k.keep ? RW.stay : ctx.prev && ctx.prev === k.key ? RW.keep : 0) + hash01((ctx.id || '') + k.key) * 0.5;
+      if (ctx.label && !hits && labelled++ < 2) { const spot = placeLabel(k.cv, ctx.label, rects, (ctx.placed || []).slice(), { segs: ctx.polys, ends: [a.id, b.id] }); if (spot.ov > 0 || spot.clash) k.cost2 += RW.label; }
+    };
+    fine.forEach(exact);
+    fine.sort((x, y) => x.cost2 - y.cost2);
+    let best = fine[0];
+    // aucun trajet net (nœud traversé, ou deux croisements) : le chemin orthogonal par A* concourt aussi
+    if (best.hits || best.cross >= 2) {
+      const g = gridRoute(a, sa, b, sb, all, skip, ctx.busy);
+      if (g) {
+        const k = { cv: g.cv, pts: g.pts, key: 'grid', s1: 'x', s2: 'x', style: 'grid', turn: 0 };
+        exact(k);
+        if (k.cost2 < best.cost2 || best.hits) best = k;
+      }
+    }
+    if (best.keep) return { ...best.cv, hits: best.hits, cross: best.cross, cost: best.cost2 - best.len };
+    return { ...best.cv, pts: best.pts, hits: best.hits, len: best.len, cross: best.cross, cost: best.cost2 - best.len, key: best.key, style: best.style, s1: best.s1, s2: best.s2, turn: best.turn, sig };
   }
 
   /** Routage orthogonal par A* (cellules de 12 px, coût = longueur + 6 cellules par coude) */
@@ -465,11 +706,47 @@
     const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
     return w > 0 && h > 0 ? w * h : 0;
   }
-  function placeLabel(cv, size, obstacles, placed, { prefer = 0.5 } = {}) {
+  /* Marges (en px, police de libellé 11 px : 0,5 em ≈ 6) : libellé ↔ libellé 6, ↔ nœud 5,
+     ↔ trait d'un AUTRE lien 4 ; zones d'exclusion : la pointe de flèche et le départ du trait,
+     les jonctions de fourche (opts.zones). Un libellé qui ne trouve aucune place nette est posé
+     au moins mauvais endroit ET marqué en conflit (clash) — jamais caché ni déclaré résolu. */
+  const LM = { label: 6, node: 5, seg: 4, end: 12 };
+  function segHitsBox(box, list) {
+    const x0 = box.x, y0 = box.y, x1 = box.x + box.w, y1 = box.y + box.h;
+    const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    for (const [p, q] of list) {
+      if (Math.max(p[0], q[0]) < x0 || Math.min(p[0], q[0]) > x1 || Math.max(p[1], q[1]) < y0 || Math.min(p[1], q[1]) > y1) continue;
+      if ((p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1) || (q[0] > x0 && q[0] < x1 && q[1] > y0 && q[1] < y1)) return true;
+      for (let k = 0; k < 4; k++) if (segCross(p, q, corners[k], corners[(k + 1) % 4])) return true;
+    }
+    return false;
+  }
+  function placeLabel(cv, size, obstacles, placed, { prefer = 0.5, segs = null, ends = null, zones = null } = {}) {
     let best = null;
     const ts = prefer === 0.5 ? TS : [prefer, ...TS];
-    // sur le trait d'abord ; à défaut, légèrement décalé de part et d'autre (perpendiculaire)
-    for (const shift of [0, 1, -1]) {
+    // seuls les obstacles proches de la courbe comptent (cartes de 1 000 nœuds)
+    const sp = sample(cv, 12);
+    const pad = Math.max(size.w, size.h) + 40;
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    for (const p of sp) { bx0 = Math.min(bx0, p[0]); by0 = Math.min(by0, p[1]); bx1 = Math.max(bx1, p[0]); by1 = Math.max(by1, p[1]); }
+    const near = (r) => r.x < bx1 + pad && r.x + r.w > bx0 - pad && r.y < by1 + pad && r.y + r.h > by0 - pad;
+    const obs = obstacles.filter(near), lbl = placed.filter(near);
+    // segments des AUTRES liens proches de la courbe (le trait du lien lui-même ne compte pas)
+    const foreign = [];
+    for (const P of segs || []) {
+      if ((ends && P.ends && ends.every((id) => P.ends.has(id))) || !P.pts) continue;
+      const near2 = [];
+      for (let i = 1; i < P.pts.length; i++) {
+        const p = P.pts[i - 1], q = P.pts[i];
+        if (Math.max(p[0], q[0]) < bx0 - pad || Math.min(p[0], q[0]) > bx1 + pad || Math.max(p[1], q[1]) < by0 - pad || Math.min(p[1], q[1]) > by1 + pad) continue;
+        near2.push([p, q]);
+      }
+      if (near2.length) foreign.push(near2);
+    }
+    const p1 = cv.at(0), p2 = cv.at(1);
+    const excl = [{ x: p2[0] - LM.end, y: p2[1] - LM.end, w: 2 * LM.end, h: 2 * LM.end }, { x: p1[0] - LM.end / 2, y: p1[1] - LM.end / 2, w: LM.end, h: LM.end }, ...(zones || [])];
+    // sur le trait d'abord ; à défaut, décalé de part et d'autre (perpendiculaire), puis plus loin
+    for (const shift of [0, 1, -1, 2, -2]) {
       for (const t of ts) {
         const p = cv.at(t);
         let x = p[0], y = p[1];
@@ -477,19 +754,25 @@
           const q = cv.at(Math.min(1, t + 0.02)), o = cv.at(Math.max(0, t - 0.02));
           let nx = -(q[1] - o[1]), ny = q[0] - o[0];
           const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
-          const off = Math.abs(nx) > Math.abs(ny) ? size.w / 2 + 6 : size.h / 2 + 6;
-          x += nx * off * shift; y += ny * off * shift;
+          const off = (Math.abs(nx) > Math.abs(ny) ? size.w / 2 + 6 : size.h / 2 + 6) + (Math.abs(shift) === 2 ? 20 : 0); // un cran plus loin, pas une demi-largeur de plus
+          x += nx * off * Math.sign(shift); y += ny * off * Math.sign(shift);
         }
-        const box = { x: x - size.w / 2 - 3, y: y - size.h / 2 - 3, w: size.w + 6, h: size.h + 6 };
-        let ov = 0;
-        for (const r of obstacles) ov += overlapArea(box, r);
-        for (const r of placed) ov += overlapArea(box, r) * 1.5;
-        const cost = ov + Math.abs(t - prefer) * 60 + (shift ? 90 : 0);
-        if (!best || cost < best.cost) best = { x, y, cost, ov, box };
-        if (ov === 0 && t === ts[0] && !shift) break;
+        const box = { x: x - size.w / 2, y: y - size.h / 2, w: size.w, h: size.h };
+        const grow = (m) => ({ x: box.x - m, y: box.y - m, w: box.w + 2 * m, h: box.h + 2 * m });
+        const bn = grow(LM.node), bl = grow(LM.label), bs = grow(LM.seg);
+        // cacher un texte (nœud) est pire que croiser un trait : chevauchement réel × 6, marge × 1
+        let ov = 0, cut = 0;
+        for (const r of obs) { const hard = overlapArea(box, r); ov += hard * 6 + (overlapArea(bn, r) - hard); }
+        for (const r of lbl) ov += overlapArea(bl, r) * 1.5;
+        for (const r of excl) ov += overlapArea(box, r);
+        for (const list of foreign) if (segHitsBox(bs, list)) cut++;
+        const cost = ov + cut * 400 + Math.abs(t - prefer) * 60 + Math.abs(shift) * 90;
+        if (!best || cost < best.cost) best = { x, y, cost, ov, cut, box };
+        if (ov === 0 && !cut && t === ts[0] && !shift) break;
       }
-      if (best.ov === 0) break;
+      if (best.ov === 0 && !best.cut) break;
     }
+    best.clash = best.ov > 0 || best.cut > 0;
     placed.push(best.box);
     return best;
   }
@@ -920,7 +1203,9 @@
       if (e.kind !== 'link') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
-      const rt = route(a, a, b, b, { rects, polys, placed, busy, fast: quick, label: e.label ? labelSize(e.label) : null });
+      // note d'une disposition : le routeur orthogonal (rapide, prévisible) suffit à comparer les dispositions ;
+      // le tracé définitif (courbes, points de passage) est choisi au rendu, disposition fixée
+      const rt = routeOrth(a, a, b, b, { rects, polys, placed, busy, fast: quick, label: e.label ? labelSize(e.label) : null });
       hits += rt.hits; cross += rt.cross; len += rt.len;
       polys.push({ pts: rt.pts, ends: new Set([e.from, e.to]) });
       if (e.label) { const p = placeLabel(rt, labelSize(e.label), rects, placed); if (p.ov > 0) lblOv++; }

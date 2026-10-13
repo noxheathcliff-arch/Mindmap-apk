@@ -204,7 +204,16 @@
       renderPane(true);
       updateHistoryBtns();
     }
-    function undo() { if (!st.undo.length || ro()) return; flushEdit(); st.redo.push(snapshot()); restoreSnap(st.undo.pop()); ui.snack('Annulé', { duration: 1200 }); }
+    function undo() {
+      if (!st.undo.length || ro()) return;
+      flushEdit();
+      st.redo.push(snapshot());
+      const s = st.undo.pop();
+      // annuler un rangement qui a corrigé l'organisation : ces corrections sont refusées, elles ne reviennent pas
+      if (st.autoSnap && st.autoSnap.snap === s) { declineKeys(st.autoSnap.keys); st.autoSnap = null; }
+      restoreSnap(s);
+      ui.snack('Annulé', { duration: 1200 });
+    }
     function redo() { if (!st.redo.length || ro()) return; flushEdit(); st.undo.push(snapshot()); restoreSnap(st.redo.pop()); ui.snack('Rétabli', { duration: 1200 }); }
     function updateHistoryBtns() {
       for (const b of U.$$('[data-act="undo"]', page).concat(undoBtn)) b.disabled = !st.undo.length;
@@ -654,7 +663,10 @@
         for (const side of 'rlbt') {
           const d1 = R.layout.sidePoint ? ({ r: [1, 0], l: [-1, 0], b: [0, 1], t: [0, -1] })[side] : null;
           const p1 = R.layout.sidePoint(a, sa, side);
-          const J = [p1[0] + d1[0] * 40, p1[1] + d1[1] * 40];
+          // la jonction porte le libellé : assez loin de la source pour qu'il ne la recouvre pas (demi-largeur + 0,5 em)
+          const ls = R.layout.labelSize(bundleLabel(b) || '');
+          const reachJ = Math.max(40, (d1[0] ? ls.w / 2 : ls.h / 2) + 6 + 6);
+          const J = [p1[0] + d1[0] * reachJ, p1[1] + d1[1] * reachJ];
           const trunk = [p1, [(p1[0] + J[0]) / 2, (p1[1] + J[1]) / 2], J];
           let flaws = rects.some((r) => r.id !== a.id && trunk.some((p) => p[0] > r.x - 4 && p[0] < r.x + r.w + 4 && p[1] > r.y - 4 && p[1] < r.y + r.h + 4)) ? 1 : 0;
           if ((busy.get(a.id) || '').includes(side)) flaws++;
@@ -793,6 +805,11 @@
       const rects = [];
       for (const n of map.nodes) if (!hidden.has(n.id)) { const s2 = size(n); rects.push({ id: n.id, x: n.x, y: n.y, w: s2.w, h: s2.h }); }
       const rectAt = new Map(rects.map((r) => [r.id, r]));
+      // signature de la géométrie : si rien n'a bougé ni changé (sélection, survol…), les renvois gardent leur tracé sans recalcul
+      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '')).join('|') + '#' + map.layout;
+      const sameGeo = st.geoSig === geoSig;
+      if (!st.fastEdges) st.geoSig = geoSig;
+      if (!st.routePrev) st.routePrev = new Map();
       const busy = R.layout.busySides({ edges: visible }, map.layout, rectAt, (r) => r);
       // fourche de renvois sans tracé propre (cibles trop éloignées) : on la dessine en renvois
       // séparés plutôt qu'un tronc qui traverserait la carte — elle reste une fourche dans les données
@@ -862,7 +879,13 @@
       const polys = [];
       const placed = [];
       for (const br of st.bundleEls.values()) if (!br.label.hidden && br.label._box) placed.push(br.label._box);
-      const ordered = visible.filter((e) => e.kind === 'tree').concat(visible.filter((e) => e.kind !== 'tree'));
+      // renvois dans un ordre stable (par identifiant) : le rendu ne dépend pas de l'ordre du fichier
+      const ordered = visible.filter((e) => e.kind === 'tree').concat(visible.filter((e) => e.kind !== 'tree').sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0)));
+      // zones d'exclusion des libellés : les jonctions de fourche
+      const zones = [];
+      for (const gm of geo.values()) if (gm && gm.J) zones.push({ x: gm.J[0] - 10, y: gm.J[1] - 10, w: 20, h: 20 });
+      const lblRecs = [];
+      if (!st.routeKey) st.routeKey = new Map();
       for (const e of ordered) {
         const a = byId.get(e.from), b = byId.get(e.to);
         alive.add(e.id);
@@ -919,7 +942,15 @@
           } else {
             const sa = size(a), sb = size(b);
             const lb = edgeLabel(e);
-            cv = R.layout.route({ id: a.id, x: a.x, y: a.y }, sa, { id: b.id, x: b.x, y: b.y }, sb, { rects, polys, placed, busy, fast: !!st.fastEdges, label: lb ? { w: rec.label.offsetWidth || R.layout.labelSize(lb).w, h: rec.label.offsetHeight || 19 } : null });
+            // le libellé est mesuré AVANT le trajet (sa vraie taille guide le choix du trajet)
+            if (lb && rec.label.textContent !== lb) setLabel(rec.label, lb, { sel });
+            const prevR = st.routePrev.get(e.id);
+            if (sameGeo && prevR && !st.fastEdges) cv = prevR;
+            else {
+              cv = R.layout.route({ id: a.id, x: a.x, y: a.y }, sa, { id: b.id, x: b.x, y: b.y }, sb, { rects, polys, placed, busy, fast: !!st.fastEdges, id: e.id, prev: st.routeKey.get(e.id), prevRoute: prevR,
+                label: lb ? { w: rec.label.offsetWidth || R.layout.labelSize(lb).w, h: rec.label.offsetHeight || 19 } : null });
+              if (!st.fastEdges) { if (cv.key) st.routeKey.set(e.id, cv.key); st.routePrev.set(e.id, cv); }
+            }
           }
           c = { d: cv.d };
           polys.push({ pts: R.layout.sample(cv, e.kind === 'tree' ? 6 : 14), ends: new Set([e.from, e.to]) });
@@ -929,10 +960,12 @@
           if (lbl) {
             // ET / OU sur un lien isolé : près de l'enfant ; libellé : là où il ne cache rien
             const sz = { w: rec.label.offsetWidth || R.layout.labelSize(lbl).w, h: rec.label.offsetHeight || 19 };
-            const spot = R.layout.placeLabel(cv, sz, rects, placed, { prefer: !e.label && e.kind === 'tree' ? 0.78 : 0.5 });
+            const prefer = !e.label && e.kind === 'tree' ? 0.78 : 0.5;
+            const spot = R.layout.placeLabel(cv, sz, rects, placed, { prefer, segs: polys, ends: [e.from, e.to], zones });
             rec.mid = [spot.x, spot.y];
             rec.label.style.transform = `translate(${spot.x}px, ${spot.y}px) translate(-50%, -50%)`;
-          } else rec.mid = cv.at(0.5);
+            lblRecs.push({ rec, cv, sz, prefer, spot, ends: [e.from, e.to] });
+          } else { rec.mid = cv.at(0.5); rec.label.classList.remove('clash'); }
         }
         rec.path.setAttribute('d', c.d);
         rec.hit.setAttribute('d', c.d);
@@ -943,6 +976,24 @@
         rec.path.classList.toggle('seq', !!rec.seq);
         drawBorn(rec, e);
       }
+      // reprise : un libellé posé tôt ne connaissait pas les traits tracés après lui — on le
+      // replace en connaissant tout ; un conflit qui reste est marqué (.clash), jamais caché
+      let clashes = 0;
+      if (!st.fastEdges) for (const x of lblRecs) {
+        if (x.spot.clash) {
+          const others = placed.filter((bx) => bx !== x.spot.box);
+          const again = R.layout.placeLabel(x.cv, x.sz, rects, others, { prefer: x.prefer, segs: polys, ends: x.ends, zones });
+          if (again.cost < x.spot.cost) {
+            placed[placed.indexOf(x.spot.box)] = again.box;
+            x.spot = again;
+            x.rec.mid = [again.x, again.y];
+            x.rec.label.style.transform = `translate(${again.x}px, ${again.y}px) translate(-50%, -50%)`;
+          }
+        }
+        x.rec.label.classList.toggle('clash', !!x.spot.clash);
+        if (x.spot.clash) clashes++;
+      }
+      ed.labelClashes = clashes;
       if (ed._newEdges) ed._newEdges.clear();
       for (const [id, rec] of st.edgeEls) {
         if (alive.has(id)) continue;
@@ -1209,7 +1260,17 @@
         aids.setAttribute('aria-checked', String(aidsOn()));
         S.save(); render();
       });
-      const body = h('div', list, h('p.overline.layout-sep', 'Affichage'), h('div.choice-list.form-choice.layout-choices', aids));
+      const autoOn = () => S.data.settings.autoOrganize !== false;
+      const autoOrg = h('button.list-item.choice.layout-aids', { type: 'button', role: 'switch', 'aria-checked': String(autoOn()) },
+        h('span.layout-ic', R.icon('sparkle', 24)),
+        h('span.choice-l', h('b', 'Corriger l’organisation en rangeant'), h('span.choice-sub', 'Ranger applique les corrections établies par la carte (libellés, rattachements dits par les notes…), vérifiées et annulables. Les probables restent des propositions.')),
+        h('span.choice-check', R.icon('check', 20)));
+      autoOrg.addEventListener('click', () => {
+        S.data.settings.autoOrganize = !autoOn();
+        autoOrg.setAttribute('aria-checked', String(autoOn()));
+        S.save();
+      });
+      const body = h('div', list, h('p.overline.layout-sep', 'Affichage'), h('div.choice-list.form-choice.layout-choices', aids, autoOrg));
       ui.dialog({ title: 'Disposition', icon: 'tidy', body, cls: 'dialog-layout', onOpen: (_, close) => { closeFn = close; } });
     }
     R.actions.chooseLayout = chooseLayout;
@@ -1225,7 +1286,13 @@
     /* Organisation : le rangement relit aussi les relations (js/organize.js) et propose
        des liens libellés, des branches, des définitions décomposées. Rien n'est appliqué
        sans accord ; tout s'annule d'un geste. */
-    const declined = st.declined || (st.declined = new Set());
+    // refus : gardés avec la carte (une correction refusée ne revient pas au rangement suivant)
+    const declined = st.declined || (st.declined = new Set(map.organizeDeclined || []));
+    function declineKeys(keys) {
+      for (const k of keys) declined.add(k);
+      map.organizeDeclined = [...declined].slice(-200);
+      S.save();
+    }
     function auditNow() {
       if (!R.organize || ro()) return { fixes: [], notes: [], stats: null };
       try {
@@ -1238,7 +1305,8 @@
       if (guard()) return;
       flushEdit();
       const { fixes: list, notes, stats } = auditNow();
-      if (!list.length && !notes.length) { ui.snack('Organisation : rien à améliorer', { duration: 2000 }); return; }
+      const log = (map.organizeLog || []).slice(-8).reverse();
+      if (!list.length && !notes.length && !log.length) { ui.snack('Organisation : rien à améliorer', { duration: 2000 }); return; }
       // sûr : coché ; probable : décoché, à vérifier ; signalé : à corriger à la main
       const on = new Set(list.filter((x) => x.certainty !== 'probable').map((x) => x.key));
       let okBtn = null, closeFn = null;
@@ -1273,14 +1341,18 @@
         stats ? h('p.org-stat', `Relations nommées : ${Math.round(stats.relationRate * 100)} % (visé : ${Math.round(R.organize.RULES.labelledTarget * 100)} %) · renvois : ${stats.links}/${R.organize.linkBudget(stats.nodes)}`) : null,
         ...group('Établi par la carte', null, sure.map(item)),
         ...group('Probable — à vérifier', 'Indice seulement (mots partagés) : cochez si le cours le dit.', maybe.map(item)),
-        ...group('À corriger à la main', 'La carte ne permet pas de trancher sans inventer.', noteEls));
+        ...group('À corriger à la main', 'La carte ne permet pas de trancher sans inventer.', noteEls),
+        ...group('Déjà appliqué au rangement', 'Établi par la carte, vérifié après coup ; Annuler juste après le rangement le refuse pour de bon.',
+          log.map((x) => h('div.list-item.org-done', { 'data-kind': x.kind },
+            h('span.choice-l', h('b', x.title), h('span.choice-sub', `${U.relTime(x.at)} · ${x.detail}`),
+              x.preview && x.preview.length ? h('span.org-preview', x.preview.map((t) => h('span', t))) : null)))));
       ui.dialog({
         title: 'Améliorer l’organisation', icon: 'tidy', body, cls: 'dialog-layout dialog-org',
         actions: [{ label: 'Plus tard', value: false }, { label: on.size ? `Appliquer (${on.size})` : 'Appliquer', value: true, variant: 'filled', primary: true }],
         onOpen: (box, close) => { closeFn = close; okBtn = box.querySelector('.dialog-actions .btn:last-child'); count(); },
       }).then((ok) => {
         if (!ok) return;
-        for (const x of list) if (!on.has(x.key)) declined.add(x.key);
+        declineKeys(list.filter((x) => !on.has(x.key)).map((x) => x.key));
         const pick = list.filter((x) => on.has(x.key));
         if (!pick.length) return;
         const snap = snapshot();
@@ -1305,6 +1377,24 @@
       });
     }
     R.actions.organize = openOrganize;
+    /** Rangement : les corrections ÉTABLIES (sûres) sont appliquées d'elles-mêmes, une à une, chacune
+        vérifiée (intégrité, effet, texte conservé) puis tracée dans le journal de la carte. Les
+        probables restent des propositions ; les doutes, des signalements. Rend le nombre appliqué. */
+    function autoOrganize() {
+      if (!R.organize || ro() || S.data.settings.autoOrganize === false) return { done: [], undone: [] };
+      let res = { done: [], undone: [] };
+      try {
+        const sure = auditNow().fixes.filter((x) => x.certainty === 'sure');
+        if (!sure.length) return res;
+        res = R.organize.applyVerified(map, sure);
+      } catch (e) { console.warn(e); return res; }
+      if (res.undone.length) console.warn('organisation : corrections défaites', res.undone.map((x) => x.fix.key + ' — ' + x.why));
+      if (res.done.length) {
+        const at = Date.now();
+        map.organizeLog = [...(map.organizeLog || []), ...res.done.map((f) => R.organize.logEntry(f, at))].slice(-60);
+      }
+      return res;
+    }
     let lastHint = '';
     function hintOrganize() {
       const { fixes, notes } = auditNow();
@@ -1327,6 +1417,25 @@
       if (guard()) return;
       flushEdit();
       measure();
+      // corrections établies d'abord (la structure change la disposition), dans la même étape d'annulation
+      let auto = null;
+      if (userTidy) {
+        const snap = snapshot();
+        auto = autoOrganize();
+        if (auto.done.length) {
+          st.undo.push(snap); st.redo = []; st.coalesce = null;
+          st.autoSnap = { snap, keys: auto.done.map((f) => f.key) };
+          opts = { ...opts, noUndo: true };
+          S.touchMap(map, 'edit');
+          render(); measure(); updateHistoryBtns();
+        } else auto = null;
+      }
+      const announce = () => {
+        if (!auto) return false;
+        const n = auto.done.length;
+        ui.snack(`Rangé · ${n > 1 ? n + ' corrections d’organisation appliquées' : '1 correction d’organisation appliquée'}`, { action: 'Voir', onAction: openOrganize, duration: 5000 });
+        return true;
+      };
       const pick = mode ? (mode === 'auto' ? null : mode) : map.layoutPick || null;
       const res = R.layout.arrange(map, sizeFn, { mode: pick || 'auto', viewport: viewportSize() });
       const target = res.pos;
@@ -1335,12 +1444,12 @@
       for (const n of map.nodes) from[n.id] = { x: n.x, y: n.y };
       const moved = map.nodes.some((n) => target[n.id] && (Math.abs(target[n.id].x - n.x) > 1 || Math.abs(target[n.id].y - n.y) > 1));
       const pickChanged = (pick || null) !== (map.layoutPick || null);
-      if (!moved && !modeChanged && !pickChanged) { fit(); if (userTidy) setTimeout(hintOrganize, 500); return; }
+      if (!moved && !modeChanged && !pickChanged) { fit(); if (userTidy && !announce()) setTimeout(hintOrganize, 500); return; }
       if (!opts.noUndo) { st.undo.push(snapshot()); st.redo = []; st.coalesce = null; }
       // l'ordre de lecture suit la disposition : on la fixe avant l'animation (rien ne se renumérote en route)
       map.layout = res.mode;
       if (pick) map.layoutPick = pick; else delete map.layoutPick;
-      if (!moved) { S.touchMap(map, 'edit'); render(); fit(); return; }
+      if (!moved) { S.touchMap(map, 'edit'); render(); fit(); announce(); return; }
       if (tidyStop) tidyStop();
       /* Overlapping action : chaque niveau de profondeur démarre 24 ms après son
          parent (plafond 120 ms). Arcs : x et y suivent des courbes différentes. */
@@ -1371,7 +1480,7 @@
           render();
           updateHistoryBtns();
           fit(true);
-          if (userTidy) setTimeout(hintOrganize, 700);
+          if (userTidy && !announce()) setTimeout(hintOrganize, 700);
         },
       });
     }

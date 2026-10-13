@@ -1,0 +1,2683 @@
+{
+ "title": "V8 grande carte",
+ "layout": "right",
+ "nodes": [
+  {
+   "id": "r",
+   "type": "chapitre",
+   "title": "Cours complet",
+   "note": "",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "id": "s0",
+   "type": "section",
+   "title": "Section 1",
+   "note": "",
+   "x": 300,
+   "y": 0
+  },
+  {
+   "id": "s0n0",
+   "type": "notion",
+   "title": "Notion 1.1",
+   "note": "",
+   "x": 560,
+   "y": 0
+  },
+  {
+   "id": "s0n0k0",
+   "type": "cause",
+   "title": "Cause 1.1",
+   "note": "",
+   "x": 820,
+   "y": 0
+  },
+  {
+   "id": "s0n0k1",
+   "type": "consequence",
+   "title": "Conséquence 1.1",
+   "note": "",
+   "x": 820,
+   "y": 70
+  },
+  {
+   "id": "s0n0k2",
+   "type": "exemple",
+   "title": "Exemple 1.1",
+   "note": "",
+   "x": 820,
+   "y": 140
+  },
+  {
+   "id": "s0n0k3",
+   "type": "condition",
+   "title": "Condition 1.1",
+   "note": "",
+   "x": 820,
+   "y": 210
+  },
+  {
+   "id": "s0n1",
+   "type": "notion",
+   "title": "Notion 1.2",
+   "note": "",
+   "x": 560,
+   "y": 300
+  },
+  {
+   "id": "s0n1k0",
+   "type": "cause",
+   "title": "Cause 1.2",
+   "note": "",
+   "x": 820,
+   "y": 300
+  },
+  {
+   "id": "s0n1k1",
+   "type": "consequence",
+   "title": "Conséquence 1.2",
+   "note": "",
+   "x": 820,
+   "y": 370
+  },
+  {
+   "id": "s0n1k2",
+   "type": "exemple",
+   "title": "Exemple 1.2",
+   "note": "",
+   "x": 820,
+   "y": 440
+  },
+  {
+   "id": "s0n1k3",
+   "type": "condition",
+   "title": "Condition 1.2",
+   "note": "",
+   "x": 820,
+   "y": 510
+  },
+  {
+   "id": "s0n2",
+   "type": "notion",
+   "title": "Notion 1.3",
+   "note": "",
+   "x": 560,
+   "y": 600
+  },
+  {
+   "id": "s0n2k0",
+   "type": "cause",
+   "title": "Cause 1.3",
+   "note": "",
+   "x": 820,
+   "y": 600
+  },
+  {
+   "id": "s0n2k1",
+   "type": "consequence",
+   "title": "Conséquence 1.3",
+   "note": "",
+   "x": 820,
+   "y": 670
+  },
+  {
+   "id": "s0n2k2",
+   "type": "exemple",
+   "title": "Exemple 1.3",
+   "note": "",
+   "x": 820,
+   "y": 740
+  },
+  {
+   "id": "s0n2k3",
+   "type": "condition",
+   "title": "Condition 1.3",
+   "note": "",
+   "x": 820,
+   "y": 810
+  },
+  {
+   "id": "s0n3",
+   "type": "notion",
+   "title": "Notion 1.4",
+   "note": "",
+   "x": 560,
+   "y": 900
+  },
+  {
+   "id": "s0n3k0",
+   "type": "cause",
+   "title": "Cause 1.4",
+   "note": "",
+   "x": 820,
+   "y": 900
+  },
+  {
+   "id": "s0n3k1",
+   "type": "consequence",
+   "title": "Conséquence 1.4",
+   "note": "",
+   "x": 820,
+   "y": 970
+  },
+  {
+   "id": "s0n3k2",
+   "type": "exemple",
+   "title": "Exemple 1.4",
+   "note": "",
+   "x": 820,
+   "y": 1040
+  },
+  {
+   "id": "s0n3k3",
+   "type": "condition",
+   "title": "Condition 1.4",
+   "note": "",
+   "x": 820,
+   "y": 1110
+  },
+  {
+   "id": "s1",
+   "type": "section",
+   "title": "Section 2",
+   "note": "",
+   "x": 300,
+   "y": 1260
+  },
+  {
+   "id": "s1n0",
+   "type": "notion",
+   "title": "Notion 2.1",
+   "note": "",
+   "x": 560,
+   "y": 1260
+  },
+  {
+   "id": "s1n0k0",
+   "type": "cause",
+   "title": "Cause 2.1",
+   "note": "",
+   "x": 820,
+   "y": 1260
+  },
+  {
+   "id": "s1n0k1",
+   "type": "consequence",
+   "title": "Conséquence 2.1",
+   "note": "",
+   "x": 820,
+   "y": 1330
+  },
+  {
+   "id": "s1n0k2",
+   "type": "exemple",
+   "title": "Exemple 2.1",
+   "note": "",
+   "x": 820,
+   "y": 1400
+  },
+  {
+   "id": "s1n0k3",
+   "type": "condition",
+   "title": "Condition 2.1",
+   "note": "",
+   "x": 820,
+   "y": 1470
+  },
+  {
+   "id": "s1n1",
+   "type": "notion",
+   "title": "Notion 2.2",
+   "note": "",
+   "x": 560,
+   "y": 1560
+  },
+  {
+   "id": "s1n1k0",
+   "type": "cause",
+   "title": "Cause 2.2",
+   "note": "",
+   "x": 820,
+   "y": 1560
+  },
+  {
+   "id": "s1n1k1",
+   "type": "consequence",
+   "title": "Conséquence 2.2",
+   "note": "",
+   "x": 820,
+   "y": 1630
+  },
+  {
+   "id": "s1n1k2",
+   "type": "exemple",
+   "title": "Exemple 2.2",
+   "note": "",
+   "x": 820,
+   "y": 1700
+  },
+  {
+   "id": "s1n1k3",
+   "type": "condition",
+   "title": "Condition 2.2",
+   "note": "",
+   "x": 820,
+   "y": 1770
+  },
+  {
+   "id": "s1n2",
+   "type": "notion",
+   "title": "Notion 2.3",
+   "note": "",
+   "x": 560,
+   "y": 1860
+  },
+  {
+   "id": "s1n2k0",
+   "type": "cause",
+   "title": "Cause 2.3",
+   "note": "",
+   "x": 820,
+   "y": 1860
+  },
+  {
+   "id": "s1n2k1",
+   "type": "consequence",
+   "title": "Conséquence 2.3",
+   "note": "",
+   "x": 820,
+   "y": 1930
+  },
+  {
+   "id": "s1n2k2",
+   "type": "exemple",
+   "title": "Exemple 2.3",
+   "note": "",
+   "x": 820,
+   "y": 2000
+  },
+  {
+   "id": "s1n2k3",
+   "type": "condition",
+   "title": "Condition 2.3",
+   "note": "",
+   "x": 820,
+   "y": 2070
+  },
+  {
+   "id": "s1n3",
+   "type": "notion",
+   "title": "Notion 2.4",
+   "note": "",
+   "x": 560,
+   "y": 2160
+  },
+  {
+   "id": "s1n3k0",
+   "type": "cause",
+   "title": "Cause 2.4",
+   "note": "",
+   "x": 820,
+   "y": 2160
+  },
+  {
+   "id": "s1n3k1",
+   "type": "consequence",
+   "title": "Conséquence 2.4",
+   "note": "",
+   "x": 820,
+   "y": 2230
+  },
+  {
+   "id": "s1n3k2",
+   "type": "exemple",
+   "title": "Exemple 2.4",
+   "note": "",
+   "x": 820,
+   "y": 2300
+  },
+  {
+   "id": "s1n3k3",
+   "type": "condition",
+   "title": "Condition 2.4",
+   "note": "",
+   "x": 820,
+   "y": 2370
+  },
+  {
+   "id": "s2",
+   "type": "section",
+   "title": "Section 3",
+   "note": "",
+   "x": 300,
+   "y": 2520
+  },
+  {
+   "id": "s2n0",
+   "type": "notion",
+   "title": "Notion 3.1",
+   "note": "",
+   "x": 560,
+   "y": 2520
+  },
+  {
+   "id": "s2n0k0",
+   "type": "cause",
+   "title": "Cause 3.1",
+   "note": "",
+   "x": 820,
+   "y": 2520
+  },
+  {
+   "id": "s2n0k1",
+   "type": "consequence",
+   "title": "Conséquence 3.1",
+   "note": "",
+   "x": 820,
+   "y": 2590
+  },
+  {
+   "id": "s2n0k2",
+   "type": "exemple",
+   "title": "Exemple 3.1",
+   "note": "",
+   "x": 820,
+   "y": 2660
+  },
+  {
+   "id": "s2n0k3",
+   "type": "condition",
+   "title": "Condition 3.1",
+   "note": "",
+   "x": 820,
+   "y": 2730
+  },
+  {
+   "id": "s2n1",
+   "type": "notion",
+   "title": "Notion 3.2",
+   "note": "",
+   "x": 560,
+   "y": 2820
+  },
+  {
+   "id": "s2n1k0",
+   "type": "cause",
+   "title": "Cause 3.2",
+   "note": "",
+   "x": 820,
+   "y": 2820
+  },
+  {
+   "id": "s2n1k1",
+   "type": "consequence",
+   "title": "Conséquence 3.2",
+   "note": "",
+   "x": 820,
+   "y": 2890
+  },
+  {
+   "id": "s2n1k2",
+   "type": "exemple",
+   "title": "Exemple 3.2",
+   "note": "",
+   "x": 820,
+   "y": 2960
+  },
+  {
+   "id": "s2n1k3",
+   "type": "condition",
+   "title": "Condition 3.2",
+   "note": "",
+   "x": 820,
+   "y": 3030
+  },
+  {
+   "id": "s2n2",
+   "type": "notion",
+   "title": "Notion 3.3",
+   "note": "",
+   "x": 560,
+   "y": 3120
+  },
+  {
+   "id": "s2n2k0",
+   "type": "cause",
+   "title": "Cause 3.3",
+   "note": "",
+   "x": 820,
+   "y": 3120
+  },
+  {
+   "id": "s2n2k1",
+   "type": "consequence",
+   "title": "Conséquence 3.3",
+   "note": "",
+   "x": 820,
+   "y": 3190
+  },
+  {
+   "id": "s2n2k2",
+   "type": "exemple",
+   "title": "Exemple 3.3",
+   "note": "",
+   "x": 820,
+   "y": 3260
+  },
+  {
+   "id": "s2n2k3",
+   "type": "condition",
+   "title": "Condition 3.3",
+   "note": "",
+   "x": 820,
+   "y": 3330
+  },
+  {
+   "id": "s2n3",
+   "type": "notion",
+   "title": "Notion 3.4",
+   "note": "",
+   "x": 560,
+   "y": 3420
+  },
+  {
+   "id": "s2n3k0",
+   "type": "cause",
+   "title": "Cause 3.4",
+   "note": "",
+   "x": 820,
+   "y": 3420
+  },
+  {
+   "id": "s2n3k1",
+   "type": "consequence",
+   "title": "Conséquence 3.4",
+   "note": "",
+   "x": 820,
+   "y": 3490
+  },
+  {
+   "id": "s2n3k2",
+   "type": "exemple",
+   "title": "Exemple 3.4",
+   "note": "",
+   "x": 820,
+   "y": 3560
+  },
+  {
+   "id": "s2n3k3",
+   "type": "condition",
+   "title": "Condition 3.4",
+   "note": "",
+   "x": 820,
+   "y": 3630
+  },
+  {
+   "id": "s3",
+   "type": "section",
+   "title": "Section 4",
+   "note": "",
+   "x": 300,
+   "y": 3780
+  },
+  {
+   "id": "s3n0",
+   "type": "notion",
+   "title": "Notion 4.1",
+   "note": "",
+   "x": 560,
+   "y": 3780
+  },
+  {
+   "id": "s3n0k0",
+   "type": "cause",
+   "title": "Cause 4.1",
+   "note": "",
+   "x": 820,
+   "y": 3780
+  },
+  {
+   "id": "s3n0k1",
+   "type": "consequence",
+   "title": "Conséquence 4.1",
+   "note": "",
+   "x": 820,
+   "y": 3850
+  },
+  {
+   "id": "s3n0k2",
+   "type": "exemple",
+   "title": "Exemple 4.1",
+   "note": "",
+   "x": 820,
+   "y": 3920
+  },
+  {
+   "id": "s3n0k3",
+   "type": "condition",
+   "title": "Condition 4.1",
+   "note": "",
+   "x": 820,
+   "y": 3990
+  },
+  {
+   "id": "s3n1",
+   "type": "notion",
+   "title": "Notion 4.2",
+   "note": "",
+   "x": 560,
+   "y": 4080
+  },
+  {
+   "id": "s3n1k0",
+   "type": "cause",
+   "title": "Cause 4.2",
+   "note": "",
+   "x": 820,
+   "y": 4080
+  },
+  {
+   "id": "s3n1k1",
+   "type": "consequence",
+   "title": "Conséquence 4.2",
+   "note": "",
+   "x": 820,
+   "y": 4150
+  },
+  {
+   "id": "s3n1k2",
+   "type": "exemple",
+   "title": "Exemple 4.2",
+   "note": "",
+   "x": 820,
+   "y": 4220
+  },
+  {
+   "id": "s3n1k3",
+   "type": "condition",
+   "title": "Condition 4.2",
+   "note": "",
+   "x": 820,
+   "y": 4290
+  },
+  {
+   "id": "s3n2",
+   "type": "notion",
+   "title": "Notion 4.3",
+   "note": "",
+   "x": 560,
+   "y": 4380
+  },
+  {
+   "id": "s3n2k0",
+   "type": "cause",
+   "title": "Cause 4.3",
+   "note": "",
+   "x": 820,
+   "y": 4380
+  },
+  {
+   "id": "s3n2k1",
+   "type": "consequence",
+   "title": "Conséquence 4.3",
+   "note": "",
+   "x": 820,
+   "y": 4450
+  },
+  {
+   "id": "s3n2k2",
+   "type": "exemple",
+   "title": "Exemple 4.3",
+   "note": "",
+   "x": 820,
+   "y": 4520
+  },
+  {
+   "id": "s3n2k3",
+   "type": "condition",
+   "title": "Condition 4.3",
+   "note": "",
+   "x": 820,
+   "y": 4590
+  },
+  {
+   "id": "s3n3",
+   "type": "notion",
+   "title": "Notion 4.4",
+   "note": "",
+   "x": 560,
+   "y": 4680
+  },
+  {
+   "id": "s3n3k0",
+   "type": "cause",
+   "title": "Cause 4.4",
+   "note": "",
+   "x": 820,
+   "y": 4680
+  },
+  {
+   "id": "s3n3k1",
+   "type": "consequence",
+   "title": "Conséquence 4.4",
+   "note": "",
+   "x": 820,
+   "y": 4750
+  },
+  {
+   "id": "s3n3k2",
+   "type": "exemple",
+   "title": "Exemple 4.4",
+   "note": "",
+   "x": 820,
+   "y": 4820
+  },
+  {
+   "id": "s3n3k3",
+   "type": "condition",
+   "title": "Condition 4.4",
+   "note": "",
+   "x": 820,
+   "y": 4890
+  },
+  {
+   "id": "s4",
+   "type": "section",
+   "title": "Section 5",
+   "note": "",
+   "x": 300,
+   "y": 5040
+  },
+  {
+   "id": "s4n0",
+   "type": "notion",
+   "title": "Notion 5.1",
+   "note": "",
+   "x": 560,
+   "y": 5040
+  },
+  {
+   "id": "s4n0k0",
+   "type": "cause",
+   "title": "Cause 5.1",
+   "note": "",
+   "x": 820,
+   "y": 5040
+  },
+  {
+   "id": "s4n0k1",
+   "type": "consequence",
+   "title": "Conséquence 5.1",
+   "note": "",
+   "x": 820,
+   "y": 5110
+  },
+  {
+   "id": "s4n0k2",
+   "type": "exemple",
+   "title": "Exemple 5.1",
+   "note": "",
+   "x": 820,
+   "y": 5180
+  },
+  {
+   "id": "s4n0k3",
+   "type": "condition",
+   "title": "Condition 5.1",
+   "note": "",
+   "x": 820,
+   "y": 5250
+  },
+  {
+   "id": "s4n1",
+   "type": "notion",
+   "title": "Notion 5.2",
+   "note": "",
+   "x": 560,
+   "y": 5340
+  },
+  {
+   "id": "s4n1k0",
+   "type": "cause",
+   "title": "Cause 5.2",
+   "note": "",
+   "x": 820,
+   "y": 5340
+  },
+  {
+   "id": "s4n1k1",
+   "type": "consequence",
+   "title": "Conséquence 5.2",
+   "note": "",
+   "x": 820,
+   "y": 5410
+  },
+  {
+   "id": "s4n1k2",
+   "type": "exemple",
+   "title": "Exemple 5.2",
+   "note": "",
+   "x": 820,
+   "y": 5480
+  },
+  {
+   "id": "s4n1k3",
+   "type": "condition",
+   "title": "Condition 5.2",
+   "note": "",
+   "x": 820,
+   "y": 5550
+  },
+  {
+   "id": "s4n2",
+   "type": "notion",
+   "title": "Notion 5.3",
+   "note": "",
+   "x": 560,
+   "y": 5640
+  },
+  {
+   "id": "s4n2k0",
+   "type": "cause",
+   "title": "Cause 5.3",
+   "note": "",
+   "x": 820,
+   "y": 5640
+  },
+  {
+   "id": "s4n2k1",
+   "type": "consequence",
+   "title": "Conséquence 5.3",
+   "note": "",
+   "x": 820,
+   "y": 5710
+  },
+  {
+   "id": "s4n2k2",
+   "type": "exemple",
+   "title": "Exemple 5.3",
+   "note": "",
+   "x": 820,
+   "y": 5780
+  },
+  {
+   "id": "s4n2k3",
+   "type": "condition",
+   "title": "Condition 5.3",
+   "note": "",
+   "x": 820,
+   "y": 5850
+  },
+  {
+   "id": "s4n3",
+   "type": "notion",
+   "title": "Notion 5.4",
+   "note": "",
+   "x": 560,
+   "y": 5940
+  },
+  {
+   "id": "s4n3k0",
+   "type": "cause",
+   "title": "Cause 5.4",
+   "note": "",
+   "x": 820,
+   "y": 5940
+  },
+  {
+   "id": "s4n3k1",
+   "type": "consequence",
+   "title": "Conséquence 5.4",
+   "note": "",
+   "x": 820,
+   "y": 6010
+  },
+  {
+   "id": "s4n3k2",
+   "type": "exemple",
+   "title": "Exemple 5.4",
+   "note": "",
+   "x": 820,
+   "y": 6080
+  },
+  {
+   "id": "s4n3k3",
+   "type": "condition",
+   "title": "Condition 5.4",
+   "note": "",
+   "x": 820,
+   "y": 6150
+  },
+  {
+   "id": "s5",
+   "type": "section",
+   "title": "Section 6",
+   "note": "",
+   "x": 300,
+   "y": 6300
+  },
+  {
+   "id": "s5n0",
+   "type": "notion",
+   "title": "Notion 6.1",
+   "note": "",
+   "x": 560,
+   "y": 6300
+  },
+  {
+   "id": "s5n0k0",
+   "type": "cause",
+   "title": "Cause 6.1",
+   "note": "",
+   "x": 820,
+   "y": 6300
+  },
+  {
+   "id": "s5n0k1",
+   "type": "consequence",
+   "title": "Conséquence 6.1",
+   "note": "",
+   "x": 820,
+   "y": 6370
+  },
+  {
+   "id": "s5n0k2",
+   "type": "exemple",
+   "title": "Exemple 6.1",
+   "note": "",
+   "x": 820,
+   "y": 6440
+  },
+  {
+   "id": "s5n0k3",
+   "type": "condition",
+   "title": "Condition 6.1",
+   "note": "",
+   "x": 820,
+   "y": 6510
+  },
+  {
+   "id": "s5n1",
+   "type": "notion",
+   "title": "Notion 6.2",
+   "note": "",
+   "x": 560,
+   "y": 6600
+  },
+  {
+   "id": "s5n1k0",
+   "type": "cause",
+   "title": "Cause 6.2",
+   "note": "",
+   "x": 820,
+   "y": 6600
+  },
+  {
+   "id": "s5n1k1",
+   "type": "consequence",
+   "title": "Conséquence 6.2",
+   "note": "",
+   "x": 820,
+   "y": 6670
+  },
+  {
+   "id": "s5n1k2",
+   "type": "exemple",
+   "title": "Exemple 6.2",
+   "note": "",
+   "x": 820,
+   "y": 6740
+  },
+  {
+   "id": "s5n1k3",
+   "type": "condition",
+   "title": "Condition 6.2",
+   "note": "",
+   "x": 820,
+   "y": 6810
+  },
+  {
+   "id": "s5n2",
+   "type": "notion",
+   "title": "Notion 6.3",
+   "note": "",
+   "x": 560,
+   "y": 6900
+  },
+  {
+   "id": "s5n2k0",
+   "type": "cause",
+   "title": "Cause 6.3",
+   "note": "",
+   "x": 820,
+   "y": 6900
+  },
+  {
+   "id": "s5n2k1",
+   "type": "consequence",
+   "title": "Conséquence 6.3",
+   "note": "",
+   "x": 820,
+   "y": 6970
+  },
+  {
+   "id": "s5n2k2",
+   "type": "exemple",
+   "title": "Exemple 6.3",
+   "note": "",
+   "x": 820,
+   "y": 7040
+  },
+  {
+   "id": "s5n2k3",
+   "type": "condition",
+   "title": "Condition 6.3",
+   "note": "",
+   "x": 820,
+   "y": 7110
+  },
+  {
+   "id": "s5n3",
+   "type": "notion",
+   "title": "Notion 6.4",
+   "note": "",
+   "x": 560,
+   "y": 7200
+  },
+  {
+   "id": "s5n3k0",
+   "type": "cause",
+   "title": "Cause 6.4",
+   "note": "",
+   "x": 820,
+   "y": 7200
+  },
+  {
+   "id": "s5n3k1",
+   "type": "consequence",
+   "title": "Conséquence 6.4",
+   "note": "",
+   "x": 820,
+   "y": 7270
+  },
+  {
+   "id": "s5n3k2",
+   "type": "exemple",
+   "title": "Exemple 6.4",
+   "note": "",
+   "x": 820,
+   "y": 7340
+  },
+  {
+   "id": "s5n3k3",
+   "type": "condition",
+   "title": "Condition 6.4",
+   "note": "",
+   "x": 820,
+   "y": 7410
+  },
+  {
+   "id": "s6",
+   "type": "section",
+   "title": "Section 7",
+   "note": "",
+   "x": 300,
+   "y": 7560
+  },
+  {
+   "id": "s6n0",
+   "type": "notion",
+   "title": "Notion 7.1",
+   "note": "",
+   "x": 560,
+   "y": 7560
+  },
+  {
+   "id": "s6n0k0",
+   "type": "cause",
+   "title": "Cause 7.1",
+   "note": "",
+   "x": 820,
+   "y": 7560
+  },
+  {
+   "id": "s6n0k1",
+   "type": "consequence",
+   "title": "Conséquence 7.1",
+   "note": "",
+   "x": 820,
+   "y": 7630
+  },
+  {
+   "id": "s6n0k2",
+   "type": "exemple",
+   "title": "Exemple 7.1",
+   "note": "",
+   "x": 820,
+   "y": 7700
+  },
+  {
+   "id": "s6n0k3",
+   "type": "condition",
+   "title": "Condition 7.1",
+   "note": "",
+   "x": 820,
+   "y": 7770
+  },
+  {
+   "id": "s6n1",
+   "type": "notion",
+   "title": "Notion 7.2",
+   "note": "",
+   "x": 560,
+   "y": 7860
+  },
+  {
+   "id": "s6n1k0",
+   "type": "cause",
+   "title": "Cause 7.2",
+   "note": "",
+   "x": 820,
+   "y": 7860
+  },
+  {
+   "id": "s6n1k1",
+   "type": "consequence",
+   "title": "Conséquence 7.2",
+   "note": "",
+   "x": 820,
+   "y": 7930
+  },
+  {
+   "id": "s6n1k2",
+   "type": "exemple",
+   "title": "Exemple 7.2",
+   "note": "",
+   "x": 820,
+   "y": 8000
+  },
+  {
+   "id": "s6n1k3",
+   "type": "condition",
+   "title": "Condition 7.2",
+   "note": "",
+   "x": 820,
+   "y": 8070
+  },
+  {
+   "id": "s6n2",
+   "type": "notion",
+   "title": "Notion 7.3",
+   "note": "",
+   "x": 560,
+   "y": 8160
+  },
+  {
+   "id": "s6n2k0",
+   "type": "cause",
+   "title": "Cause 7.3",
+   "note": "",
+   "x": 820,
+   "y": 8160
+  },
+  {
+   "id": "s6n2k1",
+   "type": "consequence",
+   "title": "Conséquence 7.3",
+   "note": "",
+   "x": 820,
+   "y": 8230
+  },
+  {
+   "id": "s6n2k2",
+   "type": "exemple",
+   "title": "Exemple 7.3",
+   "note": "",
+   "x": 820,
+   "y": 8300
+  },
+  {
+   "id": "s6n2k3",
+   "type": "condition",
+   "title": "Condition 7.3",
+   "note": "",
+   "x": 820,
+   "y": 8370
+  },
+  {
+   "id": "s6n3",
+   "type": "notion",
+   "title": "Notion 7.4",
+   "note": "",
+   "x": 560,
+   "y": 8460
+  },
+  {
+   "id": "s6n3k0",
+   "type": "cause",
+   "title": "Cause 7.4",
+   "note": "",
+   "x": 820,
+   "y": 8460
+  },
+  {
+   "id": "s6n3k1",
+   "type": "consequence",
+   "title": "Conséquence 7.4",
+   "note": "",
+   "x": 820,
+   "y": 8530
+  },
+  {
+   "id": "s6n3k2",
+   "type": "exemple",
+   "title": "Exemple 7.4",
+   "note": "",
+   "x": 820,
+   "y": 8600
+  },
+  {
+   "id": "s6n3k3",
+   "type": "condition",
+   "title": "Condition 7.4",
+   "note": "",
+   "x": 820,
+   "y": 8670
+  },
+  {
+   "id": "s7",
+   "type": "section",
+   "title": "Section 8",
+   "note": "",
+   "x": 300,
+   "y": 8820
+  },
+  {
+   "id": "s7n0",
+   "type": "notion",
+   "title": "Notion 8.1",
+   "note": "",
+   "x": 560,
+   "y": 8820
+  },
+  {
+   "id": "s7n0k0",
+   "type": "cause",
+   "title": "Cause 8.1",
+   "note": "",
+   "x": 820,
+   "y": 8820
+  },
+  {
+   "id": "s7n0k1",
+   "type": "consequence",
+   "title": "Conséquence 8.1",
+   "note": "",
+   "x": 820,
+   "y": 8890
+  },
+  {
+   "id": "s7n0k2",
+   "type": "exemple",
+   "title": "Exemple 8.1",
+   "note": "",
+   "x": 820,
+   "y": 8960
+  },
+  {
+   "id": "s7n0k3",
+   "type": "condition",
+   "title": "Condition 8.1",
+   "note": "",
+   "x": 820,
+   "y": 9030
+  },
+  {
+   "id": "s7n1",
+   "type": "notion",
+   "title": "Notion 8.2",
+   "note": "",
+   "x": 560,
+   "y": 9120
+  },
+  {
+   "id": "s7n1k0",
+   "type": "cause",
+   "title": "Cause 8.2",
+   "note": "",
+   "x": 820,
+   "y": 9120
+  },
+  {
+   "id": "s7n1k1",
+   "type": "consequence",
+   "title": "Conséquence 8.2",
+   "note": "",
+   "x": 820,
+   "y": 9190
+  },
+  {
+   "id": "s7n1k2",
+   "type": "exemple",
+   "title": "Exemple 8.2",
+   "note": "",
+   "x": 820,
+   "y": 9260
+  },
+  {
+   "id": "s7n1k3",
+   "type": "condition",
+   "title": "Condition 8.2",
+   "note": "",
+   "x": 820,
+   "y": 9330
+  },
+  {
+   "id": "s7n2",
+   "type": "notion",
+   "title": "Notion 8.3",
+   "note": "",
+   "x": 560,
+   "y": 9420
+  },
+  {
+   "id": "s7n2k0",
+   "type": "cause",
+   "title": "Cause 8.3",
+   "note": "",
+   "x": 820,
+   "y": 9420
+  },
+  {
+   "id": "s7n2k1",
+   "type": "consequence",
+   "title": "Conséquence 8.3",
+   "note": "",
+   "x": 820,
+   "y": 9490
+  },
+  {
+   "id": "s7n2k2",
+   "type": "exemple",
+   "title": "Exemple 8.3",
+   "note": "",
+   "x": 820,
+   "y": 9560
+  },
+  {
+   "id": "s7n2k3",
+   "type": "condition",
+   "title": "Condition 8.3",
+   "note": "",
+   "x": 820,
+   "y": 9630
+  },
+  {
+   "id": "s7n3",
+   "type": "notion",
+   "title": "Notion 8.4",
+   "note": "",
+   "x": 560,
+   "y": 9720
+  },
+  {
+   "id": "s7n3k0",
+   "type": "cause",
+   "title": "Cause 8.4",
+   "note": "",
+   "x": 820,
+   "y": 9720
+  },
+  {
+   "id": "s7n3k1",
+   "type": "consequence",
+   "title": "Conséquence 8.4",
+   "note": "",
+   "x": 820,
+   "y": 9790
+  },
+  {
+   "id": "s7n3k2",
+   "type": "exemple",
+   "title": "Exemple 8.4",
+   "note": "",
+   "x": 820,
+   "y": 9860
+  },
+  {
+   "id": "s7n3k3",
+   "type": "condition",
+   "title": "Condition 8.4",
+   "note": "",
+   "x": 820,
+   "y": 9930
+  }
+ ],
+ "edges": [
+  {
+   "id": "t93",
+   "from": "r",
+   "to": "s0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t94",
+   "from": "s0",
+   "to": "s0n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t95",
+   "from": "s0n0",
+   "to": "s0n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t96",
+   "from": "s0n0",
+   "to": "s0n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t97",
+   "from": "s0n0",
+   "to": "s0n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t98",
+   "from": "s0n0",
+   "to": "s0n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t99",
+   "from": "s0",
+   "to": "s0n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t100",
+   "from": "s0n1",
+   "to": "s0n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t101",
+   "from": "s0n1",
+   "to": "s0n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t102",
+   "from": "s0n1",
+   "to": "s0n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t103",
+   "from": "s0n1",
+   "to": "s0n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t104",
+   "from": "s0",
+   "to": "s0n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t105",
+   "from": "s0n2",
+   "to": "s0n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t106",
+   "from": "s0n2",
+   "to": "s0n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t107",
+   "from": "s0n2",
+   "to": "s0n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t108",
+   "from": "s0n2",
+   "to": "s0n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t109",
+   "from": "s0",
+   "to": "s0n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t110",
+   "from": "s0n3",
+   "to": "s0n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t111",
+   "from": "s0n3",
+   "to": "s0n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t112",
+   "from": "s0n3",
+   "to": "s0n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t113",
+   "from": "s0n3",
+   "to": "s0n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t114",
+   "from": "r",
+   "to": "s1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t115",
+   "from": "s1",
+   "to": "s1n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t116",
+   "from": "s1n0",
+   "to": "s1n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t117",
+   "from": "s1n0",
+   "to": "s1n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t118",
+   "from": "s1n0",
+   "to": "s1n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t119",
+   "from": "s1n0",
+   "to": "s1n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t120",
+   "from": "s1",
+   "to": "s1n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t121",
+   "from": "s1n1",
+   "to": "s1n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t122",
+   "from": "s1n1",
+   "to": "s1n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t123",
+   "from": "s1n1",
+   "to": "s1n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t124",
+   "from": "s1n1",
+   "to": "s1n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t125",
+   "from": "s1",
+   "to": "s1n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t126",
+   "from": "s1n2",
+   "to": "s1n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t127",
+   "from": "s1n2",
+   "to": "s1n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t128",
+   "from": "s1n2",
+   "to": "s1n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t129",
+   "from": "s1n2",
+   "to": "s1n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t130",
+   "from": "s1",
+   "to": "s1n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t131",
+   "from": "s1n3",
+   "to": "s1n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t132",
+   "from": "s1n3",
+   "to": "s1n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t133",
+   "from": "s1n3",
+   "to": "s1n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t134",
+   "from": "s1n3",
+   "to": "s1n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t135",
+   "from": "r",
+   "to": "s2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t136",
+   "from": "s2",
+   "to": "s2n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t137",
+   "from": "s2n0",
+   "to": "s2n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t138",
+   "from": "s2n0",
+   "to": "s2n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t139",
+   "from": "s2n0",
+   "to": "s2n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t140",
+   "from": "s2n0",
+   "to": "s2n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t141",
+   "from": "s2",
+   "to": "s2n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t142",
+   "from": "s2n1",
+   "to": "s2n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t143",
+   "from": "s2n1",
+   "to": "s2n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t144",
+   "from": "s2n1",
+   "to": "s2n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t145",
+   "from": "s2n1",
+   "to": "s2n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t146",
+   "from": "s2",
+   "to": "s2n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t147",
+   "from": "s2n2",
+   "to": "s2n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t148",
+   "from": "s2n2",
+   "to": "s2n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t149",
+   "from": "s2n2",
+   "to": "s2n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t150",
+   "from": "s2n2",
+   "to": "s2n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t151",
+   "from": "s2",
+   "to": "s2n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t152",
+   "from": "s2n3",
+   "to": "s2n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t153",
+   "from": "s2n3",
+   "to": "s2n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t154",
+   "from": "s2n3",
+   "to": "s2n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t155",
+   "from": "s2n3",
+   "to": "s2n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t156",
+   "from": "r",
+   "to": "s3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t157",
+   "from": "s3",
+   "to": "s3n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t158",
+   "from": "s3n0",
+   "to": "s3n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t159",
+   "from": "s3n0",
+   "to": "s3n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t160",
+   "from": "s3n0",
+   "to": "s3n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t161",
+   "from": "s3n0",
+   "to": "s3n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t162",
+   "from": "s3",
+   "to": "s3n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t163",
+   "from": "s3n1",
+   "to": "s3n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t164",
+   "from": "s3n1",
+   "to": "s3n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t165",
+   "from": "s3n1",
+   "to": "s3n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t166",
+   "from": "s3n1",
+   "to": "s3n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t167",
+   "from": "s3",
+   "to": "s3n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t168",
+   "from": "s3n2",
+   "to": "s3n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t169",
+   "from": "s3n2",
+   "to": "s3n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t170",
+   "from": "s3n2",
+   "to": "s3n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t171",
+   "from": "s3n2",
+   "to": "s3n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t172",
+   "from": "s3",
+   "to": "s3n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t173",
+   "from": "s3n3",
+   "to": "s3n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t174",
+   "from": "s3n3",
+   "to": "s3n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t175",
+   "from": "s3n3",
+   "to": "s3n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t176",
+   "from": "s3n3",
+   "to": "s3n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t177",
+   "from": "r",
+   "to": "s4",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t178",
+   "from": "s4",
+   "to": "s4n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t179",
+   "from": "s4n0",
+   "to": "s4n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t180",
+   "from": "s4n0",
+   "to": "s4n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t181",
+   "from": "s4n0",
+   "to": "s4n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t182",
+   "from": "s4n0",
+   "to": "s4n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t183",
+   "from": "s4",
+   "to": "s4n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t184",
+   "from": "s4n1",
+   "to": "s4n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t185",
+   "from": "s4n1",
+   "to": "s4n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t186",
+   "from": "s4n1",
+   "to": "s4n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t187",
+   "from": "s4n1",
+   "to": "s4n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t188",
+   "from": "s4",
+   "to": "s4n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t189",
+   "from": "s4n2",
+   "to": "s4n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t190",
+   "from": "s4n2",
+   "to": "s4n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t191",
+   "from": "s4n2",
+   "to": "s4n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t192",
+   "from": "s4n2",
+   "to": "s4n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t193",
+   "from": "s4",
+   "to": "s4n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t194",
+   "from": "s4n3",
+   "to": "s4n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t195",
+   "from": "s4n3",
+   "to": "s4n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t196",
+   "from": "s4n3",
+   "to": "s4n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t197",
+   "from": "s4n3",
+   "to": "s4n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t198",
+   "from": "r",
+   "to": "s5",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t199",
+   "from": "s5",
+   "to": "s5n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t200",
+   "from": "s5n0",
+   "to": "s5n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t201",
+   "from": "s5n0",
+   "to": "s5n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t202",
+   "from": "s5n0",
+   "to": "s5n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t203",
+   "from": "s5n0",
+   "to": "s5n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t204",
+   "from": "s5",
+   "to": "s5n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t205",
+   "from": "s5n1",
+   "to": "s5n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t206",
+   "from": "s5n1",
+   "to": "s5n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t207",
+   "from": "s5n1",
+   "to": "s5n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t208",
+   "from": "s5n1",
+   "to": "s5n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t209",
+   "from": "s5",
+   "to": "s5n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t210",
+   "from": "s5n2",
+   "to": "s5n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t211",
+   "from": "s5n2",
+   "to": "s5n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t212",
+   "from": "s5n2",
+   "to": "s5n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t213",
+   "from": "s5n2",
+   "to": "s5n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t214",
+   "from": "s5",
+   "to": "s5n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t215",
+   "from": "s5n3",
+   "to": "s5n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t216",
+   "from": "s5n3",
+   "to": "s5n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t217",
+   "from": "s5n3",
+   "to": "s5n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t218",
+   "from": "s5n3",
+   "to": "s5n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t219",
+   "from": "r",
+   "to": "s6",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t220",
+   "from": "s6",
+   "to": "s6n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t221",
+   "from": "s6n0",
+   "to": "s6n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t222",
+   "from": "s6n0",
+   "to": "s6n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t223",
+   "from": "s6n0",
+   "to": "s6n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t224",
+   "from": "s6n0",
+   "to": "s6n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t225",
+   "from": "s6",
+   "to": "s6n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t226",
+   "from": "s6n1",
+   "to": "s6n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t227",
+   "from": "s6n1",
+   "to": "s6n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t228",
+   "from": "s6n1",
+   "to": "s6n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t229",
+   "from": "s6n1",
+   "to": "s6n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t230",
+   "from": "s6",
+   "to": "s6n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t231",
+   "from": "s6n2",
+   "to": "s6n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t232",
+   "from": "s6n2",
+   "to": "s6n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t233",
+   "from": "s6n2",
+   "to": "s6n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t234",
+   "from": "s6n2",
+   "to": "s6n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t235",
+   "from": "s6",
+   "to": "s6n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t236",
+   "from": "s6n3",
+   "to": "s6n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t237",
+   "from": "s6n3",
+   "to": "s6n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t238",
+   "from": "s6n3",
+   "to": "s6n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t239",
+   "from": "s6n3",
+   "to": "s6n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t240",
+   "from": "r",
+   "to": "s7",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t241",
+   "from": "s7",
+   "to": "s7n0",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t242",
+   "from": "s7n0",
+   "to": "s7n0k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t243",
+   "from": "s7n0",
+   "to": "s7n0k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t244",
+   "from": "s7n0",
+   "to": "s7n0k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t245",
+   "from": "s7n0",
+   "to": "s7n0k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t246",
+   "from": "s7",
+   "to": "s7n1",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t247",
+   "from": "s7n1",
+   "to": "s7n1k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t248",
+   "from": "s7n1",
+   "to": "s7n1k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t249",
+   "from": "s7n1",
+   "to": "s7n1k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t250",
+   "from": "s7n1",
+   "to": "s7n1k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t251",
+   "from": "s7",
+   "to": "s7n2",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t252",
+   "from": "s7n2",
+   "to": "s7n2k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t253",
+   "from": "s7n2",
+   "to": "s7n2k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t254",
+   "from": "s7n2",
+   "to": "s7n2k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t255",
+   "from": "s7n2",
+   "to": "s7n2k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "t256",
+   "from": "s7",
+   "to": "s7n3",
+   "kind": "tree",
+   "label": ""
+  },
+  {
+   "id": "t257",
+   "from": "s7n3",
+   "to": "s7n3k0",
+   "kind": "tree",
+   "label": "a pour cause"
+  },
+  {
+   "id": "t258",
+   "from": "s7n3",
+   "to": "s7n3k1",
+   "kind": "tree",
+   "label": "entraîne"
+  },
+  {
+   "id": "t259",
+   "from": "s7n3",
+   "to": "s7n3k2",
+   "kind": "tree",
+   "label": "illustré par"
+  },
+  {
+   "id": "t260",
+   "from": "s7n3",
+   "to": "s7n3k3",
+   "kind": "tree",
+   "label": "suppose"
+  },
+  {
+   "id": "l261",
+   "from": "s0n0k0",
+   "to": "s5n2",
+   "kind": "link",
+   "label": "fait appel à"
+  },
+  {
+   "id": "l262",
+   "from": "s1n1k1",
+   "to": "s0n3",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l263",
+   "from": "s2n2k2",
+   "to": "s3n0",
+   "kind": "link",
+   "label": "s’oppose à"
+  },
+  {
+   "id": "l264",
+   "from": "s3n3k3",
+   "to": "s6n1",
+   "kind": "link",
+   "label": "illustre"
+  },
+  {
+   "id": "l265",
+   "from": "s4n0k0",
+   "to": "s1n2",
+   "kind": "link",
+   "label": "résulte de"
+  },
+  {
+   "id": "l266",
+   "from": "s5n1k1",
+   "to": "s4n3",
+   "kind": "link",
+   "label": "sauf"
+  },
+  {
+   "id": "l267",
+   "from": "s6n2k2",
+   "to": "s7n0",
+   "kind": "link",
+   "label": "suppose"
+  },
+  {
+   "id": "l268",
+   "from": "s7n3k3",
+   "to": "s2n1",
+   "kind": "link",
+   "label": "se distingue de"
+  },
+  {
+   "id": "l269",
+   "from": "s0n0k0",
+   "to": "s5n2",
+   "kind": "link",
+   "label": "fait appel à"
+  },
+  {
+   "id": "l270",
+   "from": "s1n1k1",
+   "to": "s0n3",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l271",
+   "from": "s2n2k2",
+   "to": "s3n0",
+   "kind": "link",
+   "label": "s’oppose à"
+  },
+  {
+   "id": "l272",
+   "from": "s3n3k3",
+   "to": "s6n1",
+   "kind": "link",
+   "label": "illustre"
+  },
+  {
+   "id": "l273",
+   "from": "s4n0k0",
+   "to": "s1n2",
+   "kind": "link",
+   "label": "résulte de"
+  },
+  {
+   "id": "l274",
+   "from": "s5n1k1",
+   "to": "s4n3",
+   "kind": "link",
+   "label": "sauf"
+  },
+  {
+   "id": "l275",
+   "from": "s6n2k2",
+   "to": "s7n0",
+   "kind": "link",
+   "label": "suppose"
+  },
+  {
+   "id": "l276",
+   "from": "s7n3k3",
+   "to": "s2n1",
+   "kind": "link",
+   "label": "se distingue de"
+  },
+  {
+   "id": "l277",
+   "from": "s0n0k0",
+   "to": "s5n2",
+   "kind": "link",
+   "label": "fait appel à"
+  },
+  {
+   "id": "l278",
+   "from": "s1n1k1",
+   "to": "s0n3",
+   "kind": "link",
+   "label": "entraîne"
+  },
+  {
+   "id": "l279",
+   "from": "s2n2k2",
+   "to": "s3n0",
+   "kind": "link",
+   "label": "s’oppose à"
+  },
+  {
+   "id": "l280",
+   "from": "s3n3k3",
+   "to": "s6n1",
+   "kind": "link",
+   "label": "illustre"
+  }
+ ],
+ "_verifier": [
+  "169 nœuds, 20 renvois longs (souvent entre sections éloignées)",
+  "nœuds traversés par les renvois : 0 ou proche de 0",
+  "temps total de routage + libellés < 1 s (rendu interactif < 50 ms par renvoi)",
+  "libellés à < 40 px de leur trait ; aucun libellé hors de la boîte englobante de la carte",
+  "déterminisme entre deux ouvertures"
+ ]
+}
