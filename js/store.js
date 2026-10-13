@@ -251,11 +251,17 @@
           id: String(e.id || U.uid('e')), from: String(e.from), to: String(e.to), kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || ''),
           ...(e.group ? { group: String(e.group) } : {}),
         })) : [];
-      // une seule arête hiérarchique entrante par nœud
+      // une seule arête hiérarchique entrante par nœud, et pas de cycle (l'arête qui le fermerait
+      // devient un renvoi : rien n'est perdu, la carte reste rangeable)
       const seen = new Set();
+      const up = new Map();
       for (const e of edges) {
         if (e.kind !== 'tree') continue;
-        if (seen.has(e.to)) { e.kind = 'link'; note('extraParents'); } else seen.add(e.to);
+        if (seen.has(e.to)) { e.kind = 'link'; note('extraParents'); continue; }
+        let j = e.from, loop = false;
+        for (let guard = 0; j != null && guard <= edges.length; guard++) { if (j === e.to) { loop = true; break; } j = up.get(j); }
+        if (loop) { e.kind = 'link'; note('treeCycles'); continue; }
+        seen.add(e.to); up.set(e.to, e.from);
       }
       // positions absentes (ou toutes identiques) : la carte sera rangée automatiquement à l'ouverture
       const placed = rawNodes.filter((n) => n && Number.isFinite(+n.x) && Number.isFinite(+n.y) && n.x !== null && n.y !== null);
@@ -624,7 +630,15 @@
 
     /* ---------------- Révision ---------------- */
     isReviewable(map, n) {
-      return !!(n.title.trim() && (n.note.trim() || this.childrenOf(map, n.id).length));
+      return !!(n.title.trim() && (n.note.trim() || this.childrenOf(map, n.id).length)) && !this.isComponent(map, n);
+    },
+    /** Composante d'une définition décomposée (idee sous la définition, directement ou en chaîne) :
+        elle se révise avec la définition, jamais seule et hors contexte. */
+    isComponent(map, n) {
+      if (n.type !== 'idee') return false;
+      let p = this.parentOf(map, n.id), guard = 0;
+      while (p && p.type === 'idee' && guard++ < 50) p = this.parentOf(map, p.id);
+      return !!(p && p.type === 'definition');
     },
     isDue(n, now = Date.now()) { return !n.review.last || n.review.due <= now; },
     mapStats(m) {
@@ -653,22 +667,35 @@
     /** Consigne de révision d'un nœud (partagée par la révision et la carte de cours) */
     promptFor(map, node) {
       const T = TYPES[node.type];
-      const kids = this.childrenOf(map, node.id).length;
-      if (!kids) return T.prompt;
-      if (node.logic) return `${T.prompt} — ${kids} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver`;
-      // liens libellés : la consigne pose les questions de la carte (« désigne · de qui ? · à qui ? »)
-      const labels = [];
-      // définition décomposée : toute la chaîne (désigne · de qui ? · à qui ? · notamment)
-      const walk = (id, deep) => {
-        for (const k of this.childrenOf(map, id)) {
-          const l = (this.parentEdge(map, k.id) || {}).label;
-          if (l && !labels.includes(l)) labels.push(l);
-          if (deep && k.type === 'idee') walk(k.id, deep);
-        }
-      };
-      walk(node.id, node.type === 'definition');
-      if (labels.length) return `${T.prompt} — ${labels.slice(0, 5).join(' · ')}${labels.length > 5 ? ' …' : ''}`;
-      return `${T.prompt} — ${kids} élément${kids > 1 ? 's' : ''} à retrouver`;
+      const kids = this.childrenOf(map, node.id);
+      if (!kids.length) return T.prompt;
+      if (node.logic) return `${T.prompt} — ${kids.length} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver`;
+      // définition décomposée : la consigne pose les questions de la chaîne (c'est · désigne · de qui ? · à qui ?)
+      if (node.type === 'definition' && kids.some((k) => k.type === 'idee')) {
+        const labels = [];
+        let scope = false;
+        const walk = (id) => {
+          for (const k of this.childrenOf(map, id)) {
+            if (k.type !== 'idee') continue;
+            const l = (this.parentEdge(map, k.id) || {}).label;
+            if (l && !labels.includes(l)) labels.push(l);
+            if (k.em) scope = true;
+            walk(k.id);
+          }
+        };
+        walk(node.id);
+        if (labels.length) return `${T.prompt} — ${labels.slice(0, 6).join(' · ')}${labels.length > 6 ? ' …' : ''}${scope ? ' (attention à la portée)' : ''}`;
+      }
+      // ailleurs, le nombre d'éléments à retrouver reste la consigne (les libellés sont dans la réponse)
+      return `${T.prompt} — ${kids.length} élément${kids.length > 1 ? 's' : ''} à retrouver`;
+    },
+    /** Ordre du plan : rang de chaque nœud dans le parcours en profondeur de la carte */
+    readingOrder(map) {
+      const rank = new Map();
+      const visit = (n) => { if (rank.has(n.id)) return; rank.set(n.id, rank.size); for (const k of this.childrenOf(map, n.id)) visit(k); };
+      for (const r of this.roots(map)) visit(r);
+      for (const n of map.nodes) if (!rank.has(n.id)) rank.set(n.id, rank.size);
+      return rank;
     },
     /**
      * Prochaine fiche d'un cours, déterministe : d'abord la plus en retard parmi les fiches
@@ -704,8 +731,11 @@
         }
       }
       due.sort((a, b) => a.due - b.due);
-      // récompense de la chasse : ordre mélangé parmi les nouvelles
-      for (let i = fresh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [fresh[i], fresh[j]] = [fresh[j], fresh[i]]; }
+      // nouvelles : dans l'ordre du plan (carte la plus ancienne, puis ordre de lecture) — on
+      // découvre une notion avant ses conséquences, une cause avant ses effets
+      const rank = new Map(), age = new Map();
+      for (const m of maps) { rank.set(m.id, this.readingOrder(m)); age.set(m.id, m.createdAt || 0); }
+      fresh.sort((a, b) => (age.get(a.mapId) - age.get(b.mapId)) || (rank.get(a.mapId).get(a.nodeId) - rank.get(b.mapId).get(b.nodeId)));
       const queue = [...due, ...fresh];
       if (first) {
         const i = queue.findIndex((q) => q.mapId === first.mapId && q.nodeId === first.nodeId);
@@ -860,6 +890,7 @@
       say('unknownTypes', (n) => `${U.plural(n, 'nœud')} au type inconnu → « Idée »`);
       say('droppedEdges', (n) => `${U.plural(n, 'lien')} vers un nœud absent, ignoré${n > 1 ? 's' : ''}`);
       say('extraParents', (n) => `${U.plural(n, 'second parent')} transformé${n > 1 ? 's' : ''} en renvoi`);
+      say('treeCycles', (n) => `${U.plural(n, 'boucle')} de hiérarchie transformée${n > 1 ? 's' : ''} en renvoi`);
       say('duplicateNodes', (n) => `${U.plural(n, 'nœud')} en double, ignoré${n > 1 ? 's' : ''}`);
       say('nodesWithoutId', (n) => `${U.plural(n, 'nœud')} sans identifiant, ignoré${n > 1 ? 's' : ''}`);
       say('orphanMaps', (n) => `${U.plural(n, 'carte')} sans cours → rangée${n > 1 ? 's' : ''} dans « Importé »`);

@@ -1005,3 +1005,11 @@
 .rc-row.k-compris .mastery { color: var(--ink-blue); }
 .rc-row.k-revoir .mastery { color: var(--ink-red); }
 .imp-err .ic { color: var(--error); flex: none; margin-top: 2px; }
+/* Révision : renvois de la fiche, parent masqué tant que la réponse n'est pas montrée */
+.answer-rel-list { list-style: none; display: grid; gap: var(--sp-2); }
+.answer-rel-list li { display: flex; align-items: baseline; gap: var(--sp-2); font: var(--body-l); }
+.answer-more { font: var(--body-s); color: var(--on-surface-variant); }
+.rcard .path-last { display: none; }
+.rcard.revealed .path-last { display: inline; }
+.rcard.revealed .path-mask { display: none; }
+.path-mask { letter-spacing: .1em; }

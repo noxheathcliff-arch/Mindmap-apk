@@ -3,7 +3,7 @@
   "type": "portable_ai_skill_specification",
   "id": "ratio_book_to_course_compiler",
   "name": "Ratio — Compilateur Livre → Cours",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "language": "fr",
   "purpose": {
     "primary": "Transformer un livre, un polycopié ou un cours (PDF, EPUB, texte, notes) en un cours Ratio complet, prêt à importer : un fichier JSON unique contenant un cours, ses cartes mentales, leurs nœuds typés, leurs notes rédigées en Markdown, leurs liens hiérarchiques et transversaux étiquetés.",
@@ -536,7 +536,7 @@
       }
     ],
     "selection_heuristic": [
-      "Remplacé en v1.5 par node_types.type_selection_engine (fonction → indices → lien au parent → question de révision → départage → cohérence). L'ordre des types n'a plus d'importance."
+      "Voir node_types.type_selection_engine (fonction → indices → lien au parent → question de révision → départage → cohérence)."
     ],
     "legal_documents": "Pour un cours de droit, les types gardent leur sens strict : fond/forme = conditions de validité, effet = régime/sanction, juris = décisions (juridiction, chambre, date, nom), texte = articles (« Art. 1128 C. civ. »). Les références « art. 1128 » écrites dans les notes deviennent automatiquement des liens Légifrance.",
     "type_selection_engine": {
@@ -1887,16 +1887,16 @@
     "Un nœud structurel (chapitre/lecon/section) peut porter une note d'introduction ; ses enfants portent le contenu."
   ],
   "edge_rules": {
-    "tree": "Relation parent → enfant, un seul parent par nœud. Libellé RECOMMANDÉ : ce que l'enfant est pour le parent (relations_first.vocabulary) ; \"\" pour la structure (chapitre/leçon/section) et pour une liste que le titre du parent nomme déjà.",
+    "tree": "Relation parent → enfant, un seul parent par nœud. Libellé = verbe de la relation (normative_core.relation_by_type) entre deux IDÉES ; \"\" sous un intitulé (chapitre, leçon, section, nœud-question) et sous une liste nommée par son parent.",
     "link": "Relation transversale entre deux nœuds de branches différentes, toujours étiquetée.",
     "labels": {
       "presets": [
         "ET",
         "OU",
         "sauf",
-        "implique",
-        "voir",
-        "car",
+        "entraîne",
+        "suppose",
+        "illustré par",
         "donc"
       ],
       "custom_allowed": true,
@@ -1909,12 +1909,11 @@
       ],
       "lexicon": {
         "cause": [
-          "cause",
           "provoque",
+          "entraîne",
           "nourrit",
-          "naît de",
-          "découle de",
-          "entretient"
+          "entretient",
+          "cause"
         ],
         "conséquence": [
           "implique",
@@ -1936,10 +1935,7 @@
           "≠"
         ],
         "exception": [
-          "sauf",
-          "nuance",
-          "limite",
-          "tempère"
+          "sauf"
         ],
         "remède": [
           "remédie à",
@@ -1986,6 +1982,35 @@
         "renvoi": [
           "voir",
           "cf."
+        ],
+        "corrélation": [
+          "est associé à",
+          "va de pair avec",
+          "corrélé à"
+        ],
+        "condition nécessaire": [
+          "nécessite",
+          "seulement si",
+          "suppose",
+          "exige"
+        ],
+        "condition suffisante": [
+          "suffit à"
+        ],
+        "facteur": [
+          "favorise",
+          "contribue à"
+        ],
+        "limite / nuance": [
+          "nuancé par",
+          "limité par",
+          "tempère"
+        ],
+        "provenance": [
+          "naît de",
+          "découle de",
+          "résulte de",
+          "a pour cause"
         ]
       },
       "examples_custom": [
@@ -1993,6 +2018,13 @@
         "Dire non poliment — protège de → L'épuisement",
         "Le disque rayé — sert à → Tenir sa position",
         "Rosenberg — définit → La CNV"
+      ],
+      "by_direction": "normative_core.lexicon_by_direction : forward (cause → effet), backward (effet → cause, règle → condition), inhibit (empêche, remédie à), symmetric (s'oppose à, se distingue de, est associé à), vague (interdits).",
+      "rules_v22": [
+        "Une étude observationnelle, une statistique ou une co-occurrence ne justifie jamais « entraîne » : « est associé à ».",
+        "« seulement si » / « nécessite » = condition nécessaire ; « suffit à » = condition suffisante ; « favorise » = facteur parmi d'autres. Choisir d'après un marqueur du texte (« que si », « il suffit », « peut »), sinon « suppose ».",
+        "« sauf » écarte une règle (de la règle vers l'exception) ; « nuancé par » / « limité par » la module. Le titre de l'exception ne recommence pas par « Sauf ».",
+        "Relation niée dans la source (« n'entraîne pas », « ne pas confondre avec ») : jamais le lien positif ; « se distingue de » si c'est une distinction."
       ]
     },
     "when_to_link": [
@@ -2005,7 +2037,7 @@
       "Une cause d'une section produit un effet décrit dans une autre section → renvoi « entraîne » d'une section à l'autre (relations_first.cross_links)."
     ],
     "groups": "Branche (fourche) : ≥ 2 arêtes qui partent du MÊME nœud, de même kind, avec la même valeur group (ex. \"g1\") et le même libellé. tree : famille de même relation sous un parent qui en a d'autres (« conséquences », « causes ») — relations_first.mixed_node option B. link : une source → plusieurs cibles réellement parallèles.",
-    "budget": "2 à 6 renvois par carte (8 au maximum au-delà de 30 nœuds), entre nœuds de la même partie OU de parties différentes quand la relation est précise (cause → effet, règle → exception, opposition). Un renvoi vague entre parties éloignées → [[Titre]] dans la note.",
+    "budget": "Budget de renvois : normative_core.rules (n/5 arrondi, entre 2 et 8) ; au plus 3 vers une même notion. Un renvoi vague entre parties éloignées → [[Titre]] dans la note, précédé du verbe s'il existe (« contredit [[X]] », « remède : [[X]] ») : Ratio ne transforme [[Titre]] en lien que quand ce verbe est là.",
     "forbidden": [
       "link qui double une arête tree existante",
       "link sans libellé",
@@ -2030,7 +2062,11 @@
       "Passage répété mot pour mot : ne le modéliser qu'une fois."
     ],
     "definitions": "Définition longue → modular_definitions : note intégrale + composantes libellées par des questions, fragment clé en relief (em).",
-    "mixed_nodes": "Nœud qui traite deux choses → relations_first.mixed_node (option B : branches libellées)."
+    "mixed_nodes": "Nœud qui traite deux choses → relations_first.mixed_node (option B : branches libellées).",
+    "rules_template": "Règle complète (droit surtout) : nœud de la règle (notion ou texte) ; conditions en enfants avec logic \"et\" (cumulatives) ou \"ou\" (alternatives) ; l'effet sous la règle (« produit ») ; chaque exception SOUS l'élément qu'elle neutralise (« sauf ») ; le fondement en premier (« fondé sur »). « soit… soit » = classification : un enfant par branche, logic \"ou\".",
+    "mechanism_template": "Mécanisme ou démonstration : étapes causales en enfilade (A —entraîne→ B —entraîne→ C), chaque étape un nœud ; une boucle (cercle vicieux) par un renvoi de retour « entretient ». Ne pas tasser une chaîne dans la note d'un seul nœud.",
+    "distinctions": "Notions que l'on confond (estime / acceptation de soi, nullité absolue / relative) : renvoi « se distingue de » + tableau des différences dans la note de l'une d'elles.",
+    "prerequisites": "Un terme défini doit l'être avant sa première utilisation dans le cours ; sinon rappeler sa définition en une ligne dans la note de l'élément qui l'emploie (Ratio signale « prérequis défini plus loin »)."
   },
   "readability_rules": {
     "why": "Ratio range la carte automatiquement (aucun lien ne traverse un nœud, aucun libellé ne cache un texte, ordre du cours conservé) — mais aucun rangement ne rend lisible une structure confuse. Ces règles portent sur la STRUCTURE que tu produis ; elles s'appuient sur la lecture réelle des diagrammes : les croisements et la longueur des chemins à suivre des yeux sont ce qui coûte le plus (Purchase 1997 ; Ware et al. 2002), et l'on ne retient d'un coup d'œil que 3 à 5 groupes (Cowan 2001).",
@@ -2143,13 +2179,13 @@
     {
       "id": "G5",
       "name": "Richesse d'expression",
-      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères (ex. « gentil vs sympathique », « soumis / agressif / assertif ») ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds NON structurels (une carte isolée peut descendre à 20 %) ; un seul par note, deux seulement si la note dépasse 12 lignes ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 5 types différents par carte de plus de 15 nœuds. Types : au moins 6 types différents par carte de plus de 20 nœuds, choisis par node_types.selection_heuristic ; aucun type de la famille droit hors droit (domain_mode) ; idee ≤ 25 % des nœuds d'une carte ; chaque exception passe le test « … SAUF … ».",
+      "check": "Mesuré sur le COURS ENTIER : un tableau dès que le livre oppose ou compare ≥ 2 notions sur ≥ 2 critères ; citations > pour les formules marquantes ; ==surligné== dans 30–70 % des notes des nœuds non structurels (20 % minimum par carte) ; un seul par note ; logic posée sur toutes les énumérations cumulatives/alternatives ; au moins 4 types différents par carte de plus de 15 nœuds ; aucun type de la famille droit hors droit (domain_mode) ; idee ≤ 25 % des nœuds d'une carte, composantes de définition non comptées ; chaque exception passe le test « … SAUF … ».",
       "blocking": false
     },
     {
       "id": "G6",
       "name": "Maillage",
-      "check": "Chaque carte a 2 à 6 renvois étiquetés (8 au maximum au-delà de 30 nœuds), y compris entre sections quand la relation est précise ; ≥ 60 % des arêtes tree non structurelles libellées (hors listes nommées par leur parent) ; familles de ≥ 2 regroupées en branches ; chaque libellé passe le test de la phrase « source — libellé → cible ».",
+      "check": "Renvois dans le budget de normative_core.rules, précis, y compris entre sections ; relations nommées ≥ rules.labelledTarget des arêtes de contenu, par des verbes ; familles regroupées en branches seulement si le parent mêle plusieurs familles ; chaque libellé passe le test de la phrase « source — libellé → cible ».",
       "blocking": false
     },
     {
@@ -2161,7 +2197,7 @@
     {
       "id": "G8",
       "name": "Lisibilité de la carte",
-      "check": "Pour chaque carte : racine avec 3 à 7 enfants ; aucun exemple ni arrêt enfant direct de la racine ; renvois ≤ 6 (≤ 8 si > 30 nœuds), précis s'ils relient des sections éloignées ; aucun renvoi parent ↔ enfant ; libellés ≤ 20 caractères (14 de préférence) ; titres médians ≤ 40 caractères ; 12–45 nœuds (cible 15–35).",
+      "check": "Pour chaque carte : racine avec 3 à 7 enfants ; aucun exemple ni arrêt enfant direct de la racine ; renvois dans le budget (normative_core.rules) ; aucun renvoi parent ↔ enfant ; libellés ≤ 20 caractères (14 de préférence) ; titres médians ≤ 40 caractères ; 12–45 nœuds (cible 15–35).",
       "blocking": true
     },
     {
@@ -2184,15 +2220,17 @@
       "Pour chaque carte : 1 racine chapitre ; toute arête tree a un parent existant ; aucun nœud sans parent sauf la racine.",
       "Les [[liens]] pointent vers des titres existants de la même carte.",
       "Lire 5 cartes de révision au hasard : question → réponse ?",
-      "Lisibilité (G8) : racine à 3–7 branches, renvois ≤ 4 et proches, aucun exemple directement sous la racine, titres courts.",
+      "Lisibilité (G8) : racine à 3–7 branches, renvois dans le budget (n/5, entre 2 et 8), aucun exemple directement sous la racine, titres courts.",
       "Audit des types : chaque question de révision a du sens pour son nœud ; aucun type juridique hors droit ; exception seulement au test « SAUF » ; idee ≤ 25 %.",
       "Relations (G9) : ≥ 60 % des arêtes tree non structurelles libellées ; familles regroupées en branches ; aucune section plate.",
       "Définitions longues décomposées en composantes libellées par des questions ; fragment clé en em (présent dans le titre).",
       "Preuve des relations (relation_evidence) : chaque lien est explicite ou solidement déduit ; aucune causalité de simple vraisemblance.",
       "Orientation : chaque phrase « source — libellé → cible » est vraie dans le sens de la flèche ; aucun libellé vague.",
-      "Relire les cas validation_cases A–H sur le cours produit."
+      "Relire les cas validation_cases A–H sur le cours produit.",
+      "Aucun verbe sous un intitulé (section, chapitre, question) ; aucun libellé-nom (conseil, définition, avantage) ; aucune relation niée transformée en lien.",
+      "Chaque exemple reprend le titre exact de l'élément qu'il illustre ; chaque [[Titre]] est précédé de son verbe quand la relation est connue."
     ],
-    "validator_python": "import json,sys\nT={'chapitre','lecon','section','notion','definition','caracteristique','categorie','signe','cause','consequence','condition','probleme','solution','question','theorie','argument','critique','nuance','comparaison','avantage','inconvenient','methode','etape','conseil','exercice','objectif','date','chiffre','formule','etude','citation','personne','texte','juris','doctrine','fond','forme','effet','exception','exemple','piege','retenir','idee'}\nd=json.load(open(sys.argv[1]));E=[];HORS='--hors-droit' in sys.argv\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link'];lim=8 if len(ids)>30 else 6\n  if len(L)>lim:W.append(p+': %d renvois (max %d)'%(len(L),lim))\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1 and e.get('label','').lower() in ('voir','cf.','lien','rapport'):W.append(p+': renvoi lointain et vague '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (libellé précis ou [[Titre]] dans la note)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2 and not m['title'].lower().startswith('test'):W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nfor m in d['maps']:\n  p=m['id'];ns=m['nodes'];N=len(ns)\n  if HORS:\n    for n in ns:\n      if n['type'] in ('fond','forme','effet','juris','doctrine'):W.append(p+': type juridique « '+n['type']+' » hors droit : '+n['title'][:40]+' (voir faux_amis)')\n  for n in ns:\n    if n['type']=='exception' and not re.search(r\"sauf|except|hormis|à moins|ne s.applique pas|sauf si|en dehors de\",(n['title']+' '+n.get('note','')).lower()):W.append(p+': exception sans règle écartée (test « SAUF ») : '+n['title'][:40]+' → nuance, critique, piege ?')\n  dpar={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};nm={x['id']:x for x in ns}\n  idees=sum(1 for n in ns if n['type']=='idee' and nm.get(dpar.get(n['id']),{}).get('type')!='definition')\n  if N>=12 and idees>0.25*N:W.append(p+': %d %% de nœuds « idee » (≤ 25 %%) — choisir des types précis'%(100*idees//N))\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  def txt(n): return (n['title']+' '+n.get('note','')).lower()\n  for n in m['nodes']:\n    t=n['type'];P=T.get(par.get(n['id']));pt=P['type'] if P else None;x=txt(n);ti=n['title'][:38]\n    if t=='etape' and pt!='methode':W.append(p+': étape hors méthode : '+ti+' → conseil ?')\n    if t=='solution' and pt not in ('probleme','question','solution','section','lecon','chapitre'):W.append(p+': solution sans problème nommé au-dessus : '+ti+' → conseil ?')\n    if t in ('avantage','inconvenient') and pt not in ('solution','comparaison','categorie','theorie','methode','notion'):W.append(p+': '+t+' sans option au-dessus : '+ti+' → consequence ?')\n    if t=='consequence' and re.search(r\"\\bpour que\\b|\\bafin de\\b|\\bafin que\\b|\\bbut\\b\",x):W.append(p+': conséquence formulée comme un but : '+ti+' → objectif ?')\n    if t=='cause' and re.search(r\"\\bil faut\\b|\\bà condition\\b|\\bseulement si\\b|\\bnécessaire\\b\",x) and not re.search(r\"parce que|à cause|provoque|entraîne\",x):W.append(p+': cause formulée comme une condition : '+ti+' → condition ?')\n    if t in ('nuance','critique','piege','probleme') and re.search(r\"\\bsauf (si|dans|lorsque|quand)\\b|à moins que|\\bexcepté\\b\",x) and pt in ('fond','forme','texte'):W.append(p+': '+t+' qui écarte une règle juridique : '+ti+' → exception ?')\n    if t=='piege' and not re.search(r\"erreur|croi|confond|faux|idée reçue|éviter|ne pas|≠|attention|piège|pense\",x):W.append(p+': piège sans erreur nommée : '+ti+' → nuance ?')\nSTOP={'dans','pour','avec','sans','sous','entre','leur','leurs','cette','celle','celui','ainsi','comme','plus','moins','tout','tous','toute','toutes','être','avoir','fait','faire','droit'}\ndef mots(t): return {w for w in re.findall(r\"[a-zà-ÿ]{5,}\",t.lower()) if w not in STOP}\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  ch={}\n  for e in m['edges']:\n    if e['kind']=='tree':ch.setdefault(e['from'],[]).append(e['to'])\n  for pid,ks in ch.items():\n    for i,k in enumerate(ks):\n      if i==0 or T[k]['type']!='exemple':continue\n      prev=T[ks[i-1]];ex=mots(T[k]['title']+' '+T[k].get('note',''));pm=mots(prev['title'])-mots(T[pid]['title'])\n      if prev['type']!='exemple' and ex & pm:W.append(p+': exemple « '+T[k]['title'][:30]+' » frère de « '+prev['title'][:30]+' » dont il reprend les mots ('+', '.join(sorted(ex & pm))[:40]+') → en faire l\\'enfant de ce frère ?')\nSTRUCT={'chapitre','lecon','section'}\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};ch={};te=[e for e in m['edges'] if e['kind']=='tree']\n  for e in te:ch.setdefault(e['from'],[]).append(e)\n  for n in m['nodes']:\n    if n.get('em') and n['em'].lower() not in n['title'].lower():W.append(p+': em « '+n['em'][:30]+' » absent du titre « '+n['title'][:30]+' »')\n  for e in m['edges']:\n    if e['kind']=='tree' and len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  G={}\n  for e in m['edges']:\n    if e.get('group'):G.setdefault(e['group'],[]).append(e)\n  for g,es in G.items():\n    if len(es)<2 or len({(e['from'],e['kind'],e.get('label','')) for e in es})>1:E.append(p+': branche '+g+' invalide (≥ 2 arêtes, même source, même kind, même libellé)')\n  cand=[e for e in te if T[e['to']]['type'] not in STRUCT and T[e['from']]['type'] not in ('methode',) and not T[e['from']].get('logic')]\n  if len(cand)>=8:\n    lab=sum(1 for e in cand if e.get('label'))\n    if lab<0.4*len(cand):W.append(p+': %d %% des arêtes tree libellées (viser ≥ 60 %%, relations_first)'%(100*lab//len(cand)))\n  for pid,es in ch.items():\n    P=T[pid]\n    if P['type'] in STRUCT and not m['title'].lower().startswith('test') and len(es)>=6 and not any(e.get('label') for e in es) and not any(e['to'] in ch for e in es):W.append(p+': section plate « '+P['title'][:30]+' » (%d enfants sans libellé ni sous-niveau) → branches libellées, chaînes, exemples sous leur élément'%len(es))\n  for n in m['nodes']:\n    if n['type']=='definition' and n['id'] not in ch and len(re.sub(r'[#*=>`_\\[\\]]','',n.get('note','')))>=160:W.append(p+': définition longue non décomposée « '+n['title'][:30]+' » → modular_definitions')\n  if len(m['nodes'])>=20 and not any(e['kind']=='link' for e in m['edges']):W.append(p+': aucun renvoi dans une carte de %d nœuds (2–6 attendus)'%len(m['nodes']))\nVAGUE={'lié à','lie a','lien','rapport','relation','en lien avec','associé à','concerne'}\nCAUS={'cause','condition','fond','forme','probleme'};EFF={'effet','consequence','solution'}\nFWD=re.compile(r\"^(entraîne|provoque|produit|cause|aboutit à|mène à|permet|implique|rend possible)\\b\");BACK=re.compile(r\"^(a pour cause|résulte de|découle de|naît de|provient de)\\b\")\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};pairs={}\n  tree={(e['from'],e['to']) for e in m['edges'] if e['kind']=='tree'}\n  for e in m['edges']:\n    l=e.get('label','').strip().lower();a=T.get(e['from']);b=T.get(e['to'])\n    if not a or not b:continue\n    if l in VAGUE:W.append(p+': libellé vague « '+e['label']+' » ('+a['title'][:20]+' → '+b['title'][:20]+') — dire la relation exacte')\n    if (FWD.match(l) and a['type'] in EFF and b['type'] in CAUS) or (BACK.match(l) and a['type'] in CAUS and b['type'] in EFF):W.append(p+': sens inversé ? '+a['title'][:22]+' —'+e['label']+'→ '+b['title'][:22])\n    if e['kind']=='link':\n      if (e['from'],e['to']) in tree or (e['to'],e['from']) in tree:W.append(p+': renvoi qui double une arête d\\'arbre ('+a['title'][:22]+' ↔ '+b['title'][:22]+')')\n      k=tuple(sorted((e['from'],e['to'])))+(l,)\n      if k in pairs:W.append(p+': renvoi répété '+a['title'][:22]+' —'+e['label']+'→ '+b['title'][:22])\n      pairs[k]=1\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
+    "validator_python": "import json,sys\nRULES={\"rules\":{\"labelledTarget\":0.6,\"flatMin\":5,\"defMinChars\":80,\"defMinParts\":3,\"linkBudgetPerNodes\":5,\"linkBudgetMin\":2,\"linkBudgetMax\":8,\"linksPerNodeMax\":3,\"commonWordShare\":0.15},\"lex\":{\"forward\":[\"entraîne\",\"provoque\",\"produit\",\"cause\",\"engendre\",\"aboutit à\",\"mène à\",\"rend possible\",\"permet\",\"implique\",\"donc\",\"favorise\",\"contribue à\",\"suffit à\",\"nourrit\",\"entretient\",\"aggrave\"],\"backward\":[\"a pour cause\",\"résulte de\",\"découle de\",\"naît de\",\"provient de\",\"est causé par\",\"suppose\",\"exige\",\"dépend de\",\"nécessite\",\"seulement si\"],\"inhibit\":[\"empêche\",\"évite\",\"réduit\",\"affaiblit\",\"protège de\",\"remédie à\",\"résout\",\"limite\",\"exclut\"],\"symmetric\":[\"s’oppose à\",\"se distingue de\",\"≠\",\"ressemble à\",\"contraire de\",\"va de pair avec\",\"est associé à\",\"corrélé à\",\"voir aussi\"],\"vague\":[\"lié à\",\"lien\",\"rapport\",\"relation\",\"en lien avec\",\"concerne\",\"cf\",\"cf.\",\"?\",\"-\",\"→\"]}}\nT={'chapitre','lecon','section','notion','definition','caracteristique','categorie','signe','cause','consequence','condition','probleme','solution','question','theorie','argument','critique','nuance','comparaison','avantage','inconvenient','methode','etape','conseil','exercice','objectif','date','chiffre','formule','etude','citation','personne','texte','juris','doctrine','fond','forme','effet','exception','exemple','piege','retenir','idee'}\nd=json.load(open(sys.argv[1]));E=[];HORS='--hors-droit' in sys.argv\nassert d.get('format')=='ratio' and d.get('version')==2 and d.get('kind')=='course'\ncid={c['id'] for c in d['courses']};mids=set()\nfor m in d['maps']:\n  p=m['id'];E+=[p+': id de carte en double'] if p in mids else [];mids.add(p)\n  if m.get('courseId') not in cid:E.append(p+': courseId inconnu')\n  if m.get('needsLayout') is not True:E.append(p+': needsLayout manquant')\n  ids=[n['id'] for n in m['nodes']];S=set(ids)\n  if len(S)!=len(ids):E.append(p+': id de nœud en double')\n  titles=[n['title'].strip().lower() for n in m['nodes']]\n  if len(set(titles))!=len(titles):E.append(p+': titres en double')\n  for n in m['nodes']:\n    if n.get('type') not in T:E.append(p+'/'+n['id']+': type inconnu')\n    if n.get('logic') not in (None,'et','ou'):E.append(p+'/'+n['id']+': logic invalide')\n  par={};eids=set()\n  for e in m['edges']:\n    if e['id'] in eids:E.append(p+': id d\\'arête en double')\n    eids.add(e['id'])\n    if e['from'] not in S or e['to'] not in S or e['from']==e['to']:E.append(p+'/'+e['id']+': extrémité invalide')\n    if e['kind']=='tree':\n      if e['to'] in par:E.append(p+'/'+e['to']+': deux parents')\n      par[e['to']]=e['from']\n    elif not e.get('label'):E.append(p+'/'+e['id']+': lien sans libellé')\n  roots=[i for i in ids if i not in par]\n  if len(roots)!=1:E.append(p+': %d racines'%len(roots))\n  for i in ids:\n    seen=set();j=i\n    while j in par:\n      if j in seen:E.append(p+': cycle');break\n      seen.add(j);j=par[j]\nW=[]\nfor m in d['maps']:\n  p=m['id'];par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};ids=[n['id'] for n in m['nodes']];T={n['id']:n for n in m['nodes']}\n  root=[i for i in ids if i not in par][0] if ids else None\n  kids=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==root]\n  if not 3<=len(kids)<=7:W.append(p+': %d branches sous la racine (3–7)'%len(kids))\n  for k in kids:\n    if T[k]['type'] in ('exemple','juris'):W.append(p+': '+T[k]['title'][:30]+' ('+T[k]['type']+') directement sous la racine')\n  top=lambda i:(i if par.get(i)==root else top(par[i])) if i in par else i\n  L=[e for e in m['edges'] if e['kind']=='link']\n  for e in L:\n    a,b=top(e['from']),top(e['to'])\n    if a in kids and b in kids and abs(kids.index(a)-kids.index(b))>1 and e.get('label','').lower() in ('voir','cf.','lien','rapport'):W.append(p+': renvoi lointain et vague '+T[e['from']]['title'][:25]+' → '+T[e['to']]['title'][:25]+' (libellé précis ou [[Titre]] dans la note)')\n    if par.get(e['to'])==e['from'] or par.get(e['from'])==e['to']:W.append(p+': renvoi parent ↔ enfant')\n    if len(e.get('label',''))>20:W.append(p+': libellé long « '+e['label']+' »')\n  if not 12<=len(ids)<=45:W.append(p+': %d nœuds (12–45, cible 15–35)'%len(ids))\nimport re\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};titles={n['title'].strip().lower().replace('’',\"'\") for n in m['nodes']}\n  ns=[n for n in m['nodes'] if n['type'] not in ('chapitre','lecon','section')]\n  hl=sum(1 for n in ns if '==' in n.get('note',''))\n  if ns and hl/len(ns)<0.2 and not m['title'].lower().startswith('test'):W.append(p+': surligné dans %d %% des notes (≥ 20 %% par carte, 30–70 %% sur le cours)'%(100*hl//len(ns)))\n  for n in m['nodes']:\n    for t in re.findall(r'\\[\\[([^\\]]+)\\]\\]',n.get('note','')):\n      if t.strip().lower().replace('’',\"'\") not in titles:W.append(p+': [['+t+']] ne correspond à aucun titre de la carte')\n  for n in m['nodes']:\n    if n['type']=='methode':\n      ks=[e['to'] for e in m['edges'] if e['kind']=='tree' and e['from']==n['id']]\n      if 3<=len(ks)<=6 and any(len(T[k]['title'])>34 for k in ks):W.append(p+': étape de méthode > 34 caractères (pas de frise) sous '+n['title'][:30])\nfor m in d['maps']:\n  p=m['id'];ns=m['nodes'];N=len(ns)\n  if HORS:\n    for n in ns:\n      if n['type'] in ('fond','forme','effet','juris','doctrine'):W.append(p+': type juridique « '+n['type']+' » hors droit : '+n['title'][:40]+' (voir faux_amis)')\n  for n in ns:\n    if n['type']=='exception' and not re.search(r\"sauf|except|hormis|à moins|ne s.applique pas|sauf si|en dehors de\",(n['title']+' '+n.get('note','')).lower()):W.append(p+': exception sans règle écartée (test « SAUF ») : '+n['title'][:40]+' → nuance, critique, piege ?')\n  dpar={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'};nm={x['id']:x for x in ns}\n  idees=sum(1 for n in ns if n['type']=='idee' and nm.get(dpar.get(n['id']),{}).get('type')!='definition')\n  if N>=12 and idees>0.25*N:W.append(p+': %d %% de nœuds « idee » (≤ 25 %%) — choisir des types précis'%(100*idees//N))\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  def txt(n): return (n['title']+' '+n.get('note','')).lower()\n  for n in m['nodes']:\n    t=n['type'];P=T.get(par.get(n['id']));pt=P['type'] if P else None;x=txt(n);ti=n['title'][:38]\n    if t=='etape' and pt!='methode':W.append(p+': étape hors méthode : '+ti+' → conseil ?')\n    if t=='solution' and pt not in ('probleme','question','solution','section','lecon','chapitre'):W.append(p+': solution sans problème nommé au-dessus : '+ti+' → conseil ?')\n    if t in ('avantage','inconvenient') and pt not in ('solution','comparaison','categorie','theorie','methode','notion'):W.append(p+': '+t+' sans option au-dessus : '+ti+' → consequence ?')\n    if t=='consequence' and re.search(r\"\\bpour que\\b|\\bafin de\\b|\\bafin que\\b|\\bbut\\b\",x):W.append(p+': conséquence formulée comme un but : '+ti+' → objectif ?')\n    if t=='cause' and re.search(r\"\\bil faut\\b|\\bà condition\\b|\\bseulement si\\b|\\bnécessaire\\b\",x) and not re.search(r\"parce que|à cause|provoque|entraîne\",x):W.append(p+': cause formulée comme une condition : '+ti+' → condition ?')\n    if t in ('nuance','critique','piege','probleme') and re.search(r\"\\bsauf (si|dans|lorsque|quand)\\b|à moins que|\\bexcepté\\b\",x) and pt in ('fond','forme','texte'):W.append(p+': '+t+' qui écarte une règle juridique : '+ti+' → exception ?')\n    if t=='piege' and not re.search(r\"erreur|croi|confond|faux|idée reçue|éviter|ne pas|≠|attention|piège|pense\",x):W.append(p+': piège sans erreur nommée : '+ti+' → nuance ?')\nSTOP={'dans','pour','avec','sans','sous','entre','leur','leurs','cette','celle','celui','ainsi','comme','plus','moins','tout','tous','toute','toutes','être','avoir','fait','faire','droit'}\ndef mots(t): return {w for w in re.findall(r\"[a-zà-ÿ]{5,}\",t.lower()) if w not in STOP}\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};par={e['to']:e['from'] for e in m['edges'] if e['kind']=='tree'}\n  ch={}\n  for e in m['edges']:\n    if e['kind']=='tree':ch.setdefault(e['from'],[]).append(e['to'])\n  for pid,ks in ch.items():\n    for i,k in enumerate(ks):\n      if i==0 or T[k]['type']!='exemple':continue\n      prev=T[ks[i-1]];ex=mots(T[k]['title']+' '+T[k].get('note',''));pm=mots(prev['title'])-mots(T[pid]['title'])\n      if prev['type']!='exemple' and ex & pm:W.append(p+': exemple « '+T[k]['title'][:30]+' » frère de « '+prev['title'][:30]+' » dont il reprend les mots ('+', '.join(sorted(ex & pm))[:40]+') → en faire l\\'enfant de ce frère ?')\nimport unicodedata\nRU=RULES['rules'];LX=RULES['lex']\ndef nz(t): return ''.join(c for c in unicodedata.normalize('NFD',str(t).lower()) if unicodedata.category(c)!='Mn').replace('’',\"'\").strip()\nSETS=[(set(nz(x) for x in LX['backward']),'back'),(set(nz(x) for x in LX['inhibit']),'inh'),(set(nz(x) for x in LX['symmetric']),'sym'),(set(nz(x) for x in LX['forward']),'fwd')]\nVAG=set(nz(x) for x in LX['vague'])\ndef pol(l):\n  l=nz(l).rstrip(' :')\n  if not l:return None\n  if l in VAG:return 'vague'\n  for s,p in SETS:\n    for w in s:\n      if l==w or l.startswith(w+' '):return p\n  return None\nSTRUCT={'chapitre','lecon','section'};NOUNS={'conseil','definition','avantage','inconvenient','attention','conseils'}\ndef heading(n):return n['type'] in STRUCT or n['title'].strip().endswith('?')\ndef budget(n):return max(RU['linkBudgetMin'],min(RU['linkBudgetMax'],round(n/RU['linkBudgetPerNodes'])))\ndef against(a,b,l):\n  p=pol(l);return (p=='fwd' and a['type'] in ('consequence','effet') and b['type']=='cause') or (p=='back' and a['type']=='cause' and b['type'] in ('consequence','effet') and not re.match(r'^(suppose|exige|depend|necessite)',nz(l)))\nfor m in d['maps']:\n  p=m['id'];T={n['id']:n for n in m['nodes']};ch={};te=[e for e in m['edges'] if e['kind']=='tree'];L=[e for e in m['edges'] if e['kind']=='link']\n  for e in te:ch.setdefault(e['from'],[]).append(e)\n  tree={(e['from'],e['to']) for e in te}\n  for n in m['nodes']:\n    if n.get('em') and n['em'].lower() not in n['title'].lower():W.append(p+': em « '+n['em'][:30]+' » absent du titre « '+n['title'][:30]+' »')\n  G={}\n  for e in m['edges']:\n    if e.get('group'):G.setdefault(e['group'],[]).append(e)\n  for g,es in G.items():\n    if len(es)<2 or len({(e['from'],e['kind'],e.get('label','')) for e in es})>1:E.append(p+': branche '+g+' invalide (≥ 2 arêtes, même source, même kind, même libellé)')\n  content=[];seen={}\n  for e in m['edges']:\n    a=T.get(e['from']);b=T.get(e['to']);l=e.get('label','')\n    if not a or not b:continue\n    if len(l)>20:W.append(p+': libellé long « '+l+' »')\n    if l and not e.get('group') and heading(a) and pol(l) in ('fwd','back','inh'):W.append(p+': verbe « '+l+' » posé depuis un intitulé ('+a['title'][:25]+') — relier les idées entre elles')\n    if l and not e.get('group') and nz(l).rstrip(' :') in NOUNS:W.append(p+': libellé-nom « '+l+' » ('+a['title'][:20]+' → '+b['title'][:20]+') — un verbe, ou rien')\n    if pol(l)=='vague':W.append(p+': libellé vague « '+l+' » ('+a['title'][:20]+' → '+b['title'][:20]+') — dire la relation exacte')\n    if l and against(a,b,l):W.append(p+': sens inversé ? '+a['title'][:22]+' —'+l+'→ '+b['title'][:22])\n    if a['type']=='definition' and b['type']=='idee' and nz(l)=='et':W.append(p+': composante de définition libellée « et » ('+b['title'][:25]+') — elle reste dans la note')\n    if e['kind']=='tree' and not heading(a) and b['type'] not in STRUCT and not a.get('logic') and not (a['type']=='methode' and b['type']=='etape') and not re.search(r'(^|\\s)\\d+\\s',' '+a['title']+' ') and not (a['type'] in ('definition','idee') and b['type']=='idee'):content.append(e)\n    if e['kind']=='link':\n      if (e['from'],e['to']) in tree or (e['to'],e['from']) in tree:W.append(p+': renvoi qui double une arête d\\'arbre ('+a['title'][:22]+' ↔ '+b['title'][:22]+')')\n      k=(tuple(sorted((e['from'],e['to']))) if pol(l)=='sym' else (e['from'],e['to']))+(nz(l),)\n      if k in seen:W.append(p+': renvoi répété '+a['title'][:22]+' —'+l+'→ '+b['title'][:22])\n      seen[k]=1\n  for x in L:\n    for y in L:\n      if x['from']==y['to'] and x['to']==y['from'] and pol(x.get('label',''))=='fwd' and pol(y.get('label',''))=='fwd' and x['from']<y['from']:W.append(p+': boucle '+T[x['from']]['title'][:22]+' ⇄ '+T[x['to']]['title'][:22]+' — cercle vicieux voulu ?')\n      if x is not y and x['from']==y['from'] and x['to']==y['to'] and pol(x.get('label',''))=='fwd' and pol(y.get('label',''))=='inh':W.append(p+': contradiction '+T[x['from']]['title'][:22]+' produit et empêche '+T[x['to']]['title'][:22])\n  if len(content)>=8 and sum(1 for e in content if e.get('label'))<RU['labelledTarget']*len(content):W.append(p+': %d %% des relations de contenu nommées (viser %d %%, sans libellé creux)'%(100*sum(1 for e in content if e.get('label'))//len(content),100*RU['labelledTarget']))\n  for pid,es in ch.items():\n    P=T[pid];ks=[T[e['to']] for e in es if T[e['to']]['type'] not in STRUCT];ids={k['id'] for k in ks}\n    if P['type'] in STRUCT and not m['title'].lower().startswith('test') and len(ks)>=RU['flatMin'] and not any(k['id'] in ch for k in ks) and not any(e['from'] in ids or e['to'] in ids for e in L) and not (len({k['type'] for k in ks})==1 and re.search(r'(^|\\s)\\d+\\s',' '+P['title']+' ')):W.append(p+': liste plate « '+P['title'][:30]+' » (%d éléments sans relation entre eux) → chaînes, exemples sous leur élément, renvois'%len(ks))\n  for n in m['nodes']:\n    if n['type']=='definition' and not any(T[e['to']]['type']=='idee' for e in ch.get(n['id'],[])) and len(re.sub(r'[#*=>`_\\[\\]]','',n.get('note','')))>=2*RU['defMinChars']:W.append(p+': définition longue non décomposée « '+n['title'][:30]+' » → modular_definitions (si ≥ %d composantes réelles)'%RU['defMinParts'])\n  nl=len([e for e in L if not e.get('group')])+len({e['group'] for e in L if e.get('group')})\n  if nl>budget(len(m['nodes'])):W.append(p+': %d renvois (budget %d ; une fourche compte pour un)'%(nl,budget(len(m['nodes']))))\n  if len(m['nodes'])>=20 and not L:W.append(p+': aucun renvoi dans une carte de %d nœuds'%len(m['nodes']))\nprint('\\n'.join('⚠ '+w for w in W))\nprint('\\n'.join(E) or 'OK — %d cartes, %d nœuds'%(len(d['maps']),sum(len(m['nodes']) for m in d['maps'])))"
   },
   "anti_patterns": [
     {
@@ -2576,7 +2614,7 @@
   },
   "implementation_notes": {
     "format_note": "Spécification JSON portable, dans le même esprit que universal_problem_solving_invention_engine. Pour Claude (Skills natifs), le fichier SKILL.md voisin sert de point d'entrée et renvoie à ce JSON. Pour ChatGPT, Gemini, Mistral… : joindre ce fichier au début de la conversation avec le document et écrire « Applique ce skill à ce livre ».",
-    "app_compatibility": "Ratio ≥ 3.5.1 : arêtes tree libellées, branches tree (group), champ em, consignes de révision construites sur les libellés (chaîne complète pour une définition), audit d'organisation au rangement (corrections établies / probables / signalements, contrôle d'intégrité après correction, idempotent).",
+    "app_compatibility": "Ratio ≥ 3.6 : arêtes tree libellées, branches (group), champ em ; audit d'organisation (établi / probable / signalé, budget de renvois, contrôle d'intégrité, idempotent) ; révision : une définition décomposée = une fiche, consigne qui garde le nombre d'éléments, renvois affichés dans la réponse, fiches nouvelles dans l'ordre du plan.",
     "privacy": "Le JSON ne contient que le cours : aucun historique de révision, aucun réglage.",
     "tested_on": "v1.0 appliquée par une IA « vierge » (sans accès au code de Ratio) à un livre de développement personnel de 27 500 mots : 16 cartes, 359 nœuds, 76 renvois, 20 tableaux, validé au premier import. La v1.1 intègre les ambiguïtés qu'elle a relevées (énumérations nues, exemples sous une énumération, questionnaires, mesures des quality gates, livres défectueux). La v1.2 ajoute les règles de lisibilité (readability_rules, G8) tirées de l'observation de ce cours dans l'app : renvois lointains, racines trop chargées, exemples reliés à leurs voisins. La v1.3 ajoute 9 types (au-delà du droit), la création de libellés sur mesure, les constructions visuelles de Ratio (frises, peignes, annotations) et une grille de décision pour découper le livre en cartes. La v1.4 ajoute 19 types universels (cause, conséquence, condition, problème, solution, argument, critique, nuance, avantage, inconvénient, caractéristique, catégorie, signe, étape, conseil, exercice, objectif, étude, théorie), le mode hors droit et l'audit des types. La v1.5 remplace l'arbre « premier oui » par un moteur de typage en 6 passes (fonction, indices, lien au parent, question de révision, départage, cohérence), 43 fiches de type, 6 groupes de confusion avec question discriminante, replis et cas d'étalonnage — mesuré sur un jeu d'évaluation à l'aveugle.",
     "versioning": "Toute modification de cette spécification change le numéro de version (champ version et changelog ci-dessous)."
@@ -2668,208 +2706,20 @@
   "relations_first": {
     "why": "Le cerveau retient par association. Un enfant pendu à une section avec un type (« Conséquence ») oblige l'élève à décoder ; un lien libellé se lit directement comme une phrase vraie. La structure de la carte doit dire comment les idées s'enchaînent, pas seulement où elles sont rangées.",
     "core_types": {
-      "rule": "Types de base, suffisants pour la plupart des cartes ; les autres types restent permis quand leur question de révision est vraiment meilleure, mais la relation passe d'abord par le libellé.",
+      "rule": "Pas de liste de types « facultatifs » : chaque type garde sa place quand il est vrai. Le libellé précise la relation ; le type choisit la question de révision.",
       "structure": [
         "chapitre",
         "lecon",
         "section"
       ],
-      "contenu": [
-        "notion",
-        "definition",
-        "idee",
-        "question",
-        "retenir"
-      ],
-      "repères": [
-        "exemple",
-        "citation",
-        "personne",
-        "date",
-        "chiffre",
-        "formule",
-        "etude"
-      ],
-      "agir": [
-        "methode",
-        "etape",
-        "exercice",
-        "piege"
-      ],
-      "droit (cours de droit seulement)": [
-        "texte",
-        "juris",
-        "doctrine"
-      ],
-      "devenus facultatifs (le libellé suffit)": [
-        "cause",
-        "consequence",
-        "effet",
-        "condition",
-        "fond",
-        "forme",
-        "exception",
-        "caracteristique",
-        "signe",
-        "categorie",
-        "solution",
-        "probleme",
-        "argument",
-        "critique",
-        "nuance",
-        "avantage",
-        "inconvenient",
-        "conseil",
-        "objectif",
-        "comparaison",
-        "theorie"
+      "neutres": [
+        "idee (composantes de définition, éléments à double rôle)",
+        "notion"
       ]
     },
     "vocabulary": {
-      "rule": "Libellé d'une arête tree = ce que l'enfant est pour le parent ; libellé de branche = le pluriel. Lire « parent — libellé → enfant » : la phrase doit être vraie.",
-      "relations": [
-        {
-          "relation": "cause",
-          "one": "a pour cause",
-          "many": "causes"
-        },
-        {
-          "relation": "conséquence",
-          "one": "entraîne",
-          "many": "conséquences"
-        },
-        {
-          "relation": "effet / régime",
-          "one": "produit",
-          "many": "effets"
-        },
-        {
-          "relation": "condition",
-          "one": "suppose",
-          "many": "conditions"
-        },
-        {
-          "relation": "condition de fond / de forme (droit)",
-          "one": "suppose / exige",
-          "many": "conditions de fond / de forme"
-        },
-        {
-          "relation": "exception",
-          "one": "sauf",
-          "many": "exceptions"
-        },
-        {
-          "relation": "exemple",
-          "one": "illustré par",
-          "many": "exemples"
-        },
-        {
-          "relation": "jurisprudence",
-          "one": "appliqué par",
-          "many": "jurisprudence"
-        },
-        {
-          "relation": "texte",
-          "one": "fondé sur",
-          "many": "textes"
-        },
-        {
-          "relation": "doctrine / citation",
-          "one": "selon",
-          "many": "doctrine"
-        },
-        {
-          "relation": "argument",
-          "one": "parce que",
-          "many": "arguments"
-        },
-        {
-          "relation": "critique",
-          "one": "critiqué :",
-          "many": "critiques"
-        },
-        {
-          "relation": "nuance",
-          "one": "nuancé par",
-          "many": "nuances"
-        },
-        {
-          "relation": "caractère",
-          "one": "se caractérise par",
-          "many": "caractères"
-        },
-        {
-          "relation": "signe",
-          "one": "se reconnaît à",
-          "many": "signes"
-        },
-        {
-          "relation": "catégorie",
-          "one": "comprend",
-          "many": "catégories"
-        },
-        {
-          "relation": "solution",
-          "one": "résolu par",
-          "many": "solutions"
-        },
-        {
-          "relation": "problème",
-          "one": "pose",
-          "many": "problèmes"
-        },
-        {
-          "relation": "objectif",
-          "one": "vise",
-          "many": "objectifs"
-        },
-        {
-          "relation": "définition",
-          "one": "définition",
-          "many": null
-        },
-        {
-          "relation": "piège",
-          "one": "attention :",
-          "many": "pièges"
-        },
-        {
-          "relation": "avantage / inconvénient",
-          "one": "avantage / inconvénient",
-          "many": "avantages / inconvénients"
-        },
-        {
-          "relation": "principe → application",
-          "one": "s'applique à",
-          "many": "applications"
-        },
-        {
-          "relation": "argument → conclusion",
-          "one": "justifie",
-          "many": null
-        },
-        {
-          "relation": "règle → limite",
-          "one": "limité par",
-          "many": "limites"
-        },
-        {
-          "relation": "distinction de qualification",
-          "one": "se distingue de",
-          "many": null
-        },
-        {
-          "relation": "dépendance",
-          "one": "dépend de / nécessite",
-          "many": null
-        },
-        {
-          "relation": "mécanisme",
-          "one": "fonctionne par",
-          "many": null
-        }
-      ],
-      "custom": "Un libellé sur mesure (« aggrave », « protège de », « naît de », « précède ») vaut mieux qu'un libellé du tableau qui sonne faux."
+      "rule": "Le verbe d'une arête parent → enfant d'un type donné est dans normative_core.relation_by_type (null = pas de libellé automatique, le type n'est pas une relation). Un libellé sur mesure plus juste est toujours permis ; un nom qui redit le type, jamais.",
+      "see": "normative_core.relation_by_type, normative_core.lexicon_by_direction"
     },
     "mixed_node": {
       "problem": "Un nœud traite deux choses (ex. une notion avec ses causes ET ses conséquences).",
@@ -2892,11 +2742,12 @@
       ]
     },
     "chains": [
-      "Définition d'abord (premier enfant, libellé « définition »), puis les branches.",
-      "Un effet se place SOUS la conséquence ou la cause qui le produit (« entraîne »), pas à côté d'elle.",
-      "Un exemple se place sous l'élément précis qu'il illustre (« illustré par ») — jamais sous la section quand il n'en illustre qu'un élément.",
-      "Une liste dont le titre du parent dit déjà la nature (« Les 5 regrets », « Pourquoi… ? », « 4 astuces ») garde des arêtes sans libellé : le titre parle déjà.",
-      "Pas de liste plate : une section de ≥ 6 enfants sans aucun libellé, branche ni petit-enfant est presque toujours mal organisée."
+      "Définition d'abord (premier enfant), puis les branches.",
+      "Un effet se place SOUS la cause ou la conséquence qui le produit (« entraîne »), pas à côté d'elle — si la source le dit.",
+      "Un exemple se place sous l'élément précis qu'il illustre (« illustré par ») ; son texte reprend le titre exact de cet élément. S'il illustre plusieurs éléments, il reste sous la partie.",
+      "Une liste nommée par son parent garde des arêtes sans libellé.",
+      "Pas de liste plate : une section de rules.flatMin éléments ou plus, sans aucune relation entre eux, est presque toujours mal organisée.",
+      "Un cercle vicieux se dessine : chaîne d'arêtes libellées puis un renvoi de retour (« entretient ») vers le début."
     ],
     "cross_links": [
       "Les renvois (kind: link) relient aussi des SECTIONS différentes quand la relation est réelle et précise : la cause décrite dans une partie → l'effet décrit dans une autre (« entraîne »), la règle → son exception ailleurs (« sauf »), la notion → celle qui s'y oppose (« s'oppose à »).",
@@ -2915,7 +2766,7 @@
     "type_policy": {
       "rule": "Classer chaque type avant de l'utiliser. Aucun type n'est supprimé (compatibilité des cours existants et de l'application) : c'est l'usage qui devient sélectif.",
       "intrinsic": "Le type dit ce QU'EST l'élément, quel que soit son voisin : chapitre, section, notion, definition, personne, date, chiffre, formule, citation, texte, juris, methode, etape, exercice, question, retenir. À garder quand c'est vrai.",
-      "relational": "Le type dit seulement ce que l'élément est POUR un autre : cause, consequence, effet, condition, exception, exemple, solution, argument, nuance, critique, signe, caracteristique, avantage, inconvenient. Ici le LIBELLÉ porte la relation ; le type n'est qu'un complément (il choisit la question de révision). Si le même élément est cause d'une chose et conséquence d'une autre, garder un type neutre (idee, notion) et dire les deux relations par des liens.",
+      "relational": "Le type dit ce que l'élément est POUR un autre (cause, consequence, condition, exemple, solution…). Garde-le quand ce rôle est stable : il choisit la question de révision et permet à Ratio de contrôler le sens des flèches. Ajoute le libellé qui dit la relation exacte. Si l'élément est effet d'une chose ET cause d'une autre, type neutre (idee) et deux liens libellés.",
       "technical": "chapitre / lecon / section structurent ; methode + etape produisent la frise ; logic ET/OU compte les éléments ; idee est le type neutre des composantes de définition."
     },
     "link_choice": {
@@ -2945,7 +2796,7 @@
   },
   "modular_definitions": {
     "why": "Une définition récitée par cœur s'oublie et ne se comprend pas ; découpée en composantes reliées par des questions, elle se comprend, se reconstruit et se retient.",
-    "when": "Toute définition de plus de ~80 caractères ou qui contient au moins deux compléments (de qui, à qui, par quoi, dans quel but, sauf…). Une définition d'une ligne reste d'un bloc.",
+    "when": "Définition de plus de rules.defMinChars caractères qui contient au moins rules.defMinParts composantes RÉELLES (cœur + compléments qui répondent à une question). Ne pas décomposer : une définition par « soit… soit » (classification → enfants en logic \"ou\"), une relative complexe (« par lequel »), une définition négative (« n'est pas… »), une énumération qui ne répond à aucune question (pas de composante « et »).",
     "procedure": [
       "1. Nœud definition : titre = le terme ; note = la définition intégrale, citée (> …) avec sa source.",
       "2. Repérer le verbe qui porte le sens (désigne, est, consiste en, permet) : 1re composante, libellé « désigne » / « c'est » / « consiste en ».",
@@ -3056,7 +2907,9 @@
       "Ne jamais réduire un quantificateur ou une portée : « une ou plusieurs personnes » ne devient pas « des héritiers » ; « notamment ses héritiers » précise sans épuiser.",
       "Ne pas créer de condition absente de la définition.",
       "La définition intégrale reste dans la note du nœud definition (citée avec >) : elle doit pouvoir être reconstituée en lisant la chaîne.",
-      "Ne pas décomposer mécaniquement : une définition courte ou d'une seule idée reste d'un bloc ; on décompose quand il y a au moins trois composantes réelles."
+      "Ne pas décomposer mécaniquement : une définition courte ou d'une seule idée reste d'un bloc ; on décompose quand il y a au moins trois composantes réelles.",
+      "Pas de composante libellée « et » : si un morceau ne répond à aucune question, il reste dans la note.",
+      "En révision, Ratio fait de la définition UNE fiche : la consigne pose la chaîne (c'est · désigne · de qui ? · à qui ?) et « attention à la portée » si une composante a un em ; les composantes ne sont pas révisées seules."
     ]
   },
   "changelog_2_0": [
@@ -3090,7 +2943,7 @@
         "do": "rien"
       }
     ],
-    "engine": "Le moteur d'audit de Ratio applique la même échelle : corrections « établies par la carte » cochées, « probables » décochées, et défauts « à corriger à la main » seulement signalés (sens causal inconnu, libellé vague sans indice, liste plate)."
+    "engine": "Le moteur d'audit de Ratio applique la même échelle : « sûr » (coché) seulement si la carte le dit — un élément nomme l'autre dans une phrase affirmative, un [[Titre]] précédé d'un verbe, le texte d'une définition de droit, le type posé par l'auteur sous une notion ; « probable » (décoché) pour un indice (mots rares partagés, mention dans une note, sens tiré des seuls types) ; « à corriger à la main » pour le reste (boucle, contradiction, sens douteux, libellé vague, liste plate, prérequis défini plus loin)."
   },
   "validation_cases": {
     "why": "Cas de contrôle à relire avant livraison ; les mêmes cas sont exécutés sur le moteur d'audit de Ratio (tests/organize.test.cjs).",
@@ -3134,6 +2987,31 @@
         "id": "H",
         "name": "Second passage",
         "expect": "Relire le JSON produit : aucune relation à ajouter, aucun lien en double ; le moteur d'audit de Ratio ne propose plus de correction établie."
+      },
+      {
+        "id": "I",
+        "name": "Négation",
+        "expect": "« L'activité solaire n'entraîne pas la montée des océans » : aucun lien « entraîne »."
+      },
+      {
+        "id": "J",
+        "name": "Intitulé",
+        "expect": "Sous la section « Débat », les arêtes restent sans libellé ; les relations relient les idées entre elles."
+      },
+      {
+        "id": "K",
+        "name": "Corrélation",
+        "expect": "Une étude montre que A et B vont ensemble : « est associé à », jamais « entraîne »."
+      },
+      {
+        "id": "L",
+        "name": "Cercle vicieux",
+        "expect": "A —entraîne→ B —entraîne→ C et un renvoi C —entretient→ A ; rien n'est « dédoublonné »."
+      },
+      {
+        "id": "M",
+        "name": "Règle complète",
+        "expect": "modeling_patterns.rules_template : conditions ET, effet, exception sous ce qu'elle neutralise, fondement."
       }
     ]
   },
@@ -3143,5 +3021,227 @@
     "relation_evidence : explicite / déduite / plausible / non justifiée — seules les deux premières deviennent des liens.",
     "modular_definitions : qualification (« c'est une notion juridique »), chaîne logique des composantes, fidélité (mots exacts, portée, reformulation et complément marqués).",
     "validation_cases A–H ; G10 ; validateur : libellés vagues, sens inversés, renvois doublons."
+  ],
+  "normative_core": {
+    "rule": "En cas de désaccord entre deux passages de cette spécification, normative_core l'emporte. Les changelogs sont un historique, jamais une règle. Les tables relation_by_type, lexicon_by_direction, causal_pairs et rules sont recopiées depuis le moteur d'audit de Ratio (js/organize.js) : le skill et l'application appliquent exactement les mêmes règles.",
+    "decisions": [
+      "Types : on GARDE les types relationnels (cause, conséquence, condition, exemple…) quand le rôle de l'élément est stable — ils choisissent la question de révision et permettent à Ratio de vérifier le sens des flèches. Le libellé dit la relation exacte ; un type neutre (idee, notion) seulement pour un élément qui joue deux rôles (effet d'une chose et cause d'une autre) et pour les composantes d'une définition.",
+      "Libellés : des VERBES ou des questions (entraîne, suppose, illustré par, de qui ?). Jamais un nom qui redit le type (« conseil », « définition », « avantage », « attention : »).",
+      "Aucun verbe depuis un intitulé : sous un chapitre, une leçon, une section ou un nœud-question, les arêtes restent sans libellé (le titre de la partie n'est pas une cause ni une notion). Les relations se posent ENTRE les idées.",
+      "Liste nommée par son parent (« Les 5 regrets », « 9 coûts de… », « Pourquoi… ? ») : arêtes sans libellé, cardinal exact dans le titre.",
+      "Branche libellée (group) seulement si le parent mêle au moins deux familles ; jamais une branche qui réunit tous les enfants.",
+      "Relations nommées : viser rules.labelledTarget des arêtes de contenu (hors intitulés, listes nommées, méthode→étapes, composantes de définition). Un libellé creux pour atteindre le taux est pire qu'une arête nue.",
+      "Renvois : budget = n/5 arrondi, entre 2 et 8 (n = nœuds de la carte ; une fourche compte pour un renvoi) ; au plus 3 vers une même notion.",
+      "Sous une NOTION, ses causes et ses conséquences se relient à elle, pas entre elles (pas de raccourci) ; sous une SECTION, une cause se relie à la conséquence qu'elle produit (causal_pairs)."
+    ],
+    "rules": {
+      "labelledTarget": 0.6,
+      "flatMin": 5,
+      "defMinChars": 80,
+      "defMinParts": 3,
+      "linkBudgetPerNodes": 5,
+      "linkBudgetMin": 2,
+      "linkBudgetMax": 8,
+      "linksPerNodeMax": 3,
+      "commonWordShare": 0.15
+    },
+    "relation_by_type": {
+      "cause": {
+        "one": "a pour cause",
+        "many": "causes"
+      },
+      "consequence": {
+        "one": "entraîne",
+        "many": "conséquences"
+      },
+      "effet": {
+        "one": "produit",
+        "many": "effets"
+      },
+      "condition": {
+        "one": "suppose",
+        "many": "conditions"
+      },
+      "fond": {
+        "one": "suppose",
+        "many": "conditions de fond"
+      },
+      "forme": {
+        "one": "exige",
+        "many": "conditions de forme"
+      },
+      "exception": {
+        "one": "sauf",
+        "many": "exceptions"
+      },
+      "exemple": {
+        "one": "illustré par",
+        "many": "exemples"
+      },
+      "juris": {
+        "one": "appliqué par",
+        "many": "jurisprudence"
+      },
+      "texte": {
+        "one": "fondé sur",
+        "many": "textes"
+      },
+      "doctrine": {
+        "one": "selon",
+        "many": "doctrine"
+      },
+      "critique": {
+        "one": "critiqué par",
+        "many": "critiques"
+      },
+      "argument": {
+        "one": "justifié par",
+        "many": "arguments"
+      },
+      "nuance": {
+        "one": "nuancé par",
+        "many": "nuances"
+      },
+      "caracteristique": {
+        "one": "se caractérise par",
+        "many": "caractères"
+      },
+      "signe": {
+        "one": "se reconnaît à",
+        "many": "signes"
+      },
+      "categorie": {
+        "one": "comprend",
+        "many": "catégories"
+      },
+      "solution": {
+        "one": "résolu par",
+        "many": "solutions"
+      },
+      "probleme": {
+        "one": "pose",
+        "many": "problèmes"
+      },
+      "objectif": {
+        "one": "vise",
+        "many": "objectifs"
+      },
+      "citation": {
+        "one": "selon",
+        "many": "citations"
+      },
+      "etude": {
+        "one": "montré par",
+        "many": "études"
+      },
+      "avantage": {
+        "one": null,
+        "many": "avantages"
+      },
+      "inconvenient": {
+        "one": null,
+        "many": "inconvénients"
+      },
+      "conseil": {
+        "one": null,
+        "many": "conseils"
+      },
+      "piege": {
+        "one": null,
+        "many": "pièges"
+      },
+      "definition": {
+        "one": null,
+        "many": null
+      }
+    },
+    "lexicon_by_direction": {
+      "forward": [
+        "entraîne",
+        "provoque",
+        "produit",
+        "cause",
+        "engendre",
+        "aboutit à",
+        "mène à",
+        "rend possible",
+        "permet",
+        "implique",
+        "donc",
+        "favorise",
+        "contribue à",
+        "suffit à",
+        "nourrit",
+        "entretient",
+        "aggrave"
+      ],
+      "backward": [
+        "a pour cause",
+        "résulte de",
+        "découle de",
+        "naît de",
+        "provient de",
+        "est causé par",
+        "suppose",
+        "exige",
+        "dépend de",
+        "nécessite",
+        "seulement si"
+      ],
+      "inhibit": [
+        "empêche",
+        "évite",
+        "réduit",
+        "affaiblit",
+        "protège de",
+        "remédie à",
+        "résout",
+        "limite",
+        "exclut"
+      ],
+      "symmetric": [
+        "s’oppose à",
+        "se distingue de",
+        "≠",
+        "ressemble à",
+        "contraire de",
+        "va de pair avec",
+        "est associé à",
+        "corrélé à",
+        "voir aussi"
+      ],
+      "vague": [
+        "lié à",
+        "lien",
+        "rapport",
+        "relation",
+        "en lien avec",
+        "concerne",
+        "cf",
+        "cf.",
+        "?",
+        "-",
+        "→"
+      ]
+    },
+    "causal_pairs": {
+      "cause>consequence": "entraîne",
+      "cause>effet": "entraîne",
+      "condition>consequence": "permet",
+      "condition>effet": "permet",
+      "fond>effet": "permet",
+      "forme>effet": "permet",
+      "fond>consequence": "permet",
+      "forme>consequence": "permet",
+      "probleme>solution": "résolu par",
+      "probleme>consequence": "entraîne"
+    }
+  },
+  "changelog_2_2": [
+    "normative_core : une valeur par règle, recopiée du moteur d'audit (rules, relation_by_type, lexicon_by_direction, causal_pairs) ; contradictions levées (types facultatifs vs G5, budget de renvois, presets « voir »).",
+    "Libellés : verbes seulement, jamais depuis un intitulé, jamais un nom-type ; corrélation, condition nécessaire / suffisante, facteur, exception vs nuance, relations niées.",
+    "Gabarits : règle complète, mécanisme / cercle vicieux, distinctions, prérequis.",
+    "Définitions : pas de composante « et », renoncer aux structures soit…soit / relatives / négatives ; révision d'un seul tenant.",
+    "Validateur : verbes depuis un intitulé, libellés-noms, boucles et contradictions, budget par formule, règles lues dans RULES."
   ]
 }

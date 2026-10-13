@@ -1227,17 +1227,17 @@
        sans accord ; tout s'annule d'un geste. */
     const declined = st.declined || (st.declined = new Set());
     function auditNow() {
-      if (!R.organize || ro()) return { fixes: [], notes: [] };
+      if (!R.organize || ro()) return { fixes: [], notes: [], stats: null };
       try {
-        const r = R.organize.audit(map);
-        return { fixes: r.fixes.filter((x) => !declined.has(x.key)), notes: r.notes };
-      } catch (e) { console.warn(e); return { fixes: [], notes: [] }; }
+        // les refus de la session sont connus du moteur : un élément refusé redevient disponible pour les autres corrections
+        return R.organize.audit(map, { declined, course: map.courseId ? S.mapsOf(map.courseId) : null });
+      } catch (e) { console.warn(e); return { fixes: [], notes: [], stats: null }; }
     }
     const suggestions = () => auditNow().fixes;
     function openOrganize() {
       if (guard()) return;
       flushEdit();
-      const { fixes: list, notes } = auditNow();
+      const { fixes: list, notes, stats } = auditNow();
       if (!list.length && !notes.length) { ui.snack('Organisation : rien à améliorer', { duration: 2000 }); return; }
       // sûr : coché ; probable : décoché, à vérifier ; signalé : à corriger à la main
       const on = new Set(list.filter((x) => x.certainty !== 'probable').map((x) => x.key));
@@ -1270,6 +1270,7 @@
       });
       const body = h('div.org-body',
         h('p.dialog-text', 'Des liens libellés se lisent comme des phrases et s’apprennent mieux qu’une liste. Rien n’est réécrit : seules les relations changent.'),
+        stats ? h('p.org-stat', `Relations nommées : ${Math.round(stats.relationRate * 100)} % (visé : ${Math.round(R.organize.RULES.labelledTarget * 100)} %) · renvois : ${stats.links}/${R.organize.linkBudget(stats.nodes)}`) : null,
         ...group('Établi par la carte', null, sure.map(item)),
         ...group('Probable — à vérifier', 'Indice seulement (mots partagés) : cochez si le cours le dit.', maybe.map(item)),
         ...group('À corriger à la main', 'La carte ne permet pas de trancher sans inventer.', noteEls));
@@ -1283,12 +1284,13 @@
         const pick = list.filter((x) => on.has(x.key));
         if (!pick.length) return;
         const snap = snapshot();
-        const before = R.organize.check(map).length;
+        const before = new Set(R.organize.check(map));
         let n = 0;
         for (const x of pick) { try { x.apply(map); n++; } catch (e) { console.warn(e); } }
-        // contrôle après correction : une carte abîmée est rendue telle qu'elle était
-        const broken = R.organize.check(map);
-        if (broken.length > before) {
+        S.normalizeGroups(map.edges);
+        // contrôle après correction : toute violation NOUVELLE rend la carte telle qu'elle était
+        const broken = R.organize.check(map).filter((v) => !before.has(v));
+        if (broken.length) {
           console.warn('organisation annulée', broken);
           restoreSnap(snap);
           ui.snack('Organisation annulée : la carte serait devenue incohérente', { duration: 3500 });

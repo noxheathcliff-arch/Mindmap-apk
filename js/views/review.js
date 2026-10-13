@@ -48,6 +48,10 @@
       h('span.box-pips', { 'aria-label': `Boîte ${r.box} sur 5` }, [1, 2, 3, 4, 5].map((i) => h('i', { class: i <= r.box ? 'on' : '' }))));
   }
 
+  /** Types dont la question porte sur le parent (« Qu'illustre cet exemple ? », « d'où vient-elle ? ») :
+      le parent est masqué dans le fil d'Ariane jusqu'à la réponse */
+  const RELATIONAL = new Set(['exemple', 'consequence', 'cause', 'effet', 'condition', 'exception', 'signe', 'solution', 'juris', 'argument', 'nuance', 'critique']);
+
   R.views.review = {
     mount(el, route) {
       const scope = route.scope || {};
@@ -163,8 +167,23 @@
         // (élément partagé, View Transitions) — pas d'entrée propre qui doublerait le mouvement
         const shared = first && done === 0 && idx === 0 && node.id === first.nodeId && !history.length;
 
+        // renvois : la fiche montre aussi les relations transversales (« entraîne → X », « ← fait appel à Y »)
+        const rel = [];
+        for (const e of map.edges) {
+          if (e.kind !== 'link') continue;
+          const out = e.from === node.id, inn = e.to === node.id;
+          if (!out && !inn) continue;
+          const o = S.node(map, out ? e.to : e.from);
+          if (o) rel.push({ out, label: e.label || 'voir', title: o.title || 'Sans titre' });
+        }
+        const relBlock = rel.length ? h('div.answer-block.answer-rel', h('p.overline', 'Relié à'),
+          h('ul.answer-rel-list', rel.slice(0, 3).map((r) => h('li',
+            h('span.decomp-rel', r.out ? r.label + ' →' : '← ' + r.label), h('span', r.title)))),
+          rel.length > 3 ? h('p.answer-more', `+ ${rel.length - 3} autre${rel.length - 3 > 1 ? 's' : ''} dans la carte`) : null) : null;
+        const noteBlock = node.note.trim() ? h('div.answer-block', h('p.overline', chain.length ? 'Définition complète' : 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null;
         const answer = h('div.answer', { 'aria-live': 'polite' },
           h('div.answer-inner',
+            chain.length ? noteBlock : null, // définition : le texte exact d'abord, sa décomposition ensuite
             kids.length ? h('div.answer-block',
               h('p.overline', node.logic === 'et' ? 'Éléments cumulatifs (ET)' : node.logic === 'ou' ? 'Éléments alternatifs (OU)' : 'Décomposition'),
               h('ol.answer-list', rows.map(({ c, depth }) => h('li', { style: depth ? `margin-inline-start:${depth * 18}px` : null },
@@ -172,7 +191,8 @@
                 (S.parentEdge(map, c.id) || {}).label ? h('span.decomp-rel', S.parentEdge(map, c.id).label)
                   : S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
                 emTitle(c))))) : null,
-            node.note.trim() ? h('div.answer-block', h('p.overline', 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null,
+            chain.length ? null : noteBlock,
+            relBlock,
             h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Ouvrir dans la carte')));
 
         // élément partagé : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la
@@ -189,7 +209,11 @@
         const card = h('article.rcard', { class: enterCls + (open ? ' revealed' : ''), dataset: hero ? { hero } : {} },
           band,
           h('div.rcard-body',
-            anc.length && !(anc.length === 1 && U.norm(anc[0].title) === U.norm(map.title)) ? h('div.rcard-path', anc.map((a, i) => [i ? ' › ' : '', a.title])) : null,
+            anc.length && !(anc.length === 1 && U.norm(anc[0].title) === U.norm(map.title)) ? h('div.rcard-path', anc.map((a, i) => {
+              // un exemple, une cause, une conséquence… : son parent EST la réponse — masqué jusqu'à la réponse
+              const hide = i === anc.length - 1 && RELATIONAL.has(node.type) && !S.isStruct(a.type);
+              return [i ? ' › ' : '', hide ? [h('span.path-mask', { 'aria-label': 'masqué jusqu’à la réponse' }, '···'), h('span.path-last', a.title)] : a.title];
+            })) : null,
             h('div.rcard-kicker', S.isStruct(node.type) ? S.kickerOf(map, node, nums) : T.label),
             h('h2.rcard-title', shared ? h('span', { dataset: { hero: `fiche:${node.id}:q` } }, node.title) : node.title),
             h('p.rcard-prompt', prompt),

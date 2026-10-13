@@ -127,9 +127,9 @@ Un import s'annule depuis la barre qui suit (*Annuler*).
 
 ### Transformer un livre en cours (skill pour IA)
 
-Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), liens libellés qui se lisent comme des phrases (« entraîne », « illustré par », « de qui ? »), branches libellées, définitions décomposées en composantes, renvois entre sections, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v2.1.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : une carte par chapitre, nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), liens libellés qui se lisent comme des phrases (« entraîne », « illustré par », « de qui ? »), branches libellées, définitions décomposées en composantes, renvois entre sections, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v2.2.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
 
-Si l'IA a mal organisé une carte, **Ranger** la relit : Carte ⋮ › *Améliorer l'organisation…* propose les corrections établies par la carte, les relations probables (à cocher soi-même) et signale ce qui reste à trancher à la main. Tests du moteur : `node tests/organize.test.cjs`.
+Si l'IA a mal organisé une carte, **Ranger** la relit : Carte ⋮ › *Améliorer l'organisation…* propose les corrections établies par la carte, les relations probables (à cocher soi-même) et signale ce qui reste à trancher à la main. Tests du moteur : `node tests/organize.test.cjs` ; mesure avant/après : `node tests/metrics.cjs [cours.json]` ; accord skill ↔ moteur : `node tests/skill-rules.cjs`.
 
 ## Structure
 

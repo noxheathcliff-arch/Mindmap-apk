@@ -1,30 +1,52 @@
 /* Ratio — audit d'organisation d'une carte (seconde ligne de contrôle après le skill d'import)
  *
- * Le rangement ne se contente pas de placer les nœuds : il relit la carte comme un graphe de
- * connaissances et cherche ce qui empêche de suivre le raisonnement. Principe (DESIGN.md §4.4 ter) :
- * un lien libellé se lit comme une phrase (« Réchauffement —entraîne→ Fonte de la banquise ») et
- * s'apprend mieux qu'une liste d'enfants typés pendus à une section.
+ * Le rangement relit la carte comme un graphe de connaissances et cherche ce qui oblige encore
+ * l'étudiant à reconstruire lui-même la logique du cours. Principe (DESIGN.md §4.4 ter) : un lien
+ * libellé se lit comme une phrase vraie (« Réchauffement —entraîne→ Fonte de la banquise »).
  *
- * Trois niveaux, selon ce que la carte permet d'établir :
- *  - correction SÛRE : la relation est déjà dite par la carte (types posés par l'auteur, mot exact
- *    repris d'un nœud à l'autre, renvoi [[Titre]] écrit dans une note, texte de la définition) ;
- *  - correction PROBABLE : indice seulement (mots partagés) — proposée décochée, à vérifier ;
- *  - SIGNALEMENT : défaut visible mais dont la correction demanderait d'inventer un sens (sens
- *    d'une causalité inconnu, libellé vague sans indice, liste plate) — montré, jamais corrigé.
- * Rien n'est appliqué sans accord, le texte des nœuds n'est jamais réécrit (les composantes d'une
- * définition reprennent ses mots exacts), et l'audit d'une carte déjà corrigée ne propose plus rien
- * (idempotence, tests/organize.test.cjs).
+ * Échelle de preuve (la même que le skill, relation_evidence) :
+ *  - SÛR : la carte dit déjà la relation — un élément NOMME l'autre dans une phrase affirmative,
+ *    un renvoi [[Titre]] précédé d'un verbe, le texte d'une définition (cours de droit), le type
+ *    posé par l'auteur quand le parent est une notion (pas un intitulé de section) ;
+ *  - PROBABLE : indice seulement (mots rares partagés, mention dans une note, sens déduit des
+ *    seuls types) — proposé décoché ;
+ *  - SIGNALEMENT : défaut visible dont la correction demanderait d'inventer (sens causal inconnu,
+ *    boucle ou contradiction, libellé vague, liste plate, renvoi ambigu, prérequis défini plus loin).
+ * Garde-fous : jamais de verbe posé depuis un intitulé de section, jamais de lien tiré d'une
+ * phrase négative (« n'entraîne pas », « ne pas confondre »), jamais de raccourci transitif ; le
+ * texte des nœuds n'est jamais réécrit ; un budget de renvois par carte ; un second audit ne
+ * propose plus rien (idempotence) ; check() vérifie l'intégrité après correction.
  *
- * audit(map) → { fixes: [{ key, kind, certainty, title, detail, preview, apply(map) }],
- *                notes: [{ key, kind, title, detail, ids }] }
- * analyze(map) → audit(map).fixes            check(map) → [violation] (intégrité du graphe)
+ * audit(map, { declined, course }) → { fixes, notes, stats }
+ *   fixes : [{ key, kind, certainty, gain, title, detail, preview, ids, apply(map) }]
+ *   notes : [{ key, kind, title, detail, ids }]
+ *   stats : indicateurs de la carte (metrics)
+ * metrics(map) · check(map) · splitDefinition(text) · RULES · REL · LEX
+ * Tests : tests/organize.test.cjs — mesure : tests/metrics.cjs
  */
 (function (R) {
   'use strict';
   const { store: S, U } = R;
 
-  /* Vocabulaire des relations : le verbe d'un lien parent → enfant de ce type, le nom d'une
-     branche qui en réunit plusieurs. Indicatif : l'auteur (ou le skill) peut écrire mieux. */
+  /* ---- Règles : source unique, recopiée dans le skill (tests/skill-rules.cjs vérifie l'accord) ---- */
+  const RULES = {
+    labelledTarget: 0.6,   // part visée de relations nommées (hors structure et listes nommées)
+    flatMin: 5,            // une partie de ≥ 5 éléments sans aucune relation entre eux = liste plate
+    defMinChars: 80,       // définition assez longue pour être décomposée…
+    defMinParts: 3,        // … en au moins 3 composantes réelles
+    linkBudgetPerNodes: 5, // budget de renvois d'une carte : n / 5, borné à [2, 8] (une fourche = un renvoi)
+    linkBudgetMin: 2,
+    linkBudgetMax: 8,
+    linksPerNodeMax: 3,    // au plus 3 renvois proposés vers une même notion
+    commonWordShare: 0.15, // un mot présent dans > 15 % des nœuds ne compte plus comme indice
+  };
+  /** renvois d'une carte : une fourche (même group) compte pour un seul renvoi */
+  const linkCount = (map) => { const g = new Set(); let n = 0; for (const e of map.edges) if (e.kind === 'link') { if (!e.group) n++; else if (!g.has(e.group)) { g.add(e.group); n++; } } return n; };
+  const linkBudget = (n) => Math.max(RULES.linkBudgetMin, Math.min(RULES.linkBudgetMax, Math.round(n / RULES.linkBudgetPerNodes)));
+
+  /* Vocabulaire parent → enfant : verbe d'un lien vers ce type (null = le type n'est pas une
+     relation, aucun libellé automatique : « conseil », « définition » ne feraient que redire le
+     sur-titre) et nom d'une branche qui en réunit plusieurs. */
   const REL = {
     cause:           { one: 'a pour cause', many: 'causes' },
     consequence:     { one: 'entraîne', many: 'conséquences' },
@@ -37,54 +59,142 @@
     juris:           { one: 'appliqué par', many: 'jurisprudence' },
     texte:           { one: 'fondé sur', many: 'textes' },
     doctrine:        { one: 'selon', many: 'doctrine' },
-    critique:        { one: 'critiqué :', many: 'critiques' },
+    critique:        { one: 'critiqué par', many: 'critiques' },
     argument:        { one: 'justifié par', many: 'arguments' },
     nuance:          { one: 'nuancé par', many: 'nuances' },
-    avantage:        { one: 'avantage', many: 'avantages' },
-    inconvenient:    { one: 'inconvénient', many: 'inconvénients' },
     caracteristique: { one: 'se caractérise par', many: 'caractères' },
     signe:           { one: 'se reconnaît à', many: 'signes' },
     categorie:       { one: 'comprend', many: 'catégories' },
     solution:        { one: 'résolu par', many: 'solutions' },
     probleme:        { one: 'pose', many: 'problèmes' },
-    definition:      { one: 'définition', many: null },
-    piege:           { one: 'attention :', many: 'pièges' },
-    conseil:         { one: 'conseil', many: 'conseils' },
     objectif:        { one: 'vise', many: 'objectifs' },
     citation:        { one: 'selon', many: 'citations' },
     etude:           { one: 'montré par', many: 'études' },
+    avantage:        { one: null, many: 'avantages' },
+    inconvenient:    { one: null, many: 'inconvénients' },
+    conseil:         { one: null, many: 'conseils' },
+    piege:           { one: null, many: 'pièges' },
+    definition:      { one: null, many: null },
+  };
+  /* Libellés selon le sens de lecture (même table que le skill : edge_rules.labels.lexicon) */
+  const LEX = {
+    forward:  ['entraîne', 'provoque', 'produit', 'cause', 'engendre', 'aboutit à', 'mène à', 'rend possible', 'permet', 'implique', 'donc', 'favorise', 'contribue à', 'suffit à', 'nourrit', 'entretient', 'aggrave'],
+    backward: ['a pour cause', 'résulte de', 'découle de', 'naît de', 'provient de', 'est causé par', 'suppose', 'exige', 'dépend de', 'nécessite', 'seulement si'],
+    inhibit:  ['empêche', 'évite', 'réduit', 'affaiblit', 'protège de', 'remédie à', 'résout', 'limite', 'exclut'],
+    symmetric: ['s’oppose à', 'se distingue de', '≠', 'ressemble à', 'contraire de', 'va de pair avec', 'est associé à', 'corrélé à', 'voir aussi'],
+    vague:    ['lié à', 'lien', 'rapport', 'relation', 'en lien avec', 'concerne', 'cf', 'cf.', '?', '-', '→'],
   };
   const STRUCT = new Set(['chapitre', 'lecon', 'section']);
-  const CAUSES = new Set(['cause', 'condition', 'fond', 'forme', 'probleme']);
-  const EFFECTS = new Set(['effet', 'consequence', 'solution']);
-  // libellés qui n'apprennent rien sur la relation
-  const VAGUE = new Set(['lie a', 'lien', 'rapport', 'relation', 'en lien avec', 'associe a', 'concerne', 'cf', 'cf.', '?', '-', '→']);
-  // libellés causaux : la flèche va de la cause vers l'effet…
-  const FORWARD = /^(entraine|provoque|produit|cause|aboutit a|mene a|permet|implique|donc|rend possible)\b/;
-  // … ou de l'effet vers la cause
-  const BACKWARD = /^(a pour cause|resulte de|decoule de|nait de|provient de|est cause par|suppose|exige|depend de)\b/;
-  const CAUSAL_WORDS = /\b(entraine|provoque|cause|consequence|effet|resulte|decoule|produit|aboutit|origine)/;
+  const LAW_TYPES = new Set(['texte', 'juris', 'doctrine', 'fond', 'forme', 'effet']);
+  /* Couples (type source → type cible) pour lesquels les types disent la relation ; tout autre
+     couple ne reçoit aucun lien causal (un problème n'est pas « résolu par » sa conséquence). */
+  const CAUSAL_PAIRS = {
+    'cause>consequence': 'entraîne', 'cause>effet': 'entraîne',
+    'condition>consequence': 'permet', 'condition>effet': 'permet',
+    'fond>effet': 'permet', 'forme>effet': 'permet', 'fond>consequence': 'permet', 'forme>consequence': 'permet',
+    'probleme>solution': 'résolu par', 'probleme>consequence': 'entraîne',
+  };
+
+  const normCache = new Map();
+  const norm = (t) => {
+    t = String(t || '');
+    let v = normCache.get(t);
+    if (v === undefined) {
+      if (normCache.size > 20000) normCache.clear();
+      v = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, "'").replace(/\s+/g, ' ');
+      normCache.set(t, v);
+    }
+    return v;
+  };
+  const lex = (list) => new Set(list.map((x) => norm(x).trim()));
+  const FWD = lex(LEX.forward), BACK = lex(LEX.backward), INH = lex(LEX.inhibit), SYM = lex(LEX.symmetric), VAGUE = lex(LEX.vague);
+  /** polarité d'un libellé : 'fwd' | 'back' | 'inh' | 'sym' | 'vague' | null */
+  function polarity(label) {
+    const l = norm(label).trim().replace(/\s*:$/, '');
+    if (!l) return null;
+    if (VAGUE.has(l)) return 'vague';
+    for (const [set, p] of [[BACK, 'back'], [INH, 'inh'], [SYM, 'sym'], [FWD, 'fwd']]) for (const w of set) if (l === w || l.startsWith(w + ' ')) return p;
+    return null;
+  }
+
+  /** la flèche contredit le couple strict cause ↔ conséquence posé par l'auteur */
+  const againstTypes = (a, b, label) => {
+    const pol = polarity(label);
+    return (pol === 'fwd' && (a.type === 'consequence' || a.type === 'effet') && b.type === 'cause')
+      || (pol === 'back' && a.type === 'cause' && (b.type === 'consequence' || b.type === 'effet') && !/^(suppose|exige|depend|necessite)/.test(norm(label)));
+  };
 
   const STOP = new Set(['dans', 'pour', 'avec', 'sans', 'sous', 'entre', 'leur', 'leurs', 'cette', 'celle', 'celui', 'ainsi', 'comme',
     'plus', 'moins', 'tout', 'tous', 'toute', 'toutes', 'etre', 'avoir', 'fait', 'faire', 'droit', 'illustre', 'notamment', 'lorsque',
-    'alors', 'aussi', 'donc', 'elle', 'elles', 'sont', 'etait', 'peut', 'doit', 'chaque', 'autre', 'autres', 'quand', 'selon']);
-  const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, "'");
-  const words = (t) => new Set((norm(t).match(/[a-z]{5,}/g) || []).filter((w) => !STOP.has(w)).map((w) => w.slice(0, 7)));
-  const inter = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
+    'alors', 'aussi', 'donc', 'elle', 'elles', 'sont', 'etait', 'peut', 'doit', 'chaque', 'autre', 'autres', 'quand', 'selon',
+    'votre', 'vous', 'notre', 'nous', 'leurs', 'quelque', 'avant', 'apres', 'depuis', 'parce', 'meme', 'encore', 'toujours', 'jamais']);
+  // racine grossière : pluriel retiré puis 7 lettres (« besoins » = « besoin »)
+  const stem = (w) => (w.length > 5 ? w.replace(/(aux|s|x)$/, '') : w).slice(0, 7);
+  const tokens = (t) => (norm(t).match(/[a-z]{5,}/g) || []).filter((w) => !STOP.has(w)).map(stem);
   const short = (t, n = 38) => { t = String(t || '').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
   const plain = (t) => String(t || '').replace(/[#*=>`_[\]]/g, '');
-  const textOf = (n) => n.title + ' ' + plain(n.note);
-  /** le texte contient-il ce terme comme mots entiers (accents et casse ignorés) ? */
-  const mentions = (text, term) => {
-    const t = norm(term).trim();
-    if (t.length < 5) return false;
-    return new RegExp('(^|[^a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-z0-9])').test(norm(text));
-  };
+  const wordsIn = (t) => norm(t).trim().split(/\s+/).filter(Boolean).length;
+  // une phrase qui nie ou écarte : « n'entraîne pas », « ne pas confondre avec », « contrairement à »
+  const NEG = /\b(ne|n')\b[^.;:!?]{0,60}\b(pas|jamais|plus|aucun|aucune|guere|nullement)\b|\bcontrairement\b|\bconfondre\b|\bsans\b|\bnon\b|\bni\b|\bau lieu de\b|\bplutot que\b/;
 
-  const kidsOf = (map, id) => S.childrenOf(map, id);
-  const edgeTo = (map, id) => S.parentEdge(map, id);
-  const linked = (map, a, b) => map.edges.some((e) => (e.from === a && e.to === b) || (e.from === b && e.to === a));
-  const lineage = (map, a, b) => S.descendants(map, a).includes(b) || S.descendants(map, b).includes(a);
+  /* ---- Contexte d'audit : tout ce qui se recalcule souvent, une seule fois (cartes de 1 000 nœuds) ---- */
+  function context(map, opts = {}) {
+    const byId = new Map(map.nodes.map((n) => [n.id, n]));
+    const parentEdge = new Map(), kidsIds = new Map();
+    for (const e of map.edges) if (e.kind === 'tree') { parentEdge.set(e.to, e); if (!kidsIds.has(e.from)) kidsIds.set(e.from, []); kidsIds.get(e.from).push(e.to); }
+    const kidsCache = new Map();
+    const kids = (id) => { if (!kidsCache.has(id)) kidsCache.set(id, kidsIds.has(id) ? S.childrenOf(map, id) : []); return kidsCache.get(id); };
+    const parent = (id) => { const e = parentEdge.get(id); return e ? byId.get(e.from) : null; };
+    const descCache = new Map();
+    const desc = (id) => {
+      if (descCache.has(id)) return descCache.get(id);
+      const out = new Set(), stack = [...(kidsIds.get(id) || [])];
+      while (stack.length) { const x = stack.pop(); if (out.has(x)) continue; out.add(x); stack.push(...(kidsIds.get(x) || [])); }
+      descCache.set(id, out); return out;
+    };
+    const text = new Map(map.nodes.map((n) => [n.id, norm(n.title + ' ' + plain(n.note))]));
+    const titleN = new Map(map.nodes.map((n) => [n.id, norm(n.title)]));
+    // rareté : un mot présent dans trop de nœuds n'est pas un indice (« besoin », « gentil »…)
+    const df = new Map();
+    for (const n of map.nodes) for (const w of new Set(tokens(n.title + ' ' + plain(n.note)))) df.set(w, (df.get(w) || 0) + 1);
+    const maxDf = Math.max(3, map.nodes.length * RULES.commonWordShare);
+    const rare = (t) => new Set(tokens(t).filter((w) => (df.get(w) || 0) <= maxDf));
+    const law = map.nodes.some((n) => LAW_TYPES.has(n.type) && n.type !== 'effet')
+      || map.nodes.some((n) => /\bart(icle)?\.?\s*l?\.?\s*\d|code (civil|penal|pénal|du travail|de commerce)|cour de cassation|\bcass\.|jurisprudence|juridique|\ben droit\b|\bau sens juridique\b/i.test(n.title + ' ' + n.note));
+    const pairSet = new Set();
+    for (const e of map.edges) { pairSet.add(e.from + '|' + e.to); pairSet.add(e.to + '|' + e.from); }
+    const linked = (a, b) => pairSet.has(a + '|' + b);
+    // index inversé racine → nœuds : ne tester une mention que sur les nœuds qui contiennent ses mots
+    const index = new Map();
+    for (const n of map.nodes) for (const w of new Set(tokens(n.title + ' ' + plain(n.note)))) { if (!index.has(w)) index.set(w, new Set()); index.get(w).add(n.id); }
+    const candidates = (term) => {
+      const ws = [...new Set(tokens(term))];
+      if (!ws.length) return map.nodes;
+      let best = null;
+      for (const w of ws) { const set = index.get(w); if (!set) return []; if (!best || set.size < best.size) best = set; }
+      return [...best].map((id) => byId.get(id));
+    };
+    const reCache = new Map();
+    const termRe = (term) => {
+      const t = norm(term).trim();
+      if (!reCache.has(t)) reCache.set(t, t.length < 4 ? null : new RegExp('(^|[^a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^a-z0-9])'));
+      return reCache.get(t);
+    };
+    /** le texte NOMME le terme dans une phrase affirmative ? (une phrase négative ne prouve rien) */
+    const splitCache = new Map();
+    const names = (txt, term) => {
+      const re = termRe(term);
+      if (!re || !re.test(txt)) return false;
+      let parts = splitCache.get(txt);
+      if (!parts) { parts = txt.split(/[.;!?\n]+/).map((x) => [x, NEG.test(x)]); splitCache.set(txt, parts); }
+      for (const [sentence, neg] of parts) if (!neg && re.test(sentence)) return true;
+      return false;
+    };
+    return { map, opts, byId, kids, parent, desc, text, titleN, rare, law, linked, names, termRe, candidates, parentEdgeOf: (id) => parentEdge.get(id), declined: opts.declined || new Set() };
+  }
+  const lineage = (c, a, b) => c.desc(a).has(b) || c.desc(b).has(a);
+  /** intitulé de partie : chapitre, leçon, section — ou nœud dont le titre est une question */
+  const heading = (n) => !n || STRUCT.has(n.type) || /\?\s*$/.test(n.title);
 
   /* Le titre du parent nomme déjà la famille (« Les 10 signes », « Pourquoi… », « 5 conseils
      pour… ») : une branche ou un libellé répété n'ajouterait que du bruit. */
@@ -105,37 +215,38 @@
   };
   const named = (p, type) => /(^|\s)\d+\s/.test(' ' + norm(p.title)) || (NAMED[type] && NAMED[type].test(norm(p.title)));
 
-  /* ---- Branches : une famille de relations (≥ 2) réunie sous un libellé commun ---- */
-  function branches(map, quiet, moved = new Set()) {
+  /* ---- Branches : une famille de relations (≥ 2) réunie sous un libellé commun ----
+     Seulement quand le parent mêle plusieurs familles (option B du skill) : une branche qui
+     réunit TOUS les enfants ne dit rien de plus que le parent. */
+  function branches(c, quiet, busy) {
     const out = [];
-    for (const p of map.nodes) {
-      if (p.logic) continue; // ET / OU : la fourche implicite parle déjà
-      const ks = kidsOf(map, p.id);
+    for (const p of c.map.nodes) {
+      if (p.logic || heading(p)) continue;
+      const ks = c.kids(p.id);
       if (ks.length < 3) continue;
       const fam = new Map();
       for (const k of ks) {
         const r = REL[k.type];
-        const e = edgeTo(map, k.id);
-        if (!r || !r.many || !e || e.group || e.label || moved.has(k.id)) continue;
+        const e = c.parentEdgeOf(k.id);
+        if (!r || !r.many || !e || e.group || e.label || busy.has(k.id)) continue;
         if (!fam.has(k.type)) fam.set(k.type, []);
         fam.get(k.type).push(k);
       }
       for (const [type, list] of fam) {
         if (list.length < 2) continue;
-        if (named(p, type)) { for (const k of list) quiet.add(k.id); continue; }
+        if (named(p, type) || list.length === ks.length) { for (const k of list) quiet.add(k.id); continue; }
         const label = REL[type].many;
         out.push({
-          key: 'br:' + p.id + ':' + type, kind: 'branch', certainty: 'sure',
+          key: 'br:' + p.id + ':' + type, kind: 'branch', certainty: 'sure', gain: 2,
           title: `Regrouper ${list.length} ${label} de « ${short(p.title, 30)} »`,
-          detail: 'Une branche nommée dit d’un coup d’œil ce qu’ils sont pour leur parent, au lieu d’une liste à décoder.',
+          detail: `« ${short(p.title, 30)} » mêle plusieurs familles : une branche nommée dit d’un coup d’œil ce que sont ces éléments pour lui.`,
           preview: [`${short(p.title, 30)} —${label}→ ${list.map((k) => short(k.title, 22)).join(' · ')}`],
           ids: list.map((k) => k.id),
           apply(m) {
             const g = U.uid('g');
-            const members = list.map((k) => edgeTo(m, k.id)).filter((e) => e && e.from === p.id && !e.group && !e.label);
+            const members = list.map((k) => S.parentEdge(m, k.id)).filter((e) => e && e.from === p.id && !e.group && !e.label);
             if (members.length < 2) return;
             for (const e of members) { e.group = g; e.label = label; }
-            // les branches d'une fourche se suivent dans l'ordre de lecture
             regroupOrder(m, p.id, new Set(members.map((e) => e.to)));
           },
         });
@@ -143,225 +254,268 @@
     }
     return out;
   }
-  /** Rend contigus, dans l'ordre de lecture, les enfants d'un même groupe (le rangement suit) */
+  /** Rend contigus, dans l'ordre de lecture, les enfants d'un même groupe : les enfants échangent
+      leurs emplacements (quel que soit l'axe de lecture de la disposition), sous-branches comprises. */
   function regroupOrder(m, pid, ids) {
     const ks = S.childrenOf(m, pid);
     const firstIdx = ks.findIndex((k) => ids.has(k.id));
-    const rest = ks.filter((k) => !ids.has(k.id));
-    const grp = ks.filter((k) => ids.has(k.id));
+    if (firstIdx < 0) return;
+    const rest = ks.filter((k) => !ids.has(k.id)), grp = ks.filter((k) => ids.has(k.id));
     const order = [...rest.slice(0, firstIdx), ...grp, ...rest.slice(firstIdx)];
-    const y0 = Math.min(...ks.map((k) => k.y));
-    order.forEach((k, i) => { const dy = y0 + i * 40 - k.y; for (const id of [k.id, ...S.descendants(m, k.id)]) { const n = S.node(m, id); if (n) n.y += dy; } });
+    const slots = ks.map((k) => ({ x: k.x, y: k.y }));
+    const moves = order.map((k, i) => ({ k, dx: slots[i].x - k.x, dy: slots[i].y - k.y }));
+    for (const { k, dx, dy } of moves) for (const id of [k.id, ...S.descendants(m, k.id)]) { const n = S.node(m, id); if (n) { n.x += dx; n.y += dy; } }
   }
 
-  /* ---- Libellés : chaque relation dit son verbe (le type posé par l'auteur le donne) ---- */
-  function labels(map, taken) {
-    const list = [];
-    for (const e of map.edges) {
+  /* ---- Libellés : le verbe de chaque relation, une proposition par parent ----
+     Jamais depuis un intitulé (section, chapitre, question) : « Chapitre 3 —entraîne→ Inflation »
+     serait faux ; jamais quand le titre du parent nomme déjà la liste. */
+  function labels(c, taken) {
+    const byParent = new Map();
+    for (const e of c.map.edges) {
       if (e.kind !== 'tree' || e.label || e.group) continue;
-      const k = S.node(map, e.to), p = S.node(map, e.from);
-      if (!k || !p || p.logic || taken.has(k.id)) continue;
+      const k = c.byId.get(e.to), p = c.byId.get(e.from);
+      if (!k || !p || p.logic || heading(p) || taken.has(k.id)) continue;
       const r = REL[k.type];
-      if (!r || STRUCT.has(k.type)) continue;
+      if (!r || !r.one || STRUCT.has(k.type) || named(p, k.type)) continue;
       if (p.type === 'methode' && k.type === 'etape') continue; // frise : la flèche suffit
-      list.push({ e, k, p, label: r.one });
+      if (k.type === 'exemple' && p.type === 'definition') continue;
+      if (!byParent.has(p.id)) byParent.set(p.id, { p, list: [] });
+      byParent.get(p.id).list.push({ e, k, label: r.one });
     }
-    if (!list.length) return [];
-    return [{
-      key: 'lbl:' + list.map((x) => x.e.id).join(','), kind: 'label', certainty: 'sure',
-      title: `Nommer ${list.length} relation${list.length > 1 ? 's' : ''} par un libellé`,
-      detail: 'Le lien se lit comme une phrase : la relation est comprise sans déchiffrer le sur-titre du nœud.',
-      preview: list.slice(0, 4).map((x) => `${short(x.p.title, 24)} —${x.label}→ ${short(x.k.title, 24)}`).concat(list.length > 4 ? [`… et ${list.length - 4} autre${list.length - 4 > 1 ? 's' : ''}`] : []),
+    return [...byParent.values()].map(({ p, list }) => ({
+      key: 'lbl:' + p.id + ':' + list.map((x) => x.e.id).join(','), kind: 'label', certainty: 'sure', gain: 1,
+      title: `Nommer ${list.length > 1 ? list.length + ' relations' : 'la relation'} de « ${short(p.title, 30)} »`,
+      detail: 'Le type posé par l’auteur dit la relation : écrite sur le lien, elle se lit comme une phrase.',
+      preview: list.map((x) => `${short(p.title, 24)} —${x.label}→ ${short(x.k.title, 26)}`),
+      ids: list.map((x) => x.k.id),
       apply(m) { for (const x of list) { const e = m.edges.find((y) => y.id === x.e.id); if (e && !e.label && !e.group) e.label = x.label; } },
-    }];
+    }));
   }
 
-  /* ---- Exemples : sous l'élément qu'ils illustrent ---- */
-  function examples(map) {
+  /* ---- Exemples : sous l'élément précis qu'ils illustrent ---- */
+  function examples(c) {
     const out = [];
-    for (const p of map.nodes) {
-      const ks = kidsOf(map, p.id);
-      ks.forEach((k, i) => {
-        if (k.type !== 'exemple' || i === 0) return;
-        const ke = edgeTo(map, k.id);
-        if (ke && ke.label) return; // relation déjà dite (« illustré par » posé par le skill ou l'utilisateur)
-        const ex = words(textOf(k));
-        const pw = words(p.title);
-        let best = null, bestN = 0, exact = false;
-        for (const s of ks) {
-          if (s === k || s.type === 'exemple' || STRUCT.has(s.type)) continue;
-          const hit = mentions(textOf(k), s.title);
-          const n = inter(ex, new Set([...words(s.title)].filter((w) => !pw.has(w)))) + (hit ? 10 : 0);
-          if (n > bestN) { best = s; bestN = n; exact = hit; }
+    for (const p of c.map.nodes) {
+      const ks = c.kids(p.id);
+      if (ks.length < 2) continue;
+      const cands = ks.filter((s) => s.type !== 'exemple' && !STRUCT.has(s.type) && s.type !== 'definition');
+      for (const k of ks) {
+        if (k.type !== 'exemple') continue;
+        const ke = c.parentEdgeOf(k.id);
+        if (ke && (ke.label || ke.group)) continue; // relation déjà dite par l'auteur
+        const txt = c.text.get(k.id);
+        // l'exemple nomme-t-il un élément, et un seul ? (deux : il illustre la partie entière)
+        const hits = cands.filter((s) => wordsIn(s.title) >= 2 && c.names(txt, s.title));
+        let best = null, certainty = null, why = '';
+        if (hits.length === 1) { best = hits[0]; certainty = 'sure'; why = 'L’exemple nomme cet élément : il l’illustre lui, pas toute la partie.'; }
+        else if (!hits.length) {
+          const ex = c.rare(k.title + ' ' + plain(k.note)), pw = c.rare(p.title);
+          let bestN = 0, second = 0;
+          for (const s of cands) {
+            let n = 0; for (const w of c.rare(s.title)) if (ex.has(w) && !pw.has(w)) n++;
+            if (n > bestN) { second = bestN; bestN = n; best = s; } else if (n > second) second = n;
+          }
+          if (best && bestN >= 2 && bestN > second) { certainty = 'probable'; why = 'L’exemple reprend des mots rares de cet élément : il l’illustre sans doute lui — à vérifier.'; }
+          else best = null;
         }
-        if (!best) return;
+        if (!best) continue;
         out.push({
-          key: 'ex:' + k.id + '>' + best.id, kind: 'example', certainty: exact || bestN >= 2 ? 'sure' : 'probable',
+          key: 'ex:' + k.id + '>' + best.id, kind: 'example', certainty, gain: 3,
           title: `Rattacher l’exemple « ${short(k.title, 28)} » à « ${short(best.title, 28)} »`,
-          detail: exact ? 'L’exemple nomme cet élément : il l’illustre lui, pas toute la partie.'
-            : 'L’exemple reprend les mots de cet élément : il l’illustre sans doute lui, pas toute la partie.',
+          detail: why,
           preview: [`${short(best.title, 28)} —illustré par→ ${short(k.title, 28)}`],
+          ids: [k.id, best.id],
           apply(m) {
-            const e = edgeTo(m, k.id);
-            if (!e || e.label || !S.node(m, best.id) || S.descendants(m, k.id).includes(best.id)) return;
-            e.from = best.id; e.label = 'illustré par'; delete e.group;
+            const e = S.parentEdge(m, k.id);
+            if (!e || e.label || e.group || !S.node(m, best.id) || S.descendants(m, k.id).includes(best.id)) return;
+            e.from = best.id; e.label = 'illustré par';
           },
         });
-      });
+      }
     }
     return out;
   }
 
-  /* ---- Cause → effet entre frères : le sens vient des types, le couple des mots partagés ---- */
-  function causal(map) {
+  /* ---- Cause → effet entre éléments d'une même partie ----
+     Seulement sous un intitulé (section) : sous une notion, ses causes et ses conséquences sont
+     reliées À ELLE, les relier entre elles court-circuiterait la notion. Le libellé dépend du
+     couple de types (CAUSAL_PAIRS) ; la preuve, d'une mention affirmative. */
+  function causal(c) {
     const out = [];
-    for (const p of map.nodes) {
-      const ks = kidsOf(map, p.id);
-      const cs = ks.filter((k) => CAUSES.has(k.type)), es = ks.filter((k) => EFFECTS.has(k.type));
-      if (!cs.length || !es.length) continue;
-      const pw = words(p.title);
-      for (const e of es) {
-        const ew = new Set([...words(textOf(e))].filter((w) => !pw.has(w)));
-        let best = null, bestN = 0, exact = false;
-        for (const c of cs) {
-          const hit = mentions(textOf(e), c.title) || mentions(textOf(c), e.title);
-          const n = inter(ew, words(textOf(c))) + (hit ? 10 : 0);
-          if (n > bestN) { best = c; bestN = n; exact = hit; }
+    for (const p of c.map.nodes) {
+      if (!heading(p)) continue;
+      const ks = c.kids(p.id);
+      for (const a of ks) for (const b of ks) {
+        const label = CAUSAL_PAIRS[a.type + '>' + b.type];
+        if (!label || a === b || c.linked(a.id, b.id)) continue;
+        const said = c.names(c.text.get(b.id), a.title) || c.names(c.text.get(a.id), b.title);
+        let certainty = said ? 'sure' : null;
+        if (!certainty) {
+          const pw = c.rare(p.title);
+          let n = 0; const aw = c.rare(a.title + ' ' + plain(a.note));
+          for (const w of c.rare(b.title + ' ' + plain(b.note))) if (aw.has(w) && !pw.has(w)) n++;
+          if (n >= 2 && !NEG.test(c.text.get(b.id))) certainty = 'probable';
         }
-        if (!best || linked(map, best.id, e.id)) continue;
-        const label = best.type === 'probleme' ? 'résolu par' : CAUSES.has(best.type) && best.type !== 'cause' ? 'permet' : 'entraîne';
+        if (!certainty) continue;
         out.push({
-          key: 'ce:' + best.id + '>' + e.id, kind: 'causal', certainty: exact ? 'sure' : 'probable',
-          title: `Relier « ${short(best.title, 26)} » à « ${short(e.title, 26)} »`,
-          detail: exact ? 'L’un nomme l’autre ; les types disent lequel produit l’autre.'
-            : 'Ils parlent de la même chose et les types donnent le sens — à confirmer : la carte ne dit pas que l’un produit l’autre.',
-          preview: [`${short(best.title, 28)} —${label}→ ${short(e.title, 28)}`],
-          apply(m) { if (!linked(m, best.id, e.id)) m.edges.push({ id: U.uid('e'), from: best.id, to: e.id, kind: 'link', label }); },
+          key: 'ce:' + a.id + '>' + b.id, kind: 'causal', certainty, gain: 4, link: true,
+          title: `Relier « ${short(a.title, 26)} » à « ${short(b.title, 26)} »`,
+          detail: certainty === 'sure' ? 'L’un nomme l’autre ; leurs types disent lequel produit l’autre.'
+            : 'Ils parlent de la même chose et leurs types donnent le sens — à confirmer : la carte ne dit pas que l’un produit l’autre.',
+          preview: [`${short(a.title, 28)} —${label}→ ${short(b.title, 28)}`],
+          ids: [a.id, b.id],
+          apply(m) { if (!S.node(m, a.id) || !S.node(m, b.id) || m.edges.some((e) => (e.from === a.id && e.to === b.id) || (e.from === b.id && e.to === a.id))) return; m.edges.push({ id: U.uid('e'), from: a.id, to: b.id, kind: 'link', label }); },
         });
       }
     }
-    return out.slice(0, 8);
+    return out;
   }
 
-  /* ---- Relations transversales : un élément qui NOMME une notion définie ailleurs ---- */
-  function crossRefs(map, planned = new Set()) {
+  /* ---- Relations transversales : un élément qui nomme une notion définie ailleurs ----
+     Une mention n'est pas une dépendance : toujours « probable ». */
+  function crossRefs(c, planned) {
     const out = [];
-    const root = map.nodes.find((n) => !edgeTo(map, n.id));
-    const targets = map.nodes.filter((n) => (n.type === 'definition' || n.type === 'notion') && n !== root && n.title.trim().length >= 5
-      && !mentions(map.title, n.title) && !(root && mentions(root.title, n.title)));
+    const map = c.map;
+    const root = map.nodes.find((n) => !c.parentEdgeOf(n.id));
+    const targets = map.nodes.filter((n) => (n.type === 'definition' || n.type === 'notion') && n !== root && n.title.trim().length >= 4
+      && !c.names(norm(map.title), n.title) && !(root && c.names(c.titleN.get(root.id), n.title)));
     for (const b of targets) {
-      // un terme repris partout (le sujet de la carte) n'apprend rien : on l'ignore
-      const users = map.nodes.filter((a) => a !== b && mentions(textOf(a), b.title));
-      if (users.length > Math.max(3, map.nodes.length * 0.3)) continue;
-      // au plus 3 renvois vers une même notion, en comptant ceux déjà tracés (idempotence)
+      const single = wordsIn(b.title) < 2;
+      // un mot seul ne compte que dans un titre (« Partie » dans « en partie d'accord » n'est pas la notion)
+      const users = c.candidates(b.title).filter((a) => a !== b && c.names(single ? c.titleN.get(a.id) : c.text.get(a.id), b.title));
+      if (users.length > Math.max(3, map.nodes.length * 0.25)) continue; // le sujet de la carte : partout
       let per = map.edges.filter((e) => e.kind === 'link' && e.to === b.id).length;
-      users.sort((x, y) => mentions(y.title, b.title) - mentions(x.title, b.title));
+      users.sort((x, y) => c.names(c.titleN.get(y.id), b.title) - c.names(c.titleN.get(x.id), b.title));
       for (const a of users) {
-        if (per >= 3) break;
-        if (STRUCT.has(a.type) || a === root || linked(map, a.id, b.id) || lineage(map, a.id, b.id) || planned.has(a.id + '>' + b.id)) continue;
-        const pa = edgeTo(map, a.id), pb = edgeTo(map, b.id);
-        if (pa && pb && pa.from === pb.from && !STRUCT.has((S.node(map, pa.from) || {}).type) && a.type !== 'exemple') continue; // frères sous une même idée : déjà proches
+        if (per >= RULES.linksPerNodeMax) break;
+        if (STRUCT.has(a.type) || a.type === 'retenir' || a === root || c.linked(a.id, b.id) || lineage(c, a.id, b.id) || planned.has(a.id + '>' + b.id)) continue;
+        const pa = c.parent(a.id), pb = c.parent(b.id);
+        if (pa && pb && pa === pb && !heading(pa) && a.type !== 'exemple') continue; // frères sous une même idée
         const label = a.type === 'exemple' ? 'illustre' : 'fait appel à';
-        const inTitle = mentions(a.title, b.title);
         per++;
         out.push({
-          key: 'x:' + a.id + '>' + b.id, kind: 'cross', certainty: 'sure',
+          key: 'x:' + a.id + '>' + b.id, kind: 'cross', certainty: 'probable', gain: 2, link: true,
           title: `Relier « ${short(a.title, 26)} » à la notion « ${short(b.title, 26)} »`,
-          detail: `${inTitle ? 'Son titre' : 'Sa note'} nomme cette notion, définie ailleurs : le renvoi rend la dépendance visible sans toucher au plan.`,
+          detail: `${c.names(c.titleN.get(a.id), b.title) ? 'Son titre' : 'Sa note'} nomme cette notion, définie ailleurs — à confirmer : une mention ne dit pas toujours une dépendance.`,
           preview: [`${short(a.title, 28)} —${label}→ ${short(b.title, 28)}`],
-          apply(m) { if (!linked(m, a.id, b.id)) m.edges.push({ id: U.uid('e'), from: a.id, to: b.id, kind: 'link', label }); },
+          ids: [a.id, b.id],
+          apply(m) { if (!S.node(m, a.id) || !S.node(m, b.id) || m.edges.some((e) => (e.from === a.id && e.to === b.id) || (e.from === b.id && e.to === a.id))) return; m.edges.push({ id: U.uid('e'), from: a.id, to: b.id, kind: 'link', label }); },
         });
-      }
-    }
-    return out.slice(0, 8);
-  }
-
-  /* ---- Renvois écrits dans les notes ([[Titre]]) qui ne sont pas encore des liens ---- */
-  function wikiLinks(map) {
-    const out = [];
-    const byTitle = new Map(map.nodes.map((n) => [norm(n.title).trim(), n]));
-    for (const n of map.nodes) {
-      for (const [, t] of String(n.note || '').matchAll(/\[\[([^\]]+)\]\]/g)) {
-        const target = byTitle.get(norm(t).trim());
-        if (!target || target.id === n.id || linked(map, n.id, target.id)) continue;
-        out.push({
-          key: 'wk:' + n.id + '>' + target.id, kind: 'link', certainty: 'sure',
-          title: `Relier « ${short(n.title, 26)} » à « ${short(target.title, 26)} »`,
-          detail: 'La note y renvoie déjà : un lien visible rattache les deux idées, même d’une partie à l’autre.',
-          preview: [`${short(n.title, 28)} —voir aussi→ ${short(target.title, 28)}`],
-          apply(m) { if (!linked(m, n.id, target.id)) m.edges.push({ id: U.uid('e'), from: n.id, to: target.id, kind: 'link', label: 'voir aussi' }); },
-        });
-      }
-    }
-    return out.slice(0, 6);
-  }
-
-  /* ---- Libellés : sens inversé, libellé vague ---- */
-  function labelAudit(map, notes) {
-    const out = [];
-    for (const e of map.edges) {
-      if (!e.label) continue;
-      const a = S.node(map, e.from), b = S.node(map, e.to);
-      if (!a || !b) continue;
-      const l = norm(e.label).trim();
-      const aC = CAUSES.has(a.type), aE = EFFECTS.has(a.type), bC = CAUSES.has(b.type), bE = EFFECTS.has(b.type);
-      const fwd = FORWARD.test(l), back = BACKWARD.test(l);
-      // les types posés par l'auteur contredisent le sens de la flèche
-      if ((fwd && aE && bC) || (back && aC && bE)) {
-        if (e.kind === 'link') {
-          out.push({
-            key: 'inv:' + e.id, kind: 'reverse', certainty: 'sure',
-            title: `Inverser le lien « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
-            detail: `« ${short(a.title, 30)} » est noté ${S.TYPES[a.type].label.toLowerCase()} et « ${short(b.title, 30)} » ${S.TYPES[b.type].label.toLowerCase()} : la flèche part dans le mauvais sens.`,
-            preview: [`${short(b.title, 28)} —${e.label}→ ${short(a.title, 28)}`],
-            apply(m) { const x = m.edges.find((y) => y.id === e.id); if (x && x.from === a.id) { x.from = b.id; x.to = a.id; delete x.group; } },
-          });
-        } else if (!e.group && REL[b.type]) {
-          // arête d'arbre : la hiérarchie reste, le verbe se retourne
-          const label = REL[b.type].one;
-          out.push({
-            key: 'invl:' + e.id, kind: 'reverse', certainty: 'sure',
-            title: `Corriger le libellé « ${e.label} » vers « ${short(b.title, 26)} »`,
-            detail: `« ${short(b.title, 30)} » est noté ${S.TYPES[b.type].label.toLowerCase()} : lu dans ce sens, « ${e.label} » dit le contraire.`,
-            preview: [`${short(a.title, 28)} —${label}→ ${short(b.title, 28)}`],
-            apply(m) { const x = m.edges.find((y) => y.id === e.id); if (x && x.label === e.label) x.label = label; },
-          });
-        } else notes.push(note('inv-n:' + e.id, 'reverse', `Sens douteux : « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
-          'Les types disent l’inverse de la flèche, mais le lien appartient à une branche : à corriger à la main.', [a.id, b.id]));
-        continue;
-      }
-      if (VAGUE.has(l)) {
-        if (e.kind === 'tree' && !e.group && REL[b.type] && !STRUCT.has(b.type)) {
-          const label = REL[b.type].one;
-          out.push({
-            key: 'vg:' + e.id, kind: 'label', certainty: 'sure',
-            title: `Préciser « ${e.label} » vers « ${short(b.title, 26)} »`,
-            detail: `Le type de l’élément (${S.TYPES[b.type].label.toLowerCase()}) dit la relation mieux que « ${e.label} ».`,
-            preview: [`${short(a.title, 28)} —${label}→ ${short(b.title, 28)}`],
-            apply(m) { const x = m.edges.find((y) => y.id === e.id); if (x && x.label === e.label) x.label = label; },
-          });
-        } else notes.push(note('vg-n:' + e.id, 'label', `Libellé vague : « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
-          'Rien dans la carte ne dit quelle est la relation exacte : à préciser à la main (entraîne, suppose, sauf, s’oppose à…).', [a.id, b.id]));
       }
     }
     return out;
   }
 
-  /* ---- Doublons : renvoi parallèle à une arête d'arbre, renvois répétés ---- */
-  function duplicates(map) {
+  /* ---- Renvois [[Titre]] écrits dans les notes ----
+     Le skill réserve [[Titre]] aux renvois sans relation précise : on ne les transforme en lien
+     que si la phrase dit la relation (« contredit [[X]] », « remède : [[X]] »). */
+  const WIKI_VERBS = [
+    [/contredi|a l'inverse|s'oppose|contre\b|contraire/, 's’oppose à'],
+    [/se distingue|different de|ne pas confondre/, 'se distingue de'],
+    [/remede|repons|resou|solution/, 'résout'],
+    [/entraine|provoque|cause\b|produit/, 'entraîne'],
+    [/decoule|resulte|vient de|nait de/, 'résulte de'],
+    [/illustr|exemple/, 'illustre'],
+    [/suppose|necessite|exige|depend/, 'suppose'],
+  ];
+  function wikiLinks(c, notes) {
     const out = [];
-    const seen = new Map();
-    for (const e of map.edges) {
-      if (e.kind !== 'link') continue;
-      const t = map.edges.find((x) => x.kind === 'tree' && ((x.from === e.from && x.to === e.to) || (x.from === e.to && x.to === e.from)));
-      const a = S.node(map, e.from), b = S.node(map, e.to);
-      if (!a || !b) continue;
-      if (t) {
-        const keep = e.label && !t.label && !t.group && t.from === e.from;
+    const byTitle = new Map();
+    for (const n of c.map.nodes) { const t = norm(n.title).trim(); if (!byTitle.has(t)) byTitle.set(t, []); byTitle.get(t).push(n); }
+    for (const n of c.map.nodes) {
+      for (const m of String(n.note || '').matchAll(/\[\[([^\]]+)\]\]/g)) {
+        const hits = byTitle.get(norm(m[1]).trim()) || [];
+        if (hits.length > 1) { notes.push(note('wk-dup:' + n.id + ':' + norm(m[1]), 'link', `Renvoi ambigu : [[${short(m[1], 30)}]]`, `${hits.length} éléments portent ce titre : renommez-les pour que le renvoi désigne le bon.`, [n.id, ...hits.map((h) => h.id)])); continue; }
+        const target = hits[0];
+        if (!target || target.id === n.id || c.linked(n.id, target.id)) continue;
+        const before = norm(String(n.note).slice(Math.max(0, m.index - 40), m.index));
+        const verb = WIKI_VERBS.find(([re]) => re.test(before));
+        if (!verb || NEG.test(before.split(/[.;!?]/).pop())) continue;
         out.push({
-          key: 'dup:' + e.id, kind: 'duplicate', certainty: 'sure',
+          key: 'wk:' + n.id + '>' + target.id, kind: 'link', certainty: 'sure', gain: 3, link: true,
+          title: `Relier « ${short(n.title, 26)} » à « ${short(target.title, 26)} »`,
+          detail: 'La note dit déjà la relation avant le renvoi : le lien la rend visible, même d’une partie à l’autre.',
+          preview: [`${short(n.title, 28)} —${verb[1]}→ ${short(target.title, 28)}`],
+          ids: [n.id, target.id],
+          apply(mm) { if (!S.node(mm, n.id) || !S.node(mm, target.id) || mm.edges.some((e) => (e.from === n.id && e.to === target.id) || (e.from === target.id && e.to === n.id))) return; mm.edges.push({ id: U.uid('e'), from: n.id, to: target.id, kind: 'link', label: verb[1] }); },
+        });
+      }
+    }
+    return out;
+  }
+
+  /* ---- Libellés posés : sens douteux, libellé vague, cible incohérente ----
+     Les types seuls ne prouvent pas un sens (un même élément est effet d'une chose et cause de la
+     suivante) : une inversion n'est proposée que pour le couple strict cause ↔ conséquence, et
+     décochée. */
+  function labelAudit(c, notes) {
+    const out = [];
+    for (const e of c.map.edges) {
+      if (!e.label) continue;
+      const a = c.byId.get(e.from), b = c.byId.get(e.to);
+      if (!a || !b) continue;
+      const pol = polarity(e.label);
+      if (againstTypes(a, b, e.label)) {
+        const parallel = c.map.edges.some((t) => t !== e && t.kind === 'tree' && ((t.from === a.id && t.to === b.id) || (t.from === b.id && t.to === a.id)));
+        if (e.kind === 'link' && !parallel) {
+          out.push({
+            key: 'inv:' + e.id, kind: 'reverse', certainty: 'probable', gain: 5, ids: [a.id, b.id],
+            title: `Inverser « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} » ?`,
+            detail: `« ${short(a.title, 30)} » est noté ${S.TYPES[a.type].label.toLowerCase()} et « ${short(b.title, 30)} » ${S.TYPES[b.type].label.toLowerCase()} : la flèche semble partir dans le mauvais sens — à vérifier, un élément peut être l’effet d’une chose et la cause d’une autre.`,
+            preview: [`${short(b.title, 28)} —${e.label}→ ${short(a.title, 28)}`],
+            apply(m) {
+              const x = m.edges.find((y) => y.id === e.id);
+              if (!x || x.from !== a.id || m.edges.some((y) => y !== x && ((y.from === b.id && y.to === a.id) || (y.from === a.id && y.to === b.id)))) return;
+              x.from = b.id; x.to = a.id; delete x.group;
+            },
+          });
+        } else notes.push(note('inv-n:' + e.id, 'reverse', `Sens douteux : « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
+          'Les types disent l’inverse de la flèche : relisez la phrase, et corrigez le libellé ou les types à la main.', [a.id, b.id]));
+        continue;
+      }
+      if (pol === 'vague') {
+        const r = REL[b.type];
+        if (e.kind === 'tree' && !e.group && r && r.one && !heading(a)) {
+          out.push({
+            key: 'vg:' + e.id, kind: 'label', certainty: 'sure', gain: 2, ids: [a.id, b.id],
+            title: `Préciser « ${e.label} » vers « ${short(b.title, 26)} »`,
+            detail: `Le type de l’élément (${S.TYPES[b.type].label.toLowerCase()}) dit la relation mieux que « ${e.label} ».`,
+            preview: [`${short(a.title, 28)} —${r.one}→ ${short(b.title, 28)}`],
+            apply(m) { const x = m.edges.find((y) => y.id === e.id); if (x && x.label === e.label) x.label = r.one; },
+          });
+        } else notes.push(note('vg-n:' + e.id, 'label', `Libellé vague : « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
+          'Rien dans la carte ne dit la relation exacte : à préciser à la main (entraîne, suppose, sauf, s’oppose à…).', [a.id, b.id]));
+        continue;
+      }
+      // un remède ou une cause qui vise un intitulé ou une question : la relation pointe vers le plan, pas vers une idée
+      if ((pol === 'inh' || pol === 'fwd') && e.kind === 'link' && heading(b)) {
+        notes.push(note('tgt:' + e.id, 'label', `Lien vers un intitulé : « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
+          'Une cause ou un remède vise une idée précise, pas une question ou une partie : rattachez le lien à l’élément concerné.', [a.id, b.id]));
+      }
+    }
+    return out;
+  }
+
+  /* ---- Doublons, boucles, contradictions entre renvois ---- */
+  function duplicates(c, notes) {
+    const out = [];
+    const seen = new Map(), pairs = new Map();
+    for (const e of c.map.edges) {
+      if (e.kind !== 'link') continue;
+      const a = c.byId.get(e.from), b = c.byId.get(e.to);
+      if (!a || !b) continue;
+      const pol = polarity(e.label);
+      const t = c.parentEdgeOf(e.to) && c.parentEdgeOf(e.to).from === e.from ? c.parentEdgeOf(e.to) : c.parentEdgeOf(e.from) && c.parentEdgeOf(e.from).from === e.to ? c.parentEdgeOf(e.from) : null;
+      if (t) {
+        // un libellé qui contredit les types ne passe pas sur l'arbre : le sens est à trancher à la main
+        if (e.label && againstTypes(a, b, e.label)) continue; // labelAudit le signale
+        // le libellé ne passe sur l'arbre que s'il va dans le même sens
+        const keep = e.label && !t.label && !t.group && t.from === e.from && pol !== 'sym';
+        out.push({
+          key: 'dup:' + e.id, kind: 'duplicate', certainty: 'sure', gain: 4, ids: [a.id, b.id],
           title: `Fondre le renvoi « ${short(a.title, 22)} → ${short(b.title, 22)} » dans la hiérarchie`,
-          detail: keep ? 'Ils sont déjà parent et enfant : le libellé du renvoi passe sur l’arête de l’arbre.' : 'Ils sont déjà parent et enfant : le renvoi double le trait.',
+          detail: keep ? 'Ils sont déjà parent et enfant : le libellé du renvoi passe sur l’arête de l’arbre.' : 'Ils sont déjà parent et enfant : le renvoi double le trait (son libellé reste visible dans l’aperçu).',
           preview: [keep ? `${short(a.title, 28)} —${e.label}→ ${short(b.title, 28)}` : `− ${short(a.title, 24)} —${e.label || '…'}→ ${short(b.title, 24)}`],
           apply(m) {
             const x = m.edges.find((y) => y.id === e.id), tt = m.edges.find((y) => y.id === t.id);
@@ -372,124 +526,157 @@
         });
         continue;
       }
-      const k = [e.from, e.to].sort().join('|') + '|' + norm(e.label);
+      // même relation tracée deux fois (symétrique : dans un sens ou dans l'autre)
+      const k = (pol === 'sym' ? [e.from, e.to].sort().join('|') : e.from + '>' + e.to) + '|' + norm(e.label);
       if (seen.has(k)) {
         out.push({
-          key: 'dup:' + e.id, kind: 'duplicate', certainty: 'sure',
+          key: 'dup:' + e.id, kind: 'duplicate', certainty: 'sure', gain: 4, ids: [a.id, b.id],
           title: `Supprimer le renvoi répété « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
           detail: 'La même relation est déjà tracée entre ces deux éléments.',
           preview: [`− ${short(a.title, 24)} —${e.label}→ ${short(b.title, 24)}`],
           apply(m) { const x = m.edges.find((y) => y.id === e.id); if (x) m.edges.splice(m.edges.indexOf(x), 1); },
         });
-      } else seen.set(k, e);
+        continue;
+      }
+      seen.set(k, e);
+      const pk = [e.from, e.to].sort().join('|');
+      if (!pairs.has(pk)) pairs.set(pk, []);
+      pairs.get(pk).push({ e, pol, a, b });
+    }
+    // A —entraîne→ B et B —entraîne→ A : boucle réelle (cercle vicieux) ou erreur — à trancher à la main
+    // A —entraîne→ B et A —empêche→ B : contradiction
+    for (const list of pairs.values()) {
+      if (list.length < 2) continue;
+      const loop = list.some((x) => list.some((y) => x !== y && x.e.from === y.e.to && x.pol === y.pol && (x.pol === 'fwd' || x.pol === 'back')));
+      const contra = list.some((x) => list.some((y) => x !== y && x.e.from === y.e.from && ((x.pol === 'fwd' && y.pol === 'inh') || (x.pol === 'inh' && y.pol === 'fwd'))));
+      if (!loop && !contra) continue;
+      const { a, b } = list[0];
+      notes.push(note((loop ? 'loop:' : 'contra:') + [a.id, b.id].sort().join('|'), 'contradiction',
+        loop ? `Boucle : « ${short(a.title, 22)} » et « ${short(b.title, 22)} » se produisent l’un l’autre` : `Contradiction : « ${short(a.title, 22)} » produit et empêche « ${short(b.title, 22)} »`,
+        loop ? 'Un cercle vicieux est possible (gardez les deux liens) ; sinon supprimez celui qui va dans le mauvais sens.' : 'Les deux liens disent l’inverse : gardez celui que dit le cours.', [a.id, b.id]));
     }
     return out;
   }
 
   /* ---- Définition modulaire : la définition découpée en composantes reliées ----
      Les composantes reprennent les mots EXACTS de la source (seule la première lettre passe en
-     capitale) ; elles s'enchaînent selon la logique de la phrase : la notion est qualifiée (c'est),
-     ce qu'elle désigne est le cœur, les compléments (de qui ? à qui ?…) précisent le cœur, et
-     « notamment » / « comme » précisent la composante qui les précède. La définition intégrale
-     reste dans la note : on peut toujours la reconstituer. */
-  const PERSON = /^(personnes?|individus?|epoux|heritiers?|defunt|auteur|creanciers?|debiteurs?|parties?|enfants?|parents?|conjoints?|ayants?|successeurs?|tiers|proprietaires?|acquereurs?|vendeurs?)/;
-  // ce qu'un étudiant oublie en récitant : le nombre, l'exclusivité, la condition
-  const EMPH = /\b(une? ou plusieurs|deux ou plusieurs|au moins (?:une?|deux|[\wéè]+)|seule?s?|uniquement|exclusivement|nécessairement|obligatoirement|toujours|jamais|tous|toutes|personnellement|à titre gratuit|à titre onéreux|de plein droit|à condition que|sous réserve)\b/i;
+     capitale ; une composante qui ne serait pas une sous-chaîne exacte annule tout). La
+     qualification (c'est), le cœur (désigne), les compléments du cœur (de qui ? à qui ?…) et
+     « notamment » / « comme » sous la composante qu'ils précisent. Au moindre doute (« et »
+     sans fonction, « soit… soit », relative « par lequel », négation), on renonce : la
+     définition reste d'un bloc plutôt que d'être mal découpée. */
+  const PERSON = /^(personnes?|individus?|epoux|heritiers?|defunt|auteur|creanciers?|debiteurs?|parties?|enfants?|parents?|conjoints?|ayants?|successeurs?|tiers|proprietaires?|acquereurs?|vendeurs?|autrui|salaries?|employeurs?|contractants?|victimes?)/;
+  // ce qu'un étudiant oublie en récitant : le nombre, l'exclusivité, la condition (limites de mots explicites : « à » n'est pas un caractère \w)
+  const EMPH = /(?<![\p{L}])(une? ou plusieurs|deux ou plusieurs|au moins (?:une?|deux)|seule?s?|uniquement|exclusivement|nécessairement|obligatoirement|personnellement|à titre gratuit|à titre onéreux|de plein droit|à condition que|sous réserve)(?![\p{L}])/iu;
   const HEADS = new Set(['désigne', 'consiste en', 'permet', 'c’est']);
+  const B = '(?=[\\s,.;:]|$)'; // fin de mot qui marche après une lettre accentuée
   function splitDefinition(text) {
-    let t = String(text || '').replace(/\s+/g, ' ').trim();
-    t = t.split(/(?<=[.;])\s/)[0].replace(/[.;]$/, '');
-    // qualification : « X est une notion juridique qui désigne … »
+    const src = String(text || '').replace(/\s+/g, ' ').trim();
+    let t = src.split(/(?<=[.;])\s/)[0].replace(/[.;]$/, '');
+    const lt = norm(t);
+    // structures qu'un découpage mécanique trahirait
+    if (/\bsoit\b.*\bsoit\b/.test(lt) || /\b(par|dans|pour|sur) (lequel|laquelle|lesquels|lesquelles)\b/.test(lt) || /\ble fait pour\b/.test(lt)
+      || /\b(n'est|ne sont) pas\b/.test(lt) || /^(il y a|on parle de)\b/.test(lt)) return [];
     let qual = null;
-    const q = t.match(/\best\s+((?:une?|la|le|l['’])\s*[^,]{3,60}?)\s+qui\s+(désigne|consiste|permet)\b/i);
+    const q = t.match(new RegExp('(?:^|\\s)est\\s+((?:une?|la|le|l[\'’])\\s*[^,]{3,60}?)\\s+qui\\s+(désigne|consiste|permet)' + B, 'i'));
     if (q) { qual = q[1].trim(); t = t.slice(q.index + q[0].length - q[2].length); }
     else {
-      const m = t.match(/\b(désigne|consiste (?:à|en)|est (?:l['’]|la |le |un |une |ce )|permet)\b/i);
-      if (m) t = t.slice(m.index);
+      const m = t.match(new RegExp('(?:^|\\s)(désigne|consiste (?:à|en)|est (?:l[\'’]|la |le |un |une |ce )|permet)' + B, 'i'));
+      if (!m) return [];
+      t = t.slice(m.index + (m[0].startsWith(' ') ? 1 : 0));
     }
-    t = t.replace(/,\s*(notamment|mais|comme|sauf)\s+/gi, ' $1 ');
+    t = t.replace(/,\s*(notamment|mais|comme|sauf|ou)\s+/gi, ' $1 ');
     // 1) virgules : une énumération courte (« créer, modifier, transmettre ») reste d'un bloc
     const chunks = [];
     let inEnum = false;
-    for (const c of t.split(/,\s*/)) {
-      const tiny = c.split(' ').length < 3;
-      if (chunks.length && (tiny || (inEnum && /\s(ou|et)\s/.test(' ' + c + ' ')))) { chunks[chunks.length - 1] += ', ' + c; inEnum = tiny; }
-      else { chunks.push(c); inEnum = false; }
+    for (const ch of t.split(/,\s*/)) {
+      const tiny = ch.split(' ').length < 3;
+      if (chunks.length && (tiny || (inEnum && /\s(ou|et)\s/.test(' ' + ch + ' ')))) { chunks[chunks.length - 1] += ', ' + ch; inEnum = tiny; }
+      else { chunks.push(ch); inEnum = false; }
     }
     // 2) articulations : chaque complément devient une composante
-    const cut = /\s(?=d['’]une?\s|à une?\s|à des\s|aux\s|par\s|pour\s|afin de\s|en vue de\s|lorsque\s|sauf\s|notamment\s|mais\s|comme\s|destinée?s?\s+à\s|résultant\s)/i;
-    const parts = chunks.flatMap((c) => c.split(cut)).map((x) => x.trim()).filter(Boolean);
+    const cut = /\s(?=d['’]une?\s|à une?\s|à des\s|aux\s|par\s(?!lequel|laquelle)|pour\s|afin de\s|en vue de\s|lorsque\s|à condition que\s|sauf\s|notamment\s|mais\s|comme\s|ou\s(?:à|de|par)\s|destinée?s?\s+à\s|résultant\s|qui entraîne\s|qui provoque\s|au détriment de\s)/i;
+    const parts = chunks.flatMap((ch) => ch.split(cut)).map((x) => x.trim()).filter(Boolean);
     const merged = [];
     for (const p of parts) { if (merged.length && p.length < 8) merged[merged.length - 1] += ' ' + p; else merged.push(p); }
-    const comps = merged.slice(0, 6).map((p, i) => {
-      const lp = norm(p);
+    if (merged.length > 6) return []; // trop de morceaux : découpage douteux
+    const comps = [];
+    for (let i = 0; i < merged.length; i++) {
+      const p = merged[i], lp = norm(p);
       let label, body = p;
       const take = (re) => { body = p.replace(re, '').trim(); };
       if (i === 0 && /^designe\b/.test(lp)) { label = 'désigne'; take(/^désigne\s+/i); }
       else if (i === 0 && /^consiste/.test(lp)) { label = 'consiste en'; take(/^consiste (?:à|en)\s+/i); }
-      else if (i === 0 && /^permet/.test(lp)) { label = 'permet'; take(/^permet\s+/i); }
-      else if (i === 0) { label = 'c’est'; take(/^est\s+/i); }
+      else if (i === 0 && /^permet\b/.test(lp)) { label = 'permet'; take(/^permet\s+/i); }
+      else if (i === 0 && /^est\b/.test(lp)) { label = 'c’est'; take(/^est\s+/i); }
       else if (/^d'une? (maniere|facon)\b/.test(lp)) { label = 'comment ?'; }
       else if (/^d'une?\s/.test(lp)) { take(/^d['’]/i); label = PERSON.test(norm(body.replace(/^une?\s+(?:ou plusieurs\s+)?/i, ''))) ? 'de qui ?' : 'de quoi ?'; }
-      else if (/^(a une?|a des|aux)\s/.test(lp)) { take(/^(à|aux)\s+/i); label = PERSON.test(norm(body.replace(/^(?:une?|des)\s+(?:ou plusieurs\s+)?/i, ''))) || /^aux/.test(lp) ? 'à qui ?' : 'à quoi ?'; }
+      else if (/^(a une?|a des|aux)\s/.test(lp)) { take(/^(à|aux)\s+/i); label = PERSON.test(norm(body.replace(/^(?:une?|des|un autre|une autre)\s+(?:ou plusieurs\s+)?/i, ''))) || /^aux/.test(lp) ? 'à qui ?' : 'à quoi ?'; }
       else if (/^par\s/.test(lp)) { take(/^par\s+/i); label = 'par quoi ?'; }
       else if (/^(pour|afin de|en vue de)\s/.test(lp)) { label = 'dans quel but ?'; }
       else if (/^lorsque\s/.test(lp)) { take(/^lorsque\s+/i); label = 'quand ?'; }
+      else if (/^a condition que\s/.test(lp)) { take(/^à condition que\s+/i); label = 'à condition que'; }
       else if (/^sauf\s/.test(lp)) { take(/^sauf\s+/i); label = 'sauf'; }
       else if (/^notamment\s/.test(lp)) { take(/^notamment\s+/i); label = 'notamment'; }
       else if (/^mais\s/.test(lp)) { take(/^mais\s+/i); label = 'mais'; }
       else if (/^comme\s/.test(lp)) { take(/^comme\s+/i); label = 'comme'; }
+      else if (/^ou\s/.test(lp)) { take(/^ou\s+/i); label = 'ou'; }
       else if (/^destinee?s?\s+a\s/.test(lp)) { take(/^destinée?s?\s+à\s+/i); label = 'pour ?'; }
       else if (/^resultant\s/.test(lp)) { take(/^résultant\s+(?:de\s+|d['’])?/i); label = 'résulte de'; }
-      else label = 'et';
-      return { label, title: body };
-    });
+      else if (/^qui (entraine|provoque)\s/.test(lp)) { take(/^qui (?:entraîne|provoque)\s+/i); label = 'entraîne'; }
+      else if (/^au detriment de\s/.test(lp)) { take(/^au détriment de\s+/i); label = 'au détriment de'; }
+      else return []; // un morceau sans fonction : mieux vaut ne pas découper
+      comps.push({ label, title: body });
+    }
     if (qual) comps.unshift({ label: 'c’est', title: qual, qual: true });
-    const out = comps.map((c) => {
-      const title = c.title.charAt(0).toUpperCase() + c.title.slice(1);
+    const out = comps.map((ch) => {
+      const title = ch.title.charAt(0).toUpperCase() + ch.title.slice(1);
       const em = (title.match(EMPH) || [])[0];
-      return { label: c.label, title, ...(em ? { em } : {}), qual: !!c.qual };
+      return { label: ch.label, title, ...(em ? { em } : {}), qual: !!ch.qual };
     });
-    // enchaînement : -1 = la définition elle-même
-    const head = out.findIndex((c) => !c.qual && HEADS.has(c.label));
-    out.forEach((c, i) => {
-      if (c.qual || i === head) c.parent = -1;
-      else if ((c.label === 'notamment' || c.label === 'comme') && i > 0 && !out[i - 1].qual) c.parent = i - 1;
-      else c.parent = head >= 0 ? head : -1;
-      delete c.qual;
+    const head = out.findIndex((ch) => !ch.qual && HEADS.has(ch.label));
+    out.forEach((ch, i) => {
+      if (ch.qual || i === head) ch.parent = -1;
+      else if ((ch.label === 'notamment' || ch.label === 'comme') && i > 0 && !out[i - 1].qual) ch.parent = i - 1;
+      else ch.parent = head >= 0 ? head : -1;
+      delete ch.qual;
     });
-    const kept = out.filter((c) => c.title.length >= 4);
-    return kept.length >= 2 && kept.length === out.length ? out : [];
+    // fidélité : chaque composante est une sous-chaîne exacte de la source, et compte au moins 2 mots
+    const ls = src.toLowerCase().replace(/[’]/g, "'");
+    if (out.some((ch) => !ls.includes(ch.title.toLowerCase().replace(/[’]/g, "'")) || ch.title.trim().split(/\s+/).length < 2)) return [];
+    return out.length >= 2 ? out : [];
   }
-  function definitions(map, notes) {
+  function definitions(c, notes) {
     const out = [];
-    for (const n of map.nodes) {
-      if (n.type !== 'definition' || kidsOf(map, n.id).length) continue;
+    for (const n of c.map.nodes) {
+      if (n.type !== 'definition') continue;
+      if (c.kids(n.id).some((k) => k.type === 'idee')) continue; // déjà décomposée
       const fromNote = plain(n.note).trim().length > n.title.length;
       const src = fromNote ? plain(n.note).trim() : n.title;
-      if (src.length < 80) continue;
-      if (!fromNote) { // la définition entière est dans le titre : on ne sait pas quel terme elle définit
+      if (src.length < RULES.defMinChars) continue;
+      if (!fromNote) {
         notes.push(note('def-t:' + n.id, 'definition', `Définition dans le titre : « ${short(n.title, 32)} »`,
           'Mettez le terme défini en titre et la définition dans la note : elle pourra alors être décomposée.', [n.id]));
         continue;
       }
       const comps = splitDefinition(src);
-      if (comps.length < 3) continue; // découpage trop pauvre : la définition reste d'un bloc
+      if (comps.length < RULES.defMinParts) continue;
       out.push({
-        key: 'def:' + n.id, kind: 'definition', certainty: 'sure',
+        key: 'def:' + n.id, kind: 'definition', certainty: c.law ? 'sure' : 'probable', gain: 5, ids: [n.id],
         title: `Décomposer la définition « ${short(n.title, 32)} »`,
-        detail: 'Une définition récitée d’un bloc s’oublie ; découpée en composantes reliées (que désigne-t-elle ? de qui ? à qui ?), elle se comprend et se retient. Mots exacts de la source ; la définition complète reste dans la note.',
-        preview: comps.map((c) => `${c.parent >= 0 ? '   ' : ''}—${c.label}→ ${short(c.title, 44)}${c.em ? `  (en relief : « ${c.em} »)` : ''}`),
+        detail: (c.law ? '' : 'Hors droit, vérifiez que chaque morceau a un sens. ')
+          + 'Découpée en composantes reliées (que désigne-t-elle ? de qui ? à qui ?), une définition se comprend et se retient. Mots exacts de la source ; la définition complète reste dans la note et se révise d’un seul tenant.',
+        preview: comps.map((ch) => `${ch.parent >= 0 ? '   ' : ''}—${ch.label}→ ${short(ch.title, 44)}${ch.em ? `  (en relief : « ${ch.em} »)` : ''}`),
         apply(m) {
           const d = S.node(m, n.id);
-          if (!d || S.childrenOf(m, d.id).length) return;
+          if (!d || S.childrenOf(m, d.id).some((k) => k.type === 'idee')) return;
           const made = [];
-          comps.forEach((c, i) => {
-            const k = S.newNode({ type: 'idee', title: c.title, em: c.em, x: d.x + 300, y: d.y + i * 60 });
+          comps.forEach((ch, i) => {
+            const k = S.newNode({ type: 'idee', title: ch.title, em: ch.em, x: d.x + 300, y: d.y + i * 60 });
             m.nodes.push(k);
             made.push(k);
-            const from = c.parent >= 0 ? made[c.parent].id : d.id;
-            m.edges.push({ id: U.uid('e'), from, to: k.id, kind: 'tree', label: c.label });
+            const from = ch.parent >= 0 ? made[ch.parent].id : d.id;
+            m.edges.push({ id: U.uid('e'), from, to: k.id, kind: 'tree', label: ch.label });
           });
         },
       });
@@ -497,35 +684,40 @@
     return out;
   }
 
-  /* ---- Signalements : ce que l'on voit sans pouvoir le corriger sans inventer ---- */
+  /* ---- Signalements ---- */
   function note(key, kind, title, detail, ids) { return { key, kind, title, detail, ids }; }
-  function flatLists(map, notes) {
-    for (const p of map.nodes) {
+  /** Liste plate : des éléments juxtaposés sous une partie, sans aucune relation ENTRE eux
+      (une branche libellée depuis la partie ne dit rien de leurs rapports mutuels). */
+  function flatLists(c, notes) {
+    for (const p of c.map.nodes) {
       if (!STRUCT.has(p.type)) continue;
-      const es = map.edges.filter((e) => e.kind === 'tree' && e.from === p.id);
-      const ks = es.map((e) => S.node(map, e.to)).filter((k) => k && !STRUCT.has(k.type));
-      if (ks.length < 5) continue;
+      const es = c.map.edges.filter((e) => e.kind === 'tree' && e.from === p.id);
+      const ks = es.map((e) => c.byId.get(e.to)).filter((k) => k && !STRUCT.has(k.type));
+      if (ks.length < RULES.flatMin) continue;
       const ids = new Set(ks.map((k) => k.id));
-      const related = es.some((e) => e.label || e.group) || ks.some((k) => kidsOf(map, k.id).length)
-        || map.edges.some((e) => e.kind === 'link' && ids.has(e.from) && ids.has(e.to));
-      if (related || named(p, ks[0].type)) continue;
+      const related = ks.some((k) => c.kids(k.id).length) || c.map.edges.some((e) => e.kind === 'link' && (ids.has(e.from) || ids.has(e.to)));
+      const types = new Set(ks.map((k) => k.type));
+      // une liste homogène que le titre nomme (« Les 10 signes ») est plate par nature
+      if (related || (types.size === 1 && named(p, ks[0].type))) continue;
       notes.push(note('flat:' + p.id, 'flat', `Liste plate : « ${short(p.title, 32)} »`,
         `${ks.length} éléments rattachés à la partie, sans aucune relation entre eux. Si le cours dit lequel produit, suppose ou illustre l’autre, reliez-les (glissez un élément sous un autre, ou tracez un renvoi libellé).`, [...ids]));
     }
   }
-  function ambiguous(map, notes) {
+  // verbes causaux (« cause » seulement suivi d'un déterminant : « cause l'autre », pas « à cause de ») ou alternative explicite
+  const CAUSAL_VERBS = /\b(entraine|entrainent|provoque|provoquent|engendre|resulte|resultent|decoule|decoulent|aboutit|mene a|est cause par|a pour cause|a pour effet|causent?\s+(l'|la |le |les |un |une |des )|effet ou cause|cause ou effet|laquelle cause|lequel cause)/;
+  function ambiguous(c, notes) {
     let n = 0;
-    for (const p of map.nodes) {
-      const ks = kidsOf(map, p.id).filter((k) => !STRUCT.has(k.type) && k.type !== 'exemple');
-      const pw = words(p.title);
+    for (const p of c.map.nodes) {
+      const ks = c.kids(p.id).filter((k) => !STRUCT.has(k.type) && !['exemple', 'comparaison', 'definition', 'notion', 'question'].includes(k.type) && !/\?\s*$/.test(k.title));
+      const pw = c.rare(p.title);
       for (let i = 0; i < ks.length && n < 4; i++) for (let j = i + 1; j < ks.length && n < 4; j++) {
         const a = ks[i], b = ks[j];
-        // le sens est donné par les types : ce n'est pas ambigu (causal() s'en charge)
-        if ((CAUSES.has(a.type) && EFFECTS.has(b.type)) || (CAUSES.has(b.type) && EFFECTS.has(a.type))) continue;
-        if (linked(map, a.id, b.id)) continue;
-        const ta = textOf(a), tb = textOf(b);
-        if (!CAUSAL_WORDS.test(norm(ta)) || !CAUSAL_WORDS.test(norm(tb))) continue;
-        const sh = inter(new Set([...words(ta)].filter((w) => !pw.has(w))), words(tb));
+        if (CAUSAL_PAIRS[a.type + '>' + b.type] || CAUSAL_PAIRS[b.type + '>' + a.type]) continue; // causal() s'en charge
+        if (c.linked(a.id, b.id)) continue;
+        const ta = c.text.get(a.id), tb = c.text.get(b.id);
+        if (!CAUSAL_VERBS.test(ta) || !CAUSAL_VERBS.test(tb)) continue;
+        let sh = 0; const aw = c.rare(a.title + ' ' + plain(a.note));
+        for (const w of c.rare(b.title + ' ' + plain(b.note))) if (aw.has(w) && !pw.has(w)) sh++;
         if (sh < 2) continue;
         n++;
         notes.push(note('amb:' + a.id + '|' + b.id, 'ambiguous', `Relation causale possible, sens inconnu : « ${short(a.title, 22)} » / « ${short(b.title, 22)} »`,
@@ -533,8 +725,27 @@
       }
     }
   }
+  /** Prérequis : une notion définie dans une carte PLUS LOIN du cours, utilisée avant */
+  function prerequisites(c, notes) {
+    const course = c.opts.course;
+    if (!course || course.length < 2) return;
+    const order = course.slice().sort((a, b) => a.createdAt - b.createdAt);
+    const idx = order.findIndex((m) => m.id === c.map.id);
+    if (idx < 0) return;
+    let n = 0;
+    for (const later of order.slice(idx + 1)) {
+      for (const d of later.nodes) {
+        if (d.type !== 'definition' || wordsIn(d.title) < 2 && d.title.trim().length < 8) continue;
+        const user = c.map.nodes.find((a) => !STRUCT.has(a.type) && c.names(c.text.get(a.id), d.title));
+        if (!user || n >= 3) continue;
+        n++;
+        notes.push(note('pre:' + user.id + '>' + d.id, 'prereq', `Prérequis défini plus loin : « ${short(d.title, 30)} »`,
+          `« ${short(user.title, 30)} » l’emploie, mais sa définition n’arrive que dans « ${short(later.title, 30)} ». Définissez-le ici ou rappelez sa définition dans la note.`, [user.id]));
+      }
+    }
+  }
 
-  /** Intégrité du graphe : à vérifier après toute correction */
+  /** Intégrité du graphe : à vérifier après toute correction (ensembles comparables avant/après) */
   function check(map) {
     const v = [];
     const ids = new Set(map.nodes.map((n) => n.id));
@@ -543,6 +754,7 @@
     for (const e of map.edges) {
       if (eids.has(e.id)) v.push('arête en double ' + e.id);
       eids.add(e.id);
+      if (e.kind !== 'tree' && e.kind !== 'link') v.push('nature inconnue ' + e.id);
       if (!ids.has(e.from) || !ids.has(e.to)) v.push('extrémité absente ' + e.id);
       if (e.from === e.to) v.push('boucle ' + e.id);
       if (e.kind === 'tree') { if (parent.has(e.to)) v.push('deux parents ' + e.to); parent.set(e.to, e.from); }
@@ -551,37 +763,82 @@
       const seen = new Set(); let j = id;
       while (parent.has(j)) { if (seen.has(j)) { v.push('cycle ' + id); break; } seen.add(j); j = parent.get(j); }
     }
+    const treePairs = new Set();
+    for (const t of map.edges) if (t.kind === 'tree') { treePairs.add(t.from + '|' + t.to); treePairs.add(t.to + '|' + t.from); }
+    for (const e of map.edges) if (e.kind === 'link' && treePairs.has(e.from + '|' + e.to)) v.push('renvoi parallèle à l’arbre ' + e.id);
     const groups = new Map();
     for (const e of map.edges) if (e.group) { if (!groups.has(e.group)) groups.set(e.group, []); groups.get(e.group).push(e); }
-    for (const [g, es] of groups) if (new Set(es.map((e) => e.from + '|' + e.kind + '|' + e.label)).size > 1) v.push('branche incohérente ' + g);
+    for (const [g, es] of groups) {
+      if (es.length < 2) v.push('branche d’un seul membre ' + g);
+      if (new Set(es.map((e) => e.from + '|' + e.kind + '|' + e.label)).size > 1) v.push('branche incohérente ' + g);
+    }
     return v;
   }
 
-  function audit(map) {
-    if (!map || !map.nodes || !map.nodes.length) return { fixes: [], notes: [] };
+  /** Indicateurs d'une carte (mesure avant/après, tests/metrics.cjs) */
+  function metrics(map) {
+    const c = context(map);
+    const tree = map.edges.filter((e) => e.kind === 'tree');
+    const content = tree.filter((e) => { const a = c.byId.get(e.from), b = c.byId.get(e.to); return a && b && !STRUCT.has(b.type) && !heading(a) && !a.logic && !(named(a, b.type)) && !(a.type === 'methode' && b.type === 'etape'); });
+    const verbs = content.filter((e) => e.label && polarity(e.label) !== 'vague');
+    let dir = 0;
+    for (const e of map.edges) {
+      const a = c.byId.get(e.from), b = c.byId.get(e.to), pol = polarity(e.label);
+      if (a && b && ((pol === 'fwd' && (a.type === 'consequence' || a.type === 'effet') && b.type === 'cause') || (pol === 'back' && a.type === 'cause' && (b.type === 'consequence' || b.type === 'effet')))) dir++;
+    }
+    const fromHeading = map.edges.filter((e) => e.label && !e.group && heading(c.byId.get(e.from)) && polarity(e.label) && polarity(e.label) !== 'sym').length;
     const notes = [];
-    const ex = examples(map);
-    const exIds = new Set(ex.map((x) => x.key.split(':')[1].split('>')[0]));
-    const quiet = new Set();
-    const br = branches(map, quiet, exIds);
-    const lab = labelAudit(map, notes);
-    const dup = duplicates(map);
-    const taken = new Set([...quiet, ...br.flatMap((b) => b.ids), ...exIds]);
-    const fixes = [...definitions(map, notes), ...dup, ...lab, ...ex, ...br, ...causal(map), ...crossRefs(map, new Set(ex.map((x) => x.key.slice(3)))), ...wikiLinks(map), ...labels(map, taken)];
-    // un même couple ne reçoit qu'une proposition de renvoi (la plus sûre, la première)
-    const pairs = new Set();
-    const uniq = fixes.filter((f) => {
-      const m = /^(ex|ce|x|wk):(.+)>(.+)$/.exec(f.key);
-      if (!m) return true;
-      const k = [m[2], m[3]].sort().join('|');
-      if (pairs.has(k)) return false;
-      pairs.add(k); return true;
-    });
-    flatLists(map, notes);
-    ambiguous(map, notes);
-    return { fixes: uniq, notes };
+    flatLists(c, notes);
+    return {
+      nodes: map.nodes.length,
+      links: linkCount(map),
+      relationRate: content.length ? verbs.length / content.length : 1,  // relations nommées par un verbe
+      vague: map.edges.filter((e) => polarity(e.label) === 'vague').length,
+      wrongDirection: dir,                                                  // flèche contraire au couple cause ↔ conséquence
+      verbFromHeading: fromHeading,                                         // verbe causal posé depuis un intitulé
+      flat: notes.length,
+      integrity: check(map).length,
+    };
   }
-  const analyze = (map) => audit(map).fixes;
 
-  R.organize = { audit, analyze, check, splitDefinition, REL };
+  function audit(map, opts = {}) {
+    if (!map || !map.nodes || !map.nodes.length) return { fixes: [], notes: [], stats: null };
+    const c = context(map, opts);
+    const notes = [];
+    const live = (list) => list.filter((f) => !c.declined.has(f.key));
+    const ex = live(examples(c));
+    const exIds = new Set(ex.map((x) => x.ids[0]));
+    const quiet = new Set();
+    const br = live(branches(c, quiet, exIds));
+    const taken = new Set([...quiet, ...br.flatMap((b) => b.ids), ...exIds]);
+    const fixed = [...live(definitions(c, notes)), ...live(duplicates(c, notes)), ...live(labelAudit(c, notes)), ...ex, ...br, ...live(labels(c, taken))];
+    // renvois : un couple ne reçoit qu'une proposition, et la carte a un budget (renvois existants compris)
+    const planned = new Set(ex.map((x) => x.key.slice(3)));
+    const linksNow = linkCount(map);
+    let room = Math.max(0, linkBudget(map.nodes.length) - linksNow);
+    const pairs = new Set();
+    const linkFixes = live([...wikiLinks(c, notes), ...causal(c), ...crossRefs(c, planned)])
+      .sort((a, b) => (a.certainty === 'sure' ? 0 : 1) - (b.certainty === 'sure' ? 0 : 1) || b.gain - a.gain)
+      .filter((f) => {
+        const k = f.ids.slice().sort().join('|');
+        if (pairs.has(k)) return false;
+        pairs.add(k);
+        if (room <= 0) return false;
+        room--; return true;
+      });
+    const fixes = [...fixed, ...linkFixes].sort((a, b) => (a.certainty === 'sure' ? 0 : 1) - (b.certainty === 'sure' ? 0 : 1) || b.gain - a.gain);
+    // signalements calculés sur la carte telle qu'elle serait après les corrections sûres
+    // (une liste qu'une correction proposée relie déjà n'est pas « plate »)
+    const after = JSON.parse(JSON.stringify({ id: map.id, title: map.title, layout: map.layout, nodes: map.nodes, edges: map.edges }));
+    for (const f of fixes) if (f.certainty === 'sure') { try { f.apply(after); } catch (e) { /* aperçu seulement */ } }
+    const ca = context(after, opts);
+    flatLists(ca, notes);
+    ambiguous(c, notes);
+    prerequisites(c, notes);
+    const seenNotes = new Set();
+    return { fixes, notes: notes.filter((n) => !seenNotes.has(n.key) && seenNotes.add(n.key)), stats: metrics(map) };
+  }
+  const analyze = (map, opts) => audit(map, opts).fixes;
+
+  R.organize = { audit, analyze, check, metrics, splitDefinition, polarity, linkBudget, linkCount, RULES, REL, LEX, CAUSAL_PAIRS };
 })(window.R);

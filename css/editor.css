@@ -673,3 +673,4 @@
 .org-note .choice-l { display: grid; gap: 2px; font: var(--body-m); }
 .org-note .choice-l b { font: var(--title-s); }
 .org-note > svg { flex: none; margin-top: 2px; color: var(--on-surface-variant); }
+.org-stat { margin: var(--sp-2) 0 0; font: var(--label-l); color: var(--on-surface-variant); }
