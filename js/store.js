@@ -658,10 +658,15 @@
       if (node.logic) return `${T.prompt} — ${kids} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver`;
       // liens libellés : la consigne pose les questions de la carte (« désigne · de qui ? · à qui ? »)
       const labels = [];
-      for (const k of this.childrenOf(map, node.id)) {
-        const l = (this.parentEdge(map, k.id) || {}).label;
-        if (l && !labels.includes(l)) labels.push(l);
-      }
+      // définition décomposée : toute la chaîne (désigne · de qui ? · à qui ? · notamment)
+      const walk = (id, deep) => {
+        for (const k of this.childrenOf(map, id)) {
+          const l = (this.parentEdge(map, k.id) || {}).label;
+          if (l && !labels.includes(l)) labels.push(l);
+          if (deep && k.type === 'idee') walk(k.id, deep);
+        }
+      };
+      walk(node.id, node.type === 'definition');
       if (labels.length) return `${T.prompt} — ${labels.slice(0, 5).join(' · ')}${labels.length > 5 ? ' …' : ''}`;
       return `${T.prompt} — ${kids} élément${kids > 1 ? 's' : ''} à retrouver`;
     },

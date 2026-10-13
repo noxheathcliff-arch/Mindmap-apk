@@ -148,6 +148,13 @@
         const { map, node } = cur;
         const T = S.TYPES[node.type];
         const kids = S.childrenOf(map, node.id);
+        // définition décomposée : la réponse déroule la chaîne de composantes, en retrait
+        const chain = [];
+        if (node.type === 'definition') {
+          const walk = (id, depth) => { for (const k of S.childrenOf(map, id)) { chain.push({ c: k, depth }); if (k.type === 'idee') walk(k.id, depth + 1); } };
+          walk(node.id, 0);
+        }
+        const rows = chain.length ? chain : kids.map((c) => ({ c, depth: 0 }));
         const anc = S.ancestors(map, node.id);
         const course = S.course(map.courseId);
         const nums = S.structNumbers(map);
@@ -160,7 +167,7 @@
           h('div.answer-inner',
             kids.length ? h('div.answer-block',
               h('p.overline', node.logic === 'et' ? 'Éléments cumulatifs (ET)' : node.logic === 'ou' ? 'Éléments alternatifs (OU)' : 'Décomposition'),
-              h('ol.answer-list', kids.map((c) => h('li',
+              h('ol.answer-list', rows.map(({ c, depth }) => h('li', { style: depth ? `margin-inline-start:${depth * 18}px` : null },
                 node.logic ? h('span.decomp-logic', node.logic === 'et' ? 'ET' : 'OU') : null,
                 (S.parentEdge(map, c.id) || {}).label ? h('span.decomp-rel', S.parentEdge(map, c.id).label)
                   : S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,

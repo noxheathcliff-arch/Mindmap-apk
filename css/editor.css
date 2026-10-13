@@ -661,7 +661,15 @@
 .dialog-org .org-item .choice-check { margin-top: 2px; }
 .org-preview { display: grid; gap: 2px; margin-top: 6px; padding: 8px 10px; border-radius: var(--shape-s, 8px); background: var(--surface-container); color: var(--on-surface-variant); font: var(--body-s); }
 .org-item[aria-checked="true"] .org-preview { background: color-mix(in oklch, var(--on-secondary-container) 8%, transparent); color: inherit; }
-.org-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org-preview span { overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 
 /* Fragment du titre mis en relief (n.em) : « une ou plusieurs » — teinte, pas de contour */
 .node-em { background: var(--tertiary-container); color: var(--on-tertiary-container); font-weight: 600; border-radius: 4px; padding: 0 3px; margin: 0 -1px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.dialog-org .org-body { max-height: min(60vh, 520px); overflow: auto; }
+.dialog-org .org-list { max-height: none; overflow: visible; }
+.org-group { margin: var(--sp-3) 0 var(--sp-1); }
+.org-group-sub { margin: 0 0 var(--sp-1); font: var(--body-s); color: var(--on-surface-variant); }
+.org-note { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: start; border-radius: var(--shape-m, 12px); background: var(--surface-container); color: var(--on-surface); margin-bottom: var(--sp-1); }
+.org-note .choice-l { display: grid; gap: 2px; font: var(--body-m); }
+.org-note .choice-l b { font: var(--title-s); }
+.org-note > svg { flex: none; margin-top: 2px; color: var(--on-surface-variant); }

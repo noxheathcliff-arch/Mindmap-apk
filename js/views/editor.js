@@ -1226,47 +1226,78 @@
        des liens libellés, des branches, des définitions décomposées. Rien n'est appliqué
        sans accord ; tout s'annule d'un geste. */
     const declined = st.declined || (st.declined = new Set());
-    function suggestions() {
-      if (!R.organize || ro()) return [];
-      try { return R.organize.analyze(map).filter((x) => !declined.has(x.key)); } catch (e) { console.warn(e); return []; }
+    function auditNow() {
+      if (!R.organize || ro()) return { fixes: [], notes: [] };
+      try {
+        const r = R.organize.audit(map);
+        return { fixes: r.fixes.filter((x) => !declined.has(x.key)), notes: r.notes };
+      } catch (e) { console.warn(e); return { fixes: [], notes: [] }; }
     }
+    const suggestions = () => auditNow().fixes;
     function openOrganize() {
       if (guard()) return;
       flushEdit();
-      const list = suggestions();
-      if (!list.length) { ui.snack('Organisation : rien à améliorer', { duration: 2000 }); return; }
-      const on = new Set(list.map((x) => x.key));
-      let okBtn = null;
-      const count = () => { if (okBtn) okBtn.querySelector('.btn-label, span:last-child').textContent = on.size ? `Appliquer (${on.size})` : 'Appliquer'; if (okBtn) okBtn.disabled = !on.size; };
-      const items = h('div.choice-list.form-choice.org-list', { role: 'group', 'aria-label': 'Améliorations proposées' },
-        list.map((x) => {
-          const b = h('button.list-item.choice.org-item', { type: 'button', role: 'checkbox', 'aria-checked': 'true', 'data-kind': x.kind },
-            h('span.choice-l', h('b', x.title), x.detail ? h('span.choice-sub', x.detail) : null,
-              x.preview && x.preview.length ? h('span.org-preview', x.preview.slice(0, 6).map((t) => h('span', t))) : null),
-            h('span.choice-check', R.icon('check', 20)));
-          b.addEventListener('click', () => {
-            if (on.has(x.key)) on.delete(x.key); else on.add(x.key);
-            b.setAttribute('aria-checked', String(on.has(x.key)));
-            count();
-          });
-          return b;
-        }));
-      const body = h('div', h('p.dialog-text', 'Des liens libellés se lisent comme des phrases et s’apprennent mieux qu’une liste. Décochez ce qui ne convient pas.'), items);
+      const { fixes: list, notes } = auditNow();
+      if (!list.length && !notes.length) { ui.snack('Organisation : rien à améliorer', { duration: 2000 }); return; }
+      // sûr : coché ; probable : décoché, à vérifier ; signalé : à corriger à la main
+      const on = new Set(list.filter((x) => x.certainty !== 'probable').map((x) => x.key));
+      let okBtn = null, closeFn = null;
+      const count = () => {
+        if (!okBtn) return;
+        okBtn.querySelector('.btn-label').textContent = on.size ? `Appliquer (${on.size})` : 'Appliquer';
+        okBtn.disabled = !on.size;
+      };
+      const item = (x) => {
+        const b = h('button.list-item.choice.org-item', { type: 'button', role: 'checkbox', 'aria-checked': String(on.has(x.key)), 'data-kind': x.kind },
+          h('span.choice-l', h('b', x.title), x.detail ? h('span.choice-sub', x.detail) : null,
+            x.preview && x.preview.length ? h('span.org-preview', x.preview.slice(0, 7).map((t) => h('span', t))) : null),
+          h('span.choice-check', R.icon('check', 20)));
+        b.addEventListener('click', () => {
+          if (on.has(x.key)) on.delete(x.key); else on.add(x.key);
+          b.setAttribute('aria-checked', String(on.has(x.key)));
+          count();
+        });
+        return b;
+      };
+      const sure = list.filter((x) => x.certainty !== 'probable'), maybe = list.filter((x) => x.certainty === 'probable');
+      const group = (title, sub, els) => els.length ? [h('p.overline.org-group', title), sub ? h('p.org-group-sub', sub) : null,
+        h('div.choice-list.form-choice.org-list', { role: 'group', 'aria-label': title }, els)] : [];
+      const noteEls = notes.map((x) => {
+        const b = h('button.list-item.org-note', { type: 'button', 'data-kind': x.kind },
+          h('span.choice-l', h('b', x.title), h('span.choice-sub', x.detail)), R.icon('target', 18));
+        b.addEventListener('click', () => { closeFn && closeFn(false); setTimeout(() => { select(x.ids[0]); centerOn(x.ids[0]); }, 200); });
+        return b;
+      });
+      const body = h('div.org-body',
+        h('p.dialog-text', 'Des liens libellés se lisent comme des phrases et s’apprennent mieux qu’une liste. Rien n’est réécrit : seules les relations changent.'),
+        ...group('Établi par la carte', null, sure.map(item)),
+        ...group('Probable — à vérifier', 'Indice seulement (mots partagés) : cochez si le cours le dit.', maybe.map(item)),
+        ...group('À corriger à la main', 'La carte ne permet pas de trancher sans inventer.', noteEls));
       ui.dialog({
         title: 'Améliorer l’organisation', icon: 'tidy', body, cls: 'dialog-layout dialog-org',
-        actions: [{ label: 'Plus tard', value: false }, { label: `Appliquer (${on.size})`, value: true, variant: 'filled', primary: true }],
-        onOpen: (box) => { okBtn = box.querySelector('.dialog-actions .btn:last-child'); },
+        actions: [{ label: 'Plus tard', value: false }, { label: on.size ? `Appliquer (${on.size})` : 'Appliquer', value: true, variant: 'filled', primary: true }],
+        onOpen: (box, close) => { closeFn = close; okBtn = box.querySelector('.dialog-actions .btn:last-child'); count(); },
       }).then((ok) => {
         if (!ok) return;
         for (const x of list) if (!on.has(x.key)) declined.add(x.key);
         const pick = list.filter((x) => on.has(x.key));
         if (!pick.length) return;
-        st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+        const snap = snapshot();
+        const before = R.organize.check(map).length;
         let n = 0;
         for (const x of pick) { try { x.apply(map); n++; } catch (e) { console.warn(e); } }
+        // contrôle après correction : une carte abîmée est rendue telle qu'elle était
+        const broken = R.organize.check(map);
+        if (broken.length > before) {
+          console.warn('organisation annulée', broken);
+          restoreSnap(snap);
+          ui.snack('Organisation annulée : la carte serait devenue incohérente', { duration: 3500 });
+          return;
+        }
+        st.undo.push(snap); st.redo = []; st.coalesce = null;
         S.touchMap(map, 'edit');
         render(); updateHistoryBtns();
-        // la structure a changé : on range dans la foulée (l'annulation reste en deux temps)
+        // la structure a changé : on range dans la foulée (une seule étape d'annulation)
         setTimeout(() => tidy(null, { quiet: true, noUndo: true }), 60);
         ui.snack(n > 1 ? `${n} améliorations appliquées` : 'Amélioration appliquée', { action: 'Annuler', onAction: undo, duration: 4000 });
       });
@@ -1274,11 +1305,14 @@
     R.actions.organize = openOrganize;
     let lastHint = '';
     function hintOrganize() {
-      const list = suggestions(), sig = list.map((x) => x.key).join('|');
+      const { fixes, notes } = auditNow();
+      const list = fixes.filter((x) => x.certainty !== 'probable');
+      const sig = list.map((x) => x.key).concat(notes.map((x) => x.key)).join('|');
       const n = list.length;
       if (sig === lastHint) return; // pas de rappel identique à chaque rangement
       lastHint = sig;
       if (n) ui.snack(n > 1 ? `Organisation : ${n} améliorations possibles` : 'Organisation : 1 amélioration possible', { action: 'Voir', onAction: openOrganize, duration: 5000 });
+      else if (notes.length) ui.snack(notes.length > 1 ? `Organisation : ${notes.length} points à vérifier` : 'Organisation : 1 point à vérifier', { action: 'Voir', onAction: openOrganize, duration: 5000 });
     }
 
     /** Ranger : pose à pose, trajectoires en arc. mode : disposition choisie (sinon celle de
