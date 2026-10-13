@@ -3026,6 +3026,22 @@
         S.save();
         render();
       }
+      // distance de sécurité avec les tailles réelles : une carte rangée ailleurs (autre écran,
+      // autre police, ancienne version) peut avoir des nœuds collés — on les écarte sans tout ranger
+      const keepApart = () => {
+        if (st.destroyed || st.mode !== 'map' || map.readOnly) return false;
+        const pos = {};
+        for (const n of map.nodes) pos[n.id] = { x: n.x, y: n.y };
+        // tolérance : on ne touche à rien tant que tout est à plus de 8 px
+        const probe = {}; for (const id in pos) probe[id] = { ...pos[id] };
+        if (!R.layout.separate(map, probe, sizeFn, map.layout, 8)) return false;
+        R.layout.separate(map, pos, sizeFn, map.layout);
+        for (const n of map.nodes) Object.assign(n, pos[n.id]);
+        S.save();
+        render();
+        return true;
+      };
+      if (!laidOut) keepApart();
       // polices pas encore chargées : les tailles mesurées sont provisoires — on remesure
       // (et on range à nouveau, dans la même disposition, si la carte vient d'être rangée)
       if (document.fonts && document.fonts.status !== 'loaded') {
@@ -3040,7 +3056,7 @@
             S.save();
             render();
             initialView();
-          } else renderEdges();
+          } else if (!keepApart()) renderEdges();
         });
       }
       renderEdges();

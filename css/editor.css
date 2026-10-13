@@ -555,8 +555,8 @@
   .bottombar.swap .ctx-btn:nth-child(5) { animation-delay: 60ms; }
   @keyframes bar-in { from { opacity: 0; transform: translateY(6px); } }
   .coach { bottom: var(--sp-4); }
-  .node { max-width: 220px; }
-  .node.struct { max-width: 280px; }
+  /* pas de largeur propre au mobile : un nœud a la même taille partout, sinon une carte rangée
+     sur un écran se retrouverait avec des nœuds collés sur un autre (positions absolues) */
 }
 
 /* icône de note sur le nœud : raccourci vers la note (cible élargie) */

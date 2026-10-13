@@ -25,11 +25,11 @@
   const P = {
     depthGap: 88,     // parent → enfants (droite / centrée) : place pour les libellés
     downGap: 60,      // pyramide : entre deux niveaux
-    leafGap: 10,      // entre deux feuilles sœurs
-    sibGap: 18,       // entre deux sœurs qui ont des enfants
+    leafGap: 20,      // entre deux feuilles sœurs (au-dessus de la distance de sécurité)
+    sibGap: 26,       // entre deux sœurs qui ont des enfants
     structGap: 34,    // entre deux branches de structure (leçons, sections)
-    cousinGap: 24,    // entre deux groupes voisins, aux niveaux plus profonds
-    downSibGap: 22,   // pyramide : entre deux sœurs
+    cousinGap: 28,    // entre deux groupes voisins, aux niveaux plus profonds
+    downSibGap: 24,   // pyramide : entre deux sœurs
     rootGap: 72,      // entre deux arbres indépendants
     w: {              // poids de la note globale (plus bas = mieux)
       // échelle commune : 1 croisement ≈ 300 px de renvoi à suivre des yeux (Ware et al. 2002 :
@@ -50,7 +50,7 @@
   };
   // rôle de lecture de chaque type : structure, contenu, appui (exemple, source…), synthèse
   P.satIndent = 18;   // un appui (exemple, arrêt, citation…) se décale comme une annotation
-  P.satGap = 6;       // deux appuis consécutifs se serrent (ils forment un bloc)
+  P.satGap = 16;      // deux appuis consécutifs se serrent (ils forment un bloc), à la distance de sécurité
   P.summaryGap = 26;  // « À retenir » se détache de ce qui précède
   P.seq = 1;          // séquences (méthodes, chronologies) en ligne
   const SUPPORT = new Set(['exemple', 'juris', 'doctrine', 'texte', 'citation', 'personne', 'etude']);
@@ -58,14 +58,14 @@
   /** Espace de recherche de l'optimiseur : chaque disposition est affinée sur ces réglages */
   const SEARCH = {
     depthGap: [72, 88, 108],
-    cousinGap: [18, 24, 34],
-    leafGap: [8, 10, 14],
+    cousinGap: [24, 28, 36],
+    leafGap: [18, 20, 24],
     structGap: [26, 34, 46],
     satIndent: [0, 18, 28],
     seq: [1, 0],
   };
   const GAP_X = P.depthGap, GAP_Y = 16, GAP_ROOT = P.rootGap; // compatibilité
-  const STACK = { indent: 28, top: 18, gap: 8, spine: 14 }; // pyramide : feuilles en colonne sous le parent
+  const STACK = { indent: 28, top: 20, gap: 16, spine: 14 }; // pyramide : feuilles en colonne sous le parent
   const SEQ = { gap: 34 }; // séquence : écart entre deux étapes (place pour la flèche)
 
   /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
@@ -739,6 +739,49 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Distance de sécurité                                                */
+  /* ------------------------------------------------------------------ */
+  /* Garantie finale, quelle que soit la disposition : deux nœuds gardent au moins SAFE px entre
+     eux. Un nœud trop proche est poussé avec toute sa sous-branche (la structure ne se déforme
+     pas), le long de l'axe des frères (vertical, horizontal en pyramide) ; ce qui est en dessous
+     est poussé à son tour. La première racine ne bouge pas. Sert aussi à réparer une carte dont
+     les tailles réelles ont changé (autre écran, police). */
+  const SAFE = 16;
+  function separate(map, pos, size, mode, pad = SAFE) {
+    const S = R.store;
+    const ids = map.nodes.map((n) => n.id).filter((id) => pos[id]);
+    const kids = new Map();
+    for (const e of map.edges) if (e.kind === 'tree') { if (!kids.has(e.from)) kids.set(e.from, []); kids.get(e.from).push(e.to); }
+    const has = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
+    const root = ids.find((id) => !has.has(id));
+    const sub = (id, out = new Set()) => { if (out.has(id)) return out; out.add(id); for (const k of kids.get(id) || []) sub(k, out); return out; };
+    const sz = new Map(ids.map((id) => [id, size(S.node(map, id) || map.nodes.find((n) => n.id === id))]));
+    const vertical = mode !== 'down';
+    let moved = false;
+    for (let it = 0; it < 200; it++) {
+      let fix = null;
+      for (let i = 0; i < ids.length && !fix; i++) for (let j = i + 1; j < ids.length; j++) {
+        const a = ids[i], b = ids[j], A = pos[a], B = pos[b], sa = sz.get(a), sb = sz.get(b);
+        const ox = Math.min(A.x + sa.w, B.x + sb.w) - Math.max(A.x, B.x) + pad;
+        const oy = Math.min(A.y + sa.h, B.y + sb.h) - Math.max(A.y, B.y) + pad;
+        if (ox <= 0.5 || oy <= 0.5) continue;
+        // le second dans le sens de lecture (plus bas / plus à droite) s'écarte vers l'avant ;
+        // s'il est la racine ou un ancêtre de l'autre, c'est le premier qui recule
+        const [first, second] = vertical ? (A.y + sa.h / 2 <= B.y + sb.h / 2 ? [a, b] : [b, a]) : (A.x + sa.w / 2 <= B.x + sb.w / 2 ? [a, b] : [b, a]);
+        const d = vertical ? oy : ox;
+        if (second !== root && !sub(second).has(first)) fix = { id: second, d, sgn: 1 };
+        else if (first !== root && !sub(first).has(second)) fix = { id: first, d, sgn: -1 };
+        else continue;
+        break;
+      }
+      if (!fix) break;
+      moved = true;
+      for (const id of sub(fix.id)) { if (vertical) pos[id].y += fix.sgn * Math.ceil(fix.d); else pos[id].x += fix.sgn * Math.ceil(fix.d); }
+    }
+    return moved;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Disposition « libre » (organique)                                   */
   /* ------------------------------------------------------------------ */
   /* Un rendu « fait à la main » : la base centrée sans colonnes alignées, puis un léger
@@ -748,7 +791,7 @@
      ensuite écartés ; l'amplitude baisse tant qu'un lien traverse un nœud ou qu'un libellé
      masque un texte (le désordre est permis, pas le fouillis). */
   function rnd(id, k) { let h = 2166136261 ^ k; for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619); return ((h >>> 0) % 10007) / 10007; }
-  const ORG = { jx: 34, jy: 14, fan: 44, pad: 16, iters: 80, gapMin: 64 };
+  const ORG = { jx: 34, jy: 14, fan: 44, pad: 20, iters: 80, gapMin: 64 };
   function placeOrganic(map, T, size, split, prm, amp) {
     const base = place(map, T, size, 'balanced', split, { ...prm, organic: true, seq: 0, satIndent: 0 });
     if (!amp) return base;
@@ -1006,7 +1049,11 @@
       const full = run({ mode: cur.mode, split: cur.split }, cur.prm);
       if (full.score.cost < best.score.cost) best = full;
     }
-    return { pos: best.pos, mode: best.mode, score: best.score, params: best.prm, tried };
+    // garantie finale : distance de sécurité entre tous les nœuds, quelle que soit la disposition
+    const pos = {};
+    for (const id in best.pos) pos[id] = { ...best.pos[id] };
+    separate(map, pos, size, best.mode);
+    return { pos, mode: best.mode, score: best.score, params: best.prm, tried };
   }
 
   /** Compatibilité : positions seules, dans la disposition actuelle (ou celle demandée) */
@@ -1052,7 +1099,7 @@
   R.layout = {
     P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT, STACK, stacked,
     estimate, labelSize,
-    arrange, tidy, evaluate, childSlot, flow,
+    arrange, tidy, evaluate, childSlot, flow, separate, SAFE,
     treeSides, treeCurve, combTooth, sequencePrev, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);
