@@ -5,9 +5,12 @@ description: Transforme un livre, un PDF de cours, un polycopié ou des notes en
 
 # Ratio — Compilateur Livre → Cours
 
-La spécification complète est dans `ratio_book_to_course_compiler_v1.6.json` (même dossier). **Lis-la en entier avant de commencer**, puis applique son `pipeline` (P0 → P7) sans sauter de phase, avec ses `modeling_patterns` (énumérations, exemples, questionnaires, méthodes, sources défectueuses).
+La spécification complète est dans `ratio_book_to_course_compiler_v2.0.json` (même dossier). **Lis-la en entier avant de commencer**, puis applique son `pipeline` (P0 → P7) sans sauter de phase, avec ses `modeling_patterns` (énumérations, exemples, questionnaires, méthodes, sources défectueuses).
 
 ## L'essentiel
+
+- **Relations d'abord (v2, `relations_first`)** : la carte s'organise par associations, pas en listes plates. Chaque arête `tree` non structurelle porte un **libellé** qui se lit comme une phrase (« Décès — entraîne → Ouverture de la succession », « Indivision — illustré par → Un père laisse deux enfants »). Une famille de ≥ 2 enfants de même relation devient une **branche libellée** (même `group` + libellé au pluriel : « conséquences », « causes »). Un nœud qui traite deux choses → deux branches libellées (option B). Les effets vont sous la cause qui les produit, les exemples sous l'élément précis qu'ils illustrent. Renvois libellés y compris **entre sections** quand la relation est précise. Le type n'est plus qu'un repère : un petit jeu de types de base suffit (`relations_first.core_types`).
+- **Définitions modulaires (v2, `modular_definitions`)** : une définition longue garde son texte intégral dans la note et se décompose en composantes `idee` reliées par des liens-questions (« désigne », « de qui ? », « à qui ? », « par quoi ? », « sauf »…) ; le fragment qu'on oublie en récitant (« une ou plusieurs ») va dans le champ `em` du nœud pour être mis en relief.
 
 - **Sortie** : un bloc ```json au format `{"format":"ratio","version":2,"kind":"course","courses":[…1 cours…],"maps":[…]}`, suivi d'un court rapport en français.
 - **Une carte = un chapitre** (ou une unité de révision). Racine de type `chapitre` dont la note dit la thèse.
@@ -18,9 +21,9 @@ La spécification complète est dans `ratio_book_to_course_compiler_v1.6.json` (
 - **Libellés** : la relation exacte en 1–3 mots ; crée ton propre libellé si aucun préréglage ne convient (`edge_rules.labels`, test de la phrase « source — libellé → cible »).
 - **Constructions** (R11) : 3–6 `etape` feuilles sous une `methode` ou 3–6 `date` sœurs → frise fléchée ; 4+ enfants → liste en peigne ; exemples et sources → annotations en retrait ; branches principales numérotées dans l'ordre du JSON.
 - **Découpage** : compare deux découpages candidats par partie avec `course_design` (cohérence, taille, autonomie, équilibre, mémorisabilité).
-- **Renvois** : 0–4 liens `kind:"link"` par carte (6 max au-delà de 30 nœuds), entre parties voisines, toujours étiquetés (`implique`, `s'oppose à`, `remédie à`, `sauf`, `voir`…), fourches avec `group`.
+- **Renvois** : 2–6 liens `kind:"link"` par carte (8 max au-delà de 30 nœuds), toujours étiquetés avec une relation précise (`entraîne`, `s'oppose à`, `remédie à`, `sauf`…), y compris d'une section à l'autre ; fourches avec `group`.
 - **Omettre** `x`, `y`, `review`, `viewport` ; mettre `"needsLayout": true` sur chaque carte ; nœuds dans l'ordre de lecture.
 - **Fidélité** : rien d'inventé ; un complément indispensable est marqué *(complément)*.
 - **Valider** avec `self_check.validator_python` si tu peux exécuter du code, sinon avec `self_check.manual_checklist`, jusqu'à zéro erreur.
-- **Lisibilité (readability_rules)** : racine à 3–6 branches homogènes, exemples et arrêts dans la partie qu'ils illustrent (jamais sous un nœud ET/OU), « À retenir » en dernier, 0–4 renvois par carte et seulement entre parties voisines (relation lointaine → `[[Titre]]` dans la note), titres de 15–40 caractères, 15–35 nœuds par carte. Ne fournis pas x/y : Ratio range la carte (facultatif : `layoutPick`).
+- **Lisibilité (readability_rules)** : racine à 3–6 branches homogènes, exemples et arrêts dans la partie qu'ils illustrent (jamais sous un nœud ET/OU), « À retenir » en dernier, 2–6 renvois précis par carte (relation vague entre parties éloignées → `[[Titre]]` dans la note), titres de 15–40 caractères, 15–35 nœuds par carte. Ne fournis pas x/y : Ratio range la carte (facultatif : `layoutPick`).
 - **Livre long** : livrer en parties, même id de cours ; l'utilisateur importera les suites avec « Compléter le cours ».

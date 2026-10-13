@@ -381,7 +381,7 @@
     function paintNode(el, n, ctx) {
       const T = S.TYPES[n.type];
       const bs = ctx.stats;
-      const sig = [n.type, n.title, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic, ctx.kicker,
+      const sig = [n.type, n.title, n.em, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic, ctx.kicker,
         bs ? `${bs.reviewable}/${Math.round(bs.progress * 100)}` : ''].join('|');
       if (el._type !== n.type) {
         if (el._type) el.classList.remove('t-' + el._type, 'rank-' + (S.TYPES[el._type].rank || 0));
@@ -398,7 +398,7 @@
         el.classList.toggle('has-meter', !!(bs && bs.reviewable));
         if (bs && bs.reviewable) meter.style.setProperty('--p', String(bs.progress));
         const hl = el.querySelector('.hl');
-        if (st.editing !== n.id) hl.textContent = n.title || 'Sans titre';
+        if (st.editing !== n.id) titleInto(hl, n);
         el.classList.toggle('untitled', !n.title);
         const meta = el.querySelector('.node-meta');
         U.clear(meta);
@@ -640,6 +640,12 @@
         // épine dans le couloir libre juste avant la colonne des enfants (un frère plus large du
         // parent peut occuper la moitié du couloir : on se cale sur la colonne, pas sur le parent)
         const x = left ? Math.min(p1[0] - 14, col + 30) : Math.max(p1[0] + 14, col - 30);
+        if (b.explicit) {
+          // branche libellée : plusieurs branches d'un même parent ne partagent pas le même tronc
+          const ys = kids.map((k) => k.y + size(k).h / 2), cy = ys.reduce((s2, y) => s2 + y, 0) / ys.length;
+          p1[1] += U.clamp((cy - p1[1]) * 0.25, -sa.h / 2 + 6, sa.h / 2 - 6);
+          return { p1, d1: [left ? -1 : 1, 0], J: [x, U.clamp(p1[1] + (cy - p1[1]) * 0.5, Math.min(...ys), Math.max(...ys))], comb: true };
+        }
         return { p1, d1: [left ? -1 : 1, 0], J: [x, p1[1]], comb: true };
       }
       if (b.kind === 'link' && rects && !st.fastEdges) {
@@ -698,6 +704,13 @@
       else if (d1[1] > 0) gap = y0 - p1[1]; else gap = p1[1] - y1;
       const reach = U.clamp(gap * 0.42, 24, 120);
       const J = [p1[0] + d1[0] * reach, p1[1] + d1[1] * reach];
+      if (b.explicit && b.kind === 'tree') {
+        // branche libellée : le tronc part vers ses propres cibles (deux branches d'un même
+        // parent — « causes », « conséquences » — ont chacune leur tronc et leur libellé)
+        const ax = d1[0] ? 1 : 0, c = ax ? (y0 + y1) / 2 : (x0 + x1) / 2, half = (ax ? sa.h : sa.w) / 2 - 6;
+        p1[ax] += U.clamp((c - p1[ax]) * 0.25, -half, half);
+        J[ax] = p1[ax] + U.clamp((c - p1[ax]) * 0.5, -90, 90);
+      }
       return { p1, d1, J };
     }
     function branchCurve(J, d1, t, kind) {
@@ -1201,11 +1214,79 @@
     }
     R.actions.chooseLayout = chooseLayout;
 
+    /** Titre d'un nœud, avec son fragment mis en relief (n.em) quand il y en a un */
+    function titleInto(el, n) {
+      const t = n.title || 'Sans titre';
+      const i = n.em ? t.toLowerCase().indexOf(n.em.toLowerCase()) : -1;
+      if (i < 0) { el.textContent = t; return; }
+      U.clear(el);
+      el.append(t.slice(0, i), h('mark.node-em', t.slice(i, i + n.em.length)), t.slice(i + n.em.length));
+    }
+    /* Organisation : le rangement relit aussi les relations (js/organize.js) et propose
+       des liens libellés, des branches, des définitions décomposées. Rien n'est appliqué
+       sans accord ; tout s'annule d'un geste. */
+    const declined = st.declined || (st.declined = new Set());
+    function suggestions() {
+      if (!R.organize || ro()) return [];
+      try { return R.organize.analyze(map).filter((x) => !declined.has(x.key)); } catch (e) { console.warn(e); return []; }
+    }
+    function openOrganize() {
+      if (guard()) return;
+      flushEdit();
+      const list = suggestions();
+      if (!list.length) { ui.snack('Organisation : rien à améliorer', { duration: 2000 }); return; }
+      const on = new Set(list.map((x) => x.key));
+      let okBtn = null;
+      const count = () => { if (okBtn) okBtn.querySelector('.btn-label, span:last-child').textContent = on.size ? `Appliquer (${on.size})` : 'Appliquer'; if (okBtn) okBtn.disabled = !on.size; };
+      const items = h('div.choice-list.form-choice.org-list', { role: 'group', 'aria-label': 'Améliorations proposées' },
+        list.map((x) => {
+          const b = h('button.list-item.choice.org-item', { type: 'button', role: 'checkbox', 'aria-checked': 'true', 'data-kind': x.kind },
+            h('span.choice-l', h('b', x.title), x.detail ? h('span.choice-sub', x.detail) : null,
+              x.preview && x.preview.length ? h('span.org-preview', x.preview.slice(0, 6).map((t) => h('span', t))) : null),
+            h('span.choice-check', R.icon('check', 20)));
+          b.addEventListener('click', () => {
+            if (on.has(x.key)) on.delete(x.key); else on.add(x.key);
+            b.setAttribute('aria-checked', String(on.has(x.key)));
+            count();
+          });
+          return b;
+        }));
+      const body = h('div', h('p.dialog-text', 'Des liens libellés se lisent comme des phrases et s’apprennent mieux qu’une liste. Décochez ce qui ne convient pas.'), items);
+      ui.dialog({
+        title: 'Améliorer l’organisation', icon: 'tidy', body, cls: 'dialog-layout dialog-org',
+        actions: [{ label: 'Plus tard', value: false }, { label: `Appliquer (${on.size})`, value: true, variant: 'filled', primary: true }],
+        onOpen: (box) => { okBtn = box.querySelector('.dialog-actions .btn:last-child'); },
+      }).then((ok) => {
+        if (!ok) return;
+        for (const x of list) if (!on.has(x.key)) declined.add(x.key);
+        const pick = list.filter((x) => on.has(x.key));
+        if (!pick.length) return;
+        st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+        let n = 0;
+        for (const x of pick) { try { x.apply(map); n++; } catch (e) { console.warn(e); } }
+        S.touchMap(map, 'edit');
+        render(); updateHistoryBtns();
+        // la structure a changé : on range dans la foulée (l'annulation reste en deux temps)
+        setTimeout(() => tidy(null, { quiet: true, noUndo: true }), 60);
+        ui.snack(n > 1 ? `${n} améliorations appliquées` : 'Amélioration appliquée', { action: 'Annuler', onAction: undo, duration: 4000 });
+      });
+    }
+    R.actions.organize = openOrganize;
+    let lastHint = '';
+    function hintOrganize() {
+      const list = suggestions(), sig = list.map((x) => x.key).join('|');
+      const n = list.length;
+      if (sig === lastHint) return; // pas de rappel identique à chaque rangement
+      lastHint = sig;
+      if (n) ui.snack(n > 1 ? `Organisation : ${n} améliorations possibles` : 'Organisation : 1 amélioration possible', { action: 'Voir', onAction: openOrganize, duration: 5000 });
+    }
+
     /** Ranger : pose à pose, trajectoires en arc. mode : disposition choisie (sinon celle de
         l'utilisateur, sinon automatique — le moteur compare droite, centrée et pyramide). */
     let tidyStop = null;
     function viewportSize() { const r = canvas.getBoundingClientRect(); return { w: r.width || innerWidth, h: r.height || innerHeight }; }
-    function tidy(mode) {
+    function tidy(mode, opts = {}) {
+      const userTidy = !opts.quiet; // l'application des suggestions range sans relancer l'analyse
       if (typeof mode !== 'string') mode = null; // appelé depuis un bouton : l'argument est l'élément
       if (guard()) return;
       flushEdit();
@@ -1218,8 +1299,8 @@
       for (const n of map.nodes) from[n.id] = { x: n.x, y: n.y };
       const moved = map.nodes.some((n) => target[n.id] && (Math.abs(target[n.id].x - n.x) > 1 || Math.abs(target[n.id].y - n.y) > 1));
       const pickChanged = (pick || null) !== (map.layoutPick || null);
-      if (!moved && !modeChanged && !pickChanged) { fit(); return; }
-      st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+      if (!moved && !modeChanged && !pickChanged) { fit(); if (userTidy) setTimeout(hintOrganize, 500); return; }
+      if (!opts.noUndo) { st.undo.push(snapshot()); st.redo = []; st.coalesce = null; }
       // l'ordre de lecture suit la disposition : on la fixe avant l'animation (rien ne se renumérote en route)
       map.layout = res.mode;
       if (pick) map.layoutPick = pick; else delete map.layoutPick;
@@ -1254,6 +1335,7 @@
           render();
           updateHistoryBtns();
           fit(true);
+          if (userTidy) setTimeout(hintOrganize, 700);
         },
       });
     }
@@ -1302,7 +1384,7 @@
         const text = hl.textContent.replace(/\s+/g, ' ').trim();
         if (!commit && isNew && !original) { deleteSilently(id); renderPane(true); return; }
         if (commit && text !== original) {
-          mutate(() => { n.title = text; });
+          mutate(() => { n.title = text; if (n.em && !text.toLowerCase().includes(n.em.toLowerCase())) delete n.em; });
         } else {
           hl.textContent = original || 'Sans titre';
           el._sig = null;
@@ -3093,6 +3175,7 @@
       flushEdit();
       st.destroyed = true;
       if (R.actions.chooseLayout === chooseLayout) R.actions.chooseLayout = null;
+      if (R.actions.organize === openOrganize) R.actions.organize = null;
       offStore();
       saveViewport.flush();
       document.removeEventListener('keydown', onKey);

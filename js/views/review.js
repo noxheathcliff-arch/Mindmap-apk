@@ -132,6 +132,12 @@
        * enter : 'stack' (la fiche monte du paquet) | 'left' | 'right' | 'up' (retour après Annuler,
        * du côté où elle était partie) ; reveal : la réponse est déjà visible (Annuler).
        */
+      /** Titre avec son fragment mis en relief (n.em), comme dans la carte */
+      function emTitle(c) {
+        const t = c.title || 'Sans titre';
+        const i = c.em ? t.toLowerCase().indexOf(c.em.toLowerCase()) : -1;
+        return i < 0 ? h('span', t) : h('span', t.slice(0, i), h('mark.node-em', t.slice(i, i + c.em.length)), t.slice(i + c.em.length));
+      }
       function showCard(enter, { reveal: open = false } = {}) {
         let cur = current();
         while (!cur && idx < queue.length) { idx++; cur = current(); }
@@ -156,8 +162,9 @@
               h('p.overline', node.logic === 'et' ? 'Éléments cumulatifs (ET)' : node.logic === 'ou' ? 'Éléments alternatifs (OU)' : 'Décomposition'),
               h('ol.answer-list', kids.map((c) => h('li',
                 node.logic ? h('span.decomp-logic', node.logic === 'et' ? 'ET' : 'OU') : null,
-                S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
-                h('span', c.title || 'Sans titre'))))) : null,
+                (S.parentEdge(map, c.id) || {}).label ? h('span.decomp-rel', S.parentEdge(map, c.id).label)
+                  : S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
+                emTitle(c))))) : null,
             node.note.trim() ? h('div.answer-block', h('p.overline', 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null,
             h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Ouvrir dans la carte')));
 

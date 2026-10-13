@@ -235,6 +235,8 @@
         y: Number.isFinite(+n.y) ? +n.y : 0,
         collapsed: !!n.collapsed,
         logic: n.logic === 'et' || n.logic === 'ou' ? n.logic : null,
+        // mise en relief : un fragment du titre à retenir (« une ou plusieurs »)
+        ...(n.em && String(n.title ?? '').toLowerCase().includes(String(n.em).toLowerCase()) ? { em: String(n.em).slice(0, 60) } : {}),
         review: n.review && typeof n.review === 'object' ? {
           box: U.clamp(+n.review.box || 0, 0, 5), due: +n.review.due || 0, last: +n.review.last || 0,
           rating: RATINGS[n.review.rating] ? n.review.rating : null,
@@ -511,7 +513,7 @@
     newNode(p = {}) {
       return {
         id: U.uid('n'), type: p.type || 'idee', title: p.title ?? '', note: p.note || '',
-        x: p.x || 0, y: p.y || 0, collapsed: false, logic: p.logic || null,
+        x: p.x || 0, y: p.y || 0, collapsed: false, logic: p.logic || null, ...(p.em ? { em: p.em } : {}),
         review: { box: 0, due: 0, last: 0, rating: null },
       };
     },
@@ -654,6 +656,13 @@
       const kids = this.childrenOf(map, node.id).length;
       if (!kids) return T.prompt;
       if (node.logic) return `${T.prompt} — ${kids} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver`;
+      // liens libellés : la consigne pose les questions de la carte (« désigne · de qui ? · à qui ? »)
+      const labels = [];
+      for (const k of this.childrenOf(map, node.id)) {
+        const l = (this.parentEdge(map, k.id) || {}).label;
+        if (l && !labels.includes(l)) labels.push(l);
+      }
+      if (labels.length) return `${T.prompt} — ${labels.slice(0, 5).join(' · ')}${labels.length > 5 ? ' …' : ''}`;
       return `${T.prompt} — ${kids} élément${kids > 1 ? 's' : ''} à retrouver`;
     },
     /**

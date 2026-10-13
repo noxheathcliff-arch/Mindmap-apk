@@ -429,6 +429,7 @@
 .answer-open:hover { text-decoration: underline; }
 .decomp-logic { flex: none; font: 700 10px/16px var(--font-plain); padding: 0 6px; border-radius: var(--shape-xs); background: var(--inverse-surface); color: var(--inverse-on-surface); letter-spacing: .04em; }
 .decomp-kicker { flex: none; font: var(--label-m); color: var(--on-surface-variant); }
+.decomp-rel { flex: none; font: var(--label-m); font-style: italic; color: var(--primary); }
 
 /* actions : collées sous la carte (grand écran), ancrées en bas au pouce (compact) */
 .review-actions {

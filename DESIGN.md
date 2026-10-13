@@ -208,6 +208,16 @@ Monochrome par défaut (60/30/10 intact). L'option **Couleurs des nœuds** (Rég
 - **Lisibilité garantie** : chaque couleur est déclinée en OKLCH (fond, bordure, texte, sur-titre) pour le thème clair et le sombre ; le texte est poussé vers le noir ou le blanc jusqu'à un contraste WCAG ≥ 4,5:1 (vérifié sur toutes les palettes : pire cas 4,52). En Perso, les paires de types trop proches (écart OKLab < 0,05) sont signalées.
 - **Légende** (panneau de la carte) et pastilles dans le menu Type ; bascule rapide Afficher/Masquer dans ⋮. Plan, impression et révision restent monochromes.
 
+### 4.4 ter Relations d'abord, définitions modulaires
+
+La mémoire fonctionne par association : une carte se lit comme une suite de phrases, pas comme une liste d'enfants typés pendus à une section.
+
+- **Le libellé porte la relation, le type porte la question.** Une arête parent → enfant peut porter un libellé (« entraîne », « a pour cause », « illustré par », « sauf », « de qui ? ») ; la consigne de révision les reprend (« Donne la définition — désigne · de qui ? · à qui ? ») et la réponse les affiche en italique devant chaque élément.
+- **Branches libellées** : ≥ 2 enfants de même relation sous un parent qui en a d'autres partagent un `group` et un libellé au pluriel (« conséquences ») écrit une fois sur le tronc. Pas de branche quand le titre du parent nomme déjà la liste (« Les 10 signes », « Pourquoi… ? »).
+- **Chaînes** : l'effet sous la cause qui le produit, l'exemple sous l'élément précis qu'il illustre.
+- **Définitions modulaires** : la note garde le texte intégral ; les composantes (`idee`) sont reliées par des liens-questions ; le fragment qu'on oublie en récitant est mis en relief (`node.em`, `mark.node-em` : teinte tertiaire, sans contour).
+- **Le rangement relit l'organisation** (`js/organize.js`) : après « Ranger », un snackbar signale les améliorations possibles ; Carte ⋮ › « Améliorer l'organisation… » ouvre la liste (cases à cocher, aperçu « source —libellé→ cible »). Propositions : décomposer une définition, rattacher un exemple, regrouper une famille, relier cause → effet entre frères, transformer un `[[Titre]]` de note en renvoi, nommer les relations. Rien n'est appliqué sans accord, le texte des nœuds n'est jamais réécrit, tout s'annule en un geste ; une proposition refusée ne revient pas pendant la session.
+
 ### 4.5 Classes de fenêtre M3 → composition
 compact < 600 · medium 600–839 · expanded 840–1199 · large 1200–1599 · extra-large ≥ 1600 (§6).
 
