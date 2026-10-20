@@ -1126,14 +1126,14 @@
           "from": "n7",
           "to": "n8",
           "kind": "tree",
-          "label": "entraîne"
+          "label": "autorise"
         },
         {
           "id": "e9",
           "from": "n7",
           "to": "n9",
           "kind": "tree",
-          "label": "entraîne"
+          "label": "garantit"
         },
         {
           "id": "e10",

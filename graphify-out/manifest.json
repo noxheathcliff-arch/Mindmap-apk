@@ -1,7 +1,7 @@
 {
   "js/app.js": {
-    "mtime": 1792466755.2842865,
-    "seen": 1792467857.4424295,
+    "mtime": 1792467866.1042085,
+    "seen": 1792480628.6364992,
     "ast_hash": "79bb2a807f3937cc19d929d0adb1b1d6",
     "semantic_hash": ""
   },
@@ -54,14 +54,14 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792467702.8692987,
-    "seen": 1792467857.4424582,
+    "mtime": 1792467866.104564,
+    "seen": 1792480628.6365287,
     "ast_hash": "dd9bba85d6f145315d73a0e3956d16f4",
     "semantic_hash": ""
   },
   "js/ui.js": {
-    "mtime": 1792466890.3771286,
-    "seen": 1792467857.4424603,
+    "mtime": 1792467866.1050045,
+    "seen": 1792480628.6365304,
     "ast_hash": "9281a528e371ef201f047046120247d8",
     "semantic_hash": ""
   },
@@ -72,20 +72,20 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792467702.8709757,
-    "seen": 1792467857.4424646,
+    "mtime": 1792467866.105347,
+    "seen": 1792480628.6365342,
     "ast_hash": "e580e822e28ce1c63dc04446d07bd67a",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1792467702.8748863,
-    "seen": 1792467857.4424663,
+    "mtime": 1792467866.1056862,
+    "seen": 1792480628.6365364,
     "ast_hash": "ded5b66e9fde1078b3ddf595fba41ad9",
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1792466893.9691288,
-    "seen": 1792467857.442468,
+    "mtime": 1792467866.1068337,
+    "seen": 1792480628.6365378,
     "ast_hash": "3bee5c80a13ad4313e8b526d3686c736",
     "semantic_hash": ""
   },
@@ -102,14 +102,14 @@
     "semantic_hash": ""
   },
   "js/views/review.js": {
-    "mtime": 1792466767.454282,
-    "seen": 1792467857.442473,
+    "mtime": 1792467866.1070132,
+    "seen": 1792480628.6365423,
     "ast_hash": "56f4dd69bf6bb0283c46ea8e37453064",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792467826.2269776,
-    "seen": 1792467857.4424791,
+    "mtime": 1792467866.107824,
+    "seen": 1792480628.636547,
     "ast_hash": "fb14ae9e765ebfa0b1b7c456285f56a0",
     "semantic_hash": ""
   },
@@ -156,8 +156,8 @@
     "semantic_hash": ""
   },
   "tests/skill-bench.cjs": {
-    "mtime": 1792467411.3951411,
-    "seen": 1792467857.4424937,
+    "mtime": 1792467866.1087327,
+    "seen": 1792480628.6365633,
     "ast_hash": "a6689dd2311c6f4f9f41284f6d36bfc8",
     "semantic_hash": ""
   },
@@ -240,8 +240,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792467826.221654,
-    "seen": 1792467857.4425166,
+    "mtime": 1792467866.0969534,
+    "seen": 1792480628.6365862,
     "ast_hash": "2133583d082a1417944fe22d9b8161a2",
     "semantic_hash": ""
   },
@@ -252,8 +252,8 @@
     "semantic_hash": ""
   },
   "docs/audit-organisation-3.md": {
-    "mtime": 1792467826.2221823,
-    "seen": 1792467857.442519,
+    "mtime": 1792467866.100965,
+    "seen": 1792480628.636589,
     "ast_hash": "2b91a26ba09b813e673e68c6eaa9d35c",
     "semantic_hash": ""
   },
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792467357.337367,
-    "seen": 1792467857.442522,
-    "ast_hash": "6b946cd008e6ce7bcb0756ed6005eff0",
+    "mtime": 1792480593.5016718,
+    "seen": 1792480628.636592,
+    "ast_hash": "cef524cad6ea7f0ede9069b491fd8c82",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -300,20 +300,20 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/exemple-cours-en-dossiers.json": {
-    "mtime": 1792467320.4125733,
-    "seen": 1792467857.4424756,
-    "ast_hash": "059f458d6af8d2a97b5b79f51d7d9c74",
+    "mtime": 1792480617.037099,
+    "seen": 1792480628.636544,
+    "ast_hash": "26dcec97652e608860d63194c053fb2a",
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.0.json": {
-    "mtime": 1792467387.572743,
-    "seen": 1792467857.442477,
-    "ast_hash": "3534e29145328105f90e7f77b3939802",
+    "mtime": 1792480585.3126123,
+    "seen": 1792480628.636546,
+    "ast_hash": "08afe05b696d78fc4faf3a0d17e6170c",
     "semantic_hash": ""
   },
   "tests/folders.test.cjs": {
-    "mtime": 1792466553.1611085,
-    "seen": 1792467857.4424803,
+    "mtime": 1792467866.107824,
+    "seen": 1792480628.6365488,
     "ast_hash": "1f0cbd6278b2a6f1eac8eca21ffc12e7",
     "semantic_hash": ""
   }
