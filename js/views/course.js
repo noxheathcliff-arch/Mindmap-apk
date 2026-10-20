@@ -477,16 +477,14 @@
 
         // les grandes parties, en jalons cliquables sous le titre : l'architecture du cours d'un coup d'œil
         const roots = items.filter((x) => x.folder).map((x) => x.folder);
-        const strip = roots.length > 1 ? h('nav.hero-parts', { 'aria-label': 'Parties du cours' },
-          roots.map((f, i) => h('a.hero-part', { href: '#/dossier/' + f.id }, h('b', numeral(f.label, i)), h('span', f.title)))) : null;
         const hero = R.courseArt.tint(h('header.course-hero', { dataset: { hero: 'course:' + course.id + ':band' } },
           h('div.course-hero-in',
             h('p.overline', planned ? `Cours · ${contentsText(course.id, null)}` : 'Cours'),
             h('h1.course-title', h('span', { dataset: { hero: 'course:' + course.id + ':title' } }, course.title)),
             course.description ? h('p.course-desc', course.description) : null,
-            strip)), course);
+            statsRow(st))), course);
 
-        const layout = h('div.course-layout.course-scope', h('div.course-head', statsRow(st)));
+        const layout = h('div.course-layout.course-scope');
         const reviewBase = '#/reviser/cours/' + course.id;
         if (st.reviewable || plan) layout.appendChild(h('div.deck', { class: plan ? '' : 'solo' }, plan ? planCard(plan, 'Plan du cours') : null, st.reviewable ? resumeCard({ courseId: course.id }, reviewBase) : null));
 
@@ -602,10 +600,11 @@
               h('div.folder-titles',
                 h('p.folder-label', kindLabel(f)),
                 h('h1.course-title', f.title))),
-            f.note ? h('p.course-desc.folder-why', plain(f.note)) : null)), course);
+            f.note ? h('p.course-desc.folder-why', plain(f.note)) : null,
+            statsRow(st))), course);
 
         const ctx = { open: readOpen(course.id) || new Set(items.filter((x) => x.folder).map((x) => x.folder.id)), rerender: draw, sub: true };
-        const layout = h('div.course-layout.course-scope', h('div.course-head', statsRow(st)));
+        const layout = h('div.course-layout.course-scope');
         if (st.reviewable || plan) layout.appendChild(h('div.deck', { class: plan ? '' : 'solo' }, plan ? planCard(plan, 'Plan ' + KIND_OF[f.kind]) : null, st.reviewable ? resumeCard({ folderId: f.id }, '#/reviser/dossier/' + f.id) : null));
 
         const body = items.length

@@ -51,12 +51,20 @@
   /* from : élément d'où naît le formulaire (emplacement « Nouveau cours / Nouvelle carte ») */
   R.actions.newCourse = async function ({ from } = {}) {
     const v = await ui.form({
-      title: 'Nouveau cours', icon: 'folder', ok: 'Créer', origin: from,
+      title: 'Nouveau cours', icon: 'folder', ok: 'Créer', origin: from, cls: 'new-course',
+      // deux départs : un cours vide, ou un cours déjà prêt (fichier, JSON d'une IA)
+      lead: (close) => h('div.nc-start',
+        h('button.nc-opt.ripple', { type: 'button', onclick: () => close('__import') },
+          h('span.nc-ic', R.icon('upload', 22)),
+          h('span.nc-t', h('b', 'Importer un cours'), h('span', 'Fichier .json ou texte d\'une IA')),
+          R.icon('chevronRight', 18)),
+        h('p.nc-or', h('span', 'ou partir de zéro'))),
       fields: [
         { key: 'title', label: 'Intitulé du cours', placeholder: 'Ex. Droit des obligations', required: true },
         { key: 'description', label: 'Précision (facultatif)', placeholder: 'Ex. M1 · S1 · Pr. Dupont' },
       ],
     });
+    if (v === '__import') { R.app.openImport(); return null; }
     if (!v) return null;
     const c = S.addCourse(v);
     R.app.go('#/cours/' + c.id);

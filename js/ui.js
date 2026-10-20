@@ -205,9 +205,12 @@
   };
 
   /** Formulaire : fields = [{key,label,value,placeholder,multiline,required}] */
-  ui.form = function ({ title, icon, fields, ok = 'Créer', origin }) {
+  ui.form = function ({ title, icon, fields, ok = 'Créer', origin, lead, cls }) {
     const inputs = {};
     const body = h('div.form');
+    let closeFn = null;
+    // lead(close) : bloc posé avant les champs (ex. « importer à la place »)
+    if (lead) body.appendChild(lead((v) => closeFn && closeFn(v)));
     fields.forEach((f, i) => {
       if (f.choices) { // choix exclusif : [{value, label, text}]
         const state = { value: f.value ?? f.choices[0].value };
@@ -245,12 +248,12 @@
     };
     const collect = () => Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, v.value]));
     return ui.dialog({
-      title, icon, body, origin,
+      title, icon, body, origin, cls,
       actions: [
         { label: 'Annuler', value: null },
         { label: ok, value: collect, validate, variant: 'filled', primary: true },
       ],
-      onOpen: () => { const first = Object.values(inputs)[0]; if (first) { first.focus(); first.select(); } },
+      onOpen: (box, close) => { closeFn = close; const first = Object.values(inputs)[0]; if (first) { first.focus(); first.select(); } },
     });
   };
 
