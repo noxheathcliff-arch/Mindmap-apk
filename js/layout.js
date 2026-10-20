@@ -25,7 +25,7 @@
   const P = {
     depthGap: 96,     // parent → enfants (droite / centrée) : place pour les libellés
     downGap: 64,      // pyramide : entre deux niveaux
-    leafGap: 24,      // entre deux feuilles sœurs (au-dessus de la distance de sécurité)
+    leafGap: 32,      // entre deux feuilles sœurs (au-dessus de la distance de sécurité)
     sibGap: 32,       // entre deux sœurs qui ont des enfants
     structGap: 40,    // entre deux branches de structure (leçons, sections)
     cousinGap: 32,    // entre deux groupes voisins, aux niveaux plus profonds
@@ -51,7 +51,7 @@
   };
   // rôle de lecture de chaque type : structure, contenu, appui (exemple, source…), synthèse
   P.satIndent = 16;   // un appui (exemple, arrêt, citation…) se décale comme une annotation
-  P.satGap = 16;      // deux appuis consécutifs se serrent (ils forment un bloc), à la distance de sécurité
+  P.satGap = 24;      // deux appuis consécutifs se serrent (ils forment un bloc), à la distance de sécurité
   P.summaryGap = 32;  // « À retenir » se détache de ce qui précède
   P.seq = 1;          // séquences (méthodes, chronologies) en ligne
   const SUPPORT = new Set(['juris', 'doctrine', 'texte', 'citation', 'personne', 'etude']);
@@ -59,14 +59,14 @@
   /** Espace de recherche de l'optimiseur : chaque disposition est affinée sur ces réglages */
   const SEARCH = {
     depthGap: [88, 96, 112],
-    cousinGap: [24, 32, 40],
-    leafGap: [16, 24, 32],
+    cousinGap: [32, 40, 48],
+    leafGap: [32, 40],
     structGap: [32, 40, 48],
     satIndent: [0, 16, 32],
     seq: [1, 0],
   };
   const GAP_X = P.depthGap, GAP_Y = 16, GAP_ROOT = P.rootGap; // compatibilité
-  const STACK = { indent: 24, top: 24, gap: 16, spine: 16 }; // pyramide : feuilles en colonne sous le parent
+  const STACK = { indent: 24, top: 24, gap: 24, spine: 16 }; // pyramide : feuilles en colonne sous le parent
   const SEQ = { gap: 40 }; // séquence : écart entre deux étapes (place pour la flèche)
 
   /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
@@ -827,7 +827,10 @@
     // libellé le plus long des liens d'arbre sortant de chaque parent
     const labels = new Map();
     for (const e of map.edges || []) if (e.kind === 'tree' && e.label) labels.set(e.from, Math.max(labels.get(e.from) || 0, String(e.label).length));
-    return { byId, kids, roots: S.roots(map).map((n) => n.id), labels };
+    // renvois entre deux nœuds : deux voisins reliés s'écartent (place pour la flèche et son libellé)
+    const links = new Map();
+    for (const e of map.edges || []) if (e.kind !== 'tree') { const v = e.label ? 24 : 16; links.set(e.from + '|' + e.to, v); links.set(e.to + '|' + e.from, v); }
+    return { byId, kids, roots: S.roots(map).map((n) => n.id), labels, links };
   }
   /** Écart en profondeur réservé aux libellés des liens parent → enfant (0 si aucun, multiple de 8) */
   function labelExtra(T, parentId) {
@@ -904,6 +907,8 @@
     for (let L = 1; L < maxD.length + 1; L++) cols[L] = cols[L - 1] + (maxD[L - 1] || 0) + gap + (extra[L - 1] || 0);
     return cols;
   }
+  /** Supplément d'écart entre deux voisins reliés par un renvoi (0, 16, ou 24 s'il est libellé) */
+  const linkGap = (T, x, y) => (T.links && T.links.get(x + '|' + y)) || 0;
   /** Écart entre deux frères : il dit s'ils vont ensemble (proximité, Gestalt) */
   function sepFor(cfg, a, b) {
     if (a.struct || b.struct) return cfg.structGap;
@@ -964,7 +969,7 @@
     // les enfants commencent après le parent — ou au début de la colonne suivante (colonnes alignées)
     const cd = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap + labelExtra(T, id);
     for (const s of subs) for (const l of s.lv) { l.d0 += cd; l.d1 += cd; }
-    const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) : cfg.cousinGap));
+    const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) + linkGap(T, ch[i - 1], ch[i]) : cfg.cousinGap));
     const first = st.offs[0] + subs[0].c, last = st.offs[subs.length - 1] + subs[subs.length - 1].c;
     const mid = (first + last) / 2;
     const pb = mid - own.bl / 2;
@@ -1003,7 +1008,7 @@
       // séquences en ligne : seulement quand la lecture va vers la droite (sinon l'ordre s'inverserait)
       const scfg = { ...cfg, cols, seq: side.dir > 0 && prm.seq !== 0 };
       const subs = side.ids.map((c) => subtree(c, T, dim, scfg, seen, 1));
-      const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) : cfg.cousinGap));
+      const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) + linkGap(T, side.ids[i - 1], side.ids[i]) : cfg.cousinGap));
       const first = st.offs[0] + subs[0].c, last = st.offs[subs.length - 1] + subs[subs.length - 1].c;
       const shift = rs.h / 2 - (first + last) / 2; // la racine au milieu de ses branches
       subs.forEach((s, i) => {
