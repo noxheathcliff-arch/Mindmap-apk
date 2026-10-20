@@ -82,7 +82,7 @@ out('v7-zone-dense-deplacee', { title: 'V7 zone dense déplacée', layout: 'righ
     const sid = 's' + s; nodes.push(N(sid, 'Section ' + (s + 1), 300, y, 'section')); edges.push(T('r', sid));
     for (let n = 0; n < 4; n++) {
       const nid = sid + 'n' + n; nodes.push(N(nid, 'Notion ' + (s + 1) + '.' + (n + 1), 560, y, 'notion')); edges.push(T(sid, nid));
-      for (let k = 0; k < 4; k++) { const kid = nid + 'k' + k; nodes.push(N(kid, ['Cause', 'Conséquence', 'Exemple', 'Condition'][k] + ' ' + (s + 1) + '.' + (n + 1), 820, y, ['cause', 'consequence', 'exemple', 'condition'][k])); edges.push(T(nid, kid, ['a pour cause', 'entraîne', 'illustré par', 'suppose'][k])); y += 70; }
+      for (let k = 0; k < 4; k++) { const kid = nid + 'k' + k; nodes.push(N(kid, ['Cause', 'Conséquence', 'Exemple', 'Condition'][k] + ' ' + (s + 1) + '.' + (n + 1), 820, y, ['idee', 'idee', 'idee', 'idee'][k])); edges.push(T(nid, kid, ['a pour cause', 'entraîne', 'illustré par', 'suppose'][k])); y += 70; }
       y += 20;
     }
     y += 60;

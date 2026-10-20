@@ -12,7 +12,7 @@
       const n = S.newNode({ type: s.type || 'idee', title: s.t, note: s.note || '', logic: s.logic || null, y: y++ * 10 });
       if (s.key) byKey[s.key] = n.id;
       map.nodes.push(n);
-      if (parent) map.edges.push({ id: U.uid('e'), from: parent.id, to: n.id, kind: 'tree', label: '' });
+      if (parent) map.edges.push({ id: U.uid('e'), from: parent.id, to: n.id, kind: 'tree', label: s.label || '' });
       (s.children || []).forEach((c) => walk(c, n));
     })(spec, null);
     for (const [a, b, label] of links) map.edges.push({ id: U.uid('e'), from: byKey[a], to: byKey[b], kind: 'link', label });
@@ -43,7 +43,7 @@
           note: '> Sont nécessaires à la validité d\'un contrat :\n> 1° Le consentement des parties ;\n> 2° Leur capacité de contracter ;\n> 3° Un contenu licite et certain.\n\n(art. 1128 C. civ.) — l\'absence d\'une seule suffit à entraîner la nullité.',
           children: [
             {
-              t: 'Consentement des parties', type: 'fond', logic: 'et', key: 'consent',
+              t: 'Consentement des parties', type: 'idee', logic: 'et', key: 'consent',
               note: 'Le consentement doit **exister** et être **intègre**.\n\nArt. 1129 : il faut être sain d\'esprit pour consentir valablement.',
               children: [
                 { t: 'Existence : rencontre d\'une offre et d\'une acceptation', type: 'idee', note: 'Art. 1113 C. civ. — le contrat est formé par la rencontre d\'une offre et d\'une acceptation.' },
@@ -65,11 +65,11 @@
               ],
             },
             {
-              t: 'Capacité de contracter', type: 'fond',
+              t: 'Capacité de contracter', type: 'idee',
               note: 'Art. 1145 — toute personne physique peut contracter sauf en cas d\'incapacité prévue par la loi (mineurs non émancipés, majeurs protégés : art. 1146).\n\nPersonnes morales : capacité limitée par leur objet (principe de spécialité).',
             },
             {
-              t: 'Contenu licite et certain', type: 'fond', logic: 'et',
+              t: 'Contenu licite et certain', type: 'idee', logic: 'et',
               note: 'Art. 1162 à 1171 C. civ.',
               children: [
                 { t: 'Licite : ne déroge pas à l\'ordre public', type: 'idee', note: 'Art. 1162 — ni par ses stipulations, ni par son but (que ce but ait été connu ou non de toutes les parties).' },
@@ -82,13 +82,13 @@
           t: 'Conditions de forme', type: 'notion',
           note: 'Principe du **consensualisme**, assorti d\'exceptions (art. 1172).',
           children: [
-            { t: 'Principe : consensualisme', type: 'forme', note: 'Art. 1172 al. 1 — les contrats sont par principe consensuels : le seul échange des consentements suffit.' },
-            { t: 'Contrats solennels', type: 'exception', note: 'Art. 1172 al. 2 — validité subordonnée à des formes déterminées par la loi.\n\n*Ex.* : donation (acte notarié, art. 931), contrat de mariage.' },
-            { t: 'Contrats réels', type: 'exception', note: 'Art. 1172 al. 3 — formation subordonnée à la **remise d\'une chose** (ex. prêt à usage, gage avec dépossession).' },
+            { t: 'Principe : consensualisme', type: 'idee', note: 'Art. 1172 al. 1 — les contrats sont par principe consensuels : le seul échange des consentements suffit.' },
+            { t: 'Contrats solennels', type: 'idee', label: 'sauf', note: 'Art. 1172 al. 2 — validité subordonnée à des formes déterminées par la loi.\n\n*Ex.* : donation (acte notarié, art. 931), contrat de mariage.' },
+            { t: 'Contrats réels', type: 'idee', label: 'sauf', note: 'Art. 1172 al. 3 — formation subordonnée à la **remise d\'une chose** (ex. prêt à usage, gage avec dépossession).' },
           ],
         },
         {
-          t: 'Sanction : la nullité', type: 'effet', logic: 'ou',
+          t: 'Sanction : la nullité', type: 'idee', label: 'entraîne', logic: 'ou',
           note: 'Art. 1178 — un contrat qui ne remplit pas les conditions requises pour sa validité est nul. Le contrat annulé est **censé n\'avoir jamais existé** (restitutions : art. 1352 s.).',
           children: [
             { t: 'Nullité relative : protection d\'un intérêt privé', type: 'idee', key: 'relative', note: 'Art. 1179 al. 2 et 1181 — invoquée par la seule partie protégée ; confirmation possible.' },
@@ -109,14 +109,14 @@
         {
           t: 'Conditions', type: 'notion', logic: 'et',
           children: [
-            { t: 'Un contrat valable', type: 'fond', note: 'Préalable : sinon, responsabilité extracontractuelle (art. 1240).' },
-            { t: 'Une inexécution', type: 'fond', note: 'Inexécution totale, partielle, tardive ou défectueuse.\n\nObligation de **moyens** vs de **résultat**.' },
-            { t: 'Un dommage', type: 'fond', note: 'Prévisible lors de la conclusion du contrat (art. 1231-3), sauf faute lourde ou dolosive.' },
-            { t: 'Un lien de causalité', type: 'fond', note: 'Le dommage doit être une suite immédiate et directe de l\'inexécution (art. 1231-4).' },
+            { t: 'Un contrat valable', type: 'idee', note: 'Préalable : sinon, responsabilité extracontractuelle (art. 1240).' },
+            { t: 'Une inexécution', type: 'idee', note: 'Inexécution totale, partielle, tardive ou défectueuse.\n\nObligation de **moyens** vs de **résultat**.' },
+            { t: 'Un dommage', type: 'idee', note: 'Prévisible lors de la conclusion du contrat (art. 1231-3), sauf faute lourde ou dolosive.' },
+            { t: 'Un lien de causalité', type: 'idee', note: 'Le dommage doit être une suite immédiate et directe de l\'inexécution (art. 1231-4).' },
           ],
         },
         {
-          t: 'Exonération : force majeure', type: 'exception', logic: 'et',
+          t: 'Exonération : force majeure', type: 'idee', label: 'sauf', logic: 'et',
           note: 'Art. 1218 — trois caractères cumulatifs.',
           children: [
             { t: 'Échappe au contrôle du débiteur', type: 'idee' },

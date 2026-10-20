@@ -28,7 +28,7 @@
   },
   {
    "id": "s0n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 1.1",
    "note": "",
    "x": 820,
@@ -36,7 +36,7 @@
   },
   {
    "id": "s0n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 1.1",
    "note": "",
    "x": 820,
@@ -44,7 +44,7 @@
   },
   {
    "id": "s0n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 1.1",
    "note": "",
    "x": 820,
@@ -52,7 +52,7 @@
   },
   {
    "id": "s0n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 1.1",
    "note": "",
    "x": 820,
@@ -68,7 +68,7 @@
   },
   {
    "id": "s0n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 1.2",
    "note": "",
    "x": 820,
@@ -76,7 +76,7 @@
   },
   {
    "id": "s0n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 1.2",
    "note": "",
    "x": 820,
@@ -84,7 +84,7 @@
   },
   {
    "id": "s0n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 1.2",
    "note": "",
    "x": 820,
@@ -92,7 +92,7 @@
   },
   {
    "id": "s0n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 1.2",
    "note": "",
    "x": 820,
@@ -108,7 +108,7 @@
   },
   {
    "id": "s0n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 1.3",
    "note": "",
    "x": 820,
@@ -116,7 +116,7 @@
   },
   {
    "id": "s0n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 1.3",
    "note": "",
    "x": 820,
@@ -124,7 +124,7 @@
   },
   {
    "id": "s0n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 1.3",
    "note": "",
    "x": 820,
@@ -132,7 +132,7 @@
   },
   {
    "id": "s0n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 1.3",
    "note": "",
    "x": 820,
@@ -148,7 +148,7 @@
   },
   {
    "id": "s0n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 1.4",
    "note": "",
    "x": 820,
@@ -156,7 +156,7 @@
   },
   {
    "id": "s0n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 1.4",
    "note": "",
    "x": 820,
@@ -164,7 +164,7 @@
   },
   {
    "id": "s0n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 1.4",
    "note": "",
    "x": 820,
@@ -172,7 +172,7 @@
   },
   {
    "id": "s0n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 1.4",
    "note": "",
    "x": 820,
@@ -196,7 +196,7 @@
   },
   {
    "id": "s1n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 2.1",
    "note": "",
    "x": 820,
@@ -204,7 +204,7 @@
   },
   {
    "id": "s1n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 2.1",
    "note": "",
    "x": 820,
@@ -212,7 +212,7 @@
   },
   {
    "id": "s1n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 2.1",
    "note": "",
    "x": 820,
@@ -220,7 +220,7 @@
   },
   {
    "id": "s1n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 2.1",
    "note": "",
    "x": 820,
@@ -236,7 +236,7 @@
   },
   {
    "id": "s1n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 2.2",
    "note": "",
    "x": 820,
@@ -244,7 +244,7 @@
   },
   {
    "id": "s1n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 2.2",
    "note": "",
    "x": 820,
@@ -252,7 +252,7 @@
   },
   {
    "id": "s1n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 2.2",
    "note": "",
    "x": 820,
@@ -260,7 +260,7 @@
   },
   {
    "id": "s1n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 2.2",
    "note": "",
    "x": 820,
@@ -276,7 +276,7 @@
   },
   {
    "id": "s1n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 2.3",
    "note": "",
    "x": 820,
@@ -284,7 +284,7 @@
   },
   {
    "id": "s1n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 2.3",
    "note": "",
    "x": 820,
@@ -292,7 +292,7 @@
   },
   {
    "id": "s1n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 2.3",
    "note": "",
    "x": 820,
@@ -300,7 +300,7 @@
   },
   {
    "id": "s1n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 2.3",
    "note": "",
    "x": 820,
@@ -316,7 +316,7 @@
   },
   {
    "id": "s1n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 2.4",
    "note": "",
    "x": 820,
@@ -324,7 +324,7 @@
   },
   {
    "id": "s1n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 2.4",
    "note": "",
    "x": 820,
@@ -332,7 +332,7 @@
   },
   {
    "id": "s1n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 2.4",
    "note": "",
    "x": 820,
@@ -340,7 +340,7 @@
   },
   {
    "id": "s1n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 2.4",
    "note": "",
    "x": 820,
@@ -364,7 +364,7 @@
   },
   {
    "id": "s2n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 3.1",
    "note": "",
    "x": 820,
@@ -372,7 +372,7 @@
   },
   {
    "id": "s2n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 3.1",
    "note": "",
    "x": 820,
@@ -380,7 +380,7 @@
   },
   {
    "id": "s2n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 3.1",
    "note": "",
    "x": 820,
@@ -388,7 +388,7 @@
   },
   {
    "id": "s2n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 3.1",
    "note": "",
    "x": 820,
@@ -404,7 +404,7 @@
   },
   {
    "id": "s2n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 3.2",
    "note": "",
    "x": 820,
@@ -412,7 +412,7 @@
   },
   {
    "id": "s2n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 3.2",
    "note": "",
    "x": 820,
@@ -420,7 +420,7 @@
   },
   {
    "id": "s2n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 3.2",
    "note": "",
    "x": 820,
@@ -428,7 +428,7 @@
   },
   {
    "id": "s2n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 3.2",
    "note": "",
    "x": 820,
@@ -444,7 +444,7 @@
   },
   {
    "id": "s2n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 3.3",
    "note": "",
    "x": 820,
@@ -452,7 +452,7 @@
   },
   {
    "id": "s2n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 3.3",
    "note": "",
    "x": 820,
@@ -460,7 +460,7 @@
   },
   {
    "id": "s2n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 3.3",
    "note": "",
    "x": 820,
@@ -468,7 +468,7 @@
   },
   {
    "id": "s2n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 3.3",
    "note": "",
    "x": 820,
@@ -484,7 +484,7 @@
   },
   {
    "id": "s2n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 3.4",
    "note": "",
    "x": 820,
@@ -492,7 +492,7 @@
   },
   {
    "id": "s2n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 3.4",
    "note": "",
    "x": 820,
@@ -500,7 +500,7 @@
   },
   {
    "id": "s2n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 3.4",
    "note": "",
    "x": 820,
@@ -508,7 +508,7 @@
   },
   {
    "id": "s2n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 3.4",
    "note": "",
    "x": 820,
@@ -532,7 +532,7 @@
   },
   {
    "id": "s3n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 4.1",
    "note": "",
    "x": 820,
@@ -540,7 +540,7 @@
   },
   {
    "id": "s3n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 4.1",
    "note": "",
    "x": 820,
@@ -548,7 +548,7 @@
   },
   {
    "id": "s3n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 4.1",
    "note": "",
    "x": 820,
@@ -556,7 +556,7 @@
   },
   {
    "id": "s3n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 4.1",
    "note": "",
    "x": 820,
@@ -572,7 +572,7 @@
   },
   {
    "id": "s3n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 4.2",
    "note": "",
    "x": 820,
@@ -580,7 +580,7 @@
   },
   {
    "id": "s3n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 4.2",
    "note": "",
    "x": 820,
@@ -588,7 +588,7 @@
   },
   {
    "id": "s3n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 4.2",
    "note": "",
    "x": 820,
@@ -596,7 +596,7 @@
   },
   {
    "id": "s3n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 4.2",
    "note": "",
    "x": 820,
@@ -612,7 +612,7 @@
   },
   {
    "id": "s3n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 4.3",
    "note": "",
    "x": 820,
@@ -620,7 +620,7 @@
   },
   {
    "id": "s3n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 4.3",
    "note": "",
    "x": 820,
@@ -628,7 +628,7 @@
   },
   {
    "id": "s3n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 4.3",
    "note": "",
    "x": 820,
@@ -636,7 +636,7 @@
   },
   {
    "id": "s3n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 4.3",
    "note": "",
    "x": 820,
@@ -652,7 +652,7 @@
   },
   {
    "id": "s3n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 4.4",
    "note": "",
    "x": 820,
@@ -660,7 +660,7 @@
   },
   {
    "id": "s3n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 4.4",
    "note": "",
    "x": 820,
@@ -668,7 +668,7 @@
   },
   {
    "id": "s3n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 4.4",
    "note": "",
    "x": 820,
@@ -676,7 +676,7 @@
   },
   {
    "id": "s3n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 4.4",
    "note": "",
    "x": 820,
@@ -700,7 +700,7 @@
   },
   {
    "id": "s4n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 5.1",
    "note": "",
    "x": 820,
@@ -708,7 +708,7 @@
   },
   {
    "id": "s4n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 5.1",
    "note": "",
    "x": 820,
@@ -716,7 +716,7 @@
   },
   {
    "id": "s4n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 5.1",
    "note": "",
    "x": 820,
@@ -724,7 +724,7 @@
   },
   {
    "id": "s4n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 5.1",
    "note": "",
    "x": 820,
@@ -740,7 +740,7 @@
   },
   {
    "id": "s4n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 5.2",
    "note": "",
    "x": 820,
@@ -748,7 +748,7 @@
   },
   {
    "id": "s4n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 5.2",
    "note": "",
    "x": 820,
@@ -756,7 +756,7 @@
   },
   {
    "id": "s4n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 5.2",
    "note": "",
    "x": 820,
@@ -764,7 +764,7 @@
   },
   {
    "id": "s4n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 5.2",
    "note": "",
    "x": 820,
@@ -780,7 +780,7 @@
   },
   {
    "id": "s4n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 5.3",
    "note": "",
    "x": 820,
@@ -788,7 +788,7 @@
   },
   {
    "id": "s4n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 5.3",
    "note": "",
    "x": 820,
@@ -796,7 +796,7 @@
   },
   {
    "id": "s4n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 5.3",
    "note": "",
    "x": 820,
@@ -804,7 +804,7 @@
   },
   {
    "id": "s4n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 5.3",
    "note": "",
    "x": 820,
@@ -820,7 +820,7 @@
   },
   {
    "id": "s4n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 5.4",
    "note": "",
    "x": 820,
@@ -828,7 +828,7 @@
   },
   {
    "id": "s4n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 5.4",
    "note": "",
    "x": 820,
@@ -836,7 +836,7 @@
   },
   {
    "id": "s4n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 5.4",
    "note": "",
    "x": 820,
@@ -844,7 +844,7 @@
   },
   {
    "id": "s4n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 5.4",
    "note": "",
    "x": 820,
@@ -868,7 +868,7 @@
   },
   {
    "id": "s5n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 6.1",
    "note": "",
    "x": 820,
@@ -876,7 +876,7 @@
   },
   {
    "id": "s5n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 6.1",
    "note": "",
    "x": 820,
@@ -884,7 +884,7 @@
   },
   {
    "id": "s5n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 6.1",
    "note": "",
    "x": 820,
@@ -892,7 +892,7 @@
   },
   {
    "id": "s5n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 6.1",
    "note": "",
    "x": 820,
@@ -908,7 +908,7 @@
   },
   {
    "id": "s5n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 6.2",
    "note": "",
    "x": 820,
@@ -916,7 +916,7 @@
   },
   {
    "id": "s5n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 6.2",
    "note": "",
    "x": 820,
@@ -924,7 +924,7 @@
   },
   {
    "id": "s5n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 6.2",
    "note": "",
    "x": 820,
@@ -932,7 +932,7 @@
   },
   {
    "id": "s5n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 6.2",
    "note": "",
    "x": 820,
@@ -948,7 +948,7 @@
   },
   {
    "id": "s5n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 6.3",
    "note": "",
    "x": 820,
@@ -956,7 +956,7 @@
   },
   {
    "id": "s5n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 6.3",
    "note": "",
    "x": 820,
@@ -964,7 +964,7 @@
   },
   {
    "id": "s5n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 6.3",
    "note": "",
    "x": 820,
@@ -972,7 +972,7 @@
   },
   {
    "id": "s5n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 6.3",
    "note": "",
    "x": 820,
@@ -988,7 +988,7 @@
   },
   {
    "id": "s5n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 6.4",
    "note": "",
    "x": 820,
@@ -996,7 +996,7 @@
   },
   {
    "id": "s5n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 6.4",
    "note": "",
    "x": 820,
@@ -1004,7 +1004,7 @@
   },
   {
    "id": "s5n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 6.4",
    "note": "",
    "x": 820,
@@ -1012,7 +1012,7 @@
   },
   {
    "id": "s5n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 6.4",
    "note": "",
    "x": 820,
@@ -1036,7 +1036,7 @@
   },
   {
    "id": "s6n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 7.1",
    "note": "",
    "x": 820,
@@ -1044,7 +1044,7 @@
   },
   {
    "id": "s6n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 7.1",
    "note": "",
    "x": 820,
@@ -1052,7 +1052,7 @@
   },
   {
    "id": "s6n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 7.1",
    "note": "",
    "x": 820,
@@ -1060,7 +1060,7 @@
   },
   {
    "id": "s6n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 7.1",
    "note": "",
    "x": 820,
@@ -1076,7 +1076,7 @@
   },
   {
    "id": "s6n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 7.2",
    "note": "",
    "x": 820,
@@ -1084,7 +1084,7 @@
   },
   {
    "id": "s6n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 7.2",
    "note": "",
    "x": 820,
@@ -1092,7 +1092,7 @@
   },
   {
    "id": "s6n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 7.2",
    "note": "",
    "x": 820,
@@ -1100,7 +1100,7 @@
   },
   {
    "id": "s6n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 7.2",
    "note": "",
    "x": 820,
@@ -1116,7 +1116,7 @@
   },
   {
    "id": "s6n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 7.3",
    "note": "",
    "x": 820,
@@ -1124,7 +1124,7 @@
   },
   {
    "id": "s6n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 7.3",
    "note": "",
    "x": 820,
@@ -1132,7 +1132,7 @@
   },
   {
    "id": "s6n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 7.3",
    "note": "",
    "x": 820,
@@ -1140,7 +1140,7 @@
   },
   {
    "id": "s6n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 7.3",
    "note": "",
    "x": 820,
@@ -1156,7 +1156,7 @@
   },
   {
    "id": "s6n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 7.4",
    "note": "",
    "x": 820,
@@ -1164,7 +1164,7 @@
   },
   {
    "id": "s6n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 7.4",
    "note": "",
    "x": 820,
@@ -1172,7 +1172,7 @@
   },
   {
    "id": "s6n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 7.4",
    "note": "",
    "x": 820,
@@ -1180,7 +1180,7 @@
   },
   {
    "id": "s6n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 7.4",
    "note": "",
    "x": 820,
@@ -1204,7 +1204,7 @@
   },
   {
    "id": "s7n0k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 8.1",
    "note": "",
    "x": 820,
@@ -1212,7 +1212,7 @@
   },
   {
    "id": "s7n0k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 8.1",
    "note": "",
    "x": 820,
@@ -1220,7 +1220,7 @@
   },
   {
    "id": "s7n0k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 8.1",
    "note": "",
    "x": 820,
@@ -1228,7 +1228,7 @@
   },
   {
    "id": "s7n0k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 8.1",
    "note": "",
    "x": 820,
@@ -1244,7 +1244,7 @@
   },
   {
    "id": "s7n1k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 8.2",
    "note": "",
    "x": 820,
@@ -1252,7 +1252,7 @@
   },
   {
    "id": "s7n1k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 8.2",
    "note": "",
    "x": 820,
@@ -1260,7 +1260,7 @@
   },
   {
    "id": "s7n1k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 8.2",
    "note": "",
    "x": 820,
@@ -1268,7 +1268,7 @@
   },
   {
    "id": "s7n1k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 8.2",
    "note": "",
    "x": 820,
@@ -1284,7 +1284,7 @@
   },
   {
    "id": "s7n2k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 8.3",
    "note": "",
    "x": 820,
@@ -1292,7 +1292,7 @@
   },
   {
    "id": "s7n2k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 8.3",
    "note": "",
    "x": 820,
@@ -1300,7 +1300,7 @@
   },
   {
    "id": "s7n2k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 8.3",
    "note": "",
    "x": 820,
@@ -1308,7 +1308,7 @@
   },
   {
    "id": "s7n2k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 8.3",
    "note": "",
    "x": 820,
@@ -1324,7 +1324,7 @@
   },
   {
    "id": "s7n3k0",
-   "type": "cause",
+   "type": "idee",
    "title": "Cause 8.4",
    "note": "",
    "x": 820,
@@ -1332,7 +1332,7 @@
   },
   {
    "id": "s7n3k1",
-   "type": "consequence",
+   "type": "idee",
    "title": "Conséquence 8.4",
    "note": "",
    "x": 820,
@@ -1340,7 +1340,7 @@
   },
   {
    "id": "s7n3k2",
-   "type": "exemple",
+   "type": "idee",
    "title": "Exemple 8.4",
    "note": "",
    "x": 820,
@@ -1348,7 +1348,7 @@
   },
   {
    "id": "s7n3k3",
-   "type": "condition",
+   "type": "idee",
    "title": "Condition 8.4",
    "note": "",
    "x": 820,

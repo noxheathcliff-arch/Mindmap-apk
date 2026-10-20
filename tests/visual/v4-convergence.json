@@ -4,7 +4,7 @@
  "nodes": [
   {
    "id": "k",
-   "type": "consequence",
+   "type": "idee",
    "title": "Excès de masse grasse",
    "note": "",
    "x": 400,
@@ -12,7 +12,7 @@
   },
   {
    "id": "c0",
-   "type": "cause",
+   "type": "idee",
    "title": "Sédentarité",
    "note": "",
    "x": 0,
@@ -20,7 +20,7 @@
   },
   {
    "id": "c1",
-   "type": "cause",
+   "type": "idee",
    "title": "Alimentation",
    "note": "",
    "x": 0,
@@ -28,7 +28,7 @@
   },
   {
    "id": "c2",
-   "type": "cause",
+   "type": "idee",
    "title": "Génétique",
    "note": "",
    "x": 0,
@@ -36,7 +36,7 @@
   },
   {
    "id": "c3",
-   "type": "cause",
+   "type": "idee",
    "title": "Sommeil court",
    "note": "",
    "x": 800,
@@ -44,7 +44,7 @@
   },
   {
    "id": "c4",
-   "type": "cause",
+   "type": "idee",
    "title": "Stress",
    "note": "",
    "x": 800,
@@ -52,7 +52,7 @@
   },
   {
    "id": "c5",
-   "type": "cause",
+   "type": "idee",
    "title": "Médicaments",
    "note": "",
    "x": 800,
@@ -60,7 +60,7 @@
   },
   {
    "id": "c6",
-   "type": "cause",
+   "type": "idee",
    "title": "Pauvreté",
    "note": "",
    "x": 400,

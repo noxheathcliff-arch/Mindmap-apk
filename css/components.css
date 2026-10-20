@@ -443,26 +443,16 @@
 /* la forme de chaque type reste visible dans l'aperçu (teinte = famille, forme = type) */
 .cp-notion, .cp-chapitre { font-weight: 600; }
 .cp-notion { border-radius: 20px; }
-.cp-forme { border-style: double; border-width: 4px; padding: 5px 10px 6px; }
-.cp-exception { border-style: dashed; }
-.cp-exemple { border-style: dotted; }
 .cp-juris .cp-t, .cp-doctrine .cp-t { font-family: var(--font-serif); }
 .cp-juris .cp-t { font-style: italic; }
 .cp-texte .cp-t { font-family: var(--font-mono); font-size: 13px; }
 .cp-lecon { border-width: 2.5px; }
-.cp-question { border-radius: 14px 14px 14px 4px; }
 .cp-methode { border-left-width: 5px; }
-.cp-comparaison { border-left: 3px double; border-right: 3px double; }
-.cp-piege { border-style: dashed; }
 .cp-citation .cp-t { font-family: var(--font-serif); font-style: italic; }
 .cp-personne { border-radius: 999px; }
 .cp-date { border-top-width: 4px; }
 .cp-chiffre .cp-t { font-weight: 700; }
 .cp-formule .cp-t { font-family: var(--font-mono); font-size: 13px; }
-.cp-cause { border-radius: 4px 14px 14px 4px; } .cp-consequence { border-radius: 14px 4px 4px 14px; }
-.cp-condition { border-left-width: 4px; } .cp-probleme { border-left: 4px dashed; } .cp-solution { border-width: 2px; }
-.cp-argument { border-left-width: 3px; } .cp-critique { border-right-width: 3px; } .cp-nuance { border-style: dashed; }
-.cp-avantage { border-top-width: 3px; } .cp-inconvenient { border-bottom-width: 3px; } .cp-signe { border-left: 3px dotted; }
 .cp-etape .cp-t { font-weight: 600; } .cp-conseil { border-radius: 14px 4px 14px 4px; } .cp-exercice { border-width: 2px; }
 .cp-pick { display: grid; gap: 6px; min-width: 0; }
 .cp-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }

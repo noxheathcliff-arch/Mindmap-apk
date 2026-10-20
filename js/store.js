@@ -96,10 +96,6 @@
   const TYPES = {
     notion:     { label: 'Notion',             kicker: '',              prompt: 'Décompose cette notion' },
     definition: { label: 'Définition',         kicker: 'Définition',    prompt: 'Donne la définition' },
-    fond:       { label: 'Condition de fond',  kicker: 'Fond',          prompt: 'Explique cette condition de fond' },
-    forme:      { label: 'Condition de forme', kicker: 'Forme',         prompt: 'Explique cette condition de forme' },
-    effet:      { label: 'Effet / Régime',     kicker: 'Effet',         prompt: 'Quels sont les effets ?' },
-    exception:  { label: 'Exception',          kicker: 'Exception',     prompt: 'Explique cette exception' },
     juris:      { label: 'Jurisprudence',      kicker: 'Jurisprudence', prompt: 'Que retient cette décision ?' },
     texte:      { label: 'Texte',              kicker: 'Texte',         prompt: 'Que prévoit ce texte ?' },
     idee:       { label: 'Idée',               kicker: '',              prompt: 'Développe cette idée' },
@@ -107,57 +103,40 @@
     lecon:      { label: 'Leçon',              kicker: 'Leçon',         prompt: 'Retrouve le plan de cette leçon', rank: 2 },
     section:    { label: 'Section',            kicker: 'Section',       prompt: 'Retrouve le plan de cette section', rank: 3 },
     doctrine:   { label: 'Doctrine',           kicker: 'Doctrine',      prompt: 'Quelle est cette position doctrinale ?' },
-    exemple:    { label: 'Exemple',            kicker: 'Exemple',       prompt: 'Qu’illustre cet exemple ?' },
     retenir:    { label: 'À retenir',          kicker: 'À retenir',     prompt: 'Restitue l’essentiel' },
     // au-delà du droit : raisonner, se repérer, citer (cours d'histoire, de sciences, essais…)
-    question:   { label: 'Question',           kicker: 'Question',      prompt: 'Réponds à cette question' },
     methode:    { label: 'Méthode',            kicker: 'Méthode',       prompt: 'Retrouve les étapes de cette méthode' },
-    comparaison:{ label: 'Comparaison',        kicker: 'Comparaison',   prompt: 'Compare : points communs et différences' },
-    piege:      { label: 'Piège',              kicker: 'Piège',         prompt: 'Quel est le piège à éviter ?' },
     citation:   { label: 'Citation',           kicker: 'Citation',      prompt: 'Que dit cette citation, et qu’en retenir ?' },
     personne:   { label: 'Personne',           kicker: 'Personne',      prompt: 'Qui est-ce et quel est son apport ?' },
     date:       { label: 'Date',               kicker: 'Date',          prompt: 'Que s’est-il passé, et pourquoi est-ce important ?' },
     chiffre:    { label: 'Chiffre clé',        kicker: 'Chiffre',       prompt: 'Que mesure ce chiffre et que montre-t-il ?' },
     formule:    { label: 'Formule',            kicker: 'Formule',       prompt: 'Restitue la formule et le sens de chaque terme' },
     // vocabulaire universel (toutes matières) : cause et effet, raisonnement, action, description
-    cause:      { label: 'Cause',              kicker: 'Cause',         prompt: 'Explique cette cause : pourquoi produit-elle cet effet ?' },
-    consequence:{ label: 'Conséquence',        kicker: 'Conséquence',   prompt: 'Quelle est cette conséquence, et d’où vient-elle ?' },
-    condition:  { label: 'Condition',          kicker: 'Condition',     prompt: 'Quelle est cette condition, et pourquoi est-elle nécessaire ?' },
-    probleme:   { label: 'Problème',           kicker: 'Problème',      prompt: 'Quel est ce problème, et qu’est-ce qui le rend difficile ?' },
-    solution:   { label: 'Solution',           kicker: 'Solution',      prompt: 'Quelle est cette solution, et comment l’appliquer ?' },
-    argument:   { label: 'Argument',           kicker: 'Argument',      prompt: 'Développe cet argument' },
-    critique:   { label: 'Critique / Limite',  kicker: 'Critique',      prompt: 'Quelle est cette critique ou cette limite ?' },
-    nuance:     { label: 'Nuance',             kicker: 'Nuance',        prompt: 'Quelle nuance faut-il apporter ?' },
-    avantage:   { label: 'Avantage',           kicker: 'Avantage',      prompt: 'Quel est cet avantage ?' },
-    inconvenient:{ label: 'Inconvénient',      kicker: 'Inconvénient',  prompt: 'Quel est cet inconvénient ?' },
-    caracteristique:{ label: 'Caractéristique', kicker: 'Caractéristique', prompt: 'Décris cette caractéristique' },
-    categorie:  { label: 'Catégorie',          kicker: 'Catégorie',     prompt: 'Que regroupe cette catégorie ?' },
-    signe:      { label: 'Signe / Indice',     kicker: 'Signe',         prompt: 'À quoi le reconnaît-on ?' },
     etape:      { label: 'Étape',              kicker: 'Étape',         prompt: 'Que fait-on à cette étape ?' },
     conseil:    { label: 'Conseil',            kicker: 'Conseil',       prompt: 'Quel est ce conseil, et comment l’appliquer ?' },
     exercice:   { label: 'Exercice',           kicker: 'Exercice',      prompt: 'Fais l’exercice : que faut-il faire ?' },
-    objectif:   { label: 'Objectif',           kicker: 'Objectif',      prompt: 'Quel est cet objectif, et comment l’atteindre ?' },
     etude:      { label: 'Étude / Expérience', kicker: 'Étude',         prompt: 'Que montre cette étude ?' },
-    theorie:    { label: 'Théorie / Modèle',   kicker: 'Théorie',       prompt: 'Que dit cette théorie, et qu’explique-t-elle ?' },
   };
   /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–3 */
-  const TYPE_ORDER = ['notion', 'definition', 'fond', 'forme', 'effet', 'exception', 'juris', 'texte', 'idee', 'chapitre', 'lecon', 'section', 'doctrine', 'exemple', 'retenir',
-    'question', 'methode', 'comparaison', 'piege', 'citation', 'personne', 'date', 'chiffre', 'formule',
-    'cause', 'consequence', 'condition', 'probleme', 'solution', 'argument', 'critique', 'nuance', 'avantage', 'inconvenient',
-    'caracteristique', 'categorie', 'signe', 'etape', 'conseil', 'exercice', 'objectif', 'etude', 'theorie'];
+  const TYPE_ORDER = ['notion', 'definition', 'idee', 'texte', 'juris', 'doctrine', 'retenir', 'methode', 'etape', 'chapitre', 'lecon', 'section',
+    'conseil', 'exercice', 'date', 'chiffre', 'formule', 'etude', 'citation', 'personne'];
   const STRUCT_ORDER = ['chapitre', 'lecon', 'section'];
   /** Regroupement du menu « Type » (divulgation par familles) */
   const TYPE_GROUPS = [
     { label: 'Structure du cours', types: STRUCT_ORDER },
-    { label: 'Notion', types: ['notion', 'definition', 'caracteristique', 'categorie', 'signe'] },
-    { label: 'Cause et effet', types: ['cause', 'consequence', 'condition', 'probleme', 'solution'] },
-    { label: 'Raisonner', types: ['question', 'theorie', 'argument', 'critique', 'nuance', 'comparaison', 'avantage', 'inconvenient'] },
-    { label: 'Agir', types: ['methode', 'etape', 'conseil', 'exercice', 'objectif'] },
+    { label: 'Notion', types: ['notion', 'definition', 'idee', 'retenir'] },
+    { label: 'Agir', types: ['methode', 'etape', 'conseil', 'exercice'] },
     { label: 'Repères', types: ['date', 'chiffre', 'formule'] },
     { label: 'Sources', types: ['etude', 'citation', 'personne', 'texte', 'juris', 'doctrine'] },
-    { label: 'Droit', types: ['fond', 'forme', 'effet', 'exception'] },
-    { label: 'Compléments', types: ['exemple', 'piege', 'retenir', 'idee'] },
   ];
+  /** Types supprimés : leur sens est porté par le libellé du lien (« sauf », « par exemple », « entraîne »…).
+      Les cartes déjà enregistrées sont migrées à la lecture (sanitize), titre et note intacts. */
+  const REMOVED_TYPES = {
+    exception: 'idee', condition: 'idee', fond: 'idee', forme: 'idee', effet: 'idee', cause: 'idee', consequence: 'idee',
+    probleme: 'idee', solution: 'idee', argument: 'idee', critique: 'idee', nuance: 'idee', avantage: 'idee',
+    inconvenient: 'idee', caracteristique: 'idee', signe: 'idee', exemple: 'idee', piege: 'idee', comparaison: 'idee',
+    objectif: 'idee', question: 'idee', categorie: 'notion', theorie: 'notion',
+  };
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
   const LAYOUTS = ['right', 'balanced', 'down', 'organic'];
@@ -228,7 +207,7 @@
         return true;
       }).map((n) => ({
         id: String(n.id),
-        type: TYPES[n.type] ? n.type : (note('unknownTypes'), 'idee'),
+        type: TYPES[n.type] ? n.type : (note('unknownTypes'), REMOVED_TYPES[n.type] || 'idee'),
         title: String(n.title ?? ''),
         note: String(n.note ?? ''),
         x: Number.isFinite(+n.x) ? +n.x : 0,
@@ -329,7 +308,7 @@
   }
 
   const store = {
-    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, RATINGS, INTERVALS,
+    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, REMOVED_TYPES, RATINGS, INTERVALS,
     isStruct,
     normalizeGroups,
     sanitize, // exposé pour les tests (journal et refus du rangement survivent à l’export)

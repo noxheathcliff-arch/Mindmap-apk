@@ -50,7 +50,7 @@
 
   /** Types dont la question porte sur le parent (« Qu'illustre cet exemple ? », « d'où vient-elle ? ») :
       le parent est masqué dans le fil d'Ariane jusqu'à la réponse */
-  const RELATIONAL = new Set(['exemple', 'consequence', 'cause', 'effet', 'condition', 'exception', 'signe', 'solution', 'juris', 'argument', 'nuance', 'critique']);
+  const RELATIONAL = new Set(['juris']);
 
   R.views.review = {
     mount(el, route) {

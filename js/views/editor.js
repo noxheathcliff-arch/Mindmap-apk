@@ -1098,7 +1098,6 @@
         return p.type === 'chapitre' ? 'lecon' : 'notion';
       }
       if (p.type === 'notion') return 'idee';
-      if (p.type === 'fond' || p.type === 'forme') return 'idee';
       return 'idee';
     }
     /** Évite qu'un nouveau nœud recouvre un nœud existant */
@@ -1569,16 +1568,11 @@
     }
     function placeholderFor(n) {
       return {
-        notion: 'Notion…', definition: 'Définition…', fond: 'Condition de fond…', forme: 'Condition de forme…',
-        effet: 'Effet…', exception: 'Exception…', juris: 'Cass. civ. …', texte: 'Art. …', idee: 'Idée…',
+        notion: 'Notion…', definition: 'Définition…', juris: 'Cass. civ. …', texte: 'Art. …', idee: 'Idée…',
         chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…',
-        doctrine: 'Auteur, position…', exemple: 'Exemple…', retenir: 'À retenir…',
-        question: 'Question…', methode: 'Méthode…', comparaison: 'A ou B ?…', piege: 'Piège…',
+        doctrine: 'Auteur, position…', retenir: 'À retenir…', methode: 'Méthode…',
         citation: '« … »', personne: 'Nom…', date: '1789…', chiffre: '42 %…', formule: 'E = mc²…',
-        cause: 'Cause…', consequence: 'Conséquence…', condition: 'Condition…', probleme: 'Problème…', solution: 'Solution…',
-        argument: 'Argument…', critique: 'Critique, limite…', nuance: 'Nuance…', avantage: 'Avantage…', inconvenient: 'Inconvénient…',
-        caracteristique: 'Caractéristique…', categorie: 'Catégorie…', signe: 'Signe…', etape: 'Étape…', conseil: 'Conseil…',
-        exercice: 'Exercice…', objectif: 'Objectif…', etude: 'Auteur, année — objet…', theorie: 'Théorie, modèle…',
+        etape: 'Étape…', conseil: 'Conseil…', exercice: 'Exercice…', etude: 'Auteur, année — objet…',
       }[n.type];
     }
 

@@ -30,63 +30,48 @@ test('Phrase — « car » lit la relation dans le bon sens, quel que soit l’o
 });
 
 test('Phrase — une énumération de causes donne un lien par cause, aucun entre elles', () => {
-  const map = makeMap(sec('Obésité', [['a', 'cause', 'Sédentarité', 'Peu d’activité.'], ['b', 'cause', 'Sucres ajoutés', 'Boissons sucrées.'], ['g', 'cause', 'Prédisposition génétique', 'Variants.'],
-    ['k', 'consequence', 'Excès de masse grasse', 'La sédentarité, les sucres ajoutés et une prédisposition génétique favorisent l’excès de masse grasse.']]));
+  const map = makeMap(sec('Obésité', [['a', 'idee', 'Sédentarité', 'Peu d’activité.'], ['b', 'idee', 'Sucres ajoutés', 'Boissons sucrées.'], ['g', 'idee', 'Prédisposition génétique', 'Variants.'],
+    ['k', 'idee', 'Excès de masse grasse', 'La sédentarité, les sucres ajoutés et une prédisposition génétique favorisent l’excès de masse grasse.']]));
   applyAll(map, 'sure');
   for (const x of ['a', 'b', 'g']) ok(edge(map, x, 'k') && edge(map, x, 'k').label === 'favorise', x + ' —favorise→ k');
   ok(!edge(map, 'a', 'b') && !edge(map, 'a', 'g') && !edge(map, 'b', 'g'), 'aucun lien entre causes');
 });
 
 test('Phrase — « ce qui » prend pour sujet ce que la proposition précédente produit (cercle vicieux gardé)', () => {
-  const map = makeMap(sec('Pauvreté', [['p', 'cause', 'Pauvreté des familles', 'Revenus bas.'], ['e', 'consequence', 'Faible scolarisation', 'La pauvreté des familles entraîne une faible scolarisation.'],
-    ['w', 'consequence', 'Revenus faibles adultes', 'Une faible scolarisation mène à des revenus faibles adultes, ce qui entretient la pauvreté des familles.']]));
+  const map = makeMap(sec('Pauvreté', [['p', 'idee', 'Pauvreté des familles', 'Revenus bas.'], ['e', 'idee', 'Faible scolarisation', 'La pauvreté des familles entraîne une faible scolarisation.'],
+    ['w', 'idee', 'Revenus faibles adultes', 'Une faible scolarisation mène à des revenus faibles adultes, ce qui entretient la pauvreté des familles.']]));
   applyAll(map, 'sure');
   ok(edge(map, 'p', 'e') && edge(map, 'e', 'w') && edge(map, 'w', 'p'), 'les trois arcs : ' + map.edges.filter((x) => x.kind === 'link').map((x) => x.from + '>' + x.to).join(' '));
   ok(O.audit(map).notes.every((n) => n.kind !== 'reverse'), 'un maillon de chaîne n’est pas un conflit de types');
 });
 
 test('Rattachement — « sauf si » range l’exception sous la règle qu’elle limite (libellé « sauf »)', () => {
-  const map = makeMap(sec('Contrat de travail', [['p', 'idee', 'Renouvellement de l’essai', 'L’essai peut être renouvelé une fois, sauf si la convention collective l’interdit.'], ['c', 'exception', 'Convention collective', 'Accord de branche.']]));
+  const map = makeMap(sec('Contrat de travail', [['p', 'idee', 'Renouvellement de l’essai', 'L’essai peut être renouvelé une fois, sauf si la convention collective l’interdit.'], ['c', 'idee', 'Convention collective', 'Accord de branche.']]));
   applyAll(map, 'sure');
   const t = S.parentEdge(map, 'c');
   ok(t.from === 'p' && t.label === 'sauf', 'Renouvellement —sauf→ Convention collective : ' + JSON.stringify(t));
 });
 
-test('Rattachement — un exemple qui annonce « les 4 paliers » rejoint la méthode qui en compte 4', () => {
-  const map = makeMap(sec('Refus gradué', [['m', 'methode', 'Refuser en 4 étapes', 'Quatre paliers, à franchir un à un.'], ['x', 'exemple', 'Le collègue bruyant', 'Illustre : les 4 paliers du refus.'], ['c', 'condition', 'Conséquences réelles', 'N’annoncer que ce qu’on fera.']]));
-  for (const i of [1, 2, 3, 4]) { map.nodes.push(Object.assign(S.newNode({ type: 'etape', title: 'Palier ' + i }), { id: 'e' + i })); map.edges.push({ id: 'te' + i, from: 'm', to: 'e' + i, kind: 'tree', label: '' }); }
-  const f = sure(map).find((x) => x.kind === 'example');
-  ok(f && f.ids[1] === 'm', 'exemple → méthode (cardinalité et nom concordent) : ' + sure(map).map((x) => x.title));
-});
-
 test('Rattachement — une série annoncée (« en 3 étapes ») et posée à côté rejoint ce qu’elle détaille', () => {
   const map = makeMap(sec('Méthode', [['m', 'methode', 'Critiquer en 3 étapes', 'Trois étapes pour une critique constructive.'],
     ['a', 'etape', 'Dire ce qu’on ressent', 'Nommer son émotion.'], ['b', 'etape', 'S’en tenir aux faits', 'Un fait précis.'], ['c', 'etape', 'Dire ce qu’on attend', 'Une demande claire.'],
-    ['p', 'piege', 'Généraliser', 'Éviter « toujours ».']]));
+    ['p', 'idee', 'Généraliser', 'Éviter « toujours ».']]));
   applyAll(map, 'sure');
   ok(['a', 'b', 'c'].every((x) => S.parentEdge(map, x).from === 'm'), 'les 3 étapes sous la méthode');
   ok(S.parentEdge(map, 'p').from === 's', 'le piège reste à la partie');
 });
 
-test('Rôle selon la relation — un conseil sous un piège le corrige (« résolu par »), pas un nom-type creux', () => {
-  const map = makeMap([['r', 'chapitre', 'Dire non'], ['p', 'piege', 'Se justifier sans fin', 'On s’épuise.', 'r'], ['k', 'conseil', 'Une raison suffit', 'Donner une seule raison.']]);
-  map.edges.push({ id: 'ek', from: 'p', to: 'k', kind: 'tree', label: '' });
-  map.edges = map.edges.filter((e) => !(e.to === 'k' && e.from !== 'p'));
-  applyAll(map, 'sure');
-  ok(S.parentEdge(map, 'k').label === 'résolu par', 'libellé : ' + S.parentEdge(map, 'k').label);
-});
-
-test('Identité — « Exemple : … » est retypé et rattaché dans la même passe (pas de cascade)', () => {
+test('Identité — un titre « Exemple : … » n’est plus retypé ; une passe suffit, la seconde ne change rien', () => {
   const map = makeMap(sec('Bulles', [['b', 'notion', 'Bulle spéculative', 'Prix déconnecté.'], ['k', 'notion', 'Krach', 'Effondrement.'], ['x', 'idee', 'Exemple : la tulipomanie', 'Un bulbe vaut une maison, puis la bulle spéculative éclate.']]));
   applyAll(map, 'sure');
-  ok(S.node(map, 'x').type === 'exemple', 'retypé');
+  ok(S.node(map, 'x').type === 'idee', 'type inchangé');
   const once = state(map);
   applyAll(map, 'sure');
   ok(state(map) === once, 'seconde passe : rien ne bouge');
 });
 
 test('Fusion — deux frères au même titre et au même type ne font qu’un ; ailleurs, seulement signalés', () => {
-  const map = makeMap(sec('Photosynthèse', [['a', 'notion', 'Chlorophylle', 'Pigment vert.'], ['b', 'notion', 'Chlorophylle', 'Capte la lumière.'], ['x', 'exemple', 'Feuille', 'Riche en chlorophylle.']]));
+  const map = makeMap(sec('Photosynthèse', [['a', 'notion', 'Chlorophylle', 'Pigment vert.'], ['b', 'notion', 'Chlorophylle', 'Capte la lumière.'], ['x', 'idee', 'Feuille', 'Riche en chlorophylle.']]));
   applyAll(map, 'sure');
   const ch = map.nodes.filter((n) => n.title === 'Chlorophylle');
   ok(ch.length === 1 && /Pigment vert/.test(ch[0].note) && /Capte la lumière/.test(ch[0].note), 'une seule, les deux notes gardées');
@@ -178,8 +163,8 @@ test('Refus persistants — une correction refusée ne revient pas ; journal et 
 });
 
 test('Stabilité — une passe suffit sur une carte riche ; la seconde ne change rien', () => {
-  const map = makeMap(sec('Chaîne', [['p', 'cause', 'Pauvreté des familles', 'Revenus bas.'], ['e', 'consequence', 'Faible scolarisation', 'La pauvreté des familles entraîne une faible scolarisation.'],
-    ['x', 'exemple', 'Exemple : Zola', 'Germinal montre la faible scolarisation des enfants de mineurs.'], ['c', 'exception', 'Bourses', 'Sauf si les bourses compensent la pauvreté des familles.']]));
+  const map = makeMap(sec('Chaîne', [['p', 'idee', 'Pauvreté des familles', 'Revenus bas.'], ['e', 'idee', 'Faible scolarisation', 'La pauvreté des familles entraîne une faible scolarisation.'],
+    ['x', 'idee', 'Exemple : Zola', 'Germinal montre la faible scolarisation des enfants de mineurs.'], ['c', 'idee', 'Bourses', 'Sauf si les bourses compensent la pauvreté des familles.']]));
   applyAll(map, 'sure');
   const once = state(map);
   applyAll(map, 'sure');
@@ -191,7 +176,7 @@ test('Performance — audit d’une carte de 1 000 nœuds en moins de 1,5 s', ()
   const spec = [['r', 'chapitre', 'Grand cours']];
   for (let s = 0; s < 20; s++) {
     spec.push(['s' + s, 'section', 'Partie ' + s, 'r']);
-    for (let i = 0; i < 49; i++) spec.push([`n${s}_${i}`, ['idee', 'cause', 'consequence', 'exemple', 'notion'][i % 5], `Élément ${s} ${i} terme${(s * 7 + i) % 90}`, 's' + s,
+    for (let i = 0; i < 49; i++) spec.push([`n${s}_${i}`, ['idee', 'idee', 'consequence', 'exemple', 'notion'][i % 5], `Élément ${s} ${i} terme${(s * 7 + i) % 90}`, 's' + s,
       `Le terme${(s * 7 + i + 1) % 90} entraîne le terme${(s * 7 + i + 2) % 90}, sauf si le terme${(s + i) % 90} intervient.`]);
   }
   const map = makeMap(spec);

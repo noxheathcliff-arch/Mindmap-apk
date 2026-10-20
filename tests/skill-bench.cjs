@@ -46,7 +46,7 @@ console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')
 
 check('version 3 et fichier choisi par le tri', () => {
   ok(/^3\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'ratio_book_to_course_compiler_v3.0.json', path.basename(file));
+  ok(path.basename(file) === 'ratio_book_to_course_compiler_v3.1.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {
@@ -101,7 +101,7 @@ check('taille ≤ 110 ko', () => {
 check('exemple travaillé hors droit : source, carte de compréhension, JSON', () => {
   const ex = skill.example;
   ok(ex.source && ex.comprehension_map && ex.json, 'source / comprehension_map / json');
-  ok(!ex.json.maps.some((m) => m.nodes.some((n) => ['fond', 'forme', 'effet', 'juris', 'doctrine'].includes(n.type))), 'type de droit dans l’exemple hors droit');
+  ok(!ex.json.maps.some((m) => m.nodes.some((n) => ['juris', 'doctrine', 'fond', 'forme', 'effet', 'exception', 'exemple', 'question', 'comparaison', 'piege', 'cause', 'consequence', 'condition', 'probleme', 'solution', 'argument', 'critique', 'nuance', 'avantage', 'inconvenient', 'caracteristique', 'categorie', 'signe', 'objectif', 'theorie'].includes(n.type))), 'type de droit ou supprimé dans l’exemple hors droit');
   const cm = ex.comprehension_map;
   ok(cm.R.length >= 5 && cm.A.length >= 1 && cm.X.length >= 1, 'lignes R, A, X');
   // chaque ligne R annonce un encodage, et la carte a au moins autant d'arêtes libellées

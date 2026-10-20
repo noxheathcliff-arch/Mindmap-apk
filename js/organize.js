@@ -48,32 +48,12 @@
      relation, aucun libellé automatique : « conseil », « définition » ne feraient que redire le
      sur-titre) et nom d'une branche qui en réunit plusieurs. */
   const REL = {
-    cause:           { one: 'a pour cause', many: 'causes' },
-    consequence:     { one: 'entraîne', many: 'conséquences' },
-    effet:           { one: 'produit', many: 'effets' },
-    condition:       { one: 'suppose', many: 'conditions' },
-    fond:            { one: 'suppose', many: 'conditions de fond' },
-    forme:           { one: 'exige', many: 'conditions de forme' },
-    exception:       { one: 'sauf', many: 'exceptions' },
-    exemple:         { one: 'illustré par', many: 'exemples' },
     juris:           { one: 'appliqué par', many: 'jurisprudence' },
     texte:           { one: 'fondé sur', many: 'textes' },
     doctrine:        { one: 'selon', many: 'doctrine' },
-    critique:        { one: 'critiqué par', many: 'critiques' },
-    argument:        { one: 'justifié par', many: 'arguments' },
-    nuance:          { one: 'nuancé par', many: 'nuances' },
-    caracteristique: { one: 'se caractérise par', many: 'caractères' },
-    signe:           { one: 'se reconnaît à', many: 'signes' },
-    categorie:       { one: 'comprend', many: 'catégories' },
-    solution:        { one: 'résolu par', many: 'solutions' },
-    probleme:        { one: 'pose', many: 'problèmes' },
-    objectif:        { one: 'vise', many: 'objectifs' },
     citation:        { one: 'selon', many: 'citations' },
     etude:           { one: 'montré par', many: 'études' },
-    avantage:        { one: null, many: 'avantages' },
-    inconvenient:    { one: null, many: 'inconvénients' },
     conseil:         { one: null, many: 'conseils' },
-    piege:           { one: null, many: 'pièges' },
     definition:      { one: null, many: null },
   };
   /* Libellés selon le sens de lecture (même table que le skill : edge_rules.labels.lexicon) */
@@ -85,14 +65,10 @@
     vague:    ['lié à', 'lien', 'rapport', 'relation', 'en lien avec', 'concerne', 'cf', 'cf.', '?', '-', '→'],
   };
   const STRUCT = new Set(['chapitre', 'lecon', 'section']);
-  const LAW_TYPES = new Set(['texte', 'juris', 'doctrine', 'fond', 'forme', 'effet']);
+  const LAW_TYPES = new Set(['texte', 'juris', 'doctrine']);
   /* Couples (type source → type cible) pour lesquels les types disent la relation ; tout autre
      couple ne reçoit aucun lien causal (un problème n'est pas « résolu par » sa conséquence). */
-  const CAUSAL_PAIRS = {
-    'cause>consequence': 'entraîne', 'cause>effet': 'entraîne',
-    'condition>consequence': 'permet', 'condition>effet': 'permet',
-    'fond>effet': 'permet', 'forme>effet': 'permet', 'fond>consequence': 'permet', 'forme>consequence': 'permet',
-    'probleme>solution': 'résolu par', 'probleme>consequence': 'entraîne',
+  const CAUSAL_PAIRS = {  // couples de types qui disent la relation : plus aucun (le sens est porté par les libellés de liens)
   };
 
   const normCache = new Map();
@@ -117,12 +93,6 @@
     return null;
   }
 
-  /** la flèche contredit le couple strict cause ↔ conséquence posé par l'auteur */
-  const againstTypes = (a, b, label) => {
-    const pol = polarity(label);
-    return (pol === 'fwd' && (a.type === 'consequence' || a.type === 'effet') && b.type === 'cause')
-      || (pol === 'back' && a.type === 'cause' && (b.type === 'consequence' || b.type === 'effet') && !/^(suppose|exige|depend|necessite)/.test(norm(label)));
-  };
 
   const STOP = new Set(['dans', 'pour', 'avec', 'sans', 'sous', 'entre', 'leur', 'leurs', 'cette', 'celle', 'celui', 'ainsi', 'comme',
     'plus', 'moins', 'tout', 'tous', 'toute', 'toutes', 'etre', 'avoir', 'fait', 'faire', 'droit', 'illustre', 'notamment', 'lorsque',
@@ -167,7 +137,7 @@
     for (const n of map.nodes) for (const w of new Set(tokens(n.title + ' ' + plain(n.note)))) df.set(w, (df.get(w) || 0) + 1);
     const maxDf = Math.max(3, map.nodes.length * RULES.commonWordShare);
     const rare = (t) => new Set(tokens(t).filter((w) => (df.get(w) || 0) <= maxDf));
-    const law = map.nodes.some((n) => LAW_TYPES.has(n.type) && n.type !== 'effet')
+    const law = map.nodes.some((n) => LAW_TYPES.has(n.type))
       || map.nodes.some((n) => /\bart(icle)?\.?\s*l?\.?\s*\d|code (civil|penal|pénal|du travail|de commerce)|cour de cassation|\bcass\.|jurisprudence|juridique|\ben droit\b|\bau sens juridique\b/i.test(n.title + ' ' + n.note));
     const pairSet = new Set();
     for (const e of map.edges) { pairSet.add(e.from + '|' + e.to); pairSet.add(e.to + '|' + e.from); }
@@ -221,19 +191,8 @@
   /* Le titre du parent nomme déjà la famille (« Les 10 signes », « Pourquoi… », « 5 conseils
      pour… ») : une branche ou un libellé répété n'ajouterait que du bruit. */
   const NAMED = {
-    cause: /pourquoi|d.ou vient|causes?\b|origines?|raisons?|facteurs?/,
-    consequence: /consequences?|effets?|couts?|produit|risques?|suites?/,
-    effet: /effets?|consequences?|produit/,
-    signe: /signes?|comportements?|symptomes?|reconna|indices?/,
     conseil: /conseils?|astuces?|techniques?|etapes?|comment|facons?|moyens?|cles?\b|regles?|habitudes?/,
-    solution: /solutions?|armes?|remedes?|comment|moyens?|outils?|techniques?/,
-    condition: /conditions?/, fond: /conditions?|fond/, forme: /conditions?|forme/,
-    exception: /exceptions?|limites?/, exemple: /exemples?|illustr/,
-    categorie: /categories?|types?|formes?|especes?|resultats?|profils?/,
-    caracteristique: /caracter|traits?|aspects?/, avantage: /avantages?|atouts?|benefices?/,
-    inconvenient: /inconvenients?|limites?|defauts?/, juris: /jurisprudence|arrets?/, texte: /textes?|articles?/,
-    critique: /critiques?/, argument: /arguments?/, nuance: /nuances?/, objectif: /objectifs?|buts?|a quoi sert/,
-    probleme: /problemes?|difficultes?|pieges?/, piege: /pieges?|erreurs?/, etude: /etudes?|recherches?/,
+    juris: /jurisprudence|arrets?/, texte: /textes?|articles?/, etude: /etudes?|recherches?/,
   };
   const named = (p, type) => /(^|\s)\d+\s/.test(' ' + norm(p.title)) || (NAMED[type] && NAMED[type].test(norm(p.title)));
 
@@ -292,21 +251,16 @@
   /* ---- Libellés : le verbe de chaque relation, une proposition par parent ----
      Jamais depuis un intitulé (section, chapitre, question) : « Chapitre 3 —entraîne→ Inflation »
      serait faux ; jamais quand le titre du parent nomme déjà la liste. */
-  const REMEDY = new Set(['conseil', 'solution', 'methode', 'exercice']);
-  const NEGATIVE = new Set(['probleme', 'piege', 'signe', 'inconvenient']);
   function labels(c, taken) {
     const byParent = new Map();
     for (const e of c.map.edges) {
       if (e.kind !== 'tree' || e.label || e.group) continue;
       const k = c.byId.get(e.to), p = c.byId.get(e.from);
       if (!k || !p || p.logic || heading(p) || taken.has(k.id)) continue;
-      // le rôle se lit dans la relation, pas dans le seul type : un conseil sous un piège le corrige
-      const remedy = REMEDY.has(k.type) && NEGATIVE.has(p.type);
-      const r = remedy ? { one: 'résolu par' } : REL[k.type];
+      const r = REL[k.type];
       if (!r || !r.one || STRUCT.has(k.type) || named(p, k.type)) continue;
       if (p.type === 'methode' && k.type === 'etape') continue; // frise : la flèche suffit
       // sous une définition, un exemple bloquerait sa décomposition — sauf si elle ne se décompose pas
-      if (k.type === 'exemple' && p.type === 'definition' && (splitDefinition(plain(p.note)).length >= RULES.defMinParts || !plain(p.note).trim())) continue;
       if (!byParent.has(p.id)) byParent.set(p.id, { p, list: [] });
       byParent.get(p.id).list.push({ e, k, label: r.one });
     }
@@ -318,59 +272,6 @@
       ids: list.map((x) => x.k.id),
       apply(m) { for (const x of list) { const e = m.edges.find((y) => y.id === x.e.id); if (e && !e.label && !e.group) e.label = x.label; } },
     }));
-  }
-
-  /* ---- Exemples : sous l'élément précis qu'ils illustrent ---- */
-  function examples(c) {
-    const out = [];
-    for (const p of c.map.nodes) {
-      const ks = c.kids(p.id);
-      if (ks.length < 2) continue;
-      const cands = ks.filter((s) => s.type !== 'exemple' && !STRUCT.has(s.type) && s.type !== 'definition');
-      for (const k of ks) {
-        if (k.type !== 'exemple') continue;
-        const ke = c.parentEdgeOf(k.id);
-        if (ke && (ke.label || ke.group)) continue; // relation déjà dite par l'auteur
-        const txt = c.text.get(k.id);
-        // l'exemple nomme-t-il un élément, et un seul ? (deux : il illustre la partie entière)
-        const hits = cands.filter((s) => wordsIn(s.title) >= 2 && c.names(txt, s.title));
-        let best = null, certainty = null, why = '';
-        // cardinalité : « Illustre : les 4 paliers du refus » → l'élément qui annonce 4 paliers et en compte 4
-        const card = !hits.length && countOf(txt);
-        const counted = card ? cands.filter((s) => c.kids(s.id).length === card.n && countsOf(c.text.get(s.id)).some((x) => x.n === card.n)) : [];
-        if (hits.length === 1) { best = hits[0]; certainty = 'sure'; why = 'L’exemple nomme cet élément : il l’illustre lui, pas toute la partie.'; }
-        else if (counted.length === 1) {
-          best = counted[0];
-          const same = countsOf(c.text.get(best.id)).some((x) => x.n === card.n && x.noun === card.noun);
-          certainty = same ? 'sure' : 'probable';
-          why = `L’exemple parle de « ${card.raw} » : seul cet élément en annonce et en compte ${card.n}` + (same ? '.' : ' — à confirmer, le mot diffère.');
-        }
-        else if (!hits.length) {
-          const ex = c.rare(k.title + ' ' + plain(k.note)), pw = c.rare(p.title);
-          let bestN = 0, second = 0;
-          for (const s of cands) {
-            let n = 0; for (const w of c.rare(s.title)) if (ex.has(w) && !pw.has(w)) n++;
-            if (n > bestN) { second = bestN; bestN = n; best = s; } else if (n > second) second = n;
-          }
-          if (best && bestN >= 2 && bestN > second) { certainty = 'probable'; why = 'L’exemple reprend des mots rares de cet élément : il l’illustre sans doute lui — à vérifier.'; }
-          else best = null;
-        }
-        if (!best) continue;
-        out.push({
-          key: 'ex:' + k.id + '>' + best.id, kind: 'example', certainty, gain: 3,
-          title: `Rattacher l’exemple « ${short(k.title, 28)} » à « ${short(best.title, 28)} »`,
-          detail: why,
-          preview: [`${short(best.title, 28)} —illustré par→ ${short(k.title, 28)}`],
-          ids: [k.id, best.id],
-          apply(m) {
-            const e = S.parentEdge(m, k.id);
-            if (!e || e.label || e.group || !S.node(m, best.id) || S.descendants(m, k.id).includes(best.id)) return;
-            e.from = best.id; e.label = 'illustré par';
-          },
-        });
-      }
-    }
-    return out;
   }
 
   /* ---- Éléments d'application posés à côté de ce qu'ils servent ----
@@ -388,7 +289,7 @@
       if (!heading(h)) continue;
       const ks = c.kids(h.id);
       ks.forEach((p, i) => {
-        if (STRUCT.has(p.type) || p.type === 'exemple' || p.type === 'retenir') return;
+        if (STRUCT.has(p.type) || p.type === 'retenir') return;
         const m = (c.titleN.get(p.id) + ' ' + norm(plain(p.note)).slice(0, 160)).match(/\b(\d|deux|trois|quatre|cinq|six|sept|huit|neuf|dix)\s+([a-z]{4,})/);
         if (!m) return;
         const n = NUMS[m[1]] || +m[1];
@@ -479,8 +380,8 @@
         if (per >= RULES.linksPerNodeMax) break;
         if (STRUCT.has(a.type) || a.type === 'retenir' || a === root || c.linked(a.id, b.id) || lineage(c, a.id, b.id) || planned.has(a.id + '>' + b.id)) continue;
         const pa = c.parent(a.id), pb = c.parent(b.id);
-        if (pa && pb && pa === pb && !heading(pa) && a.type !== 'exemple') continue; // frères sous une même idée
-        const label = a.type === 'exemple' ? 'illustre' : 'fait appel à';
+        if (pa && pb && pa === pb && !heading(pa)) continue; // frères sous une même idée
+        const label = 'fait appel à';
         per++;
         out.push({
           key: 'x:' + a.id + '>' + b.id, kind: 'cross', certainty: 'probable', gain: 2, link: true,
@@ -649,10 +550,10 @@
           }
         }
         // partie d'un tout : « Prolongements courts du neurone », « Frontière de la cellule »
-        if (si === 0 && ['caracteristique', 'idee', 'notion', 'categorie'].includes(owner.type)) {
+        if (si === 0 && ['idee', 'notion'].includes(owner.type)) {
           const head = sent.text.split(/[,:;—()]/)[0];
           for (const m of mentionsIn(head, owner)) {
-            if (!m.strong || !['notion', 'definition', 'idee', 'theorie'].includes(m.n.type)) continue;
+            if (!m.strong || !['notion', 'definition', 'idee'].includes(m.n.type)) continue;
             const pre = head.slice(Math.max(0, m.pos - 7), m.pos);
             if (!/\b(du|de la|de l'|des)\s*$/.test(pre) || head.slice(0, m.pos).split(/\s+/).length > 7 || NEG.test(head)) continue;
             rels.push({ a: owner, b: m.n, fam: 'part', verb: 'fait partie de', strong: true, hedge: false, owner, sentence: head });
@@ -672,10 +573,6 @@
     for (const r of rels) if (r.fam === 'part') partCount.set(r.b.id, (partCount.get(r.b.id) || 0) + 1);
     const best = new Map();
     for (const r of rels) {
-      // exemple : sa relation à ce qu'il nomme est l'illustration, quel que soit le verbe de la phrase
-      if (r.a.type === 'exemple' && r.owner === r.a && r.b.type !== 'exemple') { r.fam = 'example'; r.verb = 'illustre'; }
-      else if (r.b.type === 'exemple' && r.owner === r.b && r.a.type !== 'exemple') { [r.a, r.b] = [r.b, r.a]; r.fam = 'example'; r.verb = 'illustre'; }
-      if (r.fam === 'limit' && r.a.type === 'exception') { r.fam = 'exceptionOf'; r.verb = 'fait exception à'; }
       if (r.fam === 'limit') { r.fam = 'inhibit'; }
       if (r.fam === 'seq' && !(r.a.type === 'etape' && r.b.type === 'etape')) continue;
       const k = [r.a.id, r.b.id].sort().join('|');
@@ -683,28 +580,16 @@
       if (!best.has(k) || score > best.get(k).score) best.set(k, { ...r, score });
     }
     // un nœud produit par un autre ET qui en produit un troisième est un maillon de chaîne : son type
-    // (« conséquence ») dit une seule de ses relations — pas de conflit de types pour la suivante
-    const produced = new Set(rels.filter((r) => r.fam === 'cause').map((r) => r.b.id));
     const out = [];
     for (const r of best.values()) {
       const { a, b, fam } = r;
       if (c.desc(a.id).has(b.id) && c.parentEdgeOf(b.id) && c.parentEdgeOf(b.id).from !== a.id) continue; // relation à travers plusieurs niveaux : on ne court-circuite pas
       // le texte contredit-il les types posés par l'auteur ? (cause ↔ conséquence inversées)
-      const typeConflict = fam === 'cause' && (a.type === 'consequence' || a.type === 'effet') && b.type === 'cause' && !produced.has(a.id);
-      let certainty = r.strong && !r.hedge && !typeConflict && fam !== 'refer' ? 'sure' : 'probable';
+      let certainty = r.strong && !r.hedge && fam !== 'refer' ? 'sure' : 'probable';
       if (fam === 'part' && partCount.get(b.id) < 2) certainty = 'probable';
       const why = `La note de « ${short(r.owner.title, 26)} » le dit : « ${short(r.sentence, 70)} »`;
       const tree = c.parentEdgeOf(b.id) && c.parentEdgeOf(b.id).from === a.id ? c.parentEdgeOf(b.id)
         : c.parentEdgeOf(a.id) && c.parentEdgeOf(a.id).from === b.id ? c.parentEdgeOf(a.id) : null;
-      if (typeConflict) {
-        out.push({
-          key: 'rt:' + a.id + '|' + b.id, kind: 'retype', certainty: 'probable', gain: 2, ids: [a.id, b.id],
-          title: `Échanger les types de « ${short(a.title, 22)} » et « ${short(b.title, 22)} »`,
-          detail: `${why}. Le texte fait de « ${short(a.title, 24)} » la cause : les types posés disent l’inverse.`,
-          preview: [`${short(a.title, 26)} : ${S.TYPES[a.type].label} → ${S.TYPES[b.type].label}`, `${short(b.title, 26)} : ${S.TYPES[b.type].label} → ${S.TYPES[a.type].label}`],
-          apply(m) { const x = S.node(m, a.id), y = S.node(m, b.id); if (x && y && x.type === a.type && y.type === b.type) { x.type = b.type; y.type = a.type; } },
-        });
-      }
       if (tree) {
         if (tree.label || tree.group || heading(c.byId.get(tree.from))) continue;
         const label = tree.from === a.id ? (fam === 'part' ? null : r.verb) : INVERSE[fam];
@@ -725,8 +610,6 @@
       if (fam === 'example') { dep = a; host = b; hostLabel = 'illustré par'; }
       else if (fam === 'exception') { dep = b; host = a; hostLabel = 'sauf'; }
       else if (fam === 'exceptionOf') { dep = a; host = b; hostLabel = 'sauf'; }
-      else if (fam === 'require' && ['condition', 'fond', 'forme'].includes(b.type)) { dep = b; host = a; hostLabel = 'suppose'; }
-      else if (fam === 'enable' && ['condition', 'fond', 'forme'].includes(a.type)) { dep = a; host = b; hostLabel = 'suppose'; }
       else if (fam === 'part') { dep = a; host = b; hostLabel = 'comprend'; }
       const pd = dep && c.parentEdgeOf(dep.id), ph = host && c.parentEdgeOf(host.id);
       if (dep && pd && ph && pd.from === ph.from && heading(c.byId.get(pd.from)) && !pd.label && !pd.group && !c.desc(dep.id).has(host.id) && host.type !== 'definition') {
@@ -768,22 +651,6 @@
         detail: 'Son titre nomme cette personne : le lien dit d’où vient l’idée.',
         preview: [`${short(user.title, 28)} —selon→ ${short(p.title, 28)}`],
         apply(m) { if (!S.node(m, user.id) || !S.node(m, p.id) || m.edges.some((e) => (e.from === user.id && e.to === p.id) || (e.from === p.id && e.to === user.id))) return; m.edges.push({ id: U.uid('e'), from: user.id, to: p.id, kind: 'link', label: 'selon' }); },
-      });
-    }
-    return out;
-  }
-
-  /* ---- Retypage déclaré par le titre (« Exemple : … ») ---- */
-  function retypes(c) {
-    const out = [];
-    for (const n of c.map.nodes) {
-      if (n.type === 'exemple' || STRUCT.has(n.type) || !/^\s*(exemple|ex\.|par exemple|cas pratique)\s*[:–—-]/i.test(n.title)) continue;
-      out.push({
-        key: 'ty:' + n.id + ':exemple', kind: 'retype', certainty: 'sure', gain: 3, ids: [n.id], structural: true,
-        title: `Typer « ${short(n.title, 30)} » comme exemple`,
-        detail: 'Son titre le déclare : typé exemple, il se révise comme tel et peut rejoindre ce qu’il illustre.',
-        preview: [`${S.TYPES[n.type].label} → Exemple`],
-        apply(m) { const x = S.node(m, n.id); if (x && x.type === n.type) x.type = 'exemple'; },
       });
     }
     return out;
@@ -948,8 +815,7 @@
 
   /* ---- Libellés posés : sens douteux, libellé vague, cible incohérente ----
      Les types seuls ne prouvent pas un sens (un même élément est effet d'une chose et cause de la
-     suivante) : une inversion n'est proposée que pour le couple strict cause ↔ conséquence, et
-     décochée. */
+     suivante) : aucune inversion n'est déduite des types. */
   function labelAudit(c, notes) {
     const out = [];
     for (const e of c.map.edges) {
@@ -957,24 +823,6 @@
       const a = c.byId.get(e.from), b = c.byId.get(e.to);
       if (!a || !b) continue;
       const pol = polarity(e.label);
-      if (againstTypes(a, b, e.label)) {
-        const parallel = c.map.edges.some((t) => t !== e && t.kind === 'tree' && ((t.from === a.id && t.to === b.id) || (t.from === b.id && t.to === a.id)));
-        if (e.kind === 'link' && !parallel) {
-          out.push({
-            key: 'inv:' + e.id, kind: 'reverse', certainty: 'probable', gain: 5, ids: [a.id, b.id],
-            title: `Inverser « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} » ?`,
-            detail: `« ${short(a.title, 30)} » est noté ${S.TYPES[a.type].label.toLowerCase()} et « ${short(b.title, 30)} » ${S.TYPES[b.type].label.toLowerCase()} : la flèche semble partir dans le mauvais sens — à vérifier, un élément peut être l’effet d’une chose et la cause d’une autre.`,
-            preview: [`${short(b.title, 28)} —${e.label}→ ${short(a.title, 28)}`],
-            apply(m) {
-              const x = m.edges.find((y) => y.id === e.id);
-              if (!x || x.from !== a.id || m.edges.some((y) => y !== x && ((y.from === b.id && y.to === a.id) || (y.from === a.id && y.to === b.id)))) return;
-              x.from = b.id; x.to = a.id; delete x.group;
-            },
-          });
-        } else notes.push(note('inv-n:' + e.id, 'reverse', `Sens douteux : « ${short(a.title, 22)} —${e.label}→ ${short(b.title, 22)} »`,
-          'Les types disent l’inverse de la flèche : relisez la phrase, et corrigez le libellé ou les types à la main.', [a.id, b.id]));
-        continue;
-      }
       if (pol === 'vague') {
         const r = REL[b.type];
         if (e.kind === 'tree' && !e.group && r && r.one && !heading(a)) {
@@ -1009,8 +857,6 @@
       const pol = polarity(e.label);
       const t = c.parentEdgeOf(e.to) && c.parentEdgeOf(e.to).from === e.from ? c.parentEdgeOf(e.to) : c.parentEdgeOf(e.from) && c.parentEdgeOf(e.from).from === e.to ? c.parentEdgeOf(e.from) : null;
       if (t) {
-        // un libellé qui contredit les types ne passe pas sur l'arbre : le sens est à trancher à la main
-        if (e.label && againstTypes(a, b, e.label)) continue; // labelAudit le signale
         // le libellé ne passe sur l'arbre que s'il va dans le même sens
         const keep = e.label && !t.label && !t.group && t.from === e.from && pol !== 'sym';
         out.push({
@@ -1209,7 +1055,7 @@
   function ambiguous(c, notes) {
     let n = 0;
     for (const p of c.map.nodes) {
-      const ks = c.kids(p.id).filter((k) => !STRUCT.has(k.type) && !['exemple', 'comparaison', 'definition', 'notion', 'question'].includes(k.type) && !/\?\s*$/.test(k.title));
+      const ks = c.kids(p.id).filter((k) => !STRUCT.has(k.type) && !['definition', 'notion'].includes(k.type) && !/\?\s*$/.test(k.title));
       const pw = c.rare(p.title);
       for (let i = 0; i < ks.length && n < 4; i++) for (let j = i + 1; j < ks.length && n < 4; j++) {
         const a = ks[i], b = ks[j];
@@ -1282,11 +1128,6 @@
     const tree = map.edges.filter((e) => e.kind === 'tree');
     const content = tree.filter((e) => { const a = c.byId.get(e.from), b = c.byId.get(e.to); return a && b && !STRUCT.has(b.type) && !heading(a) && !a.logic && !(named(a, b.type)) && !(a.type === 'methode' && b.type === 'etape'); });
     const verbs = content.filter((e) => e.label && polarity(e.label) !== 'vague');
-    let dir = 0;
-    for (const e of map.edges) {
-      const a = c.byId.get(e.from), b = c.byId.get(e.to), pol = polarity(e.label);
-      if (a && b && ((pol === 'fwd' && (a.type === 'consequence' || a.type === 'effet') && b.type === 'cause') || (pol === 'back' && a.type === 'cause' && (b.type === 'consequence' || b.type === 'effet')))) dir++;
-    }
     const fromHeading = map.edges.filter((e) => e.label && !e.group && heading(c.byId.get(e.from)) && polarity(e.label) && polarity(e.label) !== 'sym').length;
     const notes = [];
     flatLists(c, notes);
@@ -1295,7 +1136,6 @@
       links: linkCount(map),
       relationRate: content.length ? verbs.length / content.length : 1,  // relations nommées par un verbe
       vague: map.edges.filter((e) => polarity(e.label) === 'vague').length,
-      wrongDirection: dir,                                                  // flèche contraire au couple cause ↔ conséquence
       verbFromHeading: fromHeading,                                         // verbe causal posé depuis un intitulé
       flat: notes.length,
       integrity: check(map).length,
@@ -1340,7 +1180,7 @@
     const declined = c0.declined;
     const live = (list) => list.filter((f) => !declined.has(f.key));
     // ---- phase 0 : identité des nœuds (type déclaré par le titre, doublons) — le reste se lit sur la carte corrigée ----
-    const identity = [...live(retypes(c0)), ...live(merges(c0, notes))];
+    const identity = [...live(merges(c0, notes))];
     let c = c0;
     if (identity.some((f) => f.certainty === 'sure')) {
       const m0 = clone(map);
@@ -1350,10 +1190,9 @@
     }
     // ---- phase 1 : structure ----
     const ph = live([...phrases(c, notes), ...persons(c)]);
-    const ex = live(examples(c));
     // un élément ne bouge qu'une fois : la relation dite par le texte passe avant la ressemblance de mots
     const moved = new Set();
-    const moves = [...ph.filter((f) => f.kind === 'reparent'), ...ex, ...live(applications(c)), ...live(linkToTree(c)), ...live(rewire(c))]
+    const moves = [...ph.filter((f) => f.kind === 'reparent'), ...live(applications(c)), ...live(linkToTree(c)), ...live(rewire(c))]
       .sort((a, b) => (a.certainty === 'sure' ? 0 : 1) - (b.certainty === 'sure' ? 0 : 1) || b.gain - a.gain)
       .filter((f) => !moved.has(f.ids[0]) && moved.add(f.ids[0]));
     const structure = [...identity, ...live(definitions(c, notes)), ...live(duplicates(c, notes)), ...live(labelAudit(c, notes)),

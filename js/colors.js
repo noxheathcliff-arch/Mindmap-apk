@@ -93,14 +93,12 @@
   // Compléments violets) ; à l'intérieur, de petites variations + la forme distinguent le type.
   const FAMILY_HUES = {
     chapitre: 265, lecon: 248, section: 230,
-    notion: 28, definition: 52, fond: 8, forme: 348, effet: 72, exception: 330,
+    notion: 28, definition: 52,
     texte: 152, juris: 178, doctrine: 202,
-    exemple: 292, retenir: 92, idee: 312,
-    piege: 18, question: 236, methode: 214, comparaison: 222,
+    retenir: 92, idee: 312,
+    methode: 214,
     citation: 165, personne: 190, date: 128, chiffre: 112, formule: 140,
-    cause: 38, consequence: 62, condition: 4, probleme: 352, solution: 150,
-    argument: 244, critique: 336, nuance: 318, avantage: 136, inconvenient: 26,
-    caracteristique: 44, categorie: 56, signe: 82, etape: 208, conseil: 176, exercice: 196, objectif: 260, etude: 186, theorie: 230,
+    etape: 208, conseil: 176, exercice: 196, etude: 186,
   };
   const family = {};
   for (const [t, h] of Object.entries(FAMILY_HUES)) family[t] = oklchToHex({ L: 0.64, C: 0.14, h });
@@ -108,8 +106,8 @@
   // de contenu les plus fréquents ; les autres restent monochromes (au-delà de 8 couleurs, on ne
   // distingue plus de manière fiable).
   const okabeIto = {
-    definition: '#0072B2', fond: '#009E73', forme: '#56B4E9', effet: '#E69F00',
-    exception: '#D55E00', juris: '#CC79A7', texte: '#F0E442',
+    definition: '#0072B2', notion: '#009E73', methode: '#56B4E9', retenir: '#E69F00',
+    idee: '#D55E00', juris: '#CC79A7', texte: '#F0E442',
   };
   const PRESETS = {
     familles: { label: 'Familles', text: 'Une teinte par famille de types (structure, notion, sources, compléments).', colors: family },

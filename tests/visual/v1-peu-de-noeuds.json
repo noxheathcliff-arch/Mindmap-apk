@@ -12,7 +12,7 @@
   },
   {
    "id": "a",
-   "type": "condition",
+   "type": "idee",
    "title": "Lumière",
    "note": "",
    "x": 260,
@@ -20,7 +20,7 @@
   },
   {
    "id": "b",
-   "type": "consequence",
+   "type": "idee",
    "title": "Glucose",
    "note": "",
    "x": 260,

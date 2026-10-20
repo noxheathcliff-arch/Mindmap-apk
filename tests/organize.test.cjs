@@ -30,9 +30,9 @@ test('A — cause et conséquences : liens causaux nommés, aucun verbe posé de
   const map = makeMap([
     ['r', 'chapitre', 'Le climat'],
     ['s', 'section', 'Le réchauffement climatique', 'r'],
-    ['c', 'cause', 'Émissions de gaz à effet de serre', 's', 'Elles retiennent la chaleur.'],
-    ['k1', 'consequence', 'Fonte de la banquise', 's', 'Les émissions de gaz à effet de serre réchauffent l’Arctique : la banquise fond.'],
-    ['k2', 'consequence', 'Montée des océans', 's', 'Conséquence des émissions de gaz à effet de serre : les océans montent.'],
+    ['c', 'idee', 'Émissions de gaz à effet de serre', 's', 'Elles retiennent la chaleur.'],
+    ['k1', 'idee', 'Fonte de la banquise', 's', 'Les émissions de gaz à effet de serre provoquent la fonte de la banquise.'],
+    ['k2', 'idee', 'Montée des océans', 's', 'Les océans montent parce que les émissions de gaz à effet de serre augmentent.'],
   ]);
   applyAll(map, 'sure');
   for (const k of ['k1', 'k2']) {
@@ -48,10 +48,10 @@ test('B — condition → effet : « permet », condition à la source', () => {
   const map = makeMap([
     ['r', 'chapitre', 'Le mariage'],
     ['s', 'section', 'Effets du mariage', 'r'],
-    ['c', 'condition', 'Consentement des époux', 's', 'Sans lui, pas de mariage valable.'],
-    ['f', 'effet', 'Devoir de fidélité', 's', 'Le consentement des époux fait naître le devoir de fidélité.'],
+    ['c', 'idee', 'Consentement des époux', 's', 'Sans lui, pas de mariage valable.'],
+    ['f', 'idee', 'Devoir de fidélité', 's', 'Le consentement des époux rend possible le devoir de fidélité.'],
   ]);
-  const f = fixesOf(map, 'causal');
+  const f = fixesOf(map, 'phrase');
   ok(f.length === 1 && f[0].certainty === 'sure', 'une proposition sûre (l’effet nomme la condition)');
   f[0].apply(map);
   ok(edge(map, 'c', 'f') && edge(map, 'c', 'f').label === 'permet', 'condition —permet→ effet');
@@ -80,12 +80,12 @@ test('D — exemple : rattaché à la conséquence qu’il nomme ; renvoi vers l
     ['r', 'chapitre', 'Dévolution'],
     ['n', 'notion', 'Indivision successorale', 'r', 'Plusieurs héritiers propriétaires ensemble.'],
     ['s', 'section', 'Effets du décès', 'r'],
-    ['k1', 'consequence', 'Ouverture de la succession', 's', 'Au jour du décès.'],
-    ['k2', 'consequence', 'Saisine des héritiers', 's', 'Ils reçoivent les biens de plein droit.'],
-    ['x', 'exemple', 'Deux enfants héritent de leur père', 's', 'Par la saisine des héritiers, ils reçoivent la maison et se trouvent en indivision successorale.'],
+    ['k1', 'idee', 'Ouverture de la succession', 's', 'Au jour du décès.'],
+    ['k2', 'idee', 'Saisine des héritiers', 's', 'Ils reçoivent les biens de plein droit.'],
+    ['x', 'idee', 'Deux enfants héritent de leur père', 's', 'Il illustre la saisine des héritiers : ils reçoivent la maison et se trouvent en indivision successorale.'],
   ]);
   const cross = fixesOf(map, 'cross').find((f) => f.key === 'x:x>n');
-  ok(cross && cross.certainty === 'probable' && cross.preview[0].includes('—illustre→'), 'renvoi « illustre » vers la notion, à confirmer');
+  ok(cross && cross.certainty === 'probable' && cross.preview[0].includes('—fait appel à→'), 'renvoi vers la notion générale, à confirmer');
   applyAll(map, 'sure');
   const e = edge(map, 'k2', 'x');
   ok(e && e.kind === 'tree' && e.label === 'illustré par', 'Saisine —illustré par→ exemple');
@@ -114,9 +114,9 @@ test('F — liste plate : corrigée quand la carte le permet, signalée sinon', 
     ['r', 'chapitre', 'Responsabilité civile'],
     ['s', 'section', 'Responsabilité du fait personnel', 'r'],
     ['d', 'definition', 'Faute', 's', 'Manquement à une obligation préexistante.'],
-    ['c', 'condition', 'Lien de causalité', 's', 'Le dommage doit résulter de la faute.'],
-    ['k', 'consequence', 'Obligation de réparer', 's', 'Le lien de causalité établi, l’auteur doit réparer le dommage.'],
-    ['x', 'exemple', 'Le cycliste imprudent', 's', 'Le cycliste renverse un piéton : le lien de causalité est établi.'],
+    ['c', 'idee', 'Lien de causalité', 's', 'Le dommage doit résulter de la faute.'],
+    ['k', 'idee', 'Obligation de réparer', 's', 'Le lien de causalité rend possible l’obligation de réparer le dommage.'],
+    ['x', 'idee', 'Le cycliste imprudent', 's', 'Le cycliste renverse un piéton : il illustre le lien de causalité.'],
     ['i', 'idee', 'Réparation intégrale', 's', 'Tout le dommage, rien que le dommage.'],
   ]);
   applyAll(map, 'sure');
@@ -126,7 +126,7 @@ test('F — liste plate : corrigée quand la carte le permet, signalée sinon', 
   const bare = makeMap([
     ['r', 'chapitre', 'Vivre mieux'], ['s', 'section', 'Habitudes', 'r'],
     ['a', 'conseil', 'Dormir huit heures', 's'], ['b', 'conseil', 'Marcher chaque jour', 's'], ['c', 'conseil', 'Lire le soir', 's'],
-    ['d', 'signe', 'Fatigue du matin', 's'], ['e', 'signe', 'Irritabilité', 's'],
+    ['d', 'idee', 'Fatigue du matin', 's'], ['e', 'idee', 'Irritabilité', 's'],
   ]);
   ok(O.audit(bare).notes.some((n) => n.kind === 'flat'), 'sans aucun indice : liste plate signalée, rien d’inventé');
 });
@@ -148,11 +148,11 @@ test('H — idempotence : trois passes, rien de nouveau ni de dupliqué', () => 
     ['r', 'chapitre', 'Successions'],
     ['d', 'definition', 'Succession', 'r', SUCCESSION],
     ['s', 'section', 'Effets du décès', 'r'],
-    ['c', 'cause', 'Le décès du défunt', 's', 'Il ouvre la succession.'],
-    ['k1', 'consequence', 'Ouverture de la succession', 's', 'Le décès du défunt ouvre la succession au dernier domicile.'],
-    ['k2', 'consequence', 'Saisine des héritiers', 's', 'Conséquence du décès du défunt pour les héritiers.'],
-    ['k3', 'consequence', 'Indivision', 's', 'Plusieurs héritiers.'],
-    ['x', 'exemple', 'Deux enfants', 's', 'Saisine des héritiers : deux enfants héritent ensemble.'],
+    ['c', 'idee', 'Le décès du défunt', 's', 'Il ouvre la succession.'],
+    ['k1', 'idee', 'Ouverture de la succession', 's', 'Le décès du défunt ouvre la succession au dernier domicile.'],
+    ['k2', 'idee', 'Saisine des héritiers', 's', 'Conséquence du décès du défunt pour les héritiers.'],
+    ['k3', 'idee', 'Indivision', 's', 'Plusieurs héritiers.'],
+    ['x', 'idee', 'Deux enfants', 's', 'Saisine des héritiers : deux enfants héritent ensemble.'],
   ], [['k1', 'd', 'voir aussi']]);
   applyAll(map);
   const n1 = map.nodes.length, e1 = map.edges.length;
@@ -166,35 +166,32 @@ test('H — idempotence : trois passes, rien de nouveau ni de dupliqué', () => 
 
 test('Négation — « n’entraîne pas » ne prouve aucune causalité', () => {
   const map = makeMap([['r', 'chapitre', 'Le climat'], ['s', 'section', 'Débat', 'r'],
-    ['c', 'cause', 'Activité solaire', 's', 'Variation du rayonnement.'],
-    ['k', 'consequence', 'Montée des océans', 's', 'Contrairement à une idée reçue, l’activité solaire n’entraîne pas la montée des océans.']]);
+    ['c', 'idee', 'Activité solaire', 's', 'Variation du rayonnement.'],
+    ['k', 'idee', 'Montée des océans', 's', 'Contrairement à une idée reçue, l’activité solaire n’entraîne pas la montée des océans.']]);
   ok(!sure(map).some((f) => f.kind === 'causal'), 'aucun lien sûr : ' + sure(map).map((f) => f.preview).join(' | '));
 });
 
 test('Couple de types — un problème n’est pas « résolu par » sa conséquence ; une cause n’« entraîne » pas une solution', () => {
   const m1 = makeMap([['r', 'chapitre', 'Travail'], ['s', 'section', 'Le surmenage', 'r'],
-    ['p', 'probleme', 'Surcharge de travail', 's', 'Trop de dossiers.'], ['k', 'consequence', 'Épuisement', 's', 'La surcharge de travail mène à l’épuisement.']]);
+    ['p', 'idee', 'Surcharge de travail', 's', 'Trop de dossiers.'], ['k', 'idee', 'Épuisement', 's', 'La surcharge de travail mène à l’épuisement.']]);
   const f1 = O.audit(m1).fixes.filter((f) => f.link);
   ok(f1.length === 1 && f1[0].preview[0].includes('—entraîne→') && f1[0].ids[0] === 'p', 'problème —entraîne→ conséquence : ' + f1.map((f) => f.preview));
   const m2 = makeMap([['r', 'chapitre', 'Dire non'], ['s', 'section', 'Sortir de la gentillesse', 'r'],
-    ['c', 'cause', 'Peur du rejet', 's', 'On craint l’abandon.'], ['so', 'solution', 'Exposition progressive', 's', 'Pour vaincre la peur du rejet, refuser de petites demandes.']]);
+    ['c', 'idee', 'Peur du rejet', 's', 'On craint l’abandon.'], ['so', 'idee', 'Exposition progressive', 's', 'Pour vaincre la peur du rejet, refuser de petites demandes.']]);
   ok(!fixesOf(m2, 'causal').length, 'cause / solution : aucun lien causal');
 });
 
-test('Sens tiré des seuls types — jamais d’inversion cochée ; une chaîne juste reste intacte', () => {
+test('Sens non tiré des types — jamais d’inversion proposée ; une chaîne juste reste intacte', () => {
   const map = makeMap([['r', 'chapitre', 'Dire non'], ['s', 'section', 'Cercles', 'r'],
-    ['so', 'solution', 'Apprendre à dire non', 's'], ['co', 'condition', 'Disposer de temps pour soi', 's'],
-    ['p', 'probleme', 'Dépendance affective', 's'], ['so2', 'solution', 'Thérapie', 's'],
-    ['a', 'consequence', 'Épuisement chronique', 's'], ['b', 'probleme', 'Isolement social', 'a']],
+    ['so', 'idee', 'Apprendre à dire non', 's'], ['co', 'idee', 'Disposer de temps pour soi', 's'],
+    ['p', 'idee', 'Dépendance affective', 's'], ['so2', 'idee', 'Thérapie', 's'],
+    ['a', 'idee', 'Épuisement chronique', 's'], ['b', 'idee', 'Isolement social', 'a']],
   [['so', 'co', 'permet'], ['p', 'so2', 'exige']]);
   edge(map, 'a', 'b').label = 'entraîne';
   const before = JSON.stringify(sentences(map));
   ok(!sure(map).some((f) => f.kind === 'reverse' || f.key.startsWith('vg:') || f.key.startsWith('invl')), 'rien de coché sur le sens');
   applyAll(map, 'sure');
   ok(JSON.stringify(sentences(map)) === before, 'phrases inchangées : ' + sentences(map).join(' | '));
-  const strict = makeMap([['r', 'chapitre', 'Éco'], ['k', 'consequence', 'Hausse des prix', 'r'], ['c', 'cause', 'Baisse de l’offre', 'r']], [['k', 'c', 'entraîne']]);
-  const inv = fixesOf(strict, 'reverse');
-  ok(inv.length === 1 && inv[0].certainty === 'probable', 'couple strict conséquence → cause : inversion proposée décochée');
 });
 
 test('Homonymie — « Action », « en partie », « ce n’est pas une action » ne créent aucun renvoi', () => {
@@ -217,27 +214,27 @@ test('Négation dans un renvoi — « ne pas confondre avec » et les résumés 
 test('Exemples — troncature, deux éléments nommés, exemple en tête, jamais sous une définition', () => {
   const trunc = makeMap([['r', 'chapitre', 'Éco'], ['s', 'section', 'Échanges', 'r'],
     ['a', 'idee', 'Importance de la communication', 's'], ['b', 'idee', 'Balance commerciale', 's'],
-    ['x', 'exemple', 'Cuba', 's', 'Importation de biens par un régime communiste.']]);
+    ['x', 'idee', 'Cuba', 's', 'Importation de biens par un régime communiste.']]);
   ok(!sure(trunc, 'example').length, 'mots tronqués : rien de sûr');
   const two = makeMap([['r', 'chapitre', 'Dire non'], ['s', 'section', 'Refuser au travail', 'r'],
     ['a', 'conseil', 'Refuser une réunion inutile', 's'], ['b', 'conseil', 'Négocier les délais', 's'],
-    ['x', 'exemple', 'Paul', 's', 'Paul décide de refuser une réunion inutile et de négocier les délais de son rapport.']]);
+    ['x', 'idee', 'Paul', 's', 'Paul décide de refuser une réunion inutile et de négocier les délais de son rapport.']]);
   ok(!fixesOf(two, 'example').length, 'il illustre deux éléments : il reste à la partie');
   const head = makeMap([['r', 'chapitre', 'Psycho'], ['s', 'section', 'Le soi', 'r'],
-    ['x', 'exemple', 'Julie', 's', 'Julie illustre la peur du conflit.'], ['a', 'idee', 'Peur du conflit', 's'], ['b', 'idee', 'Estime de soi', 's']]);
+    ['x', 'idee', 'Julie', 's', 'Julie illustre la peur du conflit.'], ['a', 'idee', 'Peur du conflit', 's'], ['b', 'idee', 'Estime de soi', 's']]);
   ok(sure(head).filter((f) => f.ids[0] === 'x' && f.ids[1] === 'a' && (f.kind === 'example' || f.kind === 'reparent')).length === 1, 'un exemple placé en premier est examiné aussi');
   const def = makeMap([['r', 'chapitre', 'Valeurs'], ['s', 'section', 'Notions', 'r'],
     ['d', 'definition', 'Valeur personnelle', 's', 'Ce qui compte pour soi.'], ['b', 'idee', 'Choisir ses priorités', 's'],
-    ['x', 'exemple', 'Julie', 's', 'Julie découvre sa valeur personnelle.']]);
+    ['x', 'idee', 'Julie', 's', 'Julie découvre sa valeur personnelle.']]);
   ok(!fixesOf(def, 'example').some((f) => f.ids[1] === 'd'), 'pas d’exemple sous une définition (il bloquerait sa décomposition)');
 });
 
-test('Doublons — un renvoi parallèle n’emporte pas une erreur sur l’arbre ; une passe suffit', () => {
-  const map = makeMap([['r', 'chapitre', 'X'], ['e', 'effet', 'Inflation', 'r'], ['c', 'cause', 'Création monétaire', 'e']], [['e', 'c', 'entraîne']]);
+test('Doublons — un renvoi parallèle de même sens passe sur l’arbre ; une passe suffit', () => {
+  const map = makeMap([['r', 'chapitre', 'X'], ['e', 'idee', 'Création monétaire', 'r'], ['c', 'idee', 'Inflation', 'e']], [['e', 'c', 'entraîne']]);
   applyAll(map, 'sure');
   const t = map.edges.find((x) => x.kind === 'tree' && x.from === 'e' && x.to === 'c');
-  ok(t && t.label !== 'entraîne', 'la flèche à contresens n’est pas recopiée sur l’arbre');
-  ok(O.audit(map).notes.some((n) => n.kind === 'reverse'), 'le sens douteux est signalé');
+  ok(t && t.label === 'entraîne', 'le libellé du renvoi passe sur l’arbre');
+  ok(!map.edges.some((x) => x.kind === 'link' && x.from === 'e' && x.to === 'c'), 'le renvoi doublon disparaît');
   ok(!sure(map).length, 'second audit : rien de sûr');
 });
 
@@ -253,40 +250,40 @@ test('Boucles et contradictions — signalées, jamais supprimées', () => {
 
 test('Raccourci transitif — sous une notion, causes et conséquences ne sont pas reliées entre elles', () => {
   const map = makeMap([['r', 'chapitre', 'Colère'], ['n', 'notion', 'Accuser l’autre', 'r'],
-    ['c', 'cause', 'Vouloir faire admettre sa douleur', 'n'], ['k', 'consequence', 'L’accusé ne change pas', 'n', 'Vouloir faire admettre sa douleur échoue : l’accusé ne change pas.']]);
+    ['c', 'idee', 'Vouloir faire admettre sa douleur', 'n'], ['k', 'idee', 'L’accusé ne change pas', 'n', 'Vouloir faire admettre sa douleur échoue : l’accusé ne change pas.']]);
   ok(!fixesOf(map, 'causal').length, 'pas de lien direct cause → conséquence');
 });
 
 test('Libellés — rien depuis un intitulé, une question ou une liste nommée ; aucun nom-type creux', () => {
   const map = makeMap([['r', 'chapitre', 'Les 5 regrets des mourants'],
-    ['a', 'consequence', 'Avoir trop travaillé', 'r'], ['b', 'conseil', 'Rester en contact', 'r'], ['c', 'condition', 'Oser exprimer ses sentiments', 'r'],
-    ['q', 'question', 'Pourquoi dit-on oui ?', 'r'], ['q1', 'cause', 'Peur du conflit', 'q'], ['q2', 'cause', 'Besoin d’être aimé', 'q'],
-    ['n', 'notion', 'Assertivité', 'r'], ['n1', 'conseil', 'Parler en « je »', 'n'], ['n2', 'avantage', 'Moins de stress', 'n'], ['n3', 'consequence', 'Relations plus claires', 'n']]);
+    ['a', 'idee', 'Avoir trop travaillé', 'r'], ['b', 'conseil', 'Rester en contact', 'r'], ['c', 'idee', 'Oser exprimer ses sentiments', 'r'],
+    ['q', 'idee', 'Pourquoi dit-on oui ?', 'r'], ['q1', 'etude', 'Peur du conflit', 'q'], ['q2', 'etude', 'Besoin d’être aimé', 'q'],
+    ['n', 'notion', 'Assertivité', 'r'], ['n1', 'conseil', 'Parler en « je »', 'n'], ['n2', 'idee', 'Moins de stress', 'n'], ['n3', 'etude', 'Relations plus claires', 'n']]);
   const lbl = fixesOf(map, 'label');
   ok(lbl.every((f) => !['r', 'q'].includes(f.key.split(':')[1])), 'aucun libellé depuis le chapitre ni la question');
   ok(!lbl.some((f) => f.preview.some((p) => /—(conseil|avantage|définition|attention :)→/.test(p))), 'aucun nom-type comme libellé');
-  ok(lbl.some((f) => f.preview.some((p) => p.includes('Assertivité —entraîne→ Relations plus claires'))), 'un vrai verbe sous une notion');
+  ok(lbl.some((f) => f.preview.some((p) => p.includes('Assertivité —montré par→ Relations plus claires'))), 'un vrai verbe sous une notion');
 });
 
 test('Branches — seulement quand le parent mêle des familles, jamais pour TOUS ses enfants', () => {
   const all = makeMap([['r', 'chapitre', 'X'], ['n', 'notion', 'Devenir plus authentique', 'r'],
-    ['a', 'consequence', 'Moins de stress', 'n'], ['b', 'consequence', 'Plus d’énergie', 'n'], ['c', 'consequence', 'Relations vraies', 'n']]);
+    ['a', 'etude', 'Moins de stress', 'n'], ['b', 'etude', 'Plus d’énergie', 'n'], ['c', 'etude', 'Relations vraies', 'n']]);
   ok(!fixesOf(all, 'branch').length, 'une branche qui réunit tous les enfants ne dit rien');
   const mixed = makeMap([['r', 'chapitre', 'X'], ['n', 'notion', 'Réchauffement climatique', 'r'],
-    ['c1', 'cause', 'Émissions de CO2', 'n'], ['c2', 'cause', 'Déforestation', 'n'],
-    ['k1', 'consequence', 'Fonte des glaces', 'n'], ['k2', 'consequence', 'Montée des océans', 'n']]);
+    ['c1', 'etude', 'Émissions de CO2', 'n'], ['c2', 'etude', 'Déforestation', 'n'],
+    ['k1', 'juris', 'Fonte des glaces', 'n'], ['k2', 'juris', 'Montée des océans', 'n']]);
   ok(fixesOf(mixed, 'branch').length === 2, 'deux familles : deux branches');
 });
 
 test('Branches — l’ordre de lecture devient contigu quelle que soit la disposition', () => {
   for (const layout of ['right', 'down']) {
     const map = makeMap([['r', 'chapitre', 'X'], ['n', 'notion', 'Stress', 'r'],
-      ['a', 'cause', 'Surcharge', 'n'], ['x', 'idee', 'Définir le stress', 'n'], ['b', 'cause', 'Conflits', 'n'], ['y', 'idee', 'Mesurer', 'n'], ['k', 'consequence', 'Fatigue', 'n'], ['l', 'consequence', 'Insomnie', 'n']], [], { layout });
+      ['a', 'etude', 'Surcharge', 'n'], ['x', 'idee', 'Définir le stress', 'n'], ['b', 'etude', 'Conflits', 'n'], ['y', 'idee', 'Mesurer', 'n'], ['k', 'juris', 'Fatigue', 'n'], ['l', 'juris', 'Insomnie', 'n']], [], { layout });
     if (layout === 'down') map.nodes.forEach((n, i) => { n.x = i * 200; n.y = 0; });
     for (const f of fixesOf(map, 'branch')) f.apply(map);
     const order = S.childrenOf(map, 'n').map((k) => k.type);
     const runs = order.filter((t, i) => t !== order[i - 1]);
-    ok(runs.filter((t) => t === 'cause').length === 1 && runs.filter((t) => t === 'consequence').length === 1, layout + ' : ' + order.join(','));
+    ok(runs.filter((t) => t === 'etude').length === 1 && runs.filter((t) => t === 'juris').length === 1, layout + ' : ' + order.join(','));
   }
 });
 
@@ -310,13 +307,13 @@ test('Budget de renvois — idempotent même avec beaucoup de couples', () => {
   ok(!sure(map).length, 'second audit : rien de sûr');
 });
 
-test('Refus — un exemple refusé redevient disponible pour la branche « exemples »', () => {
-  const map = makeMap([['r', 'chapitre', 'X'], ['n', 'notion', 'Stress', 'r'], ['c1', 'cause', 'Surcharge de travail', 'n'], ['c2', 'cause', 'Conflits familiaux', 'n'],
-    ['x1', 'exemple', 'Marie', 'n', 'Marie subit une surcharge de travail.'], ['x2', 'exemple', 'Luc', 'n', 'Luc.'], ['x3', 'exemple', 'Zoé', 'n', 'Zoé.']]);
-  const ex = fixesOf(map, 'example');
-  ok(ex.length === 1, 'Marie → Surcharge proposé');
-  const br = O.audit(map, { declined: new Set([ex[0].key]) }).fixes.find((f) => f.key === 'br:n:exemple');
-  ok(br && br.ids.includes('x1'), 'refusé : Marie rejoint la branche « exemples »');
+test('Refus — un rattachement refusé libère l’élément pour la branche « études »', () => {
+  const map = makeMap([['r', 'chapitre', 'X'], ['n', 'notion', 'Stress', 'r'], ['c1', 'idee', 'Surcharge de travail', 'n'], ['c2', 'idee', 'Conflits familiaux', 'n'],
+    ['x1', 'etude', 'Marie', 'n', 'Marie illustre la surcharge de travail.'], ['x2', 'etude', 'Luc', 'n', 'Luc.'], ['x3', 'etude', 'Zoé', 'n', 'Zoé.']]);
+  const mv = O.audit(map).fixes.find((f) => f.ids[0] === 'x1' && f.kind !== 'branch' && f.kind !== 'label');
+  ok(mv, 'Marie → Surcharge proposé : ' + O.audit(map).fixes.map((f) => f.key));
+  const br = O.audit(map, { declined: new Set([mv.key]) }).fixes.find((f) => f.key === 'br:n:etude');
+  ok(br && br.ids.includes('x1'), 'refusé : Marie rejoint la branche « études »');
 });
 
 test('check() — nature inconnue, branche d’un seul membre, renvoi parallèle à l’arbre', () => {
@@ -367,14 +364,14 @@ test('Révision — une définition décomposée est UNE fiche ; sa consigne pos
 
 test('Révision — la consigne garde le nombre d’éléments à retrouver', () => {
   const map = makeMap([['r', 'chapitre', 'X'], ['n', 'notion', 'Dire non', 'r'],
-    ['a', 'consequence', 'Respect de soi', 'n'], ['b', 'consequence', 'Moins de stress', 'n'], ['c', 'idee', 'Un droit', 'n']]);
+    ['a', 'idee', 'Respect de soi', 'n'], ['b', 'idee', 'Moins de stress', 'n'], ['c', 'idee', 'Un droit', 'n']]);
   applyAll(map, 'sure');
   ok(/3 éléments à retrouver/.test(S.promptFor(map, S.node(map, 'n'))), S.promptFor(map, S.node(map, 'n')));
 });
 
 test('Révision — les nouvelles fiches arrivent dans l’ordre du plan', () => {
   S.data.maps = [];
-  const map = makeMap([['r', 'chapitre', 'Plan'], ['a', 'notion', 'Notion A', 'r', 'n'], ['a1', 'consequence', 'Effet de A', 'a', 'n'], ['b', 'notion', 'Notion B', 'r', 'n']]);
+  const map = makeMap([['r', 'chapitre', 'Plan'], ['a', 'notion', 'Notion A', 'r', 'n'], ['a1', 'idee', 'Effet de A', 'a', 'n'], ['b', 'notion', 'Notion B', 'r', 'n']]);
   map.courseId = 'c'; map.createdAt = 1;
   S.data.maps.push(map);
   const q = S.reviewQueue({ mapId: map.id }, { all: true, limit: 50 }).map((x) => x.nodeId);

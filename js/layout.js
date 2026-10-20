@@ -53,7 +53,7 @@
   P.satGap = 16;      // deux appuis consécutifs se serrent (ils forment un bloc), à la distance de sécurité
   P.summaryGap = 26;  // « À retenir » se détache de ce qui précède
   P.seq = 1;          // séquences (méthodes, chronologies) en ligne
-  const SUPPORT = new Set(['exemple', 'juris', 'doctrine', 'texte', 'citation', 'personne', 'etude']);
+  const SUPPORT = new Set(['juris', 'doctrine', 'texte', 'citation', 'personne', 'etude']);
   const role = (n) => (!n ? 'core' : R.store.TYPES[n.type] && R.store.TYPES[n.type].rank ? 'struct' : n.type === 'retenir' ? 'summary' : SUPPORT.has(n.type) ? 'support' : 'core');
   /** Espace de recherche de l'optimiseur : chaque disposition est affinée sur ces réglages */
   const SEARCH = {
@@ -892,9 +892,9 @@
     const kids = ch.map((c) => T.byId.get(c));
     if (kids.some((k) => (k.title || '').length > 34)) return false;
     if (kids.every((k) => k.type === 'date')) return true;
-    if (p.type === 'methode' && kids.every((k) => ['etape', 'forme', 'idee', 'methode'].includes(k.type))) return true;
+    if (p.type === 'methode' && kids.every((k) => ['etape', 'idee', 'methode'].includes(k.type))) return true;
     if (kids.every((k) => k.type === 'etape')) return true;
-    return p.logic === 'et' && kids.every((k) => k.type === 'forme');
+    return false;
   }
   function group(id, own, ch, T, dim, cfg, seen, level = 0) {
     if (cfg.seq && isSequence(id, ch, T)) {

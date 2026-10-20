@@ -239,7 +239,7 @@
       const show = (k) => scope === 'all' || scope === k;
       if (!r.courses.length && !r.maps.length && !r.nodes.length) {
         list.appendChild(h('div.search-empty', R.icon('search', 28), h('p', 'Aucun résultat pour « ', h('b', q), ' »'),
-          h('p.muted', art ? 'Rien dans tes notes : tu peux chercher le texte officiel.' : 'Essaie un autre mot, un type (« exception ») ou un numéro d’article.')));
+          h('p.muted', art ? 'Rien dans tes notes : tu peux chercher le texte officiel.' : 'Essaie un autre mot, un type (« jurisprudence ») ou un numéro d’article.')));
       }
       if (r.courses.length && show('courses')) {
         list.appendChild(group('Cours'));
