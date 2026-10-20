@@ -39,7 +39,7 @@
       over: 10,       // trait collé à un autre lien (par 100 px), branche et renvoi du même nœud compris
       label: 25,      // libellé qui recouvre un nœud ou un autre libellé
       len: 4,         // longueur des renvois (par 100 px)
-      fit: 50,        // -log(échelle d'ajustement) : passer de 50 % à 80 % vaut ~2 croisements
+      fit: 20,        // -log(échelle d'ajustement) : passer de 50 % à 80 % vaut ~2 croisements
       amb: 4,         // voisins de colonne de groupes différents trop proches (proximité ambiguë)
       seq: 12,        // bonus par étape rangée en séquence (méthode, chronologie)
       reach: 1.5,     // arcs hiérarchiques très longs (par 100 px au-delà de 220 px)
@@ -1066,7 +1066,19 @@
      est poussé à son tour. La première racine ne bouge pas. Sert aussi à réparer une carte dont
      les tailles réelles ont changé (autre écran, police). */
   const SAFE = 16;
+  /** Air de lecture (carte zoomée) : deux nœuds voisins gardent AIR px ; reliés par un renvoi,
+      ils s'écartent encore (place pour la flèche, et pour son libellé s'il en a un) */
+  const AIR = 32;
+  function aerate(map, pos, size, mode) {
+    const link = new Map();
+    for (const e of map.edges) if (e.kind !== 'tree') { const v = e.label ? 32 : 16; link.set(e.from + '|' + e.to, v); link.set(e.to + '|' + e.from, v); }
+    // deux voisins de groupes différents s'écartent plus que deux frères (proximité, Gestalt)
+    const par = new Map();
+    for (const e of map.edges) if (e.kind === 'tree') par.set(e.to, e.from);
+    return separate(map, pos, size, mode, (a, b) => AIR + (par.get(a) !== par.get(b) ? 16 : 0) + (link.get(a + '|' + b) || 0));
+  }
   function separate(map, pos, size, mode, pad = SAFE) {
+    const padOf = typeof pad === 'function' ? pad : () => pad;
     const S = R.store;
     const ids = map.nodes.map((n) => n.id).filter((id) => pos[id]);
     const kids = new Map();
@@ -1077,10 +1089,10 @@
     const sz = new Map(ids.map((id) => [id, size(S.node(map, id) || map.nodes.find((n) => n.id === id))]));
     const vertical = mode !== 'down';
     let moved = false;
-    for (let it = 0; it < 200; it++) {
+    for (let it = 0; it < 400; it++) {
       let fix = null;
       for (let i = 0; i < ids.length && !fix; i++) for (let j = i + 1; j < ids.length; j++) {
-        const a = ids[i], b = ids[j], A = pos[a], B = pos[b], sa = sz.get(a), sb = sz.get(b);
+        const a = ids[i], b = ids[j], A = pos[a], B = pos[b], sa = sz.get(a), sb = sz.get(b), pad = padOf(a, b);
         const ox = Math.min(A.x + sa.w, B.x + sb.w) - Math.max(A.x, B.x) + pad;
         const oy = Math.min(A.y + sa.h, B.y + sb.h) - Math.max(A.y, B.y) + pad;
         if (ox <= 0.5 || oy <= 0.5) continue;
@@ -1375,6 +1387,7 @@
     const pos = {};
     for (const id in best.pos) pos[id] = { ...best.pos[id] };
     separate(map, pos, size, best.mode);
+    aerate(map, pos, size, best.mode);
     return { pos, mode: best.mode, score: best.score, params: best.prm, tried };
   }
 
