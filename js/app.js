@@ -332,7 +332,7 @@
     rb.append(R.icon(cfg.icon || 'plus', 24), h('span.fab-label', cfg.label));
     slot.appendChild(rb);
     // compact : le FAB prend le centre de la barre flottante
-    const f = h('button.fab.fab-float.nav-fab#fab-float', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick }, R.icon(cfg.icon || 'plus', 24));
+    const f = h('button.fab.fab-float.nav-fab.lux#fab-float', { type: 'button', 'aria-label': cfg.label, 'data-tip': cfg.label, onclick: cfg.onClick }, R.icon(cfg.icon || 'plus', 24));
     (U.$('#nav-center') || U.$('#dock') || U.$('#app')).appendChild(f);
     syncDock();
   };
@@ -357,9 +357,10 @@
     for (const it of cfg.items) {
       let el;
       if (it.primary) {
-        el = h(it.href ? 'a.btn.btn-filled.ctx-primary' : 'button.btn.btn-filled.ctx-primary', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '' },
-          R.icon(it.icon, 20), h('span.ctx-primary-l', it.label), it.short ? h('span.ctx-primary-s', it.short) : null);
+        el = h(it.href ? 'a.btn.btn-filled.ctx-primary.lux' : 'button.btn.btn-filled.ctx-primary.lux', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '', 'aria-label': it.aria || null },
+          R.icon(it.icon, 20), h('span.ctx-primary-l', it.label), it.short ? h('span.ctx-primary-s', it.short) : null, luxCount(it));
         if (it.short) el.classList.add('has-short');
+        luxMark(el, it);
       } else {
         el = h(it.href ? 'a.icon-btn.ctx-ic' : 'button.icon-btn.ctx-ic', { type: it.href ? null : 'button', href: it.href || null, 'aria-label': it.label, 'data-tip': it.label, class: it.cls || '' }, R.icon(it.icon, 24));
       }
@@ -370,6 +371,13 @@
     bar.hidden = false;
     syncDock();
   };
+
+  /** Bouton « lux » : pastille de compte (24 px) et ▶ qui s'élance (classe is-play) */
+  function luxCount(it) { return it.count ? h('span.lux-count', { 'aria-hidden': 'true' }, String(it.count)) : null; }
+  function luxMark(el, it) {
+    if (it.count) el.classList.add('has-count');
+    if (it.icon === 'play') el.classList.add('is-play');
+  }
 
   /** Compact : une page dont la seule action est l'action principale (Réviser › Commencer) la
       place au centre de la barre flottante, à la place du FAB ; la barre contextuelle reste
@@ -383,8 +391,9 @@
     const it = cfg && !cfg.replaceNav && cfg.items && cfg.items.length === 1 && cfg.items[0].primary ? cfg.items[0] : null;
     slot.closest('.navbar').classList.toggle('has-cta', !!it);
     if (!it) return;
-    const el = h(it.href ? 'a.nav-cta' : 'button.nav-cta', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '', 'aria-label': it.label },
-      R.icon(it.icon, 22), h('span.nav-cta-l', it.short || it.label));
+    const el = h(it.href ? 'a.nav-cta.lux' : 'button.nav-cta.lux', { type: it.href ? null : 'button', href: it.href || null, class: it.cls || '', 'aria-label': it.aria || it.label },
+      R.icon(it.icon, 22), h('span.nav-cta-l', it.short || it.label), luxCount(it));
+    luxMark(el, it);
     if (it.onClick) el.addEventListener('click', (e) => it.onClick(e, el));
     // une mise à jour (même page) ne rejoue pas l'entrée : seul le libellé « tique »
     if (had) el.classList.add('no-enter');

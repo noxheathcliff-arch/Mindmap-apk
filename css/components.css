@@ -478,3 +478,72 @@
 /* pastille de couleur dans les menus (Type) et la légende */
 .menu-swatch { flex: none; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid; margin-left: auto; }
 .menu-item .menu-swatch + .menu-hint { margin-left: var(--sp-2); }
+
+/* ---- Boutons d'action « lux » (FAB +, Commencer, Réviser) -----------------
+   Une matière, pas un aplat : dégradé de 8 % (haut plus clair), reflet de 1 px en haut, ombre
+   en trois couches (contact net, ambiance neutre, halo teinté de la couleur du bouton). Un reflet
+   suit le doigt / le curseur (--lx, --ly posés par ui.js). Appui : anticipation (.94, l'ombre
+   rentre dans le bouton), relâché au ressort. Grille 8 : hauteur 48, pastille de compte 24,
+   concentrique (12 de marge autour). */
+@property --lux-glint { syntax: '<number>'; inherits: true; initial-value: 0; }
+.lux {
+  --lux-c: var(--primary); --lux-on: var(--on-primary);
+  --lux-drop: 0 1px 2px rgba(var(--shadow-color), .24), 0 4px 8px -2px rgba(var(--shadow-color), .16),
+    0 8px 24px -8px color-mix(in srgb, var(--lux-c) 72%, transparent);
+  --lux-lit: inset 0 1px 0 rgba(255, 255, 255, .32), inset 0 -1px 0 rgba(0, 0, 0, .14);
+  --lx: 50%; --ly: 0%;
+  background:
+    radial-gradient(96px circle at var(--lx) var(--ly), rgba(255, 255, 255, calc(var(--lux-glint) * .28)), transparent 72%),
+    linear-gradient(180deg, color-mix(in srgb, #fff 8%, var(--lux-c)), var(--lux-c) 56%, color-mix(in srgb, #000 6%, var(--lux-c)));
+  color: var(--lux-on);
+  box-shadow: var(--lux-lit), var(--lux-drop);
+  transition: transform var(--dur-spring-fast) var(--spring-fast), border-radius var(--dur-spring-fast) var(--spring-fast),
+    box-shadow var(--dur-sm) var(--ease-out), --lux-glint var(--dur-md) var(--ease-out);
+}
+.lux::before { display: none; } /* le reflet remplace la couche d'état */
+@media (hover: hover) {
+  .lux:hover:not(:disabled) { --lux-glint: 1; transform: translateY(-1px);
+    box-shadow: var(--lux-lit), 0 1px 2px rgba(var(--shadow-color), .24), 0 6px 12px -2px rgba(var(--shadow-color), .18),
+      0 12px 32px -8px color-mix(in srgb, var(--lux-c) 80%, transparent); }
+}
+.lux:active, .lux.pressing {
+  --lux-glint: 1.4; transform: scale(.94); border-radius: var(--shape-full);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .2), 0 1px 2px rgba(var(--shadow-color), .2);
+  transition-duration: var(--dur-xs), var(--dur-sm), var(--dur-xs), var(--dur-xs); transition-timing-function: var(--ease-out);
+}
+/* sombre : l'ombre neutre se perd, le halo teinté et un fil de lumière prennent le relais */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lux { --lux-lit: inset 0 1px 0 rgba(255, 255, 255, .4), inset 0 -1px 0 rgba(0, 0, 0, .18);
+  --lux-drop: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px -6px color-mix(in srgb, var(--lux-c) 48%, transparent); } }
+:root[data-theme="dark"] .lux { --lux-lit: inset 0 1px 0 rgba(255, 255, 255, .4), inset 0 -1px 0 rgba(0, 0, 0, .18);
+  --lux-drop: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px -6px color-mix(in srgb, var(--lux-c) 48%, transparent); }
+/* éclat : une bande de lumière traverse le bouton à son arrivée et quand le compte change */
+.lux::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+  background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, .36) 48%, transparent 64%) -150% 0 / 250% 100% no-repeat;
+  animation: lux-shine 800ms var(--ease-out) 320ms both;
+}
+.lux.no-enter::after { animation: none; }
+.lux.tick::after { animation: lux-shine 800ms var(--ease-out) both; }
+@keyframes lux-shine { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+.lux > :not(.ripple-wave) { position: relative; z-index: 2; }
+.lux > .ripple-wave { z-index: 1; opacity: .16; }
+.lux .ic { transition: transform var(--dur-spring-fast) var(--spring-fast); }
+/* FAB + : à l'appui, le + se serre et tourne ; relâché, il revient en dépassant (ressort) */
+.lux.nav-fab:active .ic, .lux.nav-fab.pressing .ic { transform: rotate(90deg) scale(.84); transition-duration: var(--dur-sm); transition-timing-function: var(--ease-out); }
+/* lecture : le ▶ recule (anticipation) puis s'élance au relâché */
+.lux.is-play:active .ic, .lux.is-play.pressing .ic { transform: translateX(-2px) scale(.88); transition-duration: var(--dur-xs); transition-timing-function: var(--ease-out); }
+.lux.launch .ic { animation: lux-launch 420ms var(--ease-out) both; }
+@keyframes lux-launch { 0% { transform: translateX(-2px) scale(.88); } 40% { transform: translateX(4px) scale(1.08); } 100% { transform: none; } }
+/* compte : une pastille 24 px, concentrique au bouton 48 (marge droite 12) */
+.lux.has-count { padding-right: var(--sp-3); }
+.lux-count {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  min-width: 24px; height: 24px; padding: 0 var(--sp-2); border-radius: var(--shape-full);
+  background: color-mix(in srgb, var(--lux-on) 18%, transparent);
+  font: var(--label-m); font-variant-numeric: tabular-nums; font-weight: 700;
+}
+.lux.tick .lux-count { animation: lux-bump var(--dur-spring-fast) var(--spring-fast); }
+@keyframes lux-bump { from { transform: scale(1.24); } }
+.ctxbar > .ctx-primary.lux.has-count:only-child { padding-right: var(--sp-4); }
+/* dans la barre : 48 de haut (barre 64 = 8 + 48 + 8), .btn seul en donnerait 40 */
+.ctxbar > .ctx-primary.lux:not(:only-child) { height: 48px; }

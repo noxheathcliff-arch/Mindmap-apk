@@ -152,7 +152,7 @@
   --hl-mark: #ffe171;
   --on-hl-mark: #1b1b21;
 
-  --shadow-color: 0 0 0;
+  --shadow-color: 0, 0, 0; /* virgules : rgba(var(--shadow-color), a) */
   --elev-1: 0 1px 2px rgba(var(--shadow-color), 0.3), 0 1px 3px 1px rgba(var(--shadow-color), 0.15);
   --elev-2: 0 1px 2px rgba(var(--shadow-color), 0.3), 0 2px 6px 2px rgba(var(--shadow-color), 0.15);
   --elev-3: 0 1px 3px rgba(var(--shadow-color), 0.3), 0 4px 8px 3px rgba(var(--shadow-color), 0.15);

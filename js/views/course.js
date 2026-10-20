@@ -149,7 +149,7 @@
         if (!c) { R.app.setActions(null); return; }
         const st = S.courseStats(c.id);
         const items = [];
-        if (st.reviewable) items.push({ icon: 'play', label: st.due ? `Réviser · ${st.due}` : 'Réviser', primary: true, onClick: () => R.app.go('#/reviser/cours/' + c.id + (st.due ? '' : '?all=1')) });
+        if (st.reviewable) items.push({ icon: 'play', label: 'Réviser', count: st.due || null, aria: st.due ? `Réviser · ${st.due} carte${st.due > 1 ? 's' : ''}` : null, primary: true, onClick: () => R.app.go('#/reviser/cours/' + c.id + (st.due ? '' : '?all=1')) });
         items.push({ icon: 'plus', label: 'Nouvelle carte', primary: !st.reviewable, cls: 'only-compact', onClick: (e, b) => R.actions.newMap(c.id, { from: b }) });
         R.app.setActions({ items, vibrant: true, course: c, replaceNav: true });
       };

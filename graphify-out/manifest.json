@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792463707.1928036,
-    "seen": 1792463863.8316905,
-    "ast_hash": "768dc2a7f3c60aa0bde2a2bf883c0cb9",
+    "mtime": 1792464287.2640889,
+    "seen": 1792464504.43808,
+    "ast_hash": "0f91ff464e4d65422d62a494822fac69",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "js/ui.js": {
-    "mtime": 1791816281.0238328,
-    "seen": 1792459242.2342455,
-    "ast_hash": "c7e4af12c41582b1c664876eb7976a40",
+    "mtime": 1792464281.4200492,
+    "seen": 1792464504.4381075,
+    "ast_hash": "e1188405a5a4823a9f1e2c7328a9a386",
     "semantic_hash": ""
   },
   "js/util.js": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1791854552.2624128,
-    "seen": 1792459242.2342482,
-    "ast_hash": "de25a1c4d42d71ffb27d944c9ed7a552",
+    "mtime": 1792464287.2786517,
+    "seen": 1792464504.4381104,
+    "ast_hash": "633cc6eb83f5ee6444730a907ecba5fd",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
@@ -96,9 +96,9 @@
     "semantic_hash": ""
   },
   "js/views/revhub.js": {
-    "mtime": 1791816281.0245693,
-    "seen": 1792459242.2342527,
-    "ast_hash": "ba5f6abc9eb3b014021403e0a1a9db5b",
+    "mtime": 1792464287.2793348,
+    "seen": 1792464504.438116,
+    "ast_hash": "9e806c490a25d05859b9d9c630f15287",
     "semantic_hash": ""
   },
   "js/views/review.js": {
@@ -114,9 +114,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792463860.4903266,
-    "seen": 1792463863.8317306,
-    "ast_hash": "fd9ebe517654cf185ce4bfa0b847671f",
+    "mtime": 1792464500.6961756,
+    "seen": 1792464504.4381213,
+    "ast_hash": "9ef45d73a2938587475ceffe661dae5b",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -264,8 +264,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1792463591.8288317,
-    "seen": 1792463863.8317678,
+    "mtime": 1792463868.8201342,
+    "seen": 1792464504.43816,
     "ast_hash": "e05626e6c3c0e6c8c37a07bfb2f70d33",
     "semantic_hash": ""
   },
@@ -303,6 +303,54 @@
     "mtime": 1792459268.8243446,
     "seen": 1792460844.4809635,
     "ast_hash": "b84b654bc722acae6601723d48ca2472",
+    "semantic_hash": ""
+  },
+  "l-course-dark.png": {
+    "mtime": 1792464373.0202832,
+    "seen": 1792464504.438169,
+    "ast_hash": "363480e127d24b40a06b4fa2ef4f5aac",
+    "semantic_hash": ""
+  },
+  "l-course-light.png": {
+    "mtime": 1792464367.304283,
+    "seen": 1792464504.438171,
+    "ast_hash": "132f36ed78c5ac1b3e24025c3196a3ab",
+    "semantic_hash": ""
+  },
+  "l-home-dark.png": {
+    "mtime": 1792464369.892283,
+    "seen": 1792464504.4381723,
+    "ast_hash": "1c562f436086f482d2988f5ac7ade524",
+    "semantic_hash": ""
+  },
+  "l-home-light.png": {
+    "mtime": 1792464364.1762826,
+    "seen": 1792464504.4381735,
+    "ast_hash": "c0f076e4dcb4dfbafeaa4b2855b092a8",
+    "semantic_hash": ""
+  },
+  "l-press-dark.png": {
+    "mtime": 1792464373.2962832,
+    "seen": 1792464504.4381747,
+    "ast_hash": "97d6faea839057262f30b1bb51119e31",
+    "semantic_hash": ""
+  },
+  "l-press-light.png": {
+    "mtime": 1792464367.580283,
+    "seen": 1792464504.438176,
+    "ast_hash": "c3d8493c2ee4072cfacecf149877b366",
+    "semantic_hash": ""
+  },
+  "l-rev-dark.png": {
+    "mtime": 1792464371.460283,
+    "seen": 1792464504.4381773,
+    "ast_hash": "a59d9a1bdd1ac50c95ec89c53ff5a1e3",
+    "semantic_hash": ""
+  },
+  "l-rev-light.png": {
+    "mtime": 1792464365.7442827,
+    "seen": 1792464504.4381783,
+    "ast_hash": "1c17432359a4ca4cf22c4fdb9c7e82cc",
     "semantic_hash": ""
   }
 }

@@ -247,21 +247,9 @@ body.immersive .rail, body.immersive .dock { display: none; }
 /* le centre : FAB (icône) ou action de la page (icône + libellé court) */
 .nav-center { position: relative; z-index: 2; display: flex; align-items: center; }
 .nav-center:empty { display: none; }
-.navbar .fab.nav-fab, .navbar .nav-cta {
-  height: 48px; border-radius: var(--shape-l);
-  background: var(--primary); color: var(--on-primary);
-  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--primary) 56%, transparent);
-  -webkit-tap-highlight-color: transparent;
-  transition: border-radius var(--dur-spring-fast) var(--spring-fast), transform var(--dur-spring-fast) var(--spring-fast), box-shadow var(--dur-sm) var(--ease-out);
-}
+.navbar .fab.nav-fab, .navbar .nav-cta { height: 48px; border-radius: var(--shape-l); -webkit-tap-highlight-color: transparent; }
 .navbar .fab.nav-fab { width: 64px; }
-.navbar .fab.nav-fab .ic, .navbar .nav-cta .ic { transition: transform var(--dur-spring-fast) var(--spring-fast); }
-.navbar .fab.nav-fab:active, .navbar .nav-cta:active {
-  border-radius: var(--shape-full); transform: scale(.92); box-shadow: none;
-  transition-duration: var(--dur-sm), var(--dur-xs), var(--dur-xs); transition-timing-function: var(--ease-out);
-}
-.navbar .fab.nav-fab:active .ic { transform: rotate(90deg) scale(.9); transition-duration: var(--dur-sm); }
-.navbar .nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--title-s); white-space: nowrap; animation: fab-in var(--dur-spring-default) var(--spring-default) both; }
+.navbar .nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--title-s); position: relative; overflow: hidden; isolation: isolate; white-space: nowrap; animation: fab-in var(--dur-spring-default) var(--spring-default) both; }
 .navbar .nav-cta.no-enter { animation: none; }
 .nav-cta-l { display: inline-block; }
 .nav-cta.tick .nav-cta-l { animation: tick var(--dur-sm) var(--ease-out); }
@@ -280,12 +268,12 @@ body.immersive .rail, body.immersive .dock { display: none; }
 .ctx-primary { height: 48px; padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--label-l); }
 /* une seule action : pas de barre autour, le bouton flotte seul (comme un FAB) */
 .ctxbar:has(> :only-child) { background: none; padding: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-.ctxbar > .ctx-primary:only-child { height: 56px; padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--title-m); box-shadow: var(--elev-3); border-radius: var(--shape-l); }
-.ctxbar > .ctx-primary:only-child:hover { box-shadow: var(--elev-4); }
+.ctxbar > .ctx-primary:only-child { height: 56px; padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--title-m); border-radius: var(--shape-l); }
 .ctx-primary .ic svg { width: 20px; height: 20px; }
 .ctx-primary { min-width: 0; }
 .ctx-primary-l, .ctx-primary-s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctx-primary-s { display: none; }
+
 @media (min-width: 600px) {
   .ctxbar .only-compact { display: none; }
   .ctxbar:not(:has(> :not(.only-compact))) { display: none; }
@@ -446,6 +434,7 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 }
 /* dock : le saut d'icône disparaît, la pilule glisse sans étirement */
 :root[data-motion="reduce"] .navbar .nav-item .ic { animation: none !important; }
+:root[data-motion="reduce"] .lux::after, :root[data-motion="reduce"] .lux .ic, :root[data-motion="reduce"] .lux-count { animation: none !important; }
 /* rotations des formes cookie : supprimées (la silhouette est la même à chaque lobe) */
 :root[data-motion="reduce"] :is(.today-shape, .dd-top, .end-flame)::before { animation: none !important; transition: none !important; }
 :root[data-motion="reduce"] .page-wrap.leaving, :root[data-motion="reduce"] .dialog.out,

@@ -42,6 +42,32 @@
     window.addEventListener('pointercancel', done, { once: true });
   }, { passive: true });
 
+  /* Boutons « lux » : le reflet suit le doigt / le curseur (--lx, --ly), petite vibration à
+     l'appui ; le ▶ s'élance au relâché (classe launch, retirée en fin d'animation). */
+  let luxRaf = 0;
+  const luxAt = (t, e) => {
+    const r = t.getBoundingClientRect();
+    t.style.setProperty('--lx', (e.clientX - r.left) + 'px');
+    t.style.setProperty('--ly', (e.clientY - r.top) + 'px');
+  };
+  document.addEventListener('pointermove', (e) => {
+    const t = e.target.closest && e.target.closest('.lux');
+    if (!t || luxRaf) return;
+    luxRaf = requestAnimationFrame(() => { luxRaf = 0; luxAt(t, e); });
+  }, { passive: true });
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target.closest && e.target.closest('.lux');
+    if (!t || t.disabled) return;
+    luxAt(t, e);
+    if (R.motion) R.motion.haptic(8);
+    if (!t.classList.contains('is-play')) return;
+    const up = () => {
+      t.classList.remove('launch'); void t.offsetWidth; t.classList.add('launch');
+      t.addEventListener('animationend', () => t.classList.remove('launch'), { once: true });
+    };
+    t.addEventListener('pointerup', up, { once: true });
+  }, { passive: true });
+
   /* ------------------------------------------------------------------ */
   /* Infobulles (souris uniquement)                                     */
   /* ------------------------------------------------------------------ */
