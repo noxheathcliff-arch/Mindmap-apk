@@ -92,12 +92,12 @@
 .nodes { position: absolute; left: 0; top: 0; }
 .node {
   position: absolute; left: 0; top: 0;
-  display: flex; flex-direction: column; gap: 2px;
-  width: max-content; min-width: 64px; max-width: 260px;
-  padding: 9px 14px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+  width: max-content; min-width: 64px; max-width: 256px; min-height: 40px;
+  padding: 8px 12px;
   border-radius: var(--shape-m);
   background: var(--surface-container-lowest);
-  border: 1.5px solid var(--outline-variant);
+  border: 1px solid var(--outline-variant);
   color: var(--on-surface);
   font: var(--body-m);
   overflow-wrap: anywhere;
@@ -114,7 +114,7 @@
 /* Ombres d'élévation sur des pseudo-éléments : on anime leur opacité (composite),
    pas box-shadow — la carte peut compter des centaines de nœuds. */
 .node::before, .node::after {
-  content: ""; position: absolute; inset: -1.5px; border-radius: inherit; pointer-events: none; z-index: -1;
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; z-index: -1;
   opacity: 0; transition: opacity var(--dur-sm) var(--ease-out);
 }
 .node::before { box-shadow: var(--elev-2); }
@@ -124,7 +124,7 @@
 .node.dragging::after { opacity: 1; }
 .node-top { display: flex; align-items: center; gap: 8px; min-height: 16px; color: var(--on-surface-variant); }
 .node-kicker { font: var(--label-s); font-weight: 700; letter-spacing: .01em; }
-.node-meta { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+.node-meta { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
 .node-meta:empty, .node-kicker:empty { display: none; }
 .node:not(.has-top) .node-top { display: none; }
 .node-title { display: block; }
@@ -134,7 +134,7 @@
   background-position: 0 100%;
   background-size: 0% 100%;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  padding: 1px 3px; margin: 0 -3px; border-radius: 3px;
+  padding: 0 4px; margin: 0 -4px; border-radius: 4px;
   outline: none;
 }
 .node.untitled .hl { color: var(--on-surface-variant); font-style: italic; }
@@ -143,23 +143,23 @@
 .node-has-note svg { width: 14px; height: 14px; }
 
 /* types — différenciés sans couleur */
-.node.t-notion { background: var(--inverse-surface); color: var(--inverse-on-surface); border-color: transparent; border-radius: 20px; padding: 12px 20px; font: var(--title-m); box-shadow: var(--elev-1); }
+.node.t-notion { background: var(--inverse-surface); color: var(--inverse-on-surface); border-color: transparent; border-radius: var(--shape-l); padding: 12px 16px; font: var(--title-m); box-shadow: var(--elev-1); }
 .node.t-notion .node-top { color: color-mix(in srgb, var(--inverse-on-surface) 70%, transparent); }
 .node.t-notion .mastery { color: var(--inverse-on-surface); }
 .node.t-notion.untitled .hl { color: color-mix(in srgb, var(--inverse-on-surface) 60%, transparent); }
 .node.t-definition { border-color: var(--on-surface-variant); }
-.node.t-juris .node-title { font: italic 400 15px/21px var(--font-serif); }
+.node.t-juris .node-title { font: italic 400 15px/20px var(--font-serif); }
 .node.t-texte .node-title { font: 500 13px/20px var(--font-mono); }
 .node.t-idee { background: var(--surface-container); border-color: transparent; }
-.node.t-doctrine { border-color: var(--outline); border-radius: 4px 16px 4px 16px; }
-.node.t-doctrine .node-title { font: 400 15px/21px var(--font-serif); }
+.node.t-doctrine { border-color: var(--outline); border-radius: 4px 12px 4px 12px; }
+.node.t-doctrine .node-title { font: 400 15px/20px var(--font-serif); }
 .node.t-retenir { background: var(--primary-container); color: var(--on-primary-container); border-color: color-mix(in srgb, var(--primary) 60%, var(--on-surface)); }
 .node.t-retenir .node-top { color: color-mix(in srgb, var(--on-primary-container) 75%, transparent); }
 /* types « au-delà du droit » — toujours différenciés par la forme */
-.node.t-methode { border-left: 5px solid var(--on-surface); padding-left: 11px; }
-.node.t-citation .node-title { font: italic 400 15px/21px var(--font-serif); }
-.node.t-citation { border-color: transparent; background: var(--surface-container-low); border-left: 3px solid var(--outline); border-radius: 4px; }
-.node.t-personne { border-radius: 999px; padding-left: 18px; padding-right: 18px; }
+.node.t-methode { border-left: 4px solid var(--on-surface); padding-left: 12px; }
+.node.t-citation .node-title { font: italic 400 15px/20px var(--font-serif); }
+.node.t-citation { border-color: transparent; background: var(--surface-container-low); border-left: 4px solid var(--outline); border-radius: 4px; padding-left: 12px; }
+.node.t-personne { border-radius: 999px; padding-left: 16px; padding-right: 16px; }
 .node.t-date { border-top: 4px solid var(--on-surface); font-variant-numeric: tabular-nums; }
 .node.t-chiffre .node-title { font: 700 18px/24px var(--font-plain); font-variant-numeric: tabular-nums; }
 .node.t-formule .node-title { font: 500 14px/20px var(--font-mono); }
@@ -167,32 +167,32 @@
 /* vocabulaire universel — chaque type garde une silhouette propre, sans couleur imposée */
 .node.t-etape { border-color: var(--outline); border-radius: 4px; }
 .node.t-etape .node-title { font-weight: 600; }
-.node.t-conseil { background: var(--surface-container-low); border-color: transparent; border-radius: 14px 4px 14px 4px; }
-.node.t-exercice { border: 2px solid var(--outline); border-radius: 6px; background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--on-surface) 6%, transparent) 19px 20px), var(--surface-container-lowest); }
-.node.t-etude .node-title { font: italic 400 15px/21px var(--font-serif); }
-.node.t-etude { border-color: var(--outline); border-radius: 4px 4px 14px 4px; }
+.node.t-conseil { background: var(--surface-container-low); border-color: transparent; border-radius: 12px 4px 12px 4px; }
+.node.t-exercice { border: 2px solid var(--outline); border-radius: 8px; background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--on-surface) 6%, transparent) 19px 20px), var(--surface-container-lowest); }
+.node.t-etude .node-title { font: italic 400 15px/20px var(--font-serif); }
+.node.t-etude { border-color: var(--outline); border-radius: 4px 4px 12px 4px; }
 
 /* Structure du cours : Chapitre › Leçon › Section. La hiérarchie se lit au premier regard
    (taille, graisse, encre), toujours sans couleur ; le sur-titre numéroté est surligné. */
 .node.struct .node-kicker { font: 700 11px/16px var(--font-plain); letter-spacing: .1em; }
 .node.t-chapitre {
   background: var(--inverse-surface); color: var(--inverse-on-surface); border-color: transparent;
-  border-radius: 10px; padding: 14px 22px 16px; min-width: 200px; max-width: 340px;
+  border-radius: var(--shape-m); padding: 16px 24px; min-width: 200px; max-width: 336px;
   font: 400 26px/32px var(--font-brand); box-shadow: var(--elev-2);
 }
 .node.t-chapitre .node-top { min-height: 20px; color: color-mix(in srgb, var(--inverse-on-surface) 70%, transparent); }
-.node.t-chapitre .node-kicker { padding: 2px 7px; border-radius: 4px; background: var(--primary); color: var(--on-primary); }
+.node.t-chapitre .node-kicker { padding: 0 8px; border-radius: 4px; background: var(--primary); color: var(--on-primary); }
 .node.t-chapitre .mastery { color: var(--inverse-on-surface); }
 .node.t-chapitre.untitled .hl { color: color-mix(in srgb, var(--inverse-on-surface) 60%, transparent); }
 .node.t-lecon {
-  background: var(--surface-container-lowest); border: 2.5px solid var(--on-surface);
-  border-radius: 14px; padding: 12px 18px 13px; min-width: 160px; max-width: 320px;
+  background: var(--surface-container-lowest); border: 2px solid var(--on-surface);
+  border-radius: var(--shape-l); padding: 12px 20px; min-width: 160px; max-width: 320px;
   font: 500 21px/28px var(--font-brand);
 }
 .node.t-lecon .node-kicker { color: var(--on-surface); }
 .node.t-section {
-  border: 2px solid var(--on-surface-variant); padding: 10px 15px 11px; min-width: 120px; max-width: 280px;
-  font: 600 16px/22px var(--font-plain);
+  border: 2px solid var(--on-surface-variant); padding: 12px 16px; min-width: 120px; max-width: 288px;
+  font: 600 16px/24px var(--font-plain);
 }
 /* jauge de maîtrise de la branche (value change : transform, 360 ms) */
 .node-meter { display: none; height: 4px; margin-top: 8px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, currentColor 16%, transparent); }
@@ -203,6 +203,8 @@
 
 /* états */
 .node.selected { border-color: var(--on-surface); z-index: 2; }
+/* focus clavier : anneau 2px + 2px d'écart (WCAG 2.4.13), distinct de la sélection */
+.canvas.kbd .node:focus-visible { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary); }
 .node.t-chapitre.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
 .node.t-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
 .node:active:not(.editing):not(.dragging) { filter: brightness(.95); }
@@ -214,11 +216,11 @@
 /* suppression : sortie courte, pas d'anticipation (action fréquente) */
 .node.dying { animation: die var(--dur-sm) var(--ease-in) forwards; pointer-events: none; }
 @keyframes die { to { scale: .92; opacity: 0; } }
-.node.drop-target { border-color: var(--on-surface); box-shadow: 0 0 0 3px var(--primary); }
+.node.drop-target { border-color: var(--on-surface); box-shadow: 0 0 0 4px var(--primary); }
 /* nœud source d'une liaison : anneau qui respire (attente), sur pseudo-élément */
-.node.link-source::after { box-shadow: 0 0 0 3px var(--primary); opacity: 1; animation: ring 1.6s var(--ease-in-out) infinite; }
+.node.link-source::after { box-shadow: 0 0 0 4px var(--primary); opacity: 1; animation: ring 1.6s var(--ease-in-out) infinite; }
 /* éléments choisis pendant « Relier » (sélection multiple) */
-.node.link-pick { box-shadow: 0 0 0 3px var(--primary); }
+.node.link-pick { box-shadow: 0 0 0 4px var(--primary); }
 .node.link-pick .node-meta::after { content: "✓"; font: 700 12px/1 var(--font-plain); color: var(--on-surface); }
 @keyframes ring { 50% { opacity: .35; transform: scale(1.04); } }
 /* confirmation d'une liaison réussie (action secondaire) */
@@ -244,9 +246,9 @@
 
 /* poignée « + » et repli */
 .node-handle {
-  position: absolute; top: 50%; right: -15px;
+  position: absolute; top: 50%; right: -16px;
   display: grid; place-items: center;
-  width: 26px; height: 26px; margin-top: -13px;
+  width: 24px; height: 24px; margin-top: -12px;
   border-radius: 50%;
   background: var(--primary); color: var(--on-primary);
   box-shadow: var(--elev-2), 0 0 0 2px var(--surface);
@@ -254,7 +256,7 @@
   opacity: 0; scale: .6; pointer-events: none;
   transition: opacity var(--dur-sm) var(--ease-out), scale var(--dur-sm) var(--ease-out);
 }
-.node-handle::after { content: ""; position: absolute; inset: -11px; border-radius: 50%; }
+.node-handle::after { content: ""; position: absolute; inset: -12px; border-radius: 50%; }
 .node.primary:not(.editing):not(.masked) .node-handle { opacity: 1; scale: 1; pointer-events: auto; }
 .node-handle:hover { scale: 1.1 !important; }
 .canvas.is-dragging .node-handle, .canvas.is-linking .node-handle, .canvas.is-masked .node-handle { opacity: 0 !important; pointer-events: none !important; }
