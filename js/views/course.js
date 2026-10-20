@@ -390,18 +390,31 @@
       h('span.resume-play', R.icon('play', 22)));
   }
 
-  /** Carte du plan : pourquoi le cours (ou la partie) est découpé ainsi */
+  /** Carte du plan : un sommaire lisible (parties numérotées et leurs sous-parties), pas une miniature */
   function planCard(plan, title) {
     const root = S.roots(plan)[0];
     const why = root && root.note ? plain(root.note) : '';
     const links = plan.edges.filter((e) => e.kind === 'link' && e.label).length;
+    const parts = root ? S.childrenOf(plan, root.id) : [];
+    const MAX = 3;
+    const part = (n, i) => {
+      const kids = S.childrenOf(plan, n.id);
+      return h('li.pc-part', { style: { '--i': i } },
+        h('span.pc-num', String(i + 1).padStart(2, '0')),
+        h('span.pc-pt', n.title),
+        kids.length ? h('ul.pc-subs', kids.slice(0, MAX).map((k) => h('li', k.title)),
+          kids.length > MAX ? h('li.pc-more', `+ ${kids.length - MAX} autre${kids.length - MAX > 1 ? 's' : ''}`) : null) : null);
+    };
     return h('a.plan-card.ripple', { href: '#/carte/' + plan.id },
-      h('span.plan-thumb', { dataset: { hero: 'map:' + plan.id + ':thumb' } }, R.thumb(plan)),
-      h('span.plan-body',
+      h('span.pc-head',
         h('span.overline', R.icon('outline', 14), title),
-        h('span.plan-title', h('span', { dataset: { hero: 'map:' + plan.id + ':title' } }, plan.title)),
-        why ? h('span.plan-why', why) : null,
-        h('span.plan-foot', links ? h('span', `${U.plural(links, 'lien expliqué', 'liens expliqués')}`) : null, h('span.plan-open', 'Comprendre le plan', R.icon('chevronRight', 16)))));
+        h('span.plan-title', h('span', { dataset: { hero: 'map:' + plan.id + ':title' } }, root ? root.title : plan.title)),
+        why ? h('span.plan-why', why) : null),
+      parts.length ? h('ol.pc-parts', parts.map(part)) : null,
+      h('span.plan-foot',
+        h('span', U.plural(parts.length, 'partie', 'parties')),
+        links ? h('span', U.plural(links, 'lien expliqué', 'liens expliqués')) : null,
+        h('span.plan-open', 'Ouvrir le plan', R.icon('chevronRight', 16))));
   }
 
   const stat = (n, l) => h('div.stat', h('span.stat-n', String(n)), h('span.stat-l', l));
