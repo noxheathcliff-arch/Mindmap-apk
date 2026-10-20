@@ -275,9 +275,11 @@
 .node.has-kids:hover .node-collapse, .node.has-kids.selected .node-collapse, .node.collapsed .node-collapse { display: block; }
 .node.collapsed .node-collapse { background: var(--on-surface); color: var(--surface); border-color: var(--on-surface); }
 .node-collapse:hover { color: var(--on-surface); border-color: var(--on-surface); }
-.canvas.far .node-top { display: none; }
+/* masqué sans perdre sa place : une carte garde la même taille à tout zoom (sinon le rangement,
+   mesuré en vue d'ensemble, serre des cartes qui grandissent au zoom) */
+.canvas.far .node-top { visibility: hidden; }
 /* vue d'ensemble (zoom < 45 %) : la structure reste lisible, le détail s'efface */
-.canvas.far .node.struct .node-top { display: flex; }
+.canvas.far .node.struct .node-top { visibility: visible; }
 .canvas.far .node:not(.struct):not(.selected) { opacity: .5; }
 
 .marquee { position: absolute; border: 1.5px dashed var(--on-surface); background: color-mix(in srgb, var(--primary) 18%, transparent); border-radius: 4px; pointer-events: none; }

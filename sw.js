@@ -1,5 +1,5 @@
 /* Ratio — service worker : coque applicative hors-ligne + polices en cache */
-const VERSION = 'ratio-v3.9.4';
+const VERSION = 'ratio-v3.9.5';
 const SHELL = [
   './',
   'index.html',
