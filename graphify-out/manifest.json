@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1791816281.0235286,
-    "seen": 1792459242.234224,
-    "ast_hash": "7ea15b8dd99a01abd01426ccb407040d",
+    "mtime": 1792463707.1928036,
+    "seen": 1792463863.8316905,
+    "ast_hash": "768dc2a7f3c60aa0bde2a2bf883c0cb9",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -114,9 +114,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792462677.139327,
-    "seen": 1792462680.161285,
-    "ast_hash": "f41b80cbcddc147ae43811bc54ee24d4",
+    "mtime": 1792463860.4903266,
+    "seen": 1792463863.8317306,
+    "ast_hash": "fd9ebe517654cf185ce4bfa0b847671f",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1791854552.2607596,
-    "seen": 1792459242.2342918,
-    "ast_hash": "059bca0bb71816b6ad59990eae62d9e4",
+    "mtime": 1792463591.8288317,
+    "seen": 1792463863.8317678,
+    "ast_hash": "e05626e6c3c0e6c8c37a07bfb2f70d33",
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {

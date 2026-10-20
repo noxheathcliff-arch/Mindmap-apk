@@ -175,8 +175,10 @@ body.immersive .rail, body.immersive .dock { display: none; }
 .rail-settings { margin-top: var(--sp-2); }
 
 /* ---- Dock flottant : barre de navigation (compact) + barre d'actions contextuelle ----
-   Floating toolbar M3 : pilule, élévation 2, icon buttons ronds 48 dp. Sur compact, la
-   navigation est la barre flottante (écart assumé : toutes les pages principales). */
+   Grille de 8 : barre 64 = 8 + 48 + 8, cibles 48, écarts 8, rayons 16 ou capsule.
+   Surface en verre dépoli (la carte glisse dessous sans casser la lecture), ombre douce en deux
+   couches, pas de contour. Une seule pilule active, partagée : elle glisse d'une destination à
+   l'autre, le bord avant part d'abord et le bord arrière suit (étirement puis retour). */
 .dock {
   position: fixed; z-index: 5;
   left: 50%; bottom: calc(var(--sp-4) + env(safe-area-inset-bottom));
@@ -187,67 +189,98 @@ body.immersive .rail, body.immersive .dock { display: none; }
 }
 .dock.hide { translate: 0 calc(100% + 32px); opacity: 0; pointer-events: none; transition-duration: var(--dur-sm); transition-timing-function: var(--ease-in); }
 .navbar, .ctxbar {
-  display: flex; align-items: center; gap: var(--sp-1);
+  --dock-glass: color-mix(in srgb, var(--surface-container) 90%, transparent);
+  position: relative;
+  display: flex; align-items: center; gap: var(--sp-2);
   padding: var(--sp-2); border-radius: var(--shape-full);
-  background: var(--surface-container); color: var(--on-surface-variant);
-  box-shadow: var(--elev-2);
+  background: var(--dock-glass); color: var(--on-surface-variant);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: 0 1px 2px rgba(var(--shadow-color), .12), 0 8px 24px -8px rgba(var(--shadow-color), .32);
 }
-/* barre flottante de navigation (compact) : Cours · action principale · Réviser
-   Les destinations portent icône + libellé ; l'actif se remplit (secondary-container, ressort).
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .navbar, .ctxbar { background: var(--surface-container); }
+}
+/* barre flottante de navigation (compact) : Cours · action principale · Réviser.
    Le centre accueille le FAB de la page ou son action principale, en primary : la seule
    chose en forte emphase, sous le pouce. */
-.navbar { gap: var(--sp-1); padding: 6px; }
 .navbar .nav-item {
+  z-index: 1;
   flex-direction: row; gap: var(--sp-2);
-  width: auto; height: 52px; padding: 0 var(--sp-4) 0 14px;
+  width: auto; height: 48px; padding: 0 var(--sp-4);
   border-radius: var(--shape-full);
   font: var(--label-l); color: var(--on-surface-variant);
+  touch-action: none; -webkit-tap-highlight-color: transparent; -webkit-user-drag: none; user-select: none;
+  transition: transform var(--dur-spring-fast) var(--spring-fast), color var(--dur-sm) var(--ease-out) 60ms;
 }
-.navbar .nav-item::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit;
-  background: var(--secondary-container);
-  transform: scaleX(.6); opacity: 0;
-  transition: transform var(--dur-spring-fast) var(--spring-fast), opacity var(--dur-sm) var(--ease-out);
-}
-.navbar .nav-item.active::before { transform: none; opacity: 1; }
+/* anticipation : l'appui tasse la destination (100 ms), le relâché la rend avec un rebond */
+.navbar .nav-item:active { transform: scale(.94); transition-duration: var(--dur-xs), var(--dur-sm); transition-timing-function: var(--ease-out); }
+.navbar .nav-item:hover:not(.active) { background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
 .navbar .nav-item.active { color: var(--on-secondary-container); font-weight: 700; }
-.navbar .nav-item:hover::before { opacity: .45; transform: none; }
-.navbar .nav-item.active:hover::before { opacity: 1; }
 .navbar .nav-indicator { position: relative; width: 24px; height: 24px; background: none !important; }
 .navbar .nav-indicator::before { display: none; }
-.navbar .nav-label { position: relative; white-space: nowrap; }
-.navbar .nav-badge { top: -7px; left: auto; right: -12px; margin: 0; }
-/* le centre : FAB (icône) ou action de la page (icône + libellé court) */
-.nav-center { display: flex; align-items: center; margin: 0 2px; }
-.nav-center:empty { display: none; }
-.navbar .fab.nav-fab, .nav-cta {
-  height: 56px; border-radius: 18px;
-  background: var(--primary); color: var(--on-primary);
-  box-shadow: none;
-  transition: border-radius var(--dur-spring-fast) var(--spring-fast), transform var(--dur-spring-default) var(--spring-default);
+.navbar .nav-item:active .nav-indicator > .ic { transform: none; }
+/* chevauchement : l'icône réagit 40 ms après la pilule (petit saut en arc, puis repos) */
+.navbar .nav-item.active .nav-indicator > .ic { animation: nav-hop 480ms var(--ease-out) 40ms both; }
+@keyframes nav-hop {
+  35% { transform: translateY(-3px) scale(1.12); }
+  70% { transform: translateY(1px) scale(.98); }
 }
-.navbar .fab.nav-fab { width: 56px; }
-.navbar .fab.nav-fab:active, .nav-cta:active { border-radius: var(--shape-full); transform: scale(.95); transition-duration: var(--dur-sm), var(--dur-xs); }
-.nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-5) 0 var(--sp-4); font: var(--title-s); white-space: nowrap; animation: fab-in var(--dur-spring-default) var(--spring-default) both; }
+.navbar .nav-label { position: relative; white-space: nowrap; }
+.navbar .nav-badge { top: -8px; left: auto; right: -8px; margin: 0; }
+/* la pilule partagée : positionnée en px par le JS (left / right), chaque bord a son ressort */
+.nav-pill {
+  position: absolute; z-index: 0; top: var(--sp-2); bottom: var(--sp-2); left: 0; right: 0;
+  border-radius: var(--shape-full);
+  background: var(--secondary-container);
+  pointer-events: none;
+  opacity: 0; transform: scale(.8);
+  transition: left 420ms var(--spring-default), right 420ms var(--spring-default),
+    opacity var(--dur-sm) var(--ease-out), transform var(--dur-spring-fast) var(--spring-fast);
+}
+.navbar.has-pill .nav-pill { opacity: 1; transform: none; }
+/* vers la droite : le bord droit mène, le gauche suit (et inversement) */
+.navbar.pill-r .nav-pill { transition-duration: 520ms, 380ms, var(--dur-sm), var(--dur-spring-fast); transition-delay: 60ms, 0s, 0s, 0s; }
+.navbar.pill-l .nav-pill { transition-duration: 380ms, 520ms, var(--dur-sm), var(--dur-spring-fast); transition-delay: 0s, 60ms, 0s, 0s; }
+.nav-pill.instant { transition: none; }
+/* glisser le doigt le long de la barre : la pilule suit, un peu tassée, et se pose au relâché */
+.navbar.scrubbing .nav-pill { transform: scaleY(.92); transition-duration: 240ms, 240ms, var(--dur-sm), var(--dur-sm); transition-delay: 0s; }
+/* le centre : FAB (icône) ou action de la page (icône + libellé court) */
+.nav-center { position: relative; z-index: 2; display: flex; align-items: center; }
+.nav-center:empty { display: none; }
+.navbar .fab.nav-fab, .navbar .nav-cta {
+  height: 48px; border-radius: var(--shape-l);
+  background: var(--primary); color: var(--on-primary);
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--primary) 56%, transparent);
+  -webkit-tap-highlight-color: transparent;
+  transition: border-radius var(--dur-spring-fast) var(--spring-fast), transform var(--dur-spring-fast) var(--spring-fast), box-shadow var(--dur-sm) var(--ease-out);
+}
+.navbar .fab.nav-fab { width: 64px; }
+.navbar .fab.nav-fab .ic, .navbar .nav-cta .ic { transition: transform var(--dur-spring-fast) var(--spring-fast); }
+.navbar .fab.nav-fab:active, .navbar .nav-cta:active {
+  border-radius: var(--shape-full); transform: scale(.92); box-shadow: none;
+  transition-duration: var(--dur-sm), var(--dur-xs), var(--dur-xs); transition-timing-function: var(--ease-out);
+}
+.navbar .fab.nav-fab:active .ic { transform: rotate(90deg) scale(.9); transition-duration: var(--dur-sm); }
+.navbar .nav-cta { display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--title-s); white-space: nowrap; animation: fab-in var(--dur-spring-default) var(--spring-default) both; }
 .navbar .nav-cta.no-enter { animation: none; }
 .nav-cta-l { display: inline-block; }
 .nav-cta.tick .nav-cta-l { animation: tick var(--dur-sm) var(--ease-out); }
 .navbar.has-cta .nav-fab { display: none; }
 /* avec une action au centre, les destinations se réduisent à leur icône (la barre tient sur 360 dp) */
-.navbar.has-cta .nav-item { width: 52px; padding: 0; justify-content: center; }
+.navbar.has-cta .nav-item { width: 48px; padding: 0; justify-content: center; }
 .navbar.has-cta .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 599.98px) { .navbar.has-cta ~ .ctxbar { display: none !important; } }
 .ctxbar { color: var(--on-surface-variant); }
 /* une barre qui apparaît (display: none → flex) monte de 16 px en fondu ; les mises à jour de
    contenu ne la rejouent pas (l'élément reste affiché) */
-.navbar, .ctxbar { animation: dock-bar-in var(--dur-md) var(--ease-out) both; }
+.navbar, .ctxbar { animation: dock-bar-in var(--dur-spring-default) var(--spring-default) both; }
 @keyframes dock-bar-in { from { opacity: 0; transform: translateY(16px) scale(.96); } }
 .ctxbar.vibrant { background: var(--primary-container); color: var(--on-primary-container); }
 .ctxbar .icon-btn { color: inherit; }
-.ctx-primary { height: 48px; padding: 0 var(--sp-5) 0 var(--sp-4); font: var(--label-l); }
-/* une seule action : pas de barre autour, le bouton flotte seul (élévation 3, comme un FAB) */
-.ctxbar:has(> :only-child) { background: none; padding: 0; box-shadow: none; }
-.ctxbar > .ctx-primary:only-child { height: 56px; padding: 0 var(--sp-6) 0 var(--sp-5); font: var(--title-m); box-shadow: var(--elev-3); border-radius: var(--shape-l); }
+.ctx-primary { height: 48px; padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--label-l); }
+/* une seule action : pas de barre autour, le bouton flotte seul (comme un FAB) */
+.ctxbar:has(> :only-child) { background: none; padding: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.ctxbar > .ctx-primary:only-child { height: 56px; padding: 0 var(--sp-6) 0 var(--sp-4); font: var(--title-m); box-shadow: var(--elev-3); border-radius: var(--shape-l); }
 .ctxbar > .ctx-primary:only-child:hover { box-shadow: var(--elev-4); }
 .ctx-primary .ic svg { width: 20px; height: 20px; }
 .ctx-primary { min-width: 0; }
@@ -260,7 +293,7 @@ body.immersive .rail, body.immersive .dock { display: none; }
 .dock > * { min-width: 0; }
 @media (max-width: 599.98px) {
   .dock.has-actions .fab-float, .dock.replace-nav .navbar { display: none; }
-  .ctx-primary { padding: 0 var(--sp-4) 0 var(--sp-3); }
+  .ctx-primary { padding: 0 var(--sp-4); }
   /* à côté de la navigation, l'action garde un libellé court (le long reste en aria-label) */
   .dock:not(.replace-nav) .ctx-primary.has-short .ctx-primary-l { display: none; }
   .dock:not(.replace-nav) .ctx-primary.has-short .ctx-primary-s { display: inline; }
@@ -291,6 +324,11 @@ body.has-ctxbar .page-scroll { scroll-padding-bottom: 120px; }
 /* ---- View Transitions (élément partagé) --------------------------------- */
 .rail { view-transition-name: rail; }
 .dock { view-transition-name: dock; }
+/* le dock n'est pas un instantané qui se fond : on montre sa version vivante tout de suite, pour
+   que la pilule et le CTA jouent leur propre mouvement pendant le changement de page */
+::view-transition-old(dock) { animation: none; opacity: 0; }
+::view-transition-new(dock) { animation: none; }
+::view-transition-group(dock) { animation: none; }
 ::view-transition-group(*) { animation-duration: var(--dur-lg); animation-timing-function: var(--ease-drawer); }
 ::view-transition-old(root) { animation: var(--dur-sm) var(--ease-in) both vt-out; }
 ::view-transition-new(root) { animation: var(--dur-md) var(--ease-out) 60ms both vt-in; }
@@ -406,6 +444,8 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 :root[data-motion="reduce"] .navbar, :root[data-motion="reduce"] .ctxbar {
   animation-name: rm-fade !important;
 }
+/* dock : le saut d'icône disparaît, la pilule glisse sans étirement */
+:root[data-motion="reduce"] .navbar .nav-item .ic { animation: none !important; }
 /* rotations des formes cookie : supprimées (la silhouette est la même à chaque lobe) */
 :root[data-motion="reduce"] :is(.today-shape, .dd-top, .end-flame)::before { animation: none !important; transition: none !important; }
 :root[data-motion="reduce"] .page-wrap.leaving, :root[data-motion="reduce"] .dialog.out,

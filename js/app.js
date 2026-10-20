@@ -183,6 +183,9 @@
       if (bar.children.length === 1) bar.appendChild(h('div.nav-center#nav-center'));
       bar.appendChild(navItem(d, 'bar'));
     }
+    bar.prepend(h('span.nav-pill#nav-pill', { 'aria-hidden': 'true' }));
+    for (const it of bar.querySelectorAll('.nav-item')) it.draggable = false;
+    pillWatch(bar);
     rail.appendChild(railItems);
     rail.appendChild(h('div.rail-courses#rail-courses', { role: 'group', 'aria-label': 'Mes cours' }));
     rail.appendChild(h('div.rail-spacer'));
@@ -245,8 +248,75 @@
       if (changed && due && b.dataset.ready && !U.reducedMotion()) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
       b.dataset.ready = '1';
     }
+    placePill();
   }
   app.updateNav = updateNav;
+
+  /* Pilule active partagée (barre compacte) : posée en px sur la destination active. Le sens du
+     trajet choisit quel bord mène (CSS pill-r / pill-l) : étirement puis retour. Barre cachée
+     (display: none) → la prochaine pose est instantanée, sans trajet depuis 0. */
+  function placePill(target) {
+    const bar = U.$('#navbar'), pill = U.$('#nav-pill');
+    if (!bar || !pill) return;
+    const el = target || bar.querySelector('.nav-item.active');
+    bar.classList.toggle('has-pill', !!el);
+    if (!el || !bar.offsetWidth) { pill.dataset.stale = '1'; return; }
+    // au sous-pixel près : le centre de la destination ne bouge pas quand elle est pressée (scale)
+    const br = bar.getBoundingClientRect(), er = el.getBoundingClientRect(), k = br.height / bar.offsetHeight || 1;
+    const w0 = er.width / k, w = Math.abs(w0 - el.offsetWidth) < 1 ? w0 : el.offsetWidth, l = (er.left + er.width / 2 - br.left) / k - w / 2, r = br.width / k - l - w;
+    const prev = parseFloat(pill.style.left);
+    const instant = pill.dataset.stale === '1' || isNaN(prev);
+    delete pill.dataset.stale;
+    bar.classList.toggle('pill-r', !instant && l > prev);
+    bar.classList.toggle('pill-l', !instant && l < prev);
+    pill.classList.toggle('instant', instant);
+    pill.style.left = l + 'px'; pill.style.right = r + 'px';
+    if (instant) { void pill.offsetWidth; pill.classList.remove('instant'); }
+  }
+
+  /* Suivi de la barre (taille, CTA au centre) + glisser le doigt d'une destination à l'autre :
+     la pilule suit, un tic haptique à chaque destination franchie, la page change au relâché. */
+  function pillWatch(bar) {
+    if (bar.dataset.pill) return;
+    bar.dataset.pill = '1';
+    if (window.ResizeObserver) new ResizeObserver(() => placePill()).observe(bar);
+    let st = null, eat = 0;
+    const itemAt = (x) => {
+      const r = bar.getBoundingClientRect();
+      const el = document.elementFromPoint(Math.min(Math.max(x, r.left + 1), r.right - 1), r.top + r.height / 2);
+      return el && el.closest('#navbar .nav-item');
+    };
+    bar.addEventListener('pointerdown', (e) => {
+      const it = e.button === 0 && e.target.closest('.nav-item');
+      st = it ? { x: e.clientX, id: e.pointerId, from: it, over: it, on: false } : null;
+    });
+    bar.addEventListener('pointermove', (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      if (!st.on) {
+        if (Math.abs(e.clientX - st.x) < 8) return;
+        st.on = true;
+        bar.classList.add('scrubbing');
+        try { bar.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      }
+      const it = itemAt(e.clientX);
+      if (it && it !== st.over) { st.over = it; placePill(it); R.motion.haptic(6); }
+    });
+    const end = (e, ok) => {
+      if (!st || e.pointerId !== st.id) return;
+      const s = st;
+      st = null;
+      if (!s.on) return;
+      bar.classList.remove('scrubbing');
+      if (ok && s.over && !s.over.classList.contains('active')) s.over.click();
+      else placePill();
+      eat = Date.now(); // le clic natif qui suit le relâché ne doit pas naviguer une 2e fois
+    };
+    bar.addEventListener('pointerup', (e) => end(e, true));
+    bar.addEventListener('pointercancel', (e) => end(e, false));
+    bar.addEventListener('click', (e) => {
+      if (Date.now() - eat < 400 && e.isTrusted) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+  }
   const updateCourses = U.debounce(() => railCourses(), 120);
 
   /** FAB contextuel : dans le rail (Extended FAB quand le rail est étendu), à côté de la barre
@@ -362,7 +432,7 @@
     if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     else document.documentElement.removeAttribute('data-theme');
     const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#131318' : '#fbf8ff');
+    for (const m of U.$$('meta[name="theme-color"]')) m.setAttribute('content', dark ? '#131318' : '#fdfaff');
   }
   app.setTheme = (t, origin) => {
     const apply = () => { S.data.settings.theme = t; S.changed('settings'); applyTheme(); };

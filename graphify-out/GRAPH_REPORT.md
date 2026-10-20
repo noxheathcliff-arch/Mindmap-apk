@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-20)
 
 ## Corpus Check
-- 45 files · ~149,938 words
+- 45 files · ~150,405 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: .css 5, (none) 1, .webmanifest 1)
 
 ## Summary
-- 709 nodes · 1621 edges · 40 communities (31 shown, 9 thin omitted)
+- 711 nodes · 1626 edges · 40 communities (31 shown, 9 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 139 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5a4efde0`
+- Built from commit: `b0c5dd61`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -103,8 +103,8 @@ Cohesion: 0.10
 Nodes (10): add(), close(), dismiss(), get(), hideTip(), motion, ui, showTip() (+2 more)
 
 ### Community 5 - "app.js"
-Cohesion: 0.17
-Nodes (20): applyMotion(), applyTheme(), buildNav(), centerAction(), app, logo(), mountRoute(), nameHeroes() (+12 more)
+Cohesion: 0.16
+Nodes (22): applyMotion(), applyTheme(), buildNav(), centerAction(), app, logo(), mountRoute(), nameHeroes() (+14 more)
 
 ### Community 7 - "colors.js"
 Cohesion: 0.25
@@ -213,13 +213,13 @@ Nodes (4): 6. Composition par écran, Desktop (large / extra-large), Mobile (com
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `onDown()` connect `Editor` to `ui`?**
-  _High betweenness centrality (0.241) - this node is a cross-community bridge._
+  _High betweenness centrality (0.240) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Editor` be split into smaller, more focused modules?**
   _Cohesion score 0.05136154168412233 - nodes in this community are weakly interconnected._
 - **Why does `rate()` connect `store.js` to `ui`?**
-  _High betweenness centrality (0.223) - this node is a cross-community bridge._
+  _High betweenness centrality (0.222) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `store.js` be split into smaller, more focused modules?**
