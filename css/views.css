@@ -1451,3 +1451,26 @@ a.resume:active { transform: scale(.985); }
   font: 700 44px/1 var(--font-brand); letter-spacing: -.04em;
 }
 @media (max-width: 599.98px) { .folder-num { min-width: 64px; height: 64px; font-size: 32px; border-radius: var(--shape-l); } }
+
+/* ==========================================================================
+   À plat : plus d'élévation, sauf la barre d'onglets et ses boutons (lux),
+   et les calques flottants (dialogue, menu, snackbar) qui doivent se détacher.
+   Plus de filets de couleur sur le bord gauche.
+   ========================================================================== */
+.fab, .fab:hover, .rail .fab:hover, .btn-filled:hover:not(:disabled),
+.fiche-body, .fiche-front, .rcard, .rate-row, .search, .plan-card, .plan-card:hover,
+.map-card:not(.map-add):hover, .part, .part:hover,
+.node::before, .node::after, .node.t-chapitre, .node-handle,
+.ctx-bar, .vtoolbar, .ed-banner, .coach,
+.page-editor[data-pane="side"] .pane, .page-editor[data-pane="bottom"] .pane, .bottombar { box-shadow: none; }
+.navbar .fab, .ctxbar .fab, .fab.lux, .fab.lux:hover { box-shadow: var(--lux-lit), var(--lux-drop); }
+.node { box-shadow: none; }
+.node.t-chapitre.selected, .node.t-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface); }
+.node-handle { box-shadow: 0 0 0 2px var(--surface); }
+/* les flottants de l'éditeur gardent un contour pour se détacher sans ombre */
+.ctx-bar, .vtoolbar, .ed-banner, .coach, .search, .plan-card { border: 1px solid var(--outline-variant); }
+.plan-card:hover, .map-card:not(.map-add):hover { transform: none; }
+
+.part::before { display: none; }
+.folder-why { border-left: 0; padding-left: 0; }
+.md blockquote { border-left: 0; border-radius: var(--shape-m); }
