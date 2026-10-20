@@ -1307,7 +1307,8 @@
   function arrange(map, size = estimate, opts = {}) {
     const T = buildTree(map);
     if (!T.roots.length) return { pos: {}, mode: 'right', score: null, tried: [] };
-    const want = opts.mode && opts.mode !== 'auto' ? opts.mode : 'auto';
+    // la carte du plan est toujours une pyramide : sommaire lisible d'un coup d'œil
+    const want = map.role === 'plan' ? 'down' : opts.mode && opts.mode !== 'auto' ? opts.mode : 'auto';
     const main = T.kids.get(T.roots[0]) || [];
     const cands = [];
     const push = (mode, split) => cands.push({ mode, split });

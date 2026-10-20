@@ -386,6 +386,8 @@
         try { this.data = sanitize(pick.data); } catch (e) { this.data = blank(); }
         // cartes importées jamais ouvertes (positions empilées) : rangées tout de suite (vignettes justes)
         let laid = false;
+        // plan rangé autrement qu'en pyramide (anciennes versions) : rangé à nouveau
+        for (const m of this.data.maps) if (m.role === 'plan' && m.layout !== 'down' && m.nodes.length) { m.needsLayout = true; try { laid = this.prelayout(m, true) || laid; } catch (e) { /* idem */ } }
         for (const m of this.data.maps) { try { laid = this.prelayout(m) || laid; } catch (e) { /* rangement impossible : l'éditeur s'en chargera */ } }
         if (laid) setTimeout(() => this.save(), 0);
         // migration (ou rattrapage) : la base principale reçoit tout de suite la bonne copie
