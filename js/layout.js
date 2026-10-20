@@ -23,14 +23,14 @@
 
   /* Paramètres — valeurs réglées sur le banc d'essai (16 cartes réelles + cartes générées) */
   const P = {
-    depthGap: 88,     // parent → enfants (droite / centrée) : place pour les libellés
-    downGap: 60,      // pyramide : entre deux niveaux
-    leafGap: 20,      // entre deux feuilles sœurs (au-dessus de la distance de sécurité)
-    sibGap: 26,       // entre deux sœurs qui ont des enfants
-    structGap: 34,    // entre deux branches de structure (leçons, sections)
-    cousinGap: 28,    // entre deux groupes voisins, aux niveaux plus profonds
+    depthGap: 96,     // parent → enfants (droite / centrée) : place pour les libellés
+    downGap: 64,      // pyramide : entre deux niveaux
+    leafGap: 24,      // entre deux feuilles sœurs (au-dessus de la distance de sécurité)
+    sibGap: 32,       // entre deux sœurs qui ont des enfants
+    structGap: 40,    // entre deux branches de structure (leçons, sections)
+    cousinGap: 32,    // entre deux groupes voisins, aux niveaux plus profonds
     downSibGap: 24,   // pyramide : entre deux sœurs
-    rootGap: 72,      // entre deux arbres indépendants
+    rootGap: 96,      // entre deux arbres indépendants
     w: {              // poids de la note globale (plus bas = mieux)
       // échelle commune : 1 croisement ≈ 300 px de renvoi à suivre des yeux (Ware et al. 2002 :
       // longueur et croisements pèsent sur le suivi d'un chemin) ; 1 nœud traversé ≈ 5 croisements
@@ -49,24 +49,24 @@
     },
   };
   // rôle de lecture de chaque type : structure, contenu, appui (exemple, source…), synthèse
-  P.satIndent = 18;   // un appui (exemple, arrêt, citation…) se décale comme une annotation
+  P.satIndent = 16;   // un appui (exemple, arrêt, citation…) se décale comme une annotation
   P.satGap = 16;      // deux appuis consécutifs se serrent (ils forment un bloc), à la distance de sécurité
-  P.summaryGap = 26;  // « À retenir » se détache de ce qui précède
+  P.summaryGap = 32;  // « À retenir » se détache de ce qui précède
   P.seq = 1;          // séquences (méthodes, chronologies) en ligne
   const SUPPORT = new Set(['juris', 'doctrine', 'texte', 'citation', 'personne', 'etude']);
   const role = (n) => (!n ? 'core' : R.store.TYPES[n.type] && R.store.TYPES[n.type].rank ? 'struct' : n.type === 'retenir' ? 'summary' : SUPPORT.has(n.type) ? 'support' : 'core');
   /** Espace de recherche de l'optimiseur : chaque disposition est affinée sur ces réglages */
   const SEARCH = {
-    depthGap: [72, 88, 108],
-    cousinGap: [24, 28, 36],
-    leafGap: [18, 20, 24],
-    structGap: [26, 34, 46],
-    satIndent: [0, 18, 28],
+    depthGap: [88, 96, 112],
+    cousinGap: [24, 32, 40],
+    leafGap: [16, 24, 32],
+    structGap: [32, 40, 48],
+    satIndent: [0, 16, 32],
     seq: [1, 0],
   };
   const GAP_X = P.depthGap, GAP_Y = 16, GAP_ROOT = P.rootGap; // compatibilité
-  const STACK = { indent: 28, top: 20, gap: 16, spine: 14 }; // pyramide : feuilles en colonne sous le parent
-  const SEQ = { gap: 34 }; // séquence : écart entre deux étapes (place pour la flèche)
+  const STACK = { indent: 24, top: 24, gap: 16, spine: 16 }; // pyramide : feuilles en colonne sous le parent
+  const SEQ = { gap: 40 }; // séquence : écart entre deux étapes (place pour la flèche)
 
   /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
       reflètent editor.css ; les nœuds de structure sont plus grands (hiérarchie visuelle). */
@@ -802,7 +802,15 @@
     const byId = new Map(map.nodes.map((n) => [n.id, n]));
     const kids = new Map();
     for (const n of map.nodes) kids.set(n.id, n.collapsed ? [] : S.childrenOf(map, n.id).map((c) => c.id));
-    return { byId, kids, roots: S.roots(map).map((n) => n.id) };
+    // libellé le plus long des liens d'arbre sortant de chaque parent
+    const labels = new Map();
+    for (const e of map.edges || []) if (e.kind === 'tree' && e.label) labels.set(e.from, Math.max(labels.get(e.from) || 0, String(e.label).length));
+    return { byId, kids, roots: S.roots(map).map((n) => n.id), labels };
+  }
+  /** Écart en profondeur réservé aux libellés des liens parent → enfant (0 si aucun, multiple de 8) */
+  function labelExtra(T, parentId) {
+    const L = T.labels && T.labels.get(parentId);
+    return L ? Math.ceil(Math.min(64, 16 + L * 6) / 8) * 8 : 0;
   }
 
   /**
@@ -854,7 +862,7 @@
    * Renvoie le décalage de chaque niveau depuis le niveau 0.
    */
   function columns(rootIds, T, dim, gap, first = 0, indent = 0) {
-    const maxD = [];
+    const maxD = [], extra = [];
     const seen = new Set();
     let frontier = rootIds.map((id) => [id, first]);
     while (frontier.length) {
@@ -865,12 +873,13 @@
         const nn = T.byId.get(id);
         const ind = indent && role(nn) === 'support' && !(T.kids.get(id) || []).length && L > 1 ? indent : 0;
         maxD[L] = Math.max(maxD[L] || 0, dim(nn).dl + ind);
+        extra[L] = Math.max(extra[L] || 0, labelExtra(T, id));
         for (const c of T.kids.get(id) || []) next.push([c, L + 1]);
       }
       frontier = next;
     }
     const cols = [0];
-    for (let L = 1; L < maxD.length + 1; L++) cols[L] = cols[L - 1] + (maxD[L - 1] || 0) + gap;
+    for (let L = 1; L < maxD.length + 1; L++) cols[L] = cols[L - 1] + (maxD[L - 1] || 0) + gap + (extra[L - 1] || 0);
     return cols;
   }
   /** Écart entre deux frères : il dit s'ils vont ensemble (proximité, Gestalt) */
@@ -898,7 +907,7 @@
   }
   function group(id, own, ch, T, dim, cfg, seen, level = 0) {
     if (cfg.seq && isSequence(id, ch, T)) {
-      const cd0 = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap;
+      const cd0 = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap + labelExtra(T, id);
       const pos = new Map([[id, { d: 0, b: 0 }]]);
       const mid = own.bl / 2;
       // étapes alignées par le haut : même y, donc l'ordre de lecture (y puis x) reste celui du cours
@@ -931,7 +940,7 @@
     }
     const subs = ch.map((c) => subtree(c, T, dim, cfg, seen, level + 1));
     // les enfants commencent après le parent — ou au début de la colonne suivante (colonnes alignées)
-    const cd = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap;
+    const cd = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap + labelExtra(T, id);
     for (const s of subs) for (const l of s.lv) { l.d0 += cd; l.d1 += cd; }
     const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) : cfg.cousinGap));
     const first = st.offs[0] + subs[0].c, last = st.offs[subs.length - 1] + subs[subs.length - 1].c;
@@ -1074,7 +1083,7 @@
      ensuite écartés ; l'amplitude baisse tant qu'un lien traverse un nœud ou qu'un libellé
      masque un texte (le désordre est permis, pas le fouillis). */
   function rnd(id, k) { let h = 2166136261 ^ k; for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619); return ((h >>> 0) % 10007) / 10007; }
-  const ORG = { jx: 34, jy: 14, fan: 44, pad: 20, iters: 80, gapMin: 64 };
+  const ORG = { jx: 32, jy: 14, fan: 48, pad: 24, iters: 80, gapMin: 80 };
   function placeOrganic(map, T, size, split, prm, amp) {
     const base = place(map, T, size, 'balanced', split, { ...prm, organic: true, seq: 0, satIndent: 0 });
     if (!amp) return base;
@@ -1118,7 +1127,7 @@
         const side = cx(k, base) >= cx(pid, base) ? 1 : -1;
         // une grande fratrie a besoin de longueur pour que ses courbes s'écartent (bouquet)
         const nk = (T.kids.get(pid) || []).length;
-        const need = Math.min(120, ORG.gapMin + Math.max(0, nk - 4) * 7);
+        const need = Math.min(120, ORG.gapMin + Math.max(0, nk - 4) * 7) + labelExtra(T, pid);
         const gap = side > 0 ? pos[k].x - (pos[pid].x + sz(pid).w) : pos[pid].x - (pos[k].x + sz(k).w);
         if (gap < need) { const d = side * (need - gap); for (const id of sub(k)) pos[id].x += d; }
         nx.push(k);

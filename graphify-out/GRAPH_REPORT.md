@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-20)
 
 ## Corpus Check
-- 44 files · ~149,176 words
+- 45 files · ~149,343 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: .css 5, (none) 1, .webmanifest 1)
 
 ## Summary
-- 703 nodes · 1608 edges · 39 communities (31 shown, 8 thin omitted)
+- 707 nodes · 1614 edges · 40 communities (31 shown, 9 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 139 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1e91bc5a`
+- Built from commit: `b09b474a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -51,6 +51,7 @@
 - course.js
 - Ratio — Compilateur Livre → Cours (v3.1)
 - sw.js
+- Mindmap-apk
 
 ## God Nodes (most connected - your core abstractions)
 1. `Editor()` - 153 edges
@@ -79,7 +80,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (39 total, 8 thin omitted)
+## Communities (40 total, 9 thin omitted)
 
 ### Community 0 - "Editor"
 Cohesion: 0.05
@@ -91,7 +92,7 @@ Nodes (59): addCourse(), addMap(), ancestors(), applyImport(), blank(), branchSt
 
 ### Community 2 - "layout.js"
 Cohesion: 0.10
-Nodes (47): 4.4 Types de nœuds (différenciation monochrome), Routage et libellés (`js/layout.js`, `js/views/editor.js`), arrange(), bbox(), buildTree(), busDown(), busySides(), childSlot() (+39 more)
+Nodes (48): 4.4 Types de nœuds (différenciation monochrome), Routage et libellés (`js/layout.js`, `js/views/editor.js`), arrange(), bbox(), buildTree(), busDown(), busySides(), childSlot() (+40 more)
 
 ### Community 3 - "organize.js"
 Cohesion: 0.11
@@ -206,22 +207,22 @@ Cohesion: 0.50
 Nodes (4): 6. Composition par écran, Desktop (large / extra-large), Mobile (compact, Android), Tablette (medium / expanded)
 
 ## Knowledge Gaps
-- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `onDown()` connect `Editor` to `ui`?**
-  _High betweenness centrality (0.244) - this node is a cross-community bridge._
+  _High betweenness centrality (0.241) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Editor` be split into smaller, more focused modules?**
   _Cohesion score 0.05136154168412233 - nodes in this community are weakly interconnected._
 - **Why does `rate()` connect `store.js` to `ui`?**
-  _High betweenness centrality (0.224) - this node is a cross-community bridge._
+  _High betweenness centrality (0.223) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `store.js` be split into smaller, more focused modules?**
   _Cohesion score 0.06521739130434782 - nodes in this community are weakly interconnected._
 - **Should `layout.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.10034013605442177 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09959183673469388 - nodes in this community are weakly interconnected._
