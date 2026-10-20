@@ -36,6 +36,7 @@
       // longueur et croisements pèsent sur le suivi d'un chemin) ; 1 nœud traversé ≈ 5 croisements
       hit: 60,        // lien qui traverse un nœud (masque un texte)
       cross: 12,      // croisement entre un renvoi et un autre lien
+      over: 10,       // trait collé à un autre lien (par 100 px), branche et renvoi du même nœud compris
       label: 25,      // libellé qui recouvre un nœud ou un autre libellé
       len: 4,         // longueur des renvois (par 100 px)
       fit: 50,        // -log(échelle d'ajustement) : passer de 50 % à 80 % vaut ~2 croisements
@@ -446,7 +447,7 @@
      exacte des 10 meilleurs. Stabilité : le trajet retenu au rendu précédent (ctx.prev) reçoit
      un bonus de 120 ; le tracé précédent lui-même, extrémités immobiles, 450 — il
      ne cède qu'à un nœud traversé ou à plus d'un croisement évité (pas de bascule pour un détail) ; départage déterministe par l'identifiant. */
-  const RW = { hit: 10000, cross: 300, overlap: 2, near: 40, busy: 240, bend: 0.6, orth: 70, out: 6, label: 420, keep: 120, stay: 450 };
+  const RW = { hit: 10000, cross: 300, overlap: 80, near: 40, busy: 240, bend: 0.6, orth: 70, out: 6, label: 420, keep: 120, stay: 450 };
   const turning = (P) => { let s = 0; for (let i = 2; i < P.length; i++) { const a = Math.atan2(P[i - 1][1] - P[i - 2][1], P[i - 1][0] - P[i - 2][0]), b = Math.atan2(P[i][1] - P[i - 1][1], P[i][0] - P[i - 1][0]); let d = Math.abs(b - a); if (d > Math.PI) d = 2 * Math.PI - d; s += d; } return s; };
   /** deux cubiques raccordées en M (tangente continue) */
   function via(p1, d1, M, tM, p2, d2) {
@@ -456,6 +457,21 @@
   const hash01 = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return ((h >>> 0) % 1000) / 1000; };
   /** grille des points des liens déjà tracés (chevauchement) : cellule → indices des tracés ;
       tenue à jour au fil des appels (les tracés s'ajoutent un à un) */
+  /** Longueur (px) d'un trajet collée au trait d'un autre lien : cellule de 8 px et ses voisines.
+      Les 6 px autour des deux nœuds reliés ne comptent pas (plusieurs liens y sortent forcément). */
+  function overRun(pts, grid, a, sa, b, sb) {
+    const nearEnd = (p, r, s) => p[0] > r.x - 6 && p[0] < r.x + s.w + 6 && p[1] > r.y - 6 && p[1] < r.y + s.h + 6;
+    let over = 0;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const p = pts[i];
+      if (nearEnd(p, a, sa) || nearEnd(p, b, sb)) continue;
+      const cx = Math.floor(p[0] / 8), cy = Math.floor(p[1] / 8);
+      let hit = false;
+      for (let dx = -1; dx <= 1 && !hit; dx++) for (let dy = -1; dy <= 1 && !hit; dy++) if (grid.get((cx + dx) + ',' + (cy + dy))) hit = true;
+      if (hit) over += Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]);
+    }
+    return over;
+  }
   function pointGrid(polys) {
     const C = 8;
     const g = polys._grid || (polys._grid = { cells: new Map(), n: 0 });
@@ -504,8 +520,9 @@
       const D = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) || 1;
       rough(cubic(p1, d1, p2, d2, handle(p1, p2)), s1 + s2 + 'c', s1, s2, 'curve');
       rough(cubic(p1, d1, p2, d2, handle(p1, p2) * 0.5), s1 + s2 + 'c2', s1, s2, 'curve');
+      rough(cubic(p1, d1, p2, d2, handle(p1, p2) * 1.5), s1 + s2 + 'c3', s1, s2, 'curve');
       const t = [(p2[0] - p1[0]) / D, (p2[1] - p1[1]) / D], n = [-t[1], t[0]], mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
-      for (const k of [-0.45, -0.25, -0.12, 0.12, 0.25, 0.45]) {
+      for (const k of [-0.6, -0.45, -0.3, -0.18, -0.08, 0.08, 0.18, 0.3, 0.45, 0.6]) {
         const off = Math.sign(k) * Math.min(Math.abs(k) * D, Math.abs(k) * 360);
         rough(via(p1, d1, [mid[0] + n[0] * off, mid[1] + n[1] * off], t, p2, d2), s1 + s2 + 'v' + k, s1, s2, 'via');
       }
@@ -550,16 +567,21 @@
       const cp = k.style === 'orth' || k.style === 'grid' ? (k.cv.pts || pts) : sample(k.cv, 32);
       cross = crossCount(cp, polys, mine, 2);
       // chevauchement : points du trajet posés sur le trait d'un autre lien (hors extrémités)
-      let over = 0;
-      for (let i = 2; i < pts.length - 2; i++) { const list = grid.get(Math.floor(pts[i][0] / 8) + ',' + Math.floor(pts[i][1] / 8)); if (list && list.some((j) => !mine(j))) over += 8; }
+      // chevauchement : points du trajet posés sur (ou longeant à < 8 px) le trait d'un autre lien,
+      // y compris un lien qui part du même nœud (branche + renvoi superposés) — hors zone de sortie
+      const over = overRun(pts, grid, a, sa, b, sb);
       const len = polyLen(pts);
       let out = 0;
       if (frame) for (const p of pts) out = Math.max(out, frame.x0 - p[0], p[0] - frame.x1, frame.y0 - p[1], p[1] - frame.y1);
-      const busy = (busyAt(a.id, k.s1) && !ctx.fromJ) + busyAt(b.id, k.s2);
+      // tracé orthogonal : son côté de sortie se lit sur ses extrémités (sinon une branche déjà posée
+      // de ce côté passerait inaperçue et le renvoi la longerait)
+      const sideOf = (q, r, sr) => q[0] >= r.x + sr.w - 2 ? 'r' : q[0] <= r.x + 2 ? 'l' : q[1] <= r.y + 2 ? 't' : 'b';
+      const s1 = k.s1 === 'x' ? sideOf(pts[0], a, sa) : k.s1, s2 = k.s2 === 'x' ? sideOf(pts[pts.length - 1], b, sb) : k.s2;
+      const busy = (busyAt(a.id, s1) && !ctx.fromJ) + busyAt(b.id, s2);
       k.pts = pts; k.hits = hits; k.len = len; k.cross = cross;
-      k.cost2 = hits * RW.hit + len + cross * RW.cross + Math.max(0, over - 24) * RW.overlap + near * RW.near + busy * RW.busy
+      k.cost2 = hits * RW.hit + len + cross * RW.cross + Math.max(0, over - 8) * RW.overlap + near * RW.near + busy * RW.busy
         + (k.turn != null ? k.turn : turning(sample(k.cv, 16))) * len * RW.bend / Math.PI + (k.style === 'orth' || k.style === 'grid' ? RW.orth : 0) + Math.max(0, out) * RW.out
-        - (k.keep ? RW.stay : ctx.prev && ctx.prev === k.key ? RW.keep : 0) + hash01((ctx.id || '') + k.key) * 0.5;
+        - (over > 8 ? 0 : k.keep ? RW.stay : ctx.prev && ctx.prev === k.key ? RW.keep : 0) + hash01((ctx.id || '') + k.key) * 0.5;
       if (ctx.label && !hits && labelled++ < 2) { const spot = placeLabel(k.cv, ctx.label, rects, (ctx.placed || []).slice(), { segs: ctx.polys, ends: [a.id, b.id] }); if (spot.ov > 0 || spot.clash) k.cost2 += RW.label; }
     };
     fine.forEach(exact);
@@ -1205,7 +1227,7 @@
       polys.push({ pts: sample(cv, 8), ends: new Set([e.from, e.to]) });
       if (e.label) treeLabels.push({ cv, label: e.label });
     }
-    let hits = 0, cross = 0, len = 0, lblOv = 0;
+    let hits = 0, cross = 0, len = 0, lblOv = 0, over = 0;
     const placed = [];
     for (const t of treeLabels) { const p = placeLabel(t.cv, labelSize(t.label), rects, placed, { prefer: 0.5 }); if (p.ov > 0) lblOv++; }
     for (const e of map.edges) {
@@ -1216,6 +1238,7 @@
       // le tracé définitif (courbes, points de passage) est choisi au rendu, disposition fixée
       const rt = routeOrth(a, a, b, b, { rects, polys, placed, busy, fast: quick, label: e.label ? labelSize(e.label) : null });
       hits += rt.hits; cross += rt.cross; len += rt.len;
+      if (rt.pts) over += overRun(rt.pts, pointGrid(polys), a, a, b, b);
       polys.push({ pts: rt.pts, ends: new Set([e.from, e.to]) });
       if (e.label) { const p = placeLabel(rt, labelSize(e.label), rects, placed); if (p.ov > 0) lblOv++; }
     }
@@ -1255,9 +1278,9 @@
     const aspect = Math.abs(Math.log((W / Math.max(1, H)) / (vw / vh)));
     const w = P.w;
     const cost = w.hit * hits + w.cross * cross + w.label * lblOv + w.len * (len / 100) - w.fit * Math.log(Math.max(0.02, fit))
-      + w.amb * amb + w.reach * reach + w.aspect * aspect + (w.mode[mode] || 0)
+      + w.over * (over / 100) + w.amb * amb + w.reach * reach + w.aspect * aspect + (w.mode[mode] || 0)
       - w.seq * new Set(seqPrev.values()).size / 2; // une frise lue d'un trait vaut un peu de largeur
-    return { cost, hits, cross, lblOv, len: Math.round(len), fit: +fit.toFixed(3), amb, reach: +reach.toFixed(1), aspect: +aspect.toFixed(2), W: Math.round(W), H: Math.round(H) };
+    return { cost, hits, cross, lblOv, over: Math.round(over), len: Math.round(len), fit: +fit.toFixed(3), amb, reach: +reach.toFixed(1), aspect: +aspect.toFixed(2), W: Math.round(W), H: Math.round(H) };
   }
 
   /**
