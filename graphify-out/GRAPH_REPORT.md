@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-20)
 
 ## Corpus Check
-- 47 files · ~164,944 words
+- 47 files · ~165,074 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: .css 5, (none) 1, .webmanifest 1)
 
 ## Summary
-- 756 nodes · 1737 edges · 39 communities (32 shown, 7 thin omitted)
+- 756 nodes · 1738 edges · 39 communities (32 shown, 7 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 140 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4f450412`
+- Built from commit: `3289d20b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -154,8 +154,8 @@ Cohesion: 0.36
 Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), write()
 
 ### Community 19 - "harness.cjs"
-Cohesion: 0.11
-Nodes (11): applyAll(), ctx, edge(), files, fs, path, root, vm (+3 more)
+Cohesion: 0.12
+Nodes (10): applyAll(), ctx, edge(), files, fs, path, root, vm (+2 more)
 
 ### Community 20 - "gen.cjs"
 Cohesion: 0.27
@@ -170,8 +170,8 @@ Cohesion: 0.22
 Nodes (9): Apprendre un chapitre entier, Couleurs des nœuds (option), Lecture seule, Notes (Markdown), Ranger une carte (disposition), Révision, Sauvegarder, importer, partager, Transformer un livre en cours (skill pour IA) (+1 more)
 
 ### Community 23 - "folders.test.cjs"
-Cohesion: 0.29
-Nodes (3): course(), node(), { S }
+Cohesion: 0.25
+Nodes (4): course(), node(), { S, win }, win
 
 ### Community 24 - "Ratio — Dossier de conception"
 Cohesion: 0.25

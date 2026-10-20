@@ -3,7 +3,7 @@
  * Lancement : node tests/folders.test.cjs   (aucune dépendance)
  */
 'use strict';
-const { S } = require('./harness.cjs');
+const { S, win } = require('./harness.cjs');
 
 let failed = 0, passed = 0;
 function test(name, fn) {
@@ -141,5 +141,21 @@ test('Cours à plat (ancien) : rien ne change, les plus récentes d’abord', ()
   ok(S.planSequence(S.mapsOf('c')).size === 0, 'séquence inventée');
 });
 
-console.log(`\n${passed} réussi(s), ${failed} échec(s)`);
-process.exit(failed ? 1 : 0);
+// Bug corrigé : la sauvegarde oubliait les dossiers ; au retour sur le site, les cartes étaient éparpillées
+(async () => {
+  try {
+    const mem = new Map();
+    win.localStorage = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+    load(course());
+    const before = S.data.folders.map((f) => f.id).sort().join();
+    await S._save();
+    S.data = null;
+    await S.load();
+    ok(S.data.folders.map((f) => f.id).sort().join() === before, 'dossiers perdus au rechargement');
+    ok(S.map('s1').folderId === 'ch1' && S.map('g').folderId === 'p2', 'cartes sorties de leur dossier');
+    ok(S.unitsIn('c1', null).items.every((x) => x.kind === 'folder' || x.map.id === 'lost'), 'racine éparpillée');
+    passed++; console.log('✓ Sauvegarde puis rechargement : dossiers et rangement conservés');
+  } catch (e) { failed++; console.log('✗ Sauvegarde puis rechargement\n    ' + e.message); }
+  console.log(`\n${passed} réussi(s), ${failed} échec(s)`);
+  process.exit(failed ? 1 : 0);
+})();

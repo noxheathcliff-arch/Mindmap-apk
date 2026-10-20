@@ -38,4 +38,4 @@ const fixesOf = (map, kind, opts) => O.audit(map, opts).fixes.filter((f) => !kin
 const applyAll = (map, certainty) => { for (const f of O.audit(map).fixes) if (!certainty || f.certainty === certainty) f.apply(map); S.normalizeGroups(map.edges); };
 const edge = (map, from, to) => map.edges.find((e) => e.from === from && e.to === to);
 
-module.exports = { S, O, makeMap, fixesOf, applyAll, edge };
+module.exports = { S, O, win, makeMap, fixesOf, applyAll, edge };

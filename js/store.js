@@ -409,12 +409,12 @@
       const d = this.data;
       const mapJson = new Map();
       for (const m of d.maps) mapJson.set(m.id, JSON.stringify(m));
-      const meta = { version: d.version, courses: d.courses, settings: d.settings, savedAt };
+      const meta = { version: d.version, courses: d.courses, folders: d.folders, settings: d.settings, savedAt };
       // miroir : même format qu'avant (+ savedAt), lisible par les anciennes versions
       let mirrorOk = false;
       try {
         localStorage.setItem(THEME_KEY, d.settings.theme);
-        const head = JSON.stringify({ version: d.version, courses: d.courses, settings: d.settings, savedAt });
+        const head = JSON.stringify({ version: d.version, courses: d.courses, folders: d.folders, settings: d.settings, savedAt });
         const json = head.slice(0, -1) + ',"maps":[' + [...mapJson.values()].join(',') + ']}';
         if (json.length < MIRROR_MAX || !idb.ok) { localStorage.setItem(KEY, json); mirrorOk = true; }
         else localStorage.removeItem(KEY);
