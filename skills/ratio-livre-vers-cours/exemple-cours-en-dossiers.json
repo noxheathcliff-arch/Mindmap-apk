@@ -452,7 +452,7 @@
           "from": "n1",
           "to": "n2",
           "kind": "tree",
-          "label": ""
+          "label": "suppose"
         },
         {
           "id": "e3",
@@ -487,7 +487,7 @@
           "from": "n1",
           "to": "n7",
           "kind": "tree",
-          "label": ""
+          "label": "exige"
         },
         {
           "id": "e8",
@@ -515,7 +515,7 @@
           "from": "n1",
           "to": "n11",
           "kind": "tree",
-          "label": ""
+          "label": "peut prévoir"
         },
         {
           "id": "e12",
@@ -615,7 +615,7 @@
           "from": "n1",
           "to": "n2",
           "kind": "tree",
-          "label": ""
+          "label": "pose le principe"
         },
         {
           "id": "e3",
@@ -629,7 +629,7 @@
           "from": "n1",
           "to": "n4",
           "kind": "tree",
-          "label": ""
+          "label": "exceptions"
         },
         {
           "id": "e5",
@@ -657,7 +657,7 @@
           "from": "n1",
           "to": "n8",
           "kind": "tree",
-          "label": ""
+          "label": "impose"
         },
         {
           "id": "e9",
@@ -782,7 +782,8 @@
           "from": "n1",
           "to": "n2",
           "kind": "tree",
-          "label": ""
+          "label": "se rompt par",
+          "group": "gr-modes"
         },
         {
           "id": "e3",
@@ -831,7 +832,8 @@
           "from": "n1",
           "to": "n9",
           "kind": "tree",
-          "label": ""
+          "label": "se rompt par",
+          "group": "gr-modes"
         },
         {
           "id": "e10",
@@ -845,7 +847,8 @@
           "from": "n1",
           "to": "n11",
           "kind": "tree",
-          "label": ""
+          "label": "se rompt par",
+          "group": "gr-modes"
         },
         {
           "id": "e12",
@@ -947,14 +950,15 @@
           "from": "n1",
           "to": "n2",
           "kind": "tree",
-          "label": ""
+          "label": "fondée sur"
         },
         {
           "id": "e3",
           "from": "n1",
           "to": "n3",
           "kind": "tree",
-          "label": ""
+          "label": "assurée par",
+          "group": "gr-acteurs"
         },
         {
           "id": "e4",
@@ -975,7 +979,8 @@
           "from": "n1",
           "to": "n6",
           "kind": "tree",
-          "label": ""
+          "label": "assurée par",
+          "group": "gr-acteurs"
         },
         {
           "id": "e7",
@@ -1084,14 +1089,14 @@
           "from": "n1",
           "to": "n2",
           "kind": "tree",
-          "label": ""
+          "label": "fondée sur"
         },
         {
           "id": "e3",
           "from": "n1",
           "to": "n3",
           "kind": "tree",
-          "label": ""
+          "label": "définie par"
         },
         {
           "id": "e4",
@@ -1119,7 +1124,7 @@
           "from": "n1",
           "to": "n7",
           "kind": "tree",
-          "label": ""
+          "label": "produit"
         },
         {
           "id": "e8",
