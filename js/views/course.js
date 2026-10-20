@@ -387,7 +387,7 @@
         h('span.overline', n.review.last ? 'Reprendre · en retard' : 'Reprendre · prochaine fiche'),
         h('span.resume-q', n.title),
         h('span.resume-path', path.map((t, k) => [k ? R.icon('chevronRight', 14) : null, h('span', t)]), T ? h('span.resume-type', m.role === 'plan' ? S.kickerOf(m, n) : T.label) : null)),
-      h('span.resume-play', R.icon('play', 22)));
+      h('span.resume-play', R.icon('play', 20), 'Réviser'));
   }
 
   /** Carte du plan : un sommaire lisible (parties numérotées et leurs sous-parties), pas une miniature */
