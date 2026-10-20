@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792482551.063047,
-    "seen": 1792482588.589081,
-    "ast_hash": "f2ecfae19ffdd975311fdb6f588f2dba",
+    "mtime": 1792490602.9937832,
+    "seen": 1792490621.5189521,
+    "ast_hash": "0019ada29e10a6fad21bda03448791fa",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -300,15 +300,15 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/exemple-cours-en-dossiers.json": {
-    "mtime": 1792482535.6853886,
-    "seen": 1792482588.5889928,
+    "mtime": 1792482591.6025653,
+    "seen": 1792490621.5188642,
     "ast_hash": "dea4bfc3a6dec5a4e6a4286c2ad38c6d",
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.0.json": {
-    "mtime": 1792482578.534655,
-    "seen": 1792482588.5889971,
-    "ast_hash": "5bea02da4884917301e1e6c57ba45651",
+    "mtime": 1792490609.9566634,
+    "seen": 1792490621.518869,
+    "ast_hash": "d80defe5fe4b50b976fc362d711da460",
     "semantic_hash": ""
   },
   "tests/folders.test.cjs": {

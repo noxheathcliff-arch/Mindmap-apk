@@ -18,6 +18,7 @@
   "normative_core": {
     "rule": "En cas de désaccord entre deux passages de cette spécification, normative_core l'emporte. Les tables rules, relation_by_type, lexicon_by_direction et causal_pairs sont recopiées du moteur d'audit de Ratio (js/organize.js) par tests/skill-rules.cjs : le skill et l'application appliquent les mêmes règles. Les annexes et l'historique ne sont jamais des règles.",
     "decisions": [
+      "LE COURS REMPLACE LE LIVRE : la cible est un étudiant qui DÉCOUVRE la matière et ne lira jamais le livre. Tout ce que le livre enseigne reste : règles, conditions, exceptions, nuances, justifications (le pourquoi), mécanismes, exemples, cas, chiffres, dates, arrêts, auteurs, débats et positions. Reformuler, oui ; couper, non. Un contenu qui ne tient pas dans une note devient des nœuds enfants ou une carte de plus, jamais une omission. Seuls disparaissent : répétitions, annonces de plan, transitions vides, digressions hors sujet.",
       "COMPRENDRE AVANT DE CONSTRUIRE : aucun nœud d'une carte n'est créé avant sa carte de compréhension (P3 : lignes U, R, A, X) et sa passe transversale (P3c).",
       "PLAN RÉEL : chaque niveau de division du livre devient un dossier (course_architecture), l'unité la plus fine une carte ; numéros et intitulés EXACTS, jamais inventés, fusionnés ou approfondis. Une carte du plan (architecture_maps, role « plan ») ouvre la racine et chaque dossier : seul endroit où le skill explique (pourquoi cette partie, cet ordre, ces liens).",
       "RELATIONS : chaque ligne R est encodée — arête d'arbre libellée, renvoi libellé, logic ET/OU, rattachement libellé (exemple sous l'élément —illustré par→, exception sous la règle —sauf→) ou phrase de note lisible par le moteur — ou son abstention est justifiée par une ligne A. Pas de quota : on encode ce que le texte dit, rien de plus, rien de moins.",
@@ -181,6 +182,7 @@
         "do": [
           "Pour la portion du livre de CETTE carte, écrire (table de travail, hors JSON) les lignes U, R, A, X au format de comprehension_map.",
           "U = unités rappelables avec le wording EXACT ; R = relations lues (connecteur cité, sens, famille, encodage prévu) ; A = relations apparentes à ne pas tracer, avec le motif ; X = renvois transversaux (préparés en P3c).",
+          "Inventaire de contenu : relever paragraphe par paragraphe chaque point enseigné (règle, condition, exception, nuance, raison, exemple, chiffre, date, arrêt, auteur, débat). Chaque point doit finir dans un titre ou une note ; un point sans place = trou à combler, pas à couper.",
           "Contrôle de couverture : relever TOUS les connecteurs explicites de la portion (comprehension_map.connector_scan) ; chacun donne une ligne R ou une ligne A. Un connecteur sans ligne = relire le passage."
         ]
       },
@@ -409,8 +411,8 @@
   },
   "note_rules": {
     "general": [
-      "La note RÉPOND à la question du type pour ce titre : la réponse d'abord, le détail ensuite ; 2 à 10 lignes.",
-      "Une note de parent ne répète pas ses enfants : un chapeau de 1 à 3 lignes, ou rien. Exception : un tableau qui compare les enfants entre eux.",
+      "La note RÉPOND à la question du type pour ce titre : la réponse d'abord, puis TOUT le détail du livre sur ce point — explication, raison d'être, nuances, conditions, exemple — de façon que l'étudiant comprenne sans le livre. Longueur dictée par le livre (souvent 4 à 15 lignes) ; au-delà de 20 lignes, découper en enfants plutôt que raccourcir. Une note qui se lit comme une fiche de révision (mots-clés sans explication) est trop maigre.",
+      "Une note de parent ne répète pas ses enfants, mais garde ce que le livre dit de l'ensemble : idée directrice, contexte, raison d'être, logique qui relie les enfants (souvent 2 à 6 lignes). Exception : un tableau qui compare les enfants entre eux.",
       "==surligné== : une seule idée-force par note (deux au-delà de 12 lignes), ≤ 15 mots ; **gras** : 2 à 5 mots-clés ; > : citation exacte (« > — Auteur » si ce n'est pas l'auteur du livre) ; tableau dès qu'on compare ≥ 2 notions sur ≥ 2 critères ; - [ ] pour les exercices.",
       "Chiffres, noms propres, dates, références : EXACTS. Pas de remplissage ni de méta-commentaire (« l'auteur explique que… »).",
       "Exemple (idee sous l'élément, libellé « illustré par ») : première ligne « Illustre : <titre exact de l'élément illustré>. », puis le cas en 2 à 5 lignes. Exception (libellé « sauf ») : la note commence par la règle écartée.",
@@ -624,7 +626,7 @@
     "import_instructions_for_user": "Importer la partie 1, puis chaque suite : Ratio reconnaît le cours et propose « Compléter « Titre du cours » »."
   },
   "operating_contract": {
-    "input": "Le document source (obligatoire) ; facultatif : matière et niveau, objectif, parties à privilégier, granularité (fiche 8–15 nœuds par carte · standard 10–35 · exhaustif jusqu'à 45). Par défaut : étudiant sérieux, restituer le plan et les notions sans le livre, granularité standard.",
+    "input": "Le document source (obligatoire) ; facultatif : matière et niveau, objectif, parties à privilégier, granularité (fiche 8–15 nœuds par carte, pour réviser un cours déjà lu · complet 10 à 45, par défaut). Par défaut : étudiant qui découvre le cours, tout apprendre sans le livre, granularité complète ; une section trop riche pour 45 nœuds → une carte par sous-section.",
     "output": [
       "UN bloc ```json contenant l'objet d'import (target_format), complet et valide, puis un court rapport en français (report_template).",
       "Si tu peux écrire des fichiers : le JSON dans un .json (sans balises), le rapport dans un .md voisin ; la réponse donne les chemins et un résumé.",
@@ -634,13 +636,13 @@
   },
   "quality_gates": [
     "G1 Schéma (bloquant) : format/version/kind ; 1 cours ; cartes à id unique, courseId juste, needsLayout true ; ids uniques par carte ; 20 types, aucun type supprimé ; from/to existants ; ≤ 1 parent ; 1 racine ; aucun isolé ; aucun cycle.",
-    "G2 Couverture (bloquant) : chaque partie du plan réel représentée ; chaque énumération avec son cardinal exact ; chaque définition explicite a un nœud definition.",
+    "G2 Couverture (bloquant) : chaque partie du plan réel représentée ; chaque point de l'inventaire de contenu (P3) présent dans un titre ou une note, détails, exemples et nuances compris ; chaque énumération avec son cardinal exact ; chaque définition explicite a un nœud definition.",
     "G3 Révisabilité (bloquant, par carte) : ≥ 85 % des nœuds non structurels ont une note ou des enfants ; aucun nœud structurel vide ; thèse en racine ou nœud retenir.",
     "G4 Fidélité (bloquant) : aucun fait, chiffre, auteur, citation ou référence absent du livre (hors *(complément)*).",
     "G5 Relations (bloquant) : P6a fait ; chaque ligne R encodée ou justifiée (ligne A) ; aucune relation aplatie ; aucun lien sans ligne R ou X ; zéro libellé sur une carte de 8 nœuds ou plus = échec.",
     "G6 Orientation et preuve (bloquant) : chaque phrase « source — libellé → cible » vraie dans le sens de la flèche ; aucun libellé vague ni « voir » ; aucune relation niée, débattue ou corrélative tracée comme une cause ; aucun renvoi en double ou parallèle à l'arbre.",
     "G7 Maillage : renvois dans le budget (double pour les relations explicites) ; toute arête entre deux idées libellée (taux ≥ rules.labelledTarget, viser 100 %) ; aucun verbe sous un intitulé ; branches seulement pour un parent qui mêle deux familles.",
-    "G8 Lisibilité : racine à 3 à 7 enfants (2 pour une section au plan binaire) ; aucun exemple ni arrêt directement sous la racine ; titres ≤ 80 (médiane ≤ 40) et uniques ; libellés ≤ 20 ; notes ≤ 25 lignes ; profondeur ≤ 6 ; cartes de contenu de 8 à 45 nœuds (cible 10–35).",
+    "G8 Lisibilité : racine à 3 à 7 enfants (2 pour une section au plan binaire) ; aucun exemple ni arrêt directement sous la racine ; titres ≤ 80 (médiane ≤ 40) et uniques ; libellés ≤ 20 ; notes ≤ 25 lignes (au-delà, découper en enfants, jamais raccourcir) ; profondeur ≤ 6 ; cartes de contenu de 8 à 45 nœuds (cible 10–35).",
     "G9 Expression (sur le cours) : tableaux pour les comparaisons ; > pour les formules marquantes ; ==surligné== dans 30–70 % des notes (20 % minimum par carte), un par note ; logic sur les énumérations cumulatives/alternatives ; ≥ 3 types par carte de plus de 15 nœuds ; aucun type de droit hors droit ; libellés variés et exacts (sauf, suppose, entraîne, illustré par, justifié par…).",
     "G10 Décomposition : définitions longues décomposées (modular_definitions) avec em quand un fragment s'oublie ; règles, mécanismes, raisonnements, distinctions selon leur gabarit ; chaque exemple sous l'élément qu'il illustre (« illustré par ») ; effets sous la cause qui les produit (« entraîne »).",
     "G11 Plan (bloquant) : un dossier par division réelle, numéros et intitulés exacts, order uniques ; une carte du plan à la racine et dans chaque dossier d'au moins 2 enfants ; chaque unité a son nœud ref et sa note « Pourquoi ici » ; liens du vocabulaire fermé, justifiés en note ; aucun peigne."
@@ -1039,7 +1041,7 @@
       "dev perso · « Éviter la confrontation » sous « Faire plaisir à tout le monde » — motif caché à dépasser. → idee « a pour cause » (tentation « vise à »)"
     ],
     "law_example": "Exemple juridique complet : exemple-cours-en-dossiers.json (même dossier) — droit du travail en dossiers (Partie › Chapitre › Section), cartes du plan, cartes de section avec texte, juris, chiffres et libellés (suppose, sauf, se distingue de).",
-    "anti_patterns": "Résumé déguisé (notes de 30 lignes) · squelette (titres sans notes) · titre-réponse · type unique · surlignage fluo · liste à puces au lieu de nœuds · structure vide · libellé passe-partout (« voir », « lien ») · invention · x/y inventés · JSON tronqué · histoire sans « Illustre : » · énumération tronquée · toile d'araignée de renvois · racine fourre-tout · vocabulaire juridique plaqué · « sauf » fourre-tout · liste plate · RELATION APLATIE (la note dit « donc », « ce qui », « parce que », la carte range les deux idées côte à côte) · causalité de vraisemblance · type supprimé à la place de la relation · idee sans libellé sous une idée · définition d'un bloc.",
+    "anti_patterns": "Résumé déguisé (notes de 30 lignes) · squelette (titres sans notes) · fiche de révision (notes en mots-clés, détails du livre perdus) · titre-réponse · type unique · surlignage fluo · liste à puces au lieu de nœuds · structure vide · libellé passe-partout (« voir », « lien ») · invention · x/y inventés · JSON tronqué · histoire sans « Illustre : » · énumération tronquée · toile d'araignée de renvois · racine fourre-tout · vocabulaire juridique plaqué · « sauf » fourre-tout · liste plate · RELATION APLATIE (la note dit « donc », « ce qui », « parce que », la carte range les deux idées côte à côte) · causalité de vraisemblance · type supprimé à la place de la relation · idee sans libellé sous une idée · définition d'un bloc.",
     "history": "v1.x : format, 43 types (20 depuis v3.1), typage en 6 passes, lisibilité, découpage (testé sur un livre de 27 500 mots : 16 cartes, 359 nœuds). v2.0 : relations d'abord, définitions modulaires. v2.1 : preuve et orientation des relations. v2.2 : normative_core recopié du moteur. v3.0 : carte de compréhension, audit interne. v3.1 : 20 types, relations dans les libellés. v4.0 : voir changelog_4_0.",
     "implementation_notes": "Spécification portable : pour Claude, SKILL.md (même dossier) sert de point d'entrée ; pour d'autres IA, joindre ce fichier avec le document et écrire « Applique ce skill à ce livre ». Ratio ≥ 4.0 : dossiers (folders), cartes du plan (role « plan »), renvois ref vers une unité. Ratio ≥ 3.6 : arêtes d'arbre libellées, branches, em, audit d'organisation (établi / probable / signalé) qui relit aussi les phrases des notes. Le JSON ne contient que le cours (aucun historique de révision ni réglage). Toute modification change le numéro de version."
   },
