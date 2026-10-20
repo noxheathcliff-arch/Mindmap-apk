@@ -140,6 +140,9 @@
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
   const LAYOUTS = ['right', 'balanced', 'down', 'organic'];
+  /** Dossiers du plan d'un cours : le niveau (pour l'affichage) ; le numéro exact est dans `label` */
+  const FOLDER_KINDS = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'autre'];
+  const FOLDER_LABELS = { partie: 'Partie', titre: 'Titre', soustitre: 'Sous-titre', chapitre: 'Chapitre', section: 'Section', autre: 'Dossier' };
 
   const RATINGS = {
     revoir:   { label: 'À revoir', fill: 1 },
@@ -155,6 +158,7 @@
     return {
       version: 1,
       courses: [],
+      folders: [],
       maps: [],
       settings: { theme: 'system', motion: 'system', onboarded: false, reviewLog: {}, paneOpen: true, sessionSize: 20 },
     };
@@ -197,6 +201,25 @@
       createdAt: +c.createdAt || Date.now(), updatedAt: +c.updatedAt || Date.now(),
     })) : [];
     const courseIds = new Set(out.courses.map((c) => c.id));
+    // dossiers : le plan du cours (Partie › Titre › Chapitre…), une arborescence par cours
+    out.folders = Array.isArray(d.folders) ? d.folders.filter((f) => f && f.id && courseIds.has(String(f.courseId))).map((f, i) => ({
+      id: String(f.id), courseId: String(f.courseId), parentId: f.parentId == null || f.parentId === '' ? null : String(f.parentId),
+      kind: FOLDER_KINDS.includes(f.kind) ? f.kind : 'autre',
+      label: String(f.label || '').slice(0, 60), title: String(f.title || f.label || 'Sans titre'), note: String(f.note || ''),
+      order: Number.isFinite(+f.order) ? +f.order : i,
+      createdAt: +f.createdAt || Date.now(), updatedAt: +f.updatedAt || Date.now(),
+    })) : [];
+    {
+      const byId = new Map(out.folders.map((f) => [f.id, f]));
+      for (const f of out.folders) {
+        const p = f.parentId && byId.get(f.parentId);
+        if (f.parentId && (!p || p.courseId !== f.courseId)) { f.parentId = null; note('folderParents'); continue; }
+        // pas de boucle : le dossier qui la fermerait remonte à la racine du cours
+        let j = p, guard = 0;
+        while (j && guard++ <= out.folders.length) { if (j.id === f.id) { f.parentId = null; note('folderParents'); break; } j = j.parentId && byId.get(j.parentId); }
+      }
+    }
+    const folderOf = new Map(out.folders.map((f) => [f.id, f.courseId]));
     out.maps = Array.isArray(d.maps) ? d.maps.filter((m) => m && m.id).map((m, mi) => {
       const rawNodes = Array.isArray(m.nodes) ? m.nodes : [];
       const seenIds = new Set();
@@ -214,6 +237,8 @@
         y: Number.isFinite(+n.y) ? +n.y : 0,
         collapsed: !!n.collapsed,
         logic: n.logic === 'et' || n.logic === 'ou' ? n.logic : null,
+        // renvoi vers une unité du cours (dossier ou carte) : nœud d'une carte du plan
+        ...(n.ref ? { ref: String(n.ref) } : {}),
         // mise en relief : un fragment du titre à retenir (« une ou plusieurs »)
         ...(n.em && String(n.title ?? '').toLowerCase().includes(String(n.em).toLowerCase()) ? { em: String(n.em).slice(0, 60) } : {}),
         review: n.review && typeof n.review === 'object' ? {
@@ -253,6 +278,11 @@
         createdAt: +m.createdAt || Date.now(), updatedAt: +m.updatedAt || Date.now() - mi,
         viewport: m.viewport && Number.isFinite(+m.viewport.k) ? { x: +m.viewport.x || 0, y: +m.viewport.y || 0, k: +m.viewport.k || 1 } : null,
         nodes, edges,
+        // place dans le plan du cours : dossier (null = racine du cours), rang, numéro (« Section 1 »), rôle
+        folderId: m.folderId != null && folderOf.get(String(m.folderId)) === String(m.courseId || '') ? String(m.folderId) : null,
+        ...(Number.isFinite(+m.order) && m.order !== null && m.order !== '' ? { order: +m.order } : {}),
+        ...(m.label ? { label: String(m.label).slice(0, 60) } : {}),
+        ...(m.role === 'plan' ? { role: 'plan' } : {}),
         ...(m.needsLayout || (rep && stacked) ? { needsLayout: true } : {}),
         ...(m.readOnly ? { readOnly: true } : {}),
         // disposition : celle en place (layout) et celle choisie par l'utilisateur (layoutPick, sinon automatique)
@@ -271,12 +301,17 @@
         let orphan = out.courses.find((c) => c._orphans);
         if (!orphan) { orphan = { id: U.uid('c'), title: 'Importé', description: 'Cartes sans cours dans le fichier importé', createdAt: Date.now(), updatedAt: Date.now(), _orphans: true }; out.courses.push(orphan); }
         m.courseId = orphan.id;
+        m.folderId = null;
         note('orphanMaps');
         return true;
       }
       return false;
     }) : [];
     for (const c of out.courses) delete c._orphans;
+    {
+      const units = new Set([...out.folders.map((f) => f.id), ...out.maps.map((m) => m.id)]);
+      for (const m of out.maps) for (const n of m.nodes) if (n.ref && !units.has(n.ref)) { delete n.ref; note('brokenRefs'); }
+    }
     if (d.settings && typeof d.settings === 'object') {
       out.settings.theme = ['system', 'light', 'dark'].includes(d.settings.theme) ? d.settings.theme : 'system';
       out.settings.motion = ['system', 'reduce', 'full'].includes(d.settings.motion) ? d.settings.motion : 'system';
@@ -308,7 +343,7 @@
   }
 
   const store = {
-    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, REMOVED_TYPES, RATINGS, INTERVALS,
+    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, REMOVED_TYPES, RATINGS, INTERVALS, FOLDER_KINDS, FOLDER_LABELS,
     isStruct,
     normalizeGroups,
     sanitize, // exposé pour les tests (journal et refus du rangement survivent à l’export)
@@ -434,17 +469,140 @@
       this.changed();
     },
     deleteCourse(id) {
-      const snap = { courses: this.data.courses.filter((c) => c.id === id), maps: this.mapsOf(id) };
+      const snap = { courses: this.data.courses.filter((c) => c.id === id), maps: this.mapsOf(id), folders: this.data.folders.filter((f) => f.courseId === id) };
       this.data.courses = this.data.courses.filter((c) => c.id !== id);
       this.data.maps = this.data.maps.filter((m) => m.courseId !== id);
+      this.data.folders = this.data.folders.filter((f) => f.courseId !== id);
       this.changed();
       return snap;
     },
     restore(snap) {
       for (const c of snap.courses || []) if (!this.course(c.id)) this.data.courses.push(c);
+      for (const f of snap.folders || []) if (!this.folder(f.id)) this.data.folders.push(f);
       for (const m of snap.maps || []) if (!this.map(m.id)) this.data.maps.push(m);
+      // dossier supprimé : ses enfants y retournent
+      for (const [id, folderId] of Object.entries(snap.homes || {})) { const x = this.map(id) || this.folder(id); if (x) x[x.nodes ? 'folderId' : 'parentId'] = folderId; }
+      for (const id of snap.plans || []) { const m = this.map(id); if (m) m.role = 'plan'; }
       this.changed();
     },
+
+    /* ---------------- Dossiers (plan du cours) ---------------- */
+    folder(id) { return id ? this.data.folders.find((f) => f.id === id) : null; },
+    /** Unités rangées directement dans un dossier (null = racine du cours), dans l'ordre du plan :
+        dossiers et cartes mêlés par `order` ; les cartes sans rang (cours à plat) suivent, les plus récentes d'abord.
+        La carte du plan (role 'plan') est à part : elle présente le dossier, elle n'en fait pas partie. */
+    unitsIn(courseId, folderId = null) {
+      const fid = folderId || null;
+      const folders = this.data.folders.filter((f) => f.courseId === courseId && f.parentId === fid).map((f) => ({ kind: 'folder', folder: f, order: f.order, at: f.updatedAt }));
+      const all = this.data.maps.filter((m) => m.courseId === courseId && (m.folderId || null) === fid);
+      const maps = all.filter((m) => m.role !== 'plan').map((m) => ({ kind: 'map', map: m, order: m.order, at: m.updatedAt }));
+      const items = folders.concat(maps).sort((a, b) => {
+        const ha = Number.isFinite(a.order), hb = Number.isFinite(b.order);
+        if (ha && hb) return a.order - b.order || a.at - b.at;
+        if (ha !== hb) return ha ? -1 : 1;
+        return b.at - a.at;
+      });
+      return { items, plan: all.find((m) => m.role === 'plan') || null };
+    },
+    planOf(courseId, folderId = null) { return this.unitsIn(courseId, folderId).plan; },
+    hasFolders(courseId) { return this.data.folders.some((f) => f.courseId === courseId); },
+    /** Chemin d'un dossier, de la racine du cours jusqu'à lui */
+    folderPath(folderId) {
+      const out = [];
+      let f = this.folder(folderId), guard = 0;
+      while (f && guard++ < 64) { out.unshift(f); f = this.folder(f.parentId); }
+      return out;
+    },
+    /** Tous les dossiers sous un dossier (lui exclu) */
+    foldersUnder(folderId) {
+      const out = [];
+      const stack = [folderId];
+      while (stack.length) {
+        const cur = stack.pop();
+        for (const f of this.data.folders) if (f.parentId === cur && !out.includes(f)) { out.push(f); stack.push(f.id); }
+      }
+      return out;
+    },
+    /** Cartes d'un dossier et de ses sous-dossiers (carte du plan comprise) */
+    mapsUnder(folderId) {
+      const ids = new Set([folderId, ...this.foldersUnder(folderId).map((f) => f.id)]);
+      return this.data.maps.filter((m) => m.folderId && ids.has(m.folderId));
+    },
+    folderStats(folderId) {
+      const s = { maps: 0, nodes: 0, reviewable: 0, mastered: 0, understood: 0, due: 0, progress: 0 };
+      for (const m of this.mapsUnder(folderId)) {
+        const ms = this.mapStats(m);
+        if (m.role !== 'plan') s.maps++;
+        s.nodes += ms.nodes; s.reviewable += ms.reviewable; s.mastered += ms.mastered; s.understood += ms.understood; s.due += ms.due;
+      }
+      s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
+      return s;
+    },
+    nextOrder(courseId, folderId = null) {
+      const { items, plan } = this.unitsIn(courseId, folderId);
+      return Math.max(-1, ...items.map((x) => (Number.isFinite(x.order) ? x.order : -1)), plan && Number.isFinite(plan.order) ? plan.order : -1) + 1;
+    },
+    addFolder(courseId, parentId = null, { kind = 'autre', label = '', title = '', note = '' } = {}) {
+      const f = { id: U.uid('f'), courseId, parentId: parentId || null, kind: FOLDER_KINDS.includes(kind) ? kind : 'autre',
+        label: label.trim(), title: title.trim() || label.trim() || 'Nouveau dossier', note: note.trim(),
+        order: this.nextOrder(courseId, parentId), createdAt: Date.now(), updatedAt: Date.now() };
+      this.data.folders.push(f);
+      const c = this.course(courseId);
+      if (c) c.updatedAt = Date.now();
+      this.changed();
+      return f;
+    },
+    updateFolder(id, patch) {
+      const f = this.folder(id);
+      if (!f) return;
+      Object.assign(f, patch, { updatedAt: Date.now() });
+      this.changed();
+    },
+    /** Supprime un dossier sans rien perdre : son contenu remonte d'un niveau, à sa place. Renvoie de quoi annuler. */
+    deleteFolder(id) {
+      const f = this.folder(id);
+      if (!f) return null;
+      const homes = {}, plans = [];
+      for (const g of this.data.folders) if (g.parentId === id) { homes[g.id] = id; g.parentId = f.parentId; g.order = f.order + (g.order || 0) / 1000; }
+      for (const m of this.data.maps) if (m.folderId === id) {
+        homes[m.id] = id;
+        if (m.role === 'plan') { delete m.role; plans.push(m.id); } // le plan d'un dossier disparu redevient une carte
+        m.folderId = f.parentId; m.order = f.order + (Number.isFinite(m.order) ? m.order : 0) / 1000;
+      }
+      this.data.folders = this.data.folders.filter((x) => x.id !== id);
+      this.changed();
+      return { folders: [f], homes, plans };
+    },
+    /** Ordre manuel : déplace une unité (dossier ou carte) d'un cran parmi ses voisins */
+    shiftUnit(courseId, folderId, unitId, delta) {
+      const { items } = this.unitsIn(courseId, folderId);
+      const i = items.findIndex((x) => (x.folder || x.map).id === unitId);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= items.length) return false;
+      items.splice(j, 0, items.splice(i, 1)[0]);
+      items.forEach((x, k) => { (x.folder || x.map).order = k; });
+      this.changed();
+      return true;
+    },
+    /** Ordre du plan d'un cours rangé en dossiers : rang de chaque carte dans le parcours du sommaire
+        (carte du plan d'abord, puis les unités dans l'ordre). Vide si les cartes ne sont pas d'un même cours en dossiers. */
+    planSequence(maps) {
+      const out = new Map();
+      const cid = maps.length && maps[0].courseId;
+      if (!cid || !this.hasFolders(cid) || maps.some((m) => m.courseId !== cid)) return out;
+      const walk = (fid, guard) => {
+        const { items, plan } = this.unitsIn(cid, fid);
+        if (plan) out.set(plan.id, out.size);
+        for (const x of items) {
+          if (x.map) out.set(x.map.id, out.size);
+          else if (guard < 32) walk(x.folder.id, guard + 1);
+        }
+      };
+      walk(null, 0);
+      return out;
+    },
+    /** Où se trouve une carte : « Partie I › Chapitre 2 » (dossiers), puis la carte elle-même */
+    locate(m) { return m ? this.folderPath(m.folderId) : []; },
 
     /* ---------------- Cartes ---------------- */
     map(id) { return this.data.maps.find((m) => m.id === id); },
@@ -452,10 +610,12 @@
       return this.data.maps.filter((m) => m.courseId === courseId).sort((a, b) => b.updatedAt - a.updatedAt);
     },
     recentMaps(n = 6) { return [...this.data.maps].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, n); },
-    addMap(courseId, title, { rootType = 'notion' } = {}) {
+    addMap(courseId, title, { rootType = 'notion', folderId = null } = {}) {
       const t = (title || '').trim() || 'Nouvelle carte';
       const root = this.newNode({ type: TYPES[rootType] ? rootType : 'notion', title: t, x: 0, y: 0 });
-      const m = { id: U.uid('m'), courseId, title: t, createdAt: Date.now(), updatedAt: Date.now(), viewport: null, nodes: [root], edges: [] };
+      const fid = folderId && this.folder(folderId) ? folderId : null;
+      const m = { id: U.uid('m'), courseId, title: t, createdAt: Date.now(), updatedAt: Date.now(), viewport: null, nodes: [root], edges: [],
+        folderId: fid, order: this.nextOrder(courseId, fid) };
       this.data.maps.push(m);
       const c = this.course(courseId);
       if (c) c.updatedAt = Date.now();
@@ -471,6 +631,8 @@
       copy.title = src.title + ' (copie)';
       copy.createdAt = copy.updatedAt = Date.now();
       delete copy.readOnly; // une copie sert à retravailler : elle naît modifiable
+      delete copy.role; // une seule carte du plan par dossier
+      if (Number.isFinite(src.order)) copy.order = src.order + 0.5;
       for (const n of copy.nodes) { const nid = U.uid('n'); idMap[n.id] = nid; n.id = nid; }
       for (const e of copy.edges) { e.id = U.uid('e'); e.from = idMap[e.from]; e.to = idMap[e.to]; }
       this.data.maps.push(copy);
@@ -500,7 +662,16 @@
       this.changed();
       return snap;
     },
-    moveMap(id, courseId) { this.updateMap(id, { courseId }); },
+    moveMap(id, courseId, folderId = null) {
+      const m = this.map(id);
+      if (!m) return;
+      const fid = folderId && this.folder(folderId) && this.folder(folderId).courseId === courseId ? folderId : null;
+      const patch = { courseId, folderId: fid, order: this.nextOrder(courseId, fid) };
+      if (m.role === 'plan') delete m.role; // le plan déplacé n'est plus le plan de son ancien dossier
+      // les renvois du plan restent valables dans le même cours ; ailleurs ils n'ont plus de sens
+      if (courseId !== m.courseId) for (const n of m.nodes) delete n.ref;
+      this.updateMap(id, patch);
+    },
 
     /* ---------------- Nœuds / graphe ---------------- */
     newNode(p = {}) {
@@ -584,6 +755,18 @@
     },
     /** Sur-titre affiché : « Leçon 2 », « Définition »… */
     kickerOf(map, n, nums) {
+      // nœud d'une carte du plan qui renvoie à une unité du cours : son vrai numéro (« Partie I », « Section 2 »)
+      if (n.ref) {
+        const f = this.folder(n.ref);
+        if (f) return f.label || FOLDER_LABELS[f.kind];
+        const m = this.map(n.ref);
+        if (m) return m.label || 'Carte';
+      }
+      // racine d'une carte du plan : le cours entier, ou le dossier qu'elle explique
+      if (map.role === 'plan' && !map.edges.some((e) => e.kind === 'tree' && e.to === n.id)) {
+        const f = this.folder(map.folderId);
+        return f ? f.label || FOLDER_LABELS[f.kind] : 'Cours';
+      }
       const k = TYPES[n.type].kicker;
       const num = isStruct(n.type) ? (nums || this.structNumbers(map)).get(n.id) : null;
       return num ? `${k} ${num}` : k;
@@ -645,7 +828,8 @@
       const s = { maps: 0, nodes: 0, reviewable: 0, mastered: 0, understood: 0, due: 0, progress: 0 };
       for (const m of this.mapsOf(id)) {
         const ms = this.mapStats(m);
-        s.maps++; s.nodes += ms.nodes; s.reviewable += ms.reviewable; s.mastered += ms.mastered;
+        if (m.role !== 'plan') s.maps++; // la carte du plan présente le cours, elle n'en est pas une unité
+        s.nodes += ms.nodes; s.reviewable += ms.reviewable; s.mastered += ms.mastered;
         s.understood += ms.understood; s.due += ms.due;
       }
       s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
@@ -691,7 +875,8 @@
      */
     nextCard(courseId, now = Date.now()) {
       let late = null, fresh = null;
-      const maps = this.mapsOf(courseId).slice().sort((a, b) => a.createdAt - b.createdAt);
+      const seq = this.planSequence(this.mapsOf(courseId));
+      const maps = this.mapsOf(courseId).slice().sort((a, b) => (seq.size ? seq.get(a.id) - seq.get(b.id) : a.createdAt - b.createdAt));
       for (const m of maps) {
         for (const n of m.nodes) {
           if (!this.isReviewable(m, n) || !this.isDue(n, now)) continue;
@@ -705,6 +890,7 @@
     /** Cartes de révision selon une portée : {all} | {courseId} | {mapId[, nodeId]} ; `first` = {mapId, nodeId} à placer en tête */
     reviewQueue(scope = {}, { all = false, limit = 20, first = null } = {}) {
       const maps = scope.mapId ? [this.map(scope.mapId)].filter(Boolean)
+        : scope.folderId ? this.mapsUnder(scope.folderId)
         : scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
       const now = Date.now();
       const due = [], fresh = [];
@@ -721,7 +907,8 @@
       // nouvelles : dans l'ordre du plan (carte la plus ancienne, puis ordre de lecture) — on
       // découvre une notion avant ses conséquences, une cause avant ses effets
       const rank = new Map(), age = new Map();
-      for (const m of maps) { rank.set(m.id, this.readingOrder(m)); age.set(m.id, m.createdAt || 0); }
+      const seq = this.planSequence(maps);
+      for (const m of maps) { rank.set(m.id, this.readingOrder(m)); age.set(m.id, seq.has(m.id) ? seq.get(m.id) : m.createdAt || 0); }
       fresh.sort((a, b) => (age.get(a.mapId) - age.get(b.mapId)) || (rank.get(a.mapId).get(a.nodeId) - rank.get(b.mapId).get(b.nodeId)));
       const queue = [...due, ...fresh];
       if (first) {
@@ -743,7 +930,7 @@
      * (aujourd'hui = cartes dues + cartes nouvelles ; les jours suivants = échéances qui tombent ce jour-là).
      */
     forecast(days = 7, scope = {}) {
-      const maps = scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
+      const maps = scope.folderId ? this.mapsUnder(scope.folderId) : scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
       const t0 = U.startOfDay();
       // by : répartition par cours ({ courseId: n }), pour empiler les piles par cours
       const out = Array.from({ length: days }, (_, i) => ({ day: t0 + i * U.DAY, n: 0, by: {} }));
@@ -813,7 +1000,7 @@
     exportCourse(id) {
       const c = this.course(id);
       if (!c) return null;
-      return JSON.stringify({ format: 'ratio', version: 2, kind: 'course', exportedAt: new Date().toISOString(), courses: [c], maps: this.mapsOf(id) }, null, 2);
+      return JSON.stringify({ format: 'ratio', version: 2, kind: 'course', exportedAt: new Date().toISOString(), courses: [c], folders: this.data.folders.filter((f) => f.courseId === id), maps: this.mapsOf(id) }, null, 2);
     },
 
     /**
@@ -850,8 +1037,11 @@
         raw = { courses: [c], maps: parsed.map((m) => ({ ...m, courseId: c.id })) };
       } else if (parsed && Array.isArray(parsed.maps) && (Array.isArray(parsed.courses) || parsed.course)) {
         kind = parsed.kind === 'backup' || (parsed.settings && parsed.courses && parsed.courses.length > 1) ? 'backup' : 'course';
-        raw = parsed.course ? { courses: [{ ...parsed.course, id: parsed.course.id || U.uid('c') }], maps: parsed.maps.map((m) => ({ ...m, courseId: m.courseId || parsed.course.id })) } : parsed;
-        if (parsed.course && !parsed.course.id) for (const m of raw.maps) m.courseId = raw.courses[0].id;
+        raw = parsed.course ? { courses: [{ ...parsed.course, id: parsed.course.id || U.uid('c') }], maps: parsed.maps.map((m) => ({ ...m, courseId: m.courseId || parsed.course.id })),
+          folders: (Array.isArray(parsed.folders) ? parsed.folders : []).map((f) => ({ ...f, courseId: f && f.courseId || parsed.course.id })) } : parsed;
+        if (parsed.course && !parsed.course.id) for (const x of [...raw.maps, ...raw.folders]) x.courseId = raw.courses[0].id;
+        // un seul cours dans le fichier : dossiers et cartes sans cours lui reviennent
+        if (raw.courses && raw.courses.length === 1) for (const x of [...(raw.maps || []), ...(Array.isArray(raw.folders) ? raw.folders : [])]) if (x && !x.courseId) x.courseId = raw.courses[0].id;
       } else if (parsed && Array.isArray(parsed.nodes)) {
         kind = 'map';
         const c = { id: U.uid('c'), title: 'Importé', description: '', createdAt: Date.now(), updatedAt: Date.now() };
@@ -871,6 +1061,7 @@
       const collide = {
         courses: data.courses.filter((c) => this.course(c.id)).length,
         maps: data.maps.filter((m) => this.map(m.id)).length,
+        folders: data.folders.filter((f) => this.folder(f.id)).length,
       };
       const issues = [];
       const say = (k, f) => { if (rep[k]) issues.push(f(rep[k])); };
@@ -881,8 +1072,10 @@
       say('duplicateNodes', (n) => `${U.plural(n, 'nœud')} en double, ignoré${n > 1 ? 's' : ''}`);
       say('nodesWithoutId', (n) => `${U.plural(n, 'nœud')} sans identifiant, ignoré${n > 1 ? 's' : ''}`);
       say('orphanMaps', (n) => `${U.plural(n, 'carte')} sans cours → rangée${n > 1 ? 's' : ''} dans « Importé »`);
+      say('folderParents', (n) => `${U.plural(n, 'dossier')} au parent introuvable → à la racine du cours`);
+      say('brokenRefs', (n) => `${U.plural(n, 'renvoi')} du plan vers une unité absente, retiré${n > 1 ? 's' : ''}`);
       say('autoLayout', (n) => `${U.plural(n, 'carte')} sans positions → rangée${n > 1 ? 's' : ''} automatiquement à l’ouverture`);
-      return { kind, data, fixes, issues, collide, stats: { courses: data.courses.length, maps: data.maps.length, nodes, edges, notes, links, labels } };
+      return { kind, data, fixes, issues, collide, stats: { courses: data.courses.length, folders: data.folders.length, maps: data.maps.length, nodes, edges, notes, links, labels } };
     },
 
     /**
@@ -901,9 +1094,17 @@
         if (mode === 'add') {
           // identifiants neufs pour les cours et les cartes déjà présents (les nœuds sont propres à leur carte) ;
           // les autres gardent les leurs, pour qu'une suite (partie 2 d'un livre) puisse ensuite compléter le même cours
-          const cid = new Map();
+          const cid = new Map(), uid = new Map();
           for (const c of inc.courses) { c.createdAt = c.updatedAt = Date.now(); if (this.course(c.id)) { const n = U.uid('c'); cid.set(c.id, n); c.id = n; } }
-          for (const m of inc.maps) { if (this.map(m.id)) m.id = U.uid('m'); m.courseId = cid.get(m.courseId) || m.courseId; }
+          for (const f of inc.folders) { if (this.folder(f.id)) { const n = U.uid('f'); uid.set(f.id, n); f.id = n; } f.courseId = cid.get(f.courseId) || f.courseId; }
+          for (const f of inc.folders) if (f.parentId) f.parentId = uid.get(f.parentId) || f.parentId;
+          for (const m of inc.maps) {
+            if (this.map(m.id)) { const n = U.uid('m'); uid.set(m.id, n); m.id = n; }
+            m.courseId = cid.get(m.courseId) || m.courseId;
+            if (m.folderId) m.folderId = uid.get(m.folderId) || m.folderId;
+          }
+          // les renvois du plan suivent les nouveaux identifiants
+          for (const m of inc.maps) for (const n of m.nodes) if (n.ref && uid.has(n.ref)) n.ref = uid.get(n.ref);
         }
         if (mode === 'complete') {
           // la suite se range après les cartes déjà présentes du cours, dans l'ordre du fichier
@@ -916,6 +1117,10 @@
           const ex = this.course(c.id);
           // 'complete' : les cartes rejoignent le cours existant, qui garde son titre et sa description
           if (ex) { if (mode !== 'complete') Object.assign(ex, c); } else this.data.courses.push(c);
+        }
+        for (const f of inc.folders || []) {
+          const i = this.data.folders.findIndex((x) => x.id === f.id);
+          if (i >= 0) this.data.folders[i] = f; else this.data.folders.push(f);
         }
         for (const m of inc.maps) {
           const i = this.data.maps.findIndex((x) => x.id === m.id);

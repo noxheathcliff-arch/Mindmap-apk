@@ -84,7 +84,7 @@
     ui.snack('Cours supprimé', { action: 'Annuler', onAction: () => S.restore(snap) });
   };
 
-  R.actions.newMap = async function (courseId, { from } = {}) {
+  R.actions.newMap = async function (courseId, { from, folderId = null } = {}) {
     if (!courseId) {
       const courses = S.coursesSorted();
       if (!courses.length) { await R.actions.newCourse(); return; }
@@ -101,7 +101,7 @@
       ],
     });
     if (!v) return;
-    const m = S.addMap(courseId, v.title, { rootType: v.root });
+    const m = S.addMap(courseId, v.title, { rootType: v.root, folderId });
     R.app.go('#/carte/' + m.id + '?new=1');
   };
 

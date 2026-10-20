@@ -59,11 +59,12 @@
       const all = q.all === '1';
       const scopeMap = scope.mapId && S.map(scope.mapId);
       const scopeNode = scopeMap && scope.nodeId && S.node(scopeMap, scope.nodeId);
+      const scopeFolder = scope.folderId && S.folder(scope.folderId);
       const scopeName = scopeNode ? [S.kickerOf(scopeMap, scopeNode), scopeNode.title].filter(Boolean).join(' · ')
-        : scope.mapId ? (scopeMap || {}).title : scope.courseId ? (S.course(scope.courseId) || {}).title : 'Tous les cours';
+        : scope.mapId ? (scopeMap || {}).title : scopeFolder ? [scopeFolder.label, scopeFolder.title].filter(Boolean).join(' · ') : scope.courseId ? (S.course(scope.courseId) || {}).title : 'Tous les cours';
       // base de l'URL de la session (l'ancien lien #/reviser?all=1 désigne la session tous cours)
       const sessionBase = () => { const b = location.hash.split('?')[0]; return /^#\/reviser\/?$/.test(b) ? '#/reviser/tout' : b; };
-      const exitHref = scopeNode ? `#/carte/${scope.mapId}?n=${scope.nodeId}` : scope.mapId ? '#/carte/' + scope.mapId : scope.courseId ? '#/cours/' + scope.courseId : '#/reviser';
+      const exitHref = scopeNode ? `#/carte/${scope.mapId}?n=${scope.nodeId}` : scope.mapId ? '#/carte/' + scope.mapId : scope.folderId ? '#/dossier/' + scope.folderId : scope.courseId ? '#/cours/' + scope.courseId : '#/reviser';
 
       // taille de session : celle de l'URL (depuis Réviser), sinon le réglage mémorisé (0 = toutes)
       const size = q.n != null && q.n !== '' ? +q.n : S.data.settings.sessionSize;
@@ -197,9 +198,10 @@
 
         // élément partagé : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la
         // fiche ; le bloc « Commencer » devient la première fiche d'une session tous cours
-        const band = h('header.rcard-band', { dataset: scope.courseId ? { hero: 'course:' + scope.courseId + ':band' } : {} },
+        const band = h('header.rcard-band', { dataset: scope.folderId ? { hero: 'folder:' + scope.folderId + ':band' } : scope.courseId ? { hero: 'course:' + scope.courseId + ':band' } : {} },
           course ? (() => { const mk = R.courseArt.dot(course); if (scope.courseId) mk.dataset.hero = 'course:' + scope.courseId + ':mono'; return mk; })() : null,
-          h('span.rcard-ctx', [course ? course.title : null, map.title].filter(Boolean).join(' › ')),
+          // où vit la fiche : cours › partie › chapitre › carte (le plan du cours, à chaque fiche)
+          h('span.rcard-ctx', [course ? course.title : null, ...S.locate(map).map((f) => f.label || f.title), map.title].filter(Boolean).join(' › ')),
           cardState(node));
         // pendant une transition de page (View Transitions), la première fiche est portée par
         // l'élément partagé : pas d'entrée propre qui doublerait le mouvement
@@ -463,7 +465,7 @@
         if (cardEl) { if (!cardEl.classList.contains('leaving')) cardEl.classList.add('leaving'); const c = cardEl; setTimeout(() => c.remove(), 260); cardEl = null; }
         stage.classList.add('is-end');
         const streak = S.streak();
-        const fc = S.forecast(2, scope.courseId ? { courseId: scope.courseId } : {});
+        const fc = S.forecast(2, scope.folderId ? { folderId: scope.folderId } : scope.courseId ? { courseId: scope.courseId } : {});
         const remaining = S.dueCount(scope);
         const sum = results.revoir + results.compris + results.maitrise || 1;
         const counts = [];
@@ -518,7 +520,7 @@
 
       function empty() {
         const anyReviewable = S.dueCount(scope) > 0 || S.reviewQueue(scope, { all: true, limit: 1 }).length > 0;
-        const fc = S.forecast(2, scope.courseId ? { courseId: scope.courseId } : {});
+        const fc = S.forecast(2, scope.folderId ? { folderId: scope.folderId } : scope.courseId ? { courseId: scope.courseId } : {});
         undoBtn.hidden = true;
         deck.appendChild(ui.emptyState(anyReviewable ? {
           icon: 'check', title: 'Tout est à jour',

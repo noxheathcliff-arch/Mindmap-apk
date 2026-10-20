@@ -490,6 +490,18 @@
       h('div.progress-bar', { style: { '--p': String(p / 100) } }));
   };
 
+  /** Anneau de progression (maîtrise d'une partie) ; `text` au centre si la taille le permet */
+  ui.ring = (value, { size = 40, stroke = 4, label, text } = {}) => {
+    const p = U.clamp(value || 0, 0, 1), r = (size - stroke) / 2, c = 2 * Math.PI * r;
+    const el = h('span.ring', { role: 'progressbar', 'aria-valuenow': Math.round(p * 100), 'aria-valuemin': 0, 'aria-valuemax': 100,
+      'aria-label': label || 'Maîtrise', style: { '--s': size + 'px' } });
+    el.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">`
+      + `<circle class="ring-track" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}"/>`
+      + `<circle class="ring-bar" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${(c * (1 - p)).toFixed(2)}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg>`;
+    if (text != null) el.appendChild(h('span.ring-t', text));
+    return el;
+  };
+
   /** Pastille de maîtrise (○ ◔ ◑ ●) — monochrome */
   ui.mastery = (rating, size = 12) => {
     const fill = rating ? R.store.RATINGS[rating].fill : 0;

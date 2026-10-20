@@ -15,17 +15,21 @@
     const q = Object.fromEntries(new URLSearchParams(qs || ''));
     const p = path.split('/').filter(Boolean).map(decodeURIComponent);
     if (p[0] === 'cours' && p[1]) return { name: 'course', id: p[1], q };
+    if (p[0] === 'dossier' && p[1]) return { name: 'folder', id: p[1], q };
     if (p[0] === 'carte' && p[1]) return { name: 'editor', id: p[1], mode: p[2] === 'plan' ? 'plan' : 'map', q };
     if (p[0] === 'reviser') {
       // #/reviser : le tableau de bord (onglet) ; #/reviser/tout : une session tous cours
       if (!p[1] && !q.all) return { name: 'reviewHub', q };
-      const scope = p[1] === 'cours' ? { courseId: p[2] } : p[1] === 'carte' ? (p[3] ? { mapId: p[2], nodeId: p[3] } : { mapId: p[2] }) : {};
+      // un dossier (partie, chapitre…) se révise seul ; son cours donne la couleur et la bande
+      const scope = p[1] === 'cours' ? { courseId: p[2] } : p[1] === 'dossier' ? { folderId: p[2], courseId: (S.folder(p[2]) || {}).courseId } : p[1] === 'carte' ? (p[3] ? { mapId: p[2], nodeId: p[3] } : { mapId: p[2] }) : {};
       return { name: 'review', scope, q };
     }
     return { name: 'library', q };
   }
 
-  const DEPTH = { library: 0, reviewHub: 0, course: 1, review: 1, editor: 2 };
+  const DEPTH = { library: 0, reviewHub: 0, course: 1, folder: 1.5, review: 1, editor: 2 };
+  /* un sous-dossier est « plus profond » que son parent : on y entre (axe Z) */
+  const depthOf = (r) => (r.name === 'folder' ? 1.5 + S.folderPath(r.id).length / 100 : DEPTH[r.name] ?? 0);
   const IMMERSIVE = new Set(['editor', 'review']);
 
   /* from : élément hors de la page (ex. une ligne de la recherche) qui porte les héros de
@@ -56,9 +60,12 @@
   const entityOf = (r) => {
     if (!r) return null;
     if (r.name === 'course') return 'course:' + r.id;
+    if (r.name === 'folder') return 'folder:' + r.id;
     if (r.name === 'editor') return 'map:' + r.id;
     // révision lancée depuis la fiche d'un cours : la fiche devient la carte de révision
     if (r.name === 'review' && r.q && r.q.start) return 'fiche:' + String(r.q.start).split('.')[1];
+    // session d'un dossier : son bloc (sommaire) ou son en-tête devient la bande de la fiche
+    if (r.name === 'review' && r.scope && r.scope.folderId) return 'folder:' + r.scope.folderId;
     // session d'un cours : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la fiche
     if (r.name === 'review' && r.scope && r.scope.courseId) return 'course:' + r.scope.courseId;
     // session tous cours : le bloc « Commencer » devient la première fiche
@@ -100,7 +107,7 @@
       updateNav(route);
       return;
     }
-    const dir = prev ? Math.sign((DEPTH[route.name] ?? 0) - (DEPTH[prev.name] ?? 0)) : 0;
+    const dir = prev ? Math.sign(depthOf(route) - depthOf(prev)) : 0;
     const host = U.$('#view');
     const useVT = !!prev && supportsVT && !U.reducedMotion() && !document.hidden;
 
@@ -209,7 +216,7 @@
     const courses = S.coursesSorted();
     if (!courses.length) return;
     box.appendChild(h('p.rail-sec', 'Mes cours'));
-    const cur = route && (route.name === 'course' ? route.id : route.name === 'editor' ? (S.map(route.id) || {}).courseId : route.name === 'review' && route.scope ? route.scope.courseId : null);
+    const cur = route && (route.name === 'course' ? route.id : route.name === 'folder' ? (S.folder(route.id) || {}).courseId : route.name === 'editor' ? (S.map(route.id) || {}).courseId : route.name === 'review' && route.scope ? route.scope.courseId : null);
     for (const c of courses) {
       const due = S.courseStats(c.id).due;
       const a = h('a.rail-course', { href: '#/cours/' + c.id, class: c.id === cur ? 'active' : '', 'aria-current': c.id === cur ? 'page' : null },
@@ -231,7 +238,7 @@
 
   function updateNav(route = app.route) {
     if (!route) return;
-    const active = route.name === 'review' || route.name === 'reviewHub' ? 'review' : route.name === 'library' || route.name === 'course' ? 'library' : '';
+    const active = route.name === 'review' || route.name === 'reviewHub' ? 'review' : route.name === 'library' || route.name === 'course' || route.name === 'folder' ? 'library' : '';
     railCourses(route);
     for (const el of U.$$('.nav-item')) {
       const on = el.dataset.key === active;

@@ -96,6 +96,8 @@
     const saveState = h('span.save-state', { 'aria-live': 'polite' }, R.icon('check', 16), h('span', 'Enregistré'));
     const titleBtn = h('button.ed-title', { type: 'button', 'data-tip': 'Renommer la carte', onclick: () => { if (!guard()) R.actions.renameMap(map); }, dataset: { hero: 'map:' + map.id + ':title' } });
     const crumbCourse = h('a.crumb', { href: '#/cours/' + map.courseId });
+    // dossiers du plan entre le cours et la carte : « Partie I › Chapitre 1 »
+    const crumbPath = h('span.ed-path');
     const undoBtn = ui.iconBtn('undo', { title: 'Annuler', onClick: () => undo() });
     const redoBtn = ui.iconBtn('redo', { title: 'Rétablir', onClick: () => redo() });
     undoBtn.dataset.kbd = `${U.mod} Z`; redoBtn.dataset.kbd = `${U.mod} ⇧ Z`;
@@ -116,8 +118,8 @@
     ui.segIndicator(modeSeg, 'editor-mode');
 
     const topbar = h('header.topbar.ed-topbar',
-      ui.iconBtn('back', { title: 'Retour au cours', onClick: () => { flushEdit(); R.app.go('#/cours/' + map.courseId); } }),
-      h('div.ed-crumbs', crumbCourse, h('span.crumb-sep', R.icon('chevronRight', 16)), titleBtn),
+      ui.iconBtn('back', { title: 'Retour', onClick: () => { flushEdit(); R.app.go(S.folder(map.folderId) ? '#/dossier/' + map.folderId : '#/cours/' + map.courseId); } }),
+      h('div.ed-crumbs', crumbCourse, crumbPath, h('span.crumb-sep', R.icon('chevronRight', 16)), titleBtn),
       modeSeg,
       h('div.topbar-actions', lockBtn, saveState, h('span.only-wide-ed.ed-history', undoBtn, redoBtn),
         ui.iconBtn('search', { title: 'Rechercher', cls: 'ed-search', onClick: (e) => R.search.open('', { from: e.currentTarget }) }), paneBtn, moreBtn));
@@ -321,7 +323,8 @@
       const r = visibleRect();
       const pad = U.isCompact() ? 32 : 72;
       const k = Math.min((r.w - pad * 2) / (b.x1 - b.x0), (r.h - pad * 2) / (b.y1 - b.y0));
-      if (k >= 0.7) { fit(false, 1); return; }
+      // carte du plan : la pyramide entière compte plus que la taille du texte
+      if (k >= (map.role === 'plan' ? 0.35 : 0.7)) { fit(false, 1); return; }
       const root = S.roots(map)[0];
       // vue d'ensemble d'abord (Shneiderman) : la racine et ses branches principales lisibles d'un coup
       const first = new Set([root.id, ...S.childrenOf(map, root.id).map((c) => c.id)]);
@@ -387,10 +390,19 @@
       return el;
     }
 
+    /** Nœud d'une carte du plan qui renvoie à un dossier ou une carte du cours : son adresse */
+    function refTarget(n) {
+      if (!n.ref) return null;
+      const f = S.folder(n.ref);
+      if (f) return { href: '#/dossier/' + f.id, label: 'Ouvrir ' + (f.label || 'le dossier') };
+      const m = S.map(n.ref);
+      return m ? { href: '#/carte/' + m.id, label: 'Ouvrir ' + (m.label || 'la carte') } : null;
+    }
+
     function paintNode(el, n, ctx) {
       const T = S.TYPES[n.type];
       const bs = ctx.stats;
-      const sig = [n.type, n.title, n.em, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic, ctx.kicker,
+      const sig = [n.type, n.title, n.em, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic, ctx.kicker, n.ref || '',
         bs ? `${bs.reviewable}/${Math.round(bs.progress * 100)}` : ''].join('|');
       if (el._type !== n.type) {
         if (el._type) el.classList.remove('t-' + el._type, 'rank-' + (S.TYPES[el._type].rank || 0));
@@ -413,7 +425,10 @@
         U.clear(meta);
         if (n.note.trim()) meta.appendChild(R.icon('note', 14, 'node-has-note'));
         if (n.review.rating) meta.appendChild(ui.mastery(n.review.rating, 10));
-        el.classList.toggle('has-top', !!(T.kicker || n.note.trim() || n.review.rating));
+        const ref = refTarget(n);
+        if (ref) meta.appendChild(h('span.node-go', { title: ref.label }, R.icon('chevronRight', 14)));
+        el.classList.toggle('is-ref', !!ref);
+        el.classList.toggle('has-top', !!(T.kicker || n.note.trim() || n.review.rating || ref));
         const col = el.querySelector('.node-collapse');
         col.textContent = n.collapsed ? '+' + ctx.descCount : '';
         col.setAttribute('aria-label', n.collapsed ? `Déplier (${ctx.descCount})` : 'Replier');
@@ -2135,6 +2150,10 @@
         gesture = { type: 'tap-collapse', id: e.pointerId, nodeId, start };
         return;
       }
+      if (nodeId && e.target.closest('.node-go') && !st.linking && !(e.shiftKey || e.metaKey || e.ctrlKey)) {
+        gesture = { type: 'tap-ref', id: e.pointerId, nodeId, start };
+        return;
+      }
       if (nodeId && e.target.closest('.node-has-note') && !st.linking && !st.masked && !(e.shiftKey || e.metaKey || e.ctrlKey)) {
         gesture = { type: 'tap-note', id: e.pointerId, nodeId, start };
         return;
@@ -2248,7 +2267,7 @@
 
     function onDragStart(e) {
       // glisser depuis l'icône de note déplace le nœud, comme ailleurs sur le nœud
-      if (gesture.type === 'tap-note') Object.assign(gesture, { type: 'node', shift: false, alt: e.altKey, pointerType: e.pointerType });
+      if (gesture.type === 'tap-note' || gesture.type === 'tap-ref') Object.assign(gesture, { type: 'node', shift: false, alt: e.altKey, pointerType: e.pointerType });
       if ((gesture.type === 'node' || gesture.type === 'connect') && ro()) {
         // lecture seule : on ne déplace pas le nœud, on fait glisser la carte
         Object.assign(gesture, { type: 'pan', view: { ...st.view } });
@@ -2344,6 +2363,9 @@
         }
       } else if (g.type === 'tap-collapse') {
         toggleCollapse(g.nodeId);
+      } else if (g.type === 'tap-ref') {
+        const ref = refTarget(S.node(map, g.nodeId) || {});
+        if (ref && Math.hypot(e.clientX - g.start.x, e.clientY - g.start.y) < 10) { flushEdit(); R.app.go(ref.href); }
       } else if (g.type === 'tap-note') {
         clearTimeout(st.noteTimer);
         if (Math.hypot(e.clientX - g.start.x, e.clientY - g.start.y) < 10) openNote(g.nodeId);
@@ -2911,10 +2933,12 @@
           acts.length ? h('div.pane-branch-actions', acts.map((a, i) => ui.btn(a.label, { icon: a.icon, variant: i ? 'text' : 'tonal', onClick: a.onClick }))) : null);
       }
 
+      const ref = refTarget(n);
       return h('div.pane-body',
         paneHeader(struct ? S.kickerOf(map, n, nums) : T.label, ui.iconBtn('target', { title: 'Centrer sur la carte', onClick: () => centerOn(n.id) })),
         crumbs,
         titleIn,
+        ref ? ui.btn(ref.label, { icon: 'chevronRight', variant: 'tonal', cls: 'pane-cta pane-ref', onClick: () => { flushEdit(); R.app.go(ref.href); } }) : null,
         typeRow,
         branchSec,
         h('section.pane-sec.pane-note',
@@ -3196,6 +3220,8 @@
       const c = course();
       crumbCourse.textContent = c ? c.title : 'Cours';
       crumbCourse.href = '#/cours/' + map.courseId;
+      U.clear(crumbPath);
+      for (const f of S.locate(map)) crumbPath.append(h('span.crumb-sep', R.icon('chevronRight', 16)), h('a.crumb', { href: '#/dossier/' + f.id, title: f.title }, f.label || f.title));
     };
     updateHeader();
 

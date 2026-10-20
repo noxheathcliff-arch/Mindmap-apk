@@ -9,6 +9,8 @@
 .ed-crumbs .crumb { color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28ch; }
 .ed-crumbs .crumb:hover { color: var(--on-surface); }
 .crumb-sep { color: var(--on-surface-variant); }
+.ed-path { display: contents; }
+.ed-path .crumb { max-width: 14ch; }
 .ed-title { font: 500 18px/24px var(--font-brand); padding: 6px 8px; border-radius: var(--shape-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: left; }
 .ed-title:hover { background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
 .save-state { display: inline-flex; align-items: center; gap: 4px; font: var(--label-m); color: var(--on-surface-variant); padding: 0 var(--sp-3); white-space: nowrap; transition: opacity var(--dur-sm) var(--ease-out); }
@@ -660,3 +662,14 @@
 .org-done .choice-l { display: grid; gap: 2px; font: var(--body-m); }
 .org-done .choice-l b { font: var(--title-s); color: var(--on-surface); }
 .org-stat { margin: var(--sp-2) 0 0; font: var(--label-l); color: var(--on-surface-variant); }
+
+/* nœud d'une carte du plan qui renvoie à une partie, un chapitre, une section */
+.node-go {
+  position: relative; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--primary); color: var(--on-primary); cursor: pointer;
+  transition: transform var(--dur-sm) var(--ease-out);
+}
+.node-go::after { content: ""; position: absolute; inset: -10px; }
+.node-go svg { width: 14px; height: 14px; }
+@media (hover: hover) { .node-go:hover { transform: translateX(2px); } }
+.node.t-notion .node-go, .node.t-chapitre .node-go { background: var(--inverse-on-surface); color: var(--inverse-surface); }

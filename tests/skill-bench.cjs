@@ -13,7 +13,7 @@ const dir = path.join(__dirname, '../skills/ratio-livre-vers-cours');
 const file = path.join(dir, fs.readdirSync(dir).filter((f) => /^ratio_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
 const raw = fs.readFileSync(file, 'utf8');
 const skill = JSON.parse(raw);
-const MAX_BYTES = 110 * 1000;
+const MAX_BYTES = 120 * 1000;
 
 let passed = 0, failed = 0;
 function check(name, fn) {
@@ -44,9 +44,9 @@ const warnings = (out) => out.split('\n').filter((l) => l.startsWith('⚠'));
 
 console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')\n');
 
-check('version 3 et fichier choisi par le tri', () => {
-  ok(/^3\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'ratio_book_to_course_compiler_v3.1.json', path.basename(file));
+check('version 4 et fichier choisi par le tri', () => {
+  ok(/^4\./.test(skill.version), 'version ' + skill.version);
+  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.0.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {
@@ -92,7 +92,7 @@ check('contradictions connues absentes', () => {
   ok(cases === 'ABCDEFGHIJKLMNOP', 'cas ' + cases);
 });
 
-check('taille ≤ 110 ko', () => {
+check('taille ≤ 120 ko', () => {
   const n = Buffer.byteLength(raw);
   ok(n <= MAX_BYTES, n + ' octets');
   return (n / 1000).toFixed(1) + ' ko';
@@ -156,6 +156,66 @@ check('validateur Python : aplatissement partiel (un seul libellé retiré) sign
   const r = validate(part, 'partielle', ['--hors-droit']);
   ok(r.code === 0, r.out.trim());
   ok(warnings(r.out).some((l) => /relation aplatie/.test(l)), 'avertissement attendu :\n' + r.out);
+});
+
+/* cours en dossiers (v4.0) : plan réel, cartes du plan, renvois ref */
+const folderText = fs.readFileSync(path.join(dir, 'exemple-cours-en-dossiers.json'), 'utf8');
+const folderEx = () => JSON.parse(folderText);
+
+check('cours en dossiers : spec (course_architecture, architecture_maps, envelope folders)', () => {
+  ok(skill.course_architecture && skill.course_architecture.leaf_rule, 'course_architecture.leaf_rule');
+  const am = JSON.stringify(skill.architecture_maps || {});
+  ok(/prépare/.test(am) && /se distingue de/.test(am) && /peigne/.test(am) && /Pourquoi ici/.test(am), 'architecture_maps : vocabulaire fermé, peigne, « Pourquoi ici »');
+  ok(/"folders":\[/.test(skill.target_format.envelope) && skill.target_format.folder, 'target_format sans folders');
+});
+
+check('cours en dossiers : validateur sans erreur ni avertissement (droit)', () => {
+  const r = validate(folderEx(), 'dossiers');
+  ok(r.code === 0 && /OK/.test(r.out), r.out.trim());
+  ok(!warnings(r.out).length, warnings(r.out).join('\n    '));
+  return r.out.trim().split('\n').pop();
+});
+
+check('cours en dossiers : import Ratio sans remarque, renvois gardés', () => {
+  const p = S.parseImport(folderText);
+  ok(!p.issues.length, JSON.stringify(p.issues));
+  ok(p.stats.folders === 3 && p.stats.maps === 9, JSON.stringify(p.stats));
+  const d = S.sanitize(folderEx());
+  const refs = d.maps.filter((m) => m.role === 'plan').flatMap((m) => m.nodes.filter((n) => n.ref));
+  ok(refs.length === folderEx().maps.filter((m) => m.role === 'plan').flatMap((m) => m.nodes.filter((n) => n.ref)).length, 'renvoi perdu');
+  return `${p.stats.folders} dossiers, ${p.stats.maps} cartes, ${refs.length} renvois`;
+});
+
+check('cours en dossiers : intègre pour le moteur (O.check), cartes de contenu sans correction établie', () => {
+  const info = [];
+  for (const m of folderEx().maps) {
+    const map = toMap(m);
+    const v = O.check(map);
+    ok(!v.length, m.id + ' : ' + v.join(' | '));
+    if (m.role === 'plan') continue;
+    const sure = O.audit(map).fixes.filter((f) => f.certainty === 'sure');
+    ok(!sure.length, m.id + ' : corrections établies ' + sure.map((f) => f.title).join(' | '));
+    ok(map.nodes.length >= 8 && map.nodes.length <= 45, m.id + ' : ' + map.nodes.length + ' nœuds');
+    info.push(m.id + ' ' + map.nodes.length);
+  }
+  return info.join(' · ');
+});
+
+check('validateur Python : plan absent, peigne, renvoi cassé et lien hors vocabulaire signalés', () => {
+  const noPlan = folderEx(); noPlan.maps = noPlan.maps.filter((m) => m.id !== 'm-plan');
+  let r = validate(noPlan, 'sans-plan');
+  ok(r.code === 1 && /carte du plan absente/.test(r.out), 'plan absent : ' + r.out.trim());
+  ok(validate(noPlan, 'partie', ['--partie']).code === 0, 'livraison en parties refusée');
+  const comb = folderEx(); const pm = comb.maps.find((m) => m.id === 'm-plan');
+  pm.edges = pm.edges.filter((e) => e.kind === 'tree');
+  r = validate(comb, 'peigne');
+  ok(warnings(r.out).some((l) => /peigne/.test(l)), 'peigne : ' + r.out.trim());
+  const bad = folderEx(); const bp = bad.maps.find((m) => m.id === 'm-plan');
+  bp.nodes.find((n) => n.ref).ref = 'nulle-part';
+  bp.edges.find((e) => e.kind === 'link').label = 'voir aussi';
+  r = validate(bad, 'renvoi');
+  ok(r.code === 1 && /ref vers une unité absente/.test(r.out), 'renvoi cassé : ' + r.out.trim());
+  ok(warnings(r.out).some((l) => /hors vocabulaire/.test(l)), 'lien hors vocabulaire : ' + r.out.trim());
 });
 
 fs.rmSync(tmp, { recursive: true, force: true });

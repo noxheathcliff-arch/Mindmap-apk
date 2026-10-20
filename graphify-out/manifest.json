@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792464287.2640889,
-    "seen": 1792464504.43808,
-    "ast_hash": "0f91ff464e4d65422d62a494822fac69",
+    "mtime": 1792466755.2842865,
+    "seen": 1792467857.4424295,
+    "ast_hash": "79bb2a807f3937cc19d929d0adb1b1d6",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -54,15 +54,15 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792459113.1295383,
-    "seen": 1792459242.2342443,
-    "ast_hash": "4cdd455118805388f2f47a177a878a21",
+    "mtime": 1792467702.8692987,
+    "seen": 1792467857.4424582,
+    "ast_hash": "dd9bba85d6f145315d73a0e3956d16f4",
     "semantic_hash": ""
   },
   "js/ui.js": {
-    "mtime": 1792464281.4200492,
-    "seen": 1792464504.4381075,
-    "ast_hash": "e1188405a5a4823a9f1e2c7328a9a386",
+    "mtime": 1792466890.3771286,
+    "seen": 1792467857.4424603,
+    "ast_hash": "9281a528e371ef201f047046120247d8",
     "semantic_hash": ""
   },
   "js/util.js": {
@@ -72,21 +72,21 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792464287.2786517,
-    "seen": 1792464504.4381104,
-    "ast_hash": "633cc6eb83f5ee6444730a907ecba5fd",
+    "mtime": 1792467702.8709757,
+    "seen": 1792467857.4424646,
+    "ast_hash": "e580e822e28ce1c63dc04446d07bd67a",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1792459113.129999,
-    "seen": 1792459242.2342498,
-    "ast_hash": "b37ebf2004d351c5da1fe6192558a0cd",
+    "mtime": 1792467702.8748863,
+    "seen": 1792467857.4424663,
+    "ast_hash": "ded5b66e9fde1078b3ddf595fba41ad9",
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1791816281.0243146,
-    "seen": 1792459242.2342508,
-    "ast_hash": "f1940c7c1dbecd930a1d42a3cb529ba4",
+    "mtime": 1792466893.9691288,
+    "seen": 1792467857.442468,
+    "ast_hash": "3bee5c80a13ad4313e8b526d3686c736",
     "semantic_hash": ""
   },
   "js/views/outline.js": {
@@ -96,27 +96,21 @@
     "semantic_hash": ""
   },
   "js/views/revhub.js": {
-    "mtime": 1792464287.2793348,
-    "seen": 1792464504.438116,
+    "mtime": 1792464513.186,
+    "seen": 1792467857.4424715,
     "ast_hash": "9e806c490a25d05859b9d9c630f15287",
     "semantic_hash": ""
   },
   "js/views/review.js": {
-    "mtime": 1792459113.1312978,
-    "seen": 1792459242.234254,
-    "ast_hash": "0272fd5215a9978944a9a3c53314ccb2",
-    "semantic_hash": ""
-  },
-  "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v3.1.json": {
-    "mtime": 1792459113.1315954,
-    "seen": 1792459242.2342548,
-    "ast_hash": "f4edc6577b8967f79462ffc43528e9a7",
+    "mtime": 1792466767.454282,
+    "seen": 1792467857.442473,
+    "ast_hash": "56f4dd69bf6bb0283c46ea8e37453064",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792464500.6961756,
-    "seen": 1792464504.4381213,
-    "ast_hash": "9ef45d73a2938587475ceffe661dae5b",
+    "mtime": 1792467826.2269776,
+    "seen": 1792467857.4424791,
+    "ast_hash": "fb14ae9e765ebfa0b1b7c456285f56a0",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -162,9 +156,9 @@
     "semantic_hash": ""
   },
   "tests/skill-bench.cjs": {
-    "mtime": 1792459113.1336637,
-    "seen": 1792459242.2342658,
-    "ast_hash": "9d8ca4fd2f0f99772bf3a083ab0ed3dd",
+    "mtime": 1792467411.3951411,
+    "seen": 1792467857.4424937,
+    "ast_hash": "a6689dd2311c6f4f9f41284f6d36bfc8",
     "semantic_hash": ""
   },
   "tests/skill-rules.cjs": {
@@ -246,9 +240,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792459113.1223044,
-    "seen": 1792459242.2342806,
-    "ast_hash": "97ec76de64b1773da85f745e1c40a13f",
+    "mtime": 1792467826.221654,
+    "seen": 1792467857.4425166,
+    "ast_hash": "2133583d082a1417944fe22d9b8161a2",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -258,9 +252,9 @@
     "semantic_hash": ""
   },
   "docs/audit-organisation-3.md": {
-    "mtime": 1792459113.1274762,
-    "seen": 1792459242.2342906,
-    "ast_hash": "54111c29a42d97c225b011fe42ad2f0f",
+    "mtime": 1792467826.2221823,
+    "seen": 1792467857.442519,
+    "ast_hash": "2b91a26ba09b813e673e68c6eaa9d35c",
     "semantic_hash": ""
   },
   "index.html": {
@@ -270,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792459113.1314392,
-    "seen": 1792459242.234293,
-    "ast_hash": "4fbbc07148d4d29a0431285249f833a9",
+    "mtime": 1792467357.337367,
+    "seen": 1792467857.442522,
+    "ast_hash": "6b946cd008e6ce7bcb0756ed6005eff0",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -305,52 +299,22 @@
     "ast_hash": "b84b654bc722acae6601723d48ca2472",
     "semantic_hash": ""
   },
-  "l-course-dark.png": {
-    "mtime": 1792464373.0202832,
-    "seen": 1792464504.438169,
-    "ast_hash": "363480e127d24b40a06b4fa2ef4f5aac",
+  "skills/ratio-livre-vers-cours/exemple-cours-en-dossiers.json": {
+    "mtime": 1792467320.4125733,
+    "seen": 1792467857.4424756,
+    "ast_hash": "059f458d6af8d2a97b5b79f51d7d9c74",
     "semantic_hash": ""
   },
-  "l-course-light.png": {
-    "mtime": 1792464367.304283,
-    "seen": 1792464504.438171,
-    "ast_hash": "132f36ed78c5ac1b3e24025c3196a3ab",
+  "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.0.json": {
+    "mtime": 1792467387.572743,
+    "seen": 1792467857.442477,
+    "ast_hash": "3534e29145328105f90e7f77b3939802",
     "semantic_hash": ""
   },
-  "l-home-dark.png": {
-    "mtime": 1792464369.892283,
-    "seen": 1792464504.4381723,
-    "ast_hash": "1c562f436086f482d2988f5ac7ade524",
-    "semantic_hash": ""
-  },
-  "l-home-light.png": {
-    "mtime": 1792464364.1762826,
-    "seen": 1792464504.4381735,
-    "ast_hash": "c0f076e4dcb4dfbafeaa4b2855b092a8",
-    "semantic_hash": ""
-  },
-  "l-press-dark.png": {
-    "mtime": 1792464373.2962832,
-    "seen": 1792464504.4381747,
-    "ast_hash": "97d6faea839057262f30b1bb51119e31",
-    "semantic_hash": ""
-  },
-  "l-press-light.png": {
-    "mtime": 1792464367.580283,
-    "seen": 1792464504.438176,
-    "ast_hash": "c3d8493c2ee4072cfacecf149877b366",
-    "semantic_hash": ""
-  },
-  "l-rev-dark.png": {
-    "mtime": 1792464371.460283,
-    "seen": 1792464504.4381773,
-    "ast_hash": "a59d9a1bdd1ac50c95ec89c53ff5a1e3",
-    "semantic_hash": ""
-  },
-  "l-rev-light.png": {
-    "mtime": 1792464365.7442827,
-    "seen": 1792464504.4381783,
-    "ast_hash": "1c17432359a4ca4cf22c4fdb9c7e82cc",
+  "tests/folders.test.cjs": {
+    "mtime": 1792466553.1611085,
+    "seen": 1792467857.4424803,
+    "ast_hash": "1f0cbd6278b2a6f1eac8eca21ffc12e7",
     "semantic_hash": ""
   }
 }

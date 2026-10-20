@@ -1,0 +1,1148 @@
+{
+  "format": "ratio",
+  "version": 2,
+  "kind": "course",
+  "courses": [
+    {
+      "id": "c-droit-travail",
+      "title": "Droit du travail",
+      "description": "Exemple du skill v4 : cours rangé selon son plan réel (Partie › Chapitre › Section), avec ses cartes du plan."
+    }
+  ],
+  "folders": [
+    {
+      "id": "f-p1",
+      "courseId": "c-droit-travail",
+      "parentId": null,
+      "kind": "partie",
+      "label": "Partie I",
+      "title": "Les relations individuelles de travail",
+      "note": "Le salarié face à son employeur, de la formation du contrat à sa rupture.",
+      "order": 1
+    },
+    {
+      "id": "f-p1-ch1",
+      "courseId": "c-droit-travail",
+      "parentId": "f-p1",
+      "kind": "chapitre",
+      "label": "Chapitre 1",
+      "title": "La formation du contrat de travail",
+      "note": "Les conditions de fond, puis la forme.",
+      "order": 1
+    },
+    {
+      "id": "f-p2",
+      "courseId": "c-droit-travail",
+      "parentId": null,
+      "kind": "partie",
+      "label": "Partie II",
+      "title": "Les relations collectives de travail",
+      "note": "Les salariés comme collectivité : représentation, puis conflit.",
+      "order": 2
+    }
+  ],
+  "maps": [
+    {
+      "id": "m-plan",
+      "courseId": "c-droit-travail",
+      "folderId": null,
+      "role": "plan",
+      "order": 0,
+      "title": "Plan du cours",
+      "needsLayout": true,
+      "layout": "down",
+      "layoutPick": "down",
+      "nodes": [
+        {
+          "id": "r",
+          "type": "chapitre",
+          "title": "Droit du travail",
+          "note": "Critère de division : le ==nombre d'acteurs en présence==. D'abord le salarié seul face à l'employeur, ensuite la collectivité des salariés face à l'employeur."
+        },
+        {
+          "id": "a",
+          "type": "lecon",
+          "title": "Les relations individuelles de travail",
+          "note": "Pourquoi ici : le contrat de travail fait naître la relation de travail ; tout le droit collectif le présuppose. Le contrat ==prépare== [[Les relations collectives de travail]].",
+          "ref": "f-p1"
+        },
+        {
+          "id": "a1",
+          "type": "section",
+          "title": "La formation du contrat de travail",
+          "note": "Pourquoi ici : on étudie la naissance du contrat avant sa fin. Sa formation ==prépare== [[La rupture du contrat de travail]].",
+          "ref": "f-p1-ch1"
+        },
+        {
+          "id": "a2",
+          "type": "section",
+          "title": "La rupture du contrat de travail",
+          "note": "Pourquoi ici : la rupture clôt la vie du contrat ; ses règles protègent le salarié contre la ==perte de son emploi==.",
+          "ref": "m-rupture"
+        },
+        {
+          "id": "b",
+          "type": "lecon",
+          "title": "Les relations collectives de travail",
+          "note": "Pourquoi ici : seuls, les salariés pèsent peu ; ensemble, ils négocient et revendiquent. Ce droit s'ajoute au contrat sans le remplacer.",
+          "ref": "f-p2"
+        },
+        {
+          "id": "b1",
+          "type": "section",
+          "title": "La représentation du personnel",
+          "note": "Pourquoi ici : la représentation organise le ==dialogue permanent== avec l'employeur ; on la voit avant le conflit.",
+          "ref": "m-representation"
+        },
+        {
+          "id": "b2",
+          "type": "section",
+          "title": "La grève",
+          "note": "Pourquoi ici : la grève est l'arme du conflit ouvert. Elle ==complète== [[La représentation du personnel]] ; elle ==se distingue de== [[La rupture du contrat de travail]] : elle suspend le contrat sans le rompre.",
+          "ref": "m-greve"
+        },
+        {
+          "id": "f",
+          "type": "retenir",
+          "title": "Fil conducteur",
+          "note": "La ==subordination== traverse tout le cours : elle définit le contrat, puis justifie la protection collective des salariés. *(complément)*"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e-a",
+          "from": "r",
+          "to": "a",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-a1",
+          "from": "a",
+          "to": "a1",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-a2",
+          "from": "a",
+          "to": "a2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-b",
+          "from": "r",
+          "to": "b",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-b1",
+          "from": "b",
+          "to": "b1",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-b2",
+          "from": "b",
+          "to": "b2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-f",
+          "from": "r",
+          "to": "f",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "l1",
+          "from": "a",
+          "to": "b",
+          "kind": "link",
+          "label": "prépare"
+        },
+        {
+          "id": "l2",
+          "from": "a1",
+          "to": "a2",
+          "kind": "link",
+          "label": "prépare"
+        },
+        {
+          "id": "l3",
+          "from": "b2",
+          "to": "b1",
+          "kind": "link",
+          "label": "complète"
+        },
+        {
+          "id": "l4",
+          "from": "b2",
+          "to": "a2",
+          "kind": "link",
+          "label": "se distingue de"
+        }
+      ]
+    },
+    {
+      "id": "m-plan-p1",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p1",
+      "role": "plan",
+      "order": 0,
+      "title": "Les relations individuelles de travail",
+      "needsLayout": true,
+      "layout": "down",
+      "layoutPick": "down",
+      "nodes": [
+        {
+          "id": "r",
+          "type": "chapitre",
+          "title": "Les relations individuelles de travail",
+          "note": "Critère : la ==vie du contrat==, de sa naissance à sa fin."
+        },
+        {
+          "id": "a",
+          "type": "lecon",
+          "title": "La formation du contrat de travail",
+          "note": "Pourquoi ici : un contrat doit être valablement formé avant de pouvoir être rompu. Sa formation ==prépare== [[La rupture du contrat de travail]].",
+          "ref": "f-p1-ch1"
+        },
+        {
+          "id": "b",
+          "type": "lecon",
+          "title": "La rupture du contrat de travail",
+          "note": "Pourquoi ici : dernier temps de la relation, la rupture est le moment où le salarié a le plus besoin de ==protection==.",
+          "ref": "m-rupture"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e-a",
+          "from": "r",
+          "to": "a",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-b",
+          "from": "r",
+          "to": "b",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "l1",
+          "from": "a",
+          "to": "b",
+          "kind": "link",
+          "label": "prépare"
+        }
+      ]
+    },
+    {
+      "id": "m-plan-ch1",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p1-ch1",
+      "role": "plan",
+      "order": 0,
+      "title": "La formation du contrat de travail",
+      "needsLayout": true,
+      "layout": "down",
+      "layoutPick": "down",
+      "nodes": [
+        {
+          "id": "r",
+          "type": "chapitre",
+          "title": "La formation du contrat de travail",
+          "note": "Critère : le ==fond== (ce que le contrat doit réunir), puis la ==forme== (comment il se conclut)."
+        },
+        {
+          "id": "a",
+          "type": "lecon",
+          "title": "Les conditions de fond",
+          "note": "Pourquoi ici : la validité du contrat se juge d'abord sur ce qu'il contient ; c'est aussi là qu'on le reconnaît.",
+          "ref": "m-fond"
+        },
+        {
+          "id": "b",
+          "type": "lecon",
+          "title": "La forme du contrat",
+          "note": "Pourquoi ici : le principe est la liberté de forme ; l'écrit n'est qu'une exception. La forme ==complète== [[Les conditions de fond]].",
+          "ref": "m-forme"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e-a",
+          "from": "r",
+          "to": "a",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-b",
+          "from": "r",
+          "to": "b",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "l1",
+          "from": "b",
+          "to": "a",
+          "kind": "link",
+          "label": "complète"
+        }
+      ]
+    },
+    {
+      "id": "m-plan-p2",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p2",
+      "role": "plan",
+      "order": 0,
+      "title": "Les relations collectives de travail",
+      "needsLayout": true,
+      "layout": "down",
+      "layoutPick": "down",
+      "nodes": [
+        {
+          "id": "r",
+          "type": "chapitre",
+          "title": "Les relations collectives de travail",
+          "note": "Critère : les deux voies de l'action collective, le ==dialogue organisé== puis le ==conflit==."
+        },
+        {
+          "id": "a",
+          "type": "lecon",
+          "title": "La représentation du personnel",
+          "note": "Pourquoi ici : avant tout conflit, les salariés s'expriment par leurs représentants élus et par les syndicats.",
+          "ref": "m-representation"
+        },
+        {
+          "id": "b",
+          "type": "lecon",
+          "title": "La grève",
+          "note": "Pourquoi ici : quand le dialogue échoue, reste l'arrêt collectif du travail. La grève ==complète== [[La représentation du personnel]].",
+          "ref": "m-greve"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e-a",
+          "from": "r",
+          "to": "a",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e-b",
+          "from": "r",
+          "to": "b",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "l1",
+          "from": "b",
+          "to": "a",
+          "kind": "link",
+          "label": "complète"
+        }
+      ]
+    },
+    {
+      "id": "m-fond",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p1-ch1",
+      "label": "Section 1",
+      "order": 1,
+      "title": "Les conditions de fond",
+      "needsLayout": true,
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "section",
+          "title": "Les conditions de fond",
+          "note": "Thèse : le contrat de travail existe dès que ses ==trois éléments== sont réunis ; il n'est valable qu'avec un consentement, une capacité et un contenu licite et certain."
+        },
+        {
+          "id": "n2",
+          "type": "definition",
+          "title": "Le contrat de travail",
+          "note": "Convention par laquelle une personne s'engage à travailler pour le compte et sous la ==subordination== d'une autre, moyennant rémunération.",
+          "logic": "et"
+        },
+        {
+          "id": "n3",
+          "type": "idee",
+          "title": "Une prestation de travail",
+          "note": "Le salarié fournit un travail ==personnel==."
+        },
+        {
+          "id": "n4",
+          "type": "idee",
+          "title": "Une rémunération",
+          "note": "La contrepartie du travail, en argent ou en nature."
+        },
+        {
+          "id": "n5",
+          "type": "idee",
+          "title": "Un lien de subordination",
+          "note": "Le critère ==décisif== du contrat de travail."
+        },
+        {
+          "id": "n6",
+          "type": "juris",
+          "title": "Cass. soc., 13 nov. 1996, Société générale",
+          "note": "Travail exécuté sous l'autorité d'un employeur qui a le pouvoir de ==donner des ordres==, d'en contrôler l'exécution et d'en sanctionner les manquements."
+        },
+        {
+          "id": "n7",
+          "type": "notion",
+          "title": "Les conditions de validité",
+          "note": "Les ==trois conditions== de tout contrat (C. civ., art. 1128), auxquelles renvoie l'article L. 1221-1 du Code du travail.",
+          "logic": "et"
+        },
+        {
+          "id": "n8",
+          "type": "idee",
+          "title": "Le consentement des parties",
+          "note": "Un consentement libre et éclairé, exempt de vices."
+        },
+        {
+          "id": "n9",
+          "type": "idee",
+          "title": "La capacité de contracter",
+          "note": "Les deux parties doivent pouvoir s'engager."
+        },
+        {
+          "id": "n10",
+          "type": "idee",
+          "title": "Un contenu licite et certain",
+          "note": "Le contrat ne peut déroger à l'==ordre public==."
+        },
+        {
+          "id": "n11",
+          "type": "notion",
+          "title": "La période d'essai",
+          "note": "Elle sert à évaluer les compétences du salarié et ==ne se présume pas==."
+        },
+        {
+          "id": "n12",
+          "type": "chiffre",
+          "title": "2, 3 ou 4 mois au maximum",
+          "note": "Durée maximale pour un CDI : ouvriers et employés, agents de maîtrise et techniciens, ==cadres== (L. 1221-19)."
+        },
+        {
+          "id": "n13",
+          "type": "idee",
+          "title": "Une stipulation expresse",
+          "note": "L'essai est ==prévu dans le contrat== ou la lettre d'engagement (L. 1221-23)."
+        }
+      ],
+      "edges": [
+        {
+          "id": "e2",
+          "from": "n1",
+          "to": "n2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e3",
+          "from": "n2",
+          "to": "n3",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e4",
+          "from": "n2",
+          "to": "n4",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e5",
+          "from": "n2",
+          "to": "n5",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e6",
+          "from": "n5",
+          "to": "n6",
+          "kind": "tree",
+          "label": "défini par"
+        },
+        {
+          "id": "e7",
+          "from": "n1",
+          "to": "n7",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e8",
+          "from": "n7",
+          "to": "n8",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e9",
+          "from": "n7",
+          "to": "n9",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e10",
+          "from": "n7",
+          "to": "n10",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e11",
+          "from": "n1",
+          "to": "n11",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e12",
+          "from": "n11",
+          "to": "n12",
+          "kind": "tree",
+          "label": "limitée à"
+        },
+        {
+          "id": "e13",
+          "from": "n11",
+          "to": "n13",
+          "kind": "tree",
+          "label": "suppose"
+        }
+      ]
+    },
+    {
+      "id": "m-forme",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p1-ch1",
+      "label": "Section 2",
+      "order": 2,
+      "title": "La forme du contrat",
+      "needsLayout": true,
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "section",
+          "title": "La forme du contrat",
+          "note": "Thèse : le contrat de travail est en principe ==consensuel== ; la loi impose l'écrit pour certains contrats et des formalités à l'embauche."
+        },
+        {
+          "id": "n2",
+          "type": "notion",
+          "title": "Le consensualisme",
+          "note": "Un CDI à temps plein peut être conclu ==sans écrit==."
+        },
+        {
+          "id": "n3",
+          "type": "texte",
+          "title": "C. trav., art. L. 1221-1",
+          "note": "> Le contrat de travail est soumis aux règles du droit commun. Il peut être établi selon les formes que les parties contractantes décident d'adopter."
+        },
+        {
+          "id": "n4",
+          "type": "notion",
+          "title": "Les 2 contrats à écrire",
+          "note": "L'écrit est ==exigé== pour les contrats qui s'écartent du CDI à temps plein."
+        },
+        {
+          "id": "n5",
+          "type": "idee",
+          "title": "Le contrat à durée déterminée",
+          "note": "Établi par écrit, avec la ==définition précise de son motif== (L. 1242-12)."
+        },
+        {
+          "id": "n6",
+          "type": "idee",
+          "title": "La requalification en CDI",
+          "note": "Le CDD sans écrit est ==réputé conclu pour une durée indéterminée== (L. 1242-12)."
+        },
+        {
+          "id": "n7",
+          "type": "idee",
+          "title": "Le contrat à temps partiel",
+          "note": "Écrit mentionnant la durée du travail et sa répartition (L. 3123-6)."
+        },
+        {
+          "id": "n8",
+          "type": "notion",
+          "title": "Les 2 formalités de l'embauche",
+          "note": "Deux obligations de l'employeur au moment d'embaucher."
+        },
+        {
+          "id": "n9",
+          "type": "idee",
+          "title": "La déclaration préalable à l'embauche",
+          "note": "Adressée aux organismes de protection sociale ==avant l'embauche== (L. 1221-10)."
+        },
+        {
+          "id": "n10",
+          "type": "idee",
+          "title": "L'écrit rédigé en français",
+          "note": "Le contrat constaté par écrit est ==rédigé en français== (L. 1221-3)."
+        },
+        {
+          "id": "n11",
+          "type": "retenir",
+          "title": "À retenir",
+          "note": "Principe : ==liberté de forme==. Exception : l'écrit pour le CDD et le temps partiel."
+        }
+      ],
+      "edges": [
+        {
+          "id": "e2",
+          "from": "n1",
+          "to": "n2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e3",
+          "from": "n2",
+          "to": "n3",
+          "kind": "tree",
+          "label": "fondé sur"
+        },
+        {
+          "id": "e4",
+          "from": "n1",
+          "to": "n4",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e5",
+          "from": "n4",
+          "to": "n5",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e6",
+          "from": "n5",
+          "to": "n6",
+          "kind": "tree",
+          "label": "faute d'écrit"
+        },
+        {
+          "id": "e7",
+          "from": "n4",
+          "to": "n7",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e8",
+          "from": "n1",
+          "to": "n8",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e9",
+          "from": "n8",
+          "to": "n9",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e10",
+          "from": "n8",
+          "to": "n10",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e11",
+          "from": "n1",
+          "to": "n11",
+          "kind": "tree",
+          "label": ""
+        }
+      ]
+    },
+    {
+      "id": "m-rupture",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p1",
+      "label": "Chapitre 2",
+      "order": 2,
+      "title": "La rupture du contrat de travail",
+      "needsLayout": true,
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "chapitre",
+          "title": "La rupture du contrat de travail",
+          "note": "Thèse : le CDI se rompt à l'initiative de l'employeur, du salarié ou d'un ==commun accord== ; chaque mode a son régime."
+        },
+        {
+          "id": "n2",
+          "type": "notion",
+          "title": "Le licenciement",
+          "note": "Rupture à l'initiative de l'==employeur==."
+        },
+        {
+          "id": "n3",
+          "type": "idee",
+          "title": "Une cause réelle et sérieuse",
+          "note": "Tout licenciement pour motif personnel est ==justifié== par une cause réelle et sérieuse (L. 1232-1)."
+        },
+        {
+          "id": "n4",
+          "type": "idee",
+          "title": "Une indemnité selon un barème",
+          "note": "Le juge octroie une indemnité entre des ==montants minimaux et maximaux== fixés selon l'ancienneté (L. 1235-3)."
+        },
+        {
+          "id": "n5",
+          "type": "methode",
+          "title": "La procédure de licenciement",
+          "note": "Trois temps fixés par le Code du travail."
+        },
+        {
+          "id": "n6",
+          "type": "etape",
+          "title": "Convocation à l'entretien",
+          "note": "Lettre recommandée ou remise en main propre (L. 1232-2)."
+        },
+        {
+          "id": "n7",
+          "type": "etape",
+          "title": "Entretien préalable",
+          "note": "L'employeur indique les motifs et ==recueille les explications== du salarié (L. 1232-3)."
+        },
+        {
+          "id": "n8",
+          "type": "etape",
+          "title": "Lettre de licenciement",
+          "note": "Envoyée ==au moins deux jours ouvrables== après l'entretien (L. 1232-6)."
+        },
+        {
+          "id": "n9",
+          "type": "notion",
+          "title": "La démission",
+          "note": "Rupture à l'initiative du ==salarié==, par une volonté claire et non équivoque."
+        },
+        {
+          "id": "n10",
+          "type": "idee",
+          "title": "Un préavis",
+          "note": "Sa durée est fixée par la loi, la convention collective ou l'==usage== (L. 1237-1)."
+        },
+        {
+          "id": "n11",
+          "type": "notion",
+          "title": "La rupture conventionnelle",
+          "note": "Rupture du CDI d'un ==commun accord== (L. 1237-11) ; elle se distingue de [[La démission]] : aucune partie ne l'impose à l'autre."
+        },
+        {
+          "id": "n12",
+          "type": "idee",
+          "title": "L'homologation",
+          "note": "L'administration dispose de ==15 jours ouvrables== pour homologuer la convention (L. 1237-14)."
+        },
+        {
+          "id": "n13",
+          "type": "idee",
+          "title": "Le droit de rétractation",
+          "note": "Chaque partie dispose de ==15 jours calendaires== pour se rétracter (L. 1237-13)."
+        },
+        {
+          "id": "n14",
+          "type": "retenir",
+          "title": "À retenir",
+          "note": "Trois initiatives, trois régimes : le licenciement est le plus encadré, pour ==protéger le salarié==."
+        }
+      ],
+      "edges": [
+        {
+          "id": "e2",
+          "from": "n1",
+          "to": "n2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e3",
+          "from": "n2",
+          "to": "n3",
+          "kind": "tree",
+          "label": "suppose"
+        },
+        {
+          "id": "e4",
+          "from": "n3",
+          "to": "n4",
+          "kind": "tree",
+          "label": "à défaut"
+        },
+        {
+          "id": "e5",
+          "from": "n2",
+          "to": "n5",
+          "kind": "tree",
+          "label": "encadré par"
+        },
+        {
+          "id": "e6",
+          "from": "n5",
+          "to": "n6",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e7",
+          "from": "n5",
+          "to": "n7",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e8",
+          "from": "n5",
+          "to": "n8",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e9",
+          "from": "n1",
+          "to": "n9",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e10",
+          "from": "n9",
+          "to": "n10",
+          "kind": "tree",
+          "label": "impose"
+        },
+        {
+          "id": "e11",
+          "from": "n1",
+          "to": "n11",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e12",
+          "from": "n11",
+          "to": "n12",
+          "kind": "tree",
+          "label": "suppose"
+        },
+        {
+          "id": "e13",
+          "from": "n11",
+          "to": "n13",
+          "kind": "tree",
+          "label": "ouvre"
+        },
+        {
+          "id": "e14",
+          "from": "n1",
+          "to": "n14",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "l1",
+          "from": "n11",
+          "to": "n9",
+          "kind": "link",
+          "label": "se distingue de"
+        }
+      ]
+    },
+    {
+      "id": "m-representation",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p2",
+      "label": "Chapitre 1",
+      "order": 1,
+      "title": "La représentation du personnel",
+      "needsLayout": true,
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "chapitre",
+          "title": "La représentation du personnel",
+          "note": "Thèse : les salariés participent à la vie de l'entreprise par des ==représentants élus== et par les syndicats."
+        },
+        {
+          "id": "n2",
+          "type": "texte",
+          "title": "Préambule de 1946, al. 8",
+          "note": "> Tout travailleur participe, par l'intermédiaire de ses délégués, à la détermination collective des conditions de travail ainsi qu'à la gestion des entreprises."
+        },
+        {
+          "id": "n3",
+          "type": "notion",
+          "title": "Le comité social et économique",
+          "note": "Instance élue unique, issue des ==ordonnances de 2017==."
+        },
+        {
+          "id": "n4",
+          "type": "chiffre",
+          "title": "Au moins 11 salariés",
+          "note": "Le CSE est mis en place dans les entreprises d'==au moins onze salariés== (L. 2311-2)."
+        },
+        {
+          "id": "n5",
+          "type": "idee",
+          "title": "L'élection du CSE",
+          "note": "Les membres sont élus pour ==quatre ans== (L. 2314-33)."
+        },
+        {
+          "id": "n6",
+          "type": "notion",
+          "title": "Les syndicats représentatifs",
+          "note": "Ils ==négocient== les accords collectifs."
+        },
+        {
+          "id": "n7",
+          "type": "chiffre",
+          "title": "10 % des suffrages",
+          "note": "Audience d'==au moins 10 %== des suffrages exprimés au premier tour des élections (L. 2122-1)."
+        },
+        {
+          "id": "n8",
+          "type": "idee",
+          "title": "Le délégué syndical",
+          "note": "Désigné dans les entreprises d'==au moins 50 salariés== (L. 2143-3)."
+        },
+        {
+          "id": "n9",
+          "type": "retenir",
+          "title": "À retenir",
+          "note": "Deux canaux : les ==élus du CSE== et les syndicats, dont l'audience se mesure aux élections."
+        }
+      ],
+      "edges": [
+        {
+          "id": "e2",
+          "from": "n1",
+          "to": "n2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e3",
+          "from": "n1",
+          "to": "n3",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e4",
+          "from": "n3",
+          "to": "n4",
+          "kind": "tree",
+          "label": "exigé dès"
+        },
+        {
+          "id": "e5",
+          "from": "n3",
+          "to": "n5",
+          "kind": "tree",
+          "label": "issu de"
+        },
+        {
+          "id": "e6",
+          "from": "n1",
+          "to": "n6",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e7",
+          "from": "n6",
+          "to": "n7",
+          "kind": "tree",
+          "label": "suppose"
+        },
+        {
+          "id": "e8",
+          "from": "n6",
+          "to": "n8",
+          "kind": "tree",
+          "label": "désignent"
+        },
+        {
+          "id": "e9",
+          "from": "n1",
+          "to": "n9",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "l1",
+          "from": "n7",
+          "to": "n5",
+          "kind": "link",
+          "label": "mesurée lors de"
+        }
+      ]
+    },
+    {
+      "id": "m-greve",
+      "courseId": "c-droit-travail",
+      "folderId": "f-p2",
+      "label": "Chapitre 2",
+      "order": 2,
+      "title": "La grève",
+      "needsLayout": true,
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "chapitre",
+          "title": "La grève",
+          "note": "Thèse : la grève est un droit ==constitutionnel== du salarié ; elle suspend le contrat sans le rompre."
+        },
+        {
+          "id": "n2",
+          "type": "texte",
+          "title": "Préambule de 1946, al. 7",
+          "note": "> Le droit de grève s'exerce dans le cadre des lois qui le réglementent."
+        },
+        {
+          "id": "n3",
+          "type": "definition",
+          "title": "La notion de grève",
+          "note": "Selon la jurisprudence, une cessation de travail ==collective et concertée== pour appuyer des revendications professionnelles.",
+          "logic": "et"
+        },
+        {
+          "id": "n4",
+          "type": "idee",
+          "title": "Une cessation totale du travail",
+          "note": "Un simple ralentissement (grève perlée) n'est ==pas une grève==."
+        },
+        {
+          "id": "n5",
+          "type": "idee",
+          "title": "Un mouvement collectif et concerté",
+          "note": "Plusieurs salariés arrêtent le travail ==ensemble==."
+        },
+        {
+          "id": "n6",
+          "type": "idee",
+          "title": "Des revendications professionnelles",
+          "note": "Connues de l'employeur au moment de l'arrêt."
+        },
+        {
+          "id": "n7",
+          "type": "notion",
+          "title": "Les effets de la grève",
+          "note": "Le contrat est ==suspendu==, pas rompu."
+        },
+        {
+          "id": "n8",
+          "type": "idee",
+          "title": "Une retenue de salaire",
+          "note": "Retenue ==proportionnelle== à la durée de l'arrêt."
+        },
+        {
+          "id": "n9",
+          "type": "idee",
+          "title": "L'interdiction de licencier",
+          "note": "Aucun licenciement pour fait de grève ; à défaut, ==nullité== (L. 2511-1)."
+        },
+        {
+          "id": "n10",
+          "type": "idee",
+          "title": "La faute lourde",
+          "note": "Faute commise avec l'==intention de nuire== à l'employeur."
+        }
+      ],
+      "edges": [
+        {
+          "id": "e2",
+          "from": "n1",
+          "to": "n2",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e3",
+          "from": "n1",
+          "to": "n3",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e4",
+          "from": "n3",
+          "to": "n4",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e5",
+          "from": "n3",
+          "to": "n5",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e6",
+          "from": "n3",
+          "to": "n6",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e7",
+          "from": "n1",
+          "to": "n7",
+          "kind": "tree",
+          "label": ""
+        },
+        {
+          "id": "e8",
+          "from": "n7",
+          "to": "n8",
+          "kind": "tree",
+          "label": "entraîne"
+        },
+        {
+          "id": "e9",
+          "from": "n7",
+          "to": "n9",
+          "kind": "tree",
+          "label": "entraîne"
+        },
+        {
+          "id": "e10",
+          "from": "n9",
+          "to": "n10",
+          "kind": "tree",
+          "label": "sauf"
+        }
+      ]
+    }
+  ]
+}
