@@ -3,13 +3,34 @@ name: ratio-livre-vers-cours
 description: Transforme un livre, un PDF de cours, un polycopié ou des notes en un cours complet pour l'application Ratio (JSON importable rangé selon le plan réel en dossiers, cartes du plan, cartes mentales typées, notes Markdown, relations libellées). À utiliser quand l'utilisateur fournit un document et demande des cartes, des fiches ou un cours Ratio.
 ---
 
-# Ratio — Compilateur Livre → Cours (v4.0)
+# Ratio — Compilateur Livre → Cours (v4.1)
 
-La spécification complète est dans `ratio_book_to_course_compiler_v4.0.json` (même dossier). **Lis-la en entier avant de commencer** (ordre conseillé : `how_to_read`), puis applique son `pipeline` P0 → P7 sans sauter de phase. Les `annexes` étalonnent le jugement ; elles ne priment jamais sur le reste.
+La spécification complète est dans `ratio_book_to_course_compiler_v4.1.json` (même dossier). **Lis-la en entier avant de commencer** (ordre conseillé : `how_to_read`), puis applique son `pipeline` P0 → P7 sans sauter de phase. Les `annexes` étalonnent le jugement ; elles ne priment jamais sur le reste.
+
+## Lecture directe (v4.1, prime sur le reste : `reader_first`)
+
+Le lecteur doit comprendre la carte **sans ouvrir une seule note**. Test des 3 secondes : lis chaque arête comme une phrase « titre du parent + libellé + titre de l'enfant ». Si la phrase est fausse, vague ou parle du livre, refais-la.
+
+- **Le titre EST le contenu (L1).** Jamais un titre-étiquette (« Illustration », « Exemple », « La leçon pratique », « Une affirmation du texte », « La distinction », « Première étape ») avec le vrai contenu caché dans la note.
+  - Mauvais : Refus assertif —illustré par→ « Exemple du collègue qui crie » (note : « Un collègue vous crie dessus… »).
+  - Bon : Refus assertif —illustré par→ « Face au collègue qui crie : « Je t'écoute quand tu baisses le ton » ».
+- **Le libellé dit une relation vraie au sujet, pas au livre (L2, L3).** Bannis sous un intitulé : « sert à », « vise à », « commence par », « présente », « rappelle », « introduit », « met en lumière », « invite à », « développe », « aborde ».
+  - Mauvais : « Comment exprimer vos sentiments et vos besoins ? » —sert à→ « Libérer les émotions ».
+  - Bon : « Exprimer ses sentiments et ses besoins » —évite→ « Que les émotions restent enfermées et s'accumulent ».
+  - Bon aussi : la question garde sa forme et l'enfant y répond : « Comment exprimer… ? » —en→ « Parler des sujets importants au bon moment ».
+- **Toute arête idée → idée porte un libellé (L4)** : viser 100 %.
+- **Surligné entier (L5)** : un terme-clé entier (1 à 3 mots) ou une proposition qui se lit seule (≤ 15 mots). Jamais coupé sur « que », « pour », « de », un article.
+- **Pas de voix méta (L6)** : jamais « le chapitre avance que », « le récit rapporte », « l'autrice explique », « cette carte ». On énonce directement : « 95 % de nos paroles visent à être aimé ». Pas de note-gabarit répétée (L7).
+- **Promesse tenue (L8)** : « 3 formulations pour dire non » donne 3 nœuds `formule` avec la phrase exacte en titre. Un `exercice` a ses `etape`, pas des `idee`.
+- **Type selon la fonction (L9)** : conseil, formule, exercice, etape, chiffre, etude avant `idee` (le validateur signale plus de 70 % d'`idee`).
+- **Titres propres (L11)** : pas de « : » ni de « . » final ; le titre de carte ou de racine énonce la thèse. Au plus 7 enfants, sinon regroupe (L13). ET/OU justes (L10).
+- **Pas de renvoi entre frères (L12)** sauf contraste (« se distingue de », « s'oppose à »). Plan : verbe concret de la transition, pas le même verbe partout (L14).
+- **Livre hors droit (essai, développement personnel)** : `reader_first.essay_mode`. Les conseils deviennent des `conseil` à l'impératif, les phrases à dire des `formule`, les cas réels des titres qui racontent le cas.
+- **Passe finale** (`reader_first.final_pass`) : relis chaque carte en lisant seulement titres et libellés ; le validateur Python émet des avertissements « lecture directe — … » à corriger tous avant livraison.
 
 ## L'essentiel
 
-- **Le cours remplace le livre** : l'étudiant découvre la matière et ne lira pas le livre. Garde tout ce qui est enseigné (règles, conditions, exceptions, nuances, le pourquoi, exemples, chiffres, dates, arrêts, auteurs, débats). Reformule, ne coupe pas. Notes complètes (souvent 4 à 15 lignes, découper en enfants au-delà de 20). Inventaire de contenu paragraphe par paragraphe en P3 : chaque point finit dans un titre ou une note. Granularité **complète** par défaut ; « fiche » seulement si on le demande.
+- **Le cours remplace le livre** : l'étudiant découvre la matière et ne lira pas le livre. Garde tout ce qui est enseigné (règles, conditions, exceptions, nuances, le pourquoi, exemples, chiffres, dates, arrêts, auteurs, débats). Reformule, ne coupe pas. Notes complètes (feuille : 2 phrases au moins, souvent 3 à 10 lignes ; découper en enfants au-delà de 20). Inventaire de contenu paragraphe par paragraphe en P3 : chaque point finit dans un titre ou une note. Granularité **complète** par défaut ; « fiche » seulement si on le demande.
 - **`normative_core` l'emporte** sur tout autre passage : une seule valeur par règle. Ses tables (`rules`, `relation_by_type`, `lexicon_by_direction`) sont recopiées du moteur d'audit de Ratio : ton cours sera contrôlé avec exactement ces règles.
 - **20 types seulement (depuis v3.1)** : chapitre, lecon, section, notion, definition, methode, etape, conseil, exercice, date, chiffre, formule, etude, citation, personne, texte, juris, doctrine, retenir, idee. Les 23 anciens types (cause, consequence, condition, exception, exemple, nuance, piege, fond, forme…) sont **supprimés** : la relation passe dans le **libellé** de l'arête (`node_types.relations_as_labels`) — cause → idee sous l'effet « a pour cause », exception → idee « sauf », exemple → idee « illustré par », condition → idee « suppose »… Les libellés reconnus par le moteur ne sont qu'un repli. **Toute arête d'arbre relationnelle porte un libellé** ; le validateur refuse un type supprimé (erreur) et signale une arête relationnelle sans libellé.
 - **Plan réel en dossiers (v4.0, `course_architecture`)** : le cours suit le plan du livre. Chaque division devient un **dossier** (`folders` : `id` f-…, `courseId`, `parentId`, `kind` partie | titre | soustitre | chapitre | section | autre, `label` = numéro exact ≤ 60 car., `title` = intitulé exact sans numéro, `note` = chapeau tiré du livre, `order` dès 1). L'unité la plus fine devient une **carte de contenu** (`folderId`, `order`, `label` « Section 1 », `title` exact). `leaf_rule` : un chapitre devient dossier s'il a au moins 2 sections réelles (ou dépasserait ~35 nœuds), sinon une seule carte ; un dossier a au moins 2 enfants. Jamais d'unité inventée, de fusion silencieuse ni de niveau ajouté. P1 relève l'arbre du plan, P2 découpe selon lui.

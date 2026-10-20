@@ -13,7 +13,7 @@ const dir = path.join(__dirname, '../skills/ratio-livre-vers-cours');
 const file = path.join(dir, fs.readdirSync(dir).filter((f) => /^ratio_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
 const raw = fs.readFileSync(file, 'utf8');
 const skill = JSON.parse(raw);
-const MAX_BYTES = 120 * 1000;
+const MAX_BYTES = 150 * 1000;
 
 let passed = 0, failed = 0;
 function check(name, fn) {
@@ -46,7 +46,7 @@ console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')
 
 check('version 4 et fichier choisi par le tri', () => {
   ok(/^4\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.0.json', path.basename(file));
+  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.1.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {

@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-20)
 
 ## Corpus Check
-- 47 files · ~165,074 words
+- 47 files · ~169,437 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: .css 5, (none) 1, .webmanifest 1)
 
 ## Summary
-- 756 nodes · 1738 edges · 39 communities (32 shown, 7 thin omitted)
+- 757 nodes · 1739 edges · 39 communities (32 shown, 7 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 140 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3289d20b`
+- Built from commit: `2c2659eb`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -94,8 +94,8 @@ Cohesion: 0.10
 Nodes (49): Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), arrange(), bbox(), buildTree(), busDown(), busySides(), childSlot() (+41 more)
 
 ### Community 3 - "organize.js"
-Cohesion: 0.10
-Nodes (40): 1. Défauts constatés (v3), 2. Agents et contributions, 3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut, 4. Changements, 5. Tests et résultats, 6. Limites et reporté (honnêteté), Moteur (`js/organize.js`), Organisation V4 — intelligence structurelle et sémantique du graphe (+32 more)
+Cohesion: 0.09
+Nodes (41): 1. Défauts constatés (v3), 2. Agents et contributions, 3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut, 4. Changements, 5. Tests et résultats, 6. Limites et reporté (honnêteté), Moteur (`js/organize.js`), Organisation V4 — intelligence structurelle et sémantique du graphe (+33 more)
 
 ### Community 4 - "ui"
 Cohesion: 0.10
@@ -122,16 +122,16 @@ Cohesion: 0.10
 Nodes (12): dir, { execFileSync }, file, folderText, fs, os, path, raw (+4 more)
 
 ### Community 11 - "checkvis.cjs"
-Cohesion: 0.15
+Cohesion: 0.16
 Nodes (18): crosses(), ctx, files, fs, inRect(), measure(), ov(), overlapLen() (+10 more)
 
 ### Community 12 - "metrics.cjs"
-Cohesion: 0.17
+Cohesion: 0.19
 Nodes (14): applySure(), fall, files, fs, heading(), indicators(), measure(), n0() (+6 more)
 
 ### Community 13 - "organize.test.cjs"
-Cohesion: 0.20
-Nodes (8): fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath, sure(), test()
+Cohesion: 0.11
+Nodes (15): ctx, edge(), files, fixesOf(), fs, path, root, vm (+7 more)
 
 ### Community 14 - "Inventaire"
 Cohesion: 0.17
@@ -154,8 +154,8 @@ Cohesion: 0.36
 Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), write()
 
 ### Community 19 - "harness.cjs"
-Cohesion: 0.12
-Nodes (10): applyAll(), ctx, edge(), files, fs, path, root, vm (+2 more)
+Cohesion: 0.18
+Nodes (3): applyAll(), ABSTAIN, { S, O, makeMap, applyAll, edge }
 
 ### Community 20 - "gen.cjs"
 Cohesion: 0.27

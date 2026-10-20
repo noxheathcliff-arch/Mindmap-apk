@@ -54,8 +54,8 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792500722.6689968,
-    "seen": 1792500751.1665568,
+    "mtime": 1792500754.127493,
+    "seen": 1792502676.6378627,
     "ast_hash": "9078cb08324f95407c0f66a8444bd0d2",
     "semantic_hash": ""
   },
@@ -108,8 +108,8 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792500746.9363039,
-    "seen": 1792500751.1665874,
+    "mtime": 1792500754.127493,
+    "seen": 1792502676.6378834,
     "ast_hash": "9e1718e171e7fbeadb888ae428f1d6c1",
     "semantic_hash": ""
   },
@@ -132,8 +132,8 @@
     "semantic_hash": ""
   },
   "tests/harness.cjs": {
-    "mtime": 1792500722.1793208,
-    "seen": 1792500751.1666005,
+    "mtime": 1792500754.127493,
+    "seen": 1792502676.6378927,
     "ast_hash": "eb77d96b2753a15ae1379cfb00282498",
     "semantic_hash": ""
   },
@@ -156,9 +156,9 @@
     "semantic_hash": ""
   },
   "tests/skill-bench.cjs": {
-    "mtime": 1792467866.1087327,
-    "seen": 1792480628.6365633,
-    "ast_hash": "a6689dd2311c6f4f9f41284f6d36bfc8",
+    "mtime": 1792502593.143497,
+    "seen": 1792502676.637899,
+    "ast_hash": "48e2b361c0d32d9def2f7b79ebfda281",
     "semantic_hash": ""
   },
   "tests/skill-rules.cjs": {
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792467866.0969534,
-    "seen": 1792480628.6365862,
-    "ast_hash": "2133583d082a1417944fe22d9b8161a2",
+    "mtime": 1792502582.1971192,
+    "seen": 1792502676.637926,
+    "ast_hash": "3b3eb74433507b720ec4ed846326306a",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792490624.3395936,
-    "seen": 1792494080.1336226,
-    "ast_hash": "0019ada29e10a6fad21bda03448791fa",
+    "mtime": 1792502664.5833454,
+    "seen": 1792502676.6379364,
+    "ast_hash": "a4be2b21d8f4db7da086f33d86dd2ea9",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -305,16 +305,16 @@
     "ast_hash": "dea4bfc3a6dec5a4e6a4286c2ad38c6d",
     "semantic_hash": ""
   },
-  "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.0.json": {
-    "mtime": 1792490624.3397977,
-    "seen": 1792494080.1335754,
-    "ast_hash": "d80defe5fe4b50b976fc362d711da460",
+  "tests/folders.test.cjs": {
+    "mtime": 1792500754.127493,
+    "seen": 1792502676.6378849,
+    "ast_hash": "4096ff32ec2e8b80defad8a930f4ecb7",
     "semantic_hash": ""
   },
-  "tests/folders.test.cjs": {
-    "mtime": 1792500722.1940947,
-    "seen": 1792500751.1665895,
-    "ast_hash": "4096ff32ec2e8b80defad8a930f4ecb7",
+  "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.1.json": {
+    "mtime": 1792502664.6175814,
+    "seen": 1792502676.637881,
+    "ast_hash": "6952c1750cf4868058f46ff4b75ffab0",
     "semantic_hash": ""
   }
 }
