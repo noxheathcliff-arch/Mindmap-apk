@@ -125,9 +125,35 @@
   cursor: pointer;
   transition: transform var(--dur-spring-default) var(--spring-default);
 }
-/* première visite : la feuille sort du dossier une fois celui-ci posé (action secondaire, +200 ms) */
-.fiche.emerge .fiche-body { animation: paper-out var(--dur-spring-default) var(--spring-default) calc(var(--i, 0) * 40ms + 200ms) both; }
-@keyframes paper-out { from { transform: translateY(26px) rotate(0deg); } }
+/* première visite : le dossier arrive fermé (un volet du rabat couvre la feuille), puis le volet
+   bascule vers soi autour de sa charnière (anticipation : il se soulève d'abord, puis tombe en
+   accélérant), le rabat encaisse le choc (dépassement, retour) et la feuille sort, son bas restant
+   glissé sous le rabat. Décalage de 90 ms entre dossiers. */
+.fiche-lid { display: none; }
+.fiche.emerge { --t0: calc(var(--i, 0) * 90ms + 260ms); }
+.fiche.emerge .fiche-lid {
+  display: block; grid-area: paper; z-index: 3; pointer-events: none;
+  margin-bottom: calc(-1 * var(--shape-l));
+  background: var(--c-pc); border-radius: var(--shape-l) var(--shape-l) 0 0;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .14);
+  transform-origin: 50% 100%; backface-visibility: hidden;
+  animation: lid-open 360ms cubic-bezier(.55, 0, .9, .45) var(--t0) both;
+}
+.fiche.emerge .fiche-front { transform-origin: 50% 100%; animation: flap-land 460ms var(--ease-out) calc(var(--t0) + 340ms) both; }
+.fiche.emerge .fiche-body { animation: paper-out var(--dur-spring-default) var(--spring-default) calc(var(--t0) + 250ms) both; }
+@keyframes lid-open {
+  0% { transform: perspective(800px) rotateX(0deg); }
+  22% { transform: perspective(800px) rotateX(-6deg); }
+  100% { transform: perspective(800px) rotateX(90deg); }
+}
+@keyframes flap-land {
+  0% { transform: perspective(800px) rotateX(0deg); }
+  28% { transform: perspective(800px) rotateX(10deg); }
+  62% { transform: perspective(800px) rotateX(-3deg); }
+  84% { transform: perspective(800px) rotateX(.8deg); }
+  100% { transform: none; }
+}
+@keyframes paper-out { from { transform: translateY(34px) rotate(0deg); } }
 :root[data-theme="dark"] .fiche-body { background: var(--surface-container-highest); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche-body { background: var(--surface-container-highest); } }
 .fiche-k { font: var(--label-s); font-weight: 600; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

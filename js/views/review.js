@@ -244,12 +244,19 @@
         const bottom = s.bottom - actions.offsetHeight - 12;
         if (r.bottom > bottom) stage.scrollTo({ top: stage.scrollTop + Math.min(r.bottom - bottom, r.top - s.top - 24), behavior: motion.reduced() || nb.fast ? 'auto' : 'smooth' });
       }
+      /* La feuille ne grandit pas pour le rouge : ce qui ne tient pas passe sur des post-it
+         (nb.spill), écrits puis collés juste après le texte gardé. */
       async function writeParts(parts, g) {
-        for (let i = 0; i < parts.length; i++) {
+        const sp = nb.spill(parts.filter((x) => x[1] === 'red').map((x) => x[0]));
+        const todo = parts.filter(([n]) => n.isConnected && !n.closest('.nb-postit'));
+        const stick = async () => { follow(sp.slot); await sp.run(); return alive(g); };
+        if (sp && !todo.some(([n]) => n === sp.after) && !(await stick())) return false;
+        for (let i = 0; i < todo.length; i++) {
           if (!alive(g)) return false;
-          const [n, ink, max] = parts[i];
+          const [n, ink, max] = todo[i];
           follow(n);
-          await nb.write(n, { ink, max, lift: i === parts.length - 1 });
+          await nb.write(n, { ink, max, lift: i === todo.length - 1 || (sp && n === sp.after) });
+          if (sp && n === sp.after && !(await stick())) return false;
         }
         return alive(g);
       }

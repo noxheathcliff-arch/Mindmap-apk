@@ -314,6 +314,59 @@
 .nb-content.nb-fit-2 { font-size: 15.5px; }
 .nb-content.nb-fit-2 .nb-red { font-size: 19px; }
 .nb-content.nb-fit-2 .nb-verdict { font-size: 23px; }
+/* le rouge n'agrandit jamais la feuille : il a sa place réservée (RED_MIN), la suite va sur post-it */
+.nb-measure .nb-answer .nb-red, .nb-measure .nb-slot { display: none; }
+.nb-reserve .nb-verdict:empty { display: block; height: var(--nb-line); }
+.nb-cut { display: none !important; }
+.nb-more { font-size: 0.8em; opacity: 0.85; margin-left: 0.2em; }
+.nb-list li.nb-cont { list-style: none; }
+
+/* ---- post-it : suite de la correction ------------------------------- */
+.nb-slot {
+  position: relative;
+  /* toute la largeur de la page, marge comprise ; aucune ligne de texte dessous */
+  margin: calc(var(--nb-line) / 2) -8px calc(var(--nb-line) / 2) calc(-1 * var(--nb-margin));
+}
+.nb-postit {
+  --pi-bg: #fff2a6; --pi-edge: #f2df78; --pi-back: #e3cd5c; --pi-ink: #c3271c;
+  position: absolute; z-index: 3;
+  transform: rotate(var(--r, 0deg));
+  transform-origin: 50% 100%;
+  pointer-events: auto;
+}
+.nb-root.is-dark .nb-postit { --pi-bg: #d9cc84; --pi-edge: #c9bb6c; --pi-back: #a9994a; --pi-ink: #9c1d14; }
+.nb-postit-shadow {
+  position: absolute; inset: 4px 2px 0 2px; border-radius: 2px;
+  box-shadow: 0 1.5px 2.5px rgba(40, 30, 0, 0.22);
+}
+.nb-root.is-dark .nb-postit-shadow { filter: brightness(0.4); }
+.nb-postit-paper {
+  position: absolute; inset: 0; border-radius: 1px 1px 2px 2px;
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent 16px),          /* bande collante, un rien plus mate */
+    linear-gradient(170deg, var(--pi-bg) 60%, var(--pi-edge));
+  /* coin bas droit décollé : coupé ici, dessiné par .nb-postit-curl */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+.nb-postit-curl {
+  position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+  transform-origin: 100% 100%;
+  background: linear-gradient(315deg, transparent 50%, var(--pi-back) 50%, var(--pi-edge) 78%, var(--pi-back));
+  filter: drop-shadow(-1px -1px 1px rgba(40, 30, 0, 0.18));
+  border-radius: 0 0 0 3px;
+}
+.nb-postit-body {
+  position: absolute; inset: 14px 12px 10px 13px; overflow: hidden;
+  color: var(--pi-ink); font: 500 19px/21px var(--nb-font-red);
+}
+.nb-postit-body .nb-red { color: inherit; font-size: inherit; font-family: inherit; line-height: inherit; }
+.nb-postit-body .nb-explain { margin-top: 0; }
+.nb-postit-body > * + * { margin-top: 4px; }
+.nb-postit-body .nb-list { padding-left: 1.1em; }
+.nb-postit-body.is-fit-1 { font-size: 17px; line-height: 19px; }
+.nb-postit-body.is-fit-2 { font-size: 15.5px; line-height: 17px; }
+.nb-postit-body.is-scroll { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.nb-postit-body:focus-visible { outline: 2px dashed var(--pi-ink); outline-offset: 3px; }
 .nb-pageno { position: absolute; right: 22px; bottom: 6px; font-size: 14px; opacity: 0.6; }
 
 /* ---- dans l'app (révision) ------------------------------------------ */

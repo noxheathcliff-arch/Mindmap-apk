@@ -66,6 +66,55 @@
   // courbure : le bas mène au décollage, traîne pendant l'arc, puis se pose avec un petit rebond
   const curl = track([[0, 0], [0.1, 4], [0.17, 2.5], [0.32, 15], [0.56, -12], [0.76, 4.5], [0.88, -1.5], [1, 0]]);
 
+  // ---- post-it ---------------------------------------------------------------
+  const RED_MIN = 150;                     // place minimale gardée au rouge sur la page (px)
+  const POST_MAX = 3;
+  const BLOCKS = 'li,p,ul,ol,div,blockquote,h1,h2,h3,h4,h5,h6,pre,table';
+  const words = (els) => els.flatMap((el) => [...el.querySelectorAll('.nb-w')]);
+  // cache les mots k… (et les blocs qui n'ont plus de mot visible) : sert à mesurer sans rien casser
+  function cutAt(els, ws, k) {
+    ws.forEach((w, i) => w.classList.toggle('nb-cut', i >= k));
+    for (const el of els) for (const b of [el, ...el.querySelectorAll(BLOCKS)]) {
+      const f = b.querySelector('.nb-w');
+      if (f) b.classList.toggle('nb-cut', ws.indexOf(f) >= k);
+    }
+  }
+  const uncut = (root) => { root.classList.remove('nb-cut'); root.querySelectorAll('.nb-cut').forEach((x) => x.classList.remove('nb-cut')); };
+  // plus grand k (0 ≤ k ≤ n) tel que ok(k) ; ok est supposé décroissant
+  function search(n, ok) {
+    let a = 0, b = n;
+    if (ok(n)) return n;
+    while (a < b) { const m = Math.ceil((a + b) / 2); if (m < n && ok(m)) a = m; else b = m - 1; }
+    return a;
+  }
+  // découpe : ce qui suit le mot k quitte els, en morceaux de même balise et même classe
+  function carve(els, ws, k) {
+    if (k >= ws.length) return [];
+    const start = ws[k], out = [];
+    let on = false;
+    for (const el of els) {
+      if (on) { el.remove(); out.push(el); continue; }
+      if (!el.contains(start)) continue;
+      on = true;
+      const li = start.closest('li'), ol = li && li.parentElement && li.parentElement.tagName === 'OL' && el.contains(li.parentElement) ? li.parentElement : null;
+      const cont = li && li.querySelector('.nb-w') !== start;
+      const before = ol ? [...ol.children].indexOf(li) : 0;
+      const r = document.createRange();
+      r.setStartBefore(start);
+      r.setEnd(el, el.childNodes.length);
+      const piece = el.cloneNode(false);
+      piece.append(r.extractContents());
+      // les coquilles vides laissées par la découpe disparaissent
+      for (const root of [el, piece]) [...root.querySelectorAll(BLOCKS + ',strong,em,mark,span:not(.nb-c)')].reverse().forEach((x) => { if (!x.querySelector('.nb-c') && !x.textContent.trim()) x.remove(); });
+      // liste numérotée : la suite garde ses numéros, la ligne coupée continue sans en prendre un
+      const pol = ol && (piece.tagName === 'OL' ? piece : piece.querySelector('ol'));
+      if (pol) { pol.start = (+ol.getAttribute('start') || 1) + before; if (cont && pol.firstElementChild) pol.firstElementChild.classList.add('nb-cont'); }
+      if (!el.querySelector('.nb-w')) el.remove();
+      out.push(piece);
+    }
+    return out;
+  }
+
   const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
   const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ESC[c]);
 
@@ -148,15 +197,17 @@
         `<path class="w-back" d="${back}"/><path class="w" d="${wire}"/><path class="w-hi" d="${hi}"/>`;
       this.fit();
     },
-    // la page doit tout contenir, même ce qui n'est pas encore écrit :
-    // on réduit d'abord l'écriture, puis on allonge la feuille si besoin
+    // la page doit contenir l'énoncé et ce qui s'écrit au crayon (verdict compris) : on réduit
+    // d'abord l'écriture, puis on allonge la feuille si besoin. Le rouge (correction, explication)
+    // n'entre jamais dans ce calcul : une place fixe lui est réservée, le reste ira sur des post-it.
     fit() {
       const c = this.content, pg = c.firstElementChild;
       let H = this.baseH;
       c.classList.remove('nb-fit-1', 'nb-fit-2');
       if (pg) {
         c.classList.add('nb-measure');
-        const need = () => Math.ceil(pg.offsetTop + pg.offsetHeight + 30);
+        const red = pg.querySelector('.nb-answer .nb-red') ? RED_MIN : 0;
+        const need = () => Math.ceil(pg.offsetTop + pg.offsetHeight + 30 + red);
         for (const k of ['nb-fit-1', 'nb-fit-2']) {
           if (need() <= H) break;
           c.classList.remove('nb-fit-1');
@@ -176,6 +227,208 @@
       this.content.replaceChildren(node);
       this.fast = false;
       this.fit();
+    },
+
+    // ---- débordement du rouge : post-it ------------------------------------------
+    /* reds : les éléments rouges de la page, déjà découpés (prep), dans l'ordre. La feuille ne
+       change pas de taille : ce qui ne tient pas est coupé proprement (« … suite ↓ ») et passe sur
+       1 à 3 post-it, rangés dans une réserve sous le texte gardé (rien ne se chevauche).
+       Renvoie null (tout tient) ou { slot, after, run } : run() fait apparaître, écrire et coller
+       les post-it ; after est l'élément après lequel les lancer. */
+    spill(reds) {
+      const c = this.content, pg = c.firstElementChild;
+      reds = (reds || []).filter((el) => el && pg && pg.contains(el) && !el.closest('.nb-postit'));
+      if (!pg || !reds.length) return null;
+      if (pg._spill !== undefined) return pg._spill;
+      const ws = words(reds);
+      const need = () => Math.ceil(pg.offsetTop + pg.offsetHeight + 30);
+      c.classList.add('nb-reserve');
+      const done = (v) => { c.classList.remove('nb-reserve'); return (pg._spill = v); };
+      if (!ws.length || need() <= this.H) return done(null);
+
+      // géométrie : réserve de la largeur de la page (marge comprise), post-it côte à côte
+      const slot = h('div', 'nb-slot');
+      const more = h('span', 'nb-more', '… suite ↓');
+      more.setAttribute('aria-hidden', 'true');
+      reds[reds.length - 1].after(slot);
+      const aw = slot.clientWidth, gap = 12;
+      // n post-it : une rangée si la largeur le permet (≥ 118 px chacun), sinon deux colonnes
+      const geo = (n) => {
+        let cols = Math.min(n, Math.max(1, Math.floor((aw + gap) / (118 + gap))));
+        if (n === 3 && cols < 3) cols = 2;
+        const pw = Math.round(Math.min(n === 1 ? 210 : 230, (aw - (cols - 1) * gap) / cols));
+        return { cols, pw, rows: Math.ceil(n / cols) };
+      };
+      const slotH = (g, ph) => g.rows * ph + (g.rows - 1) * gap;
+      const place = (k) => {
+        cutAt(reds, ws, k);
+        if (k > 0) { ws[k - 1].after(more); reds.find((el) => el.contains(ws[k - 1])).after(slot); }
+        else { more.remove(); reds[0].before(slot); }
+      };
+      const mk = (i, n, pw, ph) => {
+        const p = h('div', 'nb-postit');
+        p.setAttribute('role', 'note');
+        p.setAttribute('aria-label', n > 1 ? `Suite de la correction, post-it ${i + 1} sur ${n}` : 'Suite de la correction (post-it)');
+        p.style.width = pw + 'px'; p.style.height = ph + 'px';
+        const body = h('div', 'nb-postit-body nb-writing');
+        body.dataset.nbSplit = '1';
+        p.append(h('div', 'nb-postit-shadow'), h('div', 'nb-postit-paper'), body, h('div', 'nb-postit-curl'));
+        p.body = body;
+        return p;
+      };
+      const fits = (body) => body.scrollHeight <= body.clientHeight + 1;
+      // remplit les post-it les uns après les autres ; renvoie ce qui reste après le dernier
+      const fill = (posts, pieces) => {
+        for (let i = 0; i < posts.length && pieces.length; i++) {
+          const b = posts[i].body;
+          b.append(...pieces);
+          pieces = [];
+          if (i === posts.length - 1) break;
+          const els = [...b.children], bw = words(els);
+          const k = Math.max(1, search(bw.length, (m) => { cutAt(els, bw, m); return fits(b); }));
+          uncut(b);
+          pieces = carve(els, bw, k);
+        }
+        return pieces;
+      };
+
+      // le plus petit nombre de post-it, puis la plus petite hauteur, qui suffisent ; au-delà de
+      // 3 post-it, le dernier se resserre puis défile
+      let n = 1, k = 0, g = geo(1), ph = 118;
+      const trial = (nn, gg, hh) => {
+        slot.style.height = slotH(gg, hh) + 'px';
+        const kk = search(ws.length - 1, (m) => { place(m); return need() <= this.H; });
+        place(kk);
+        if (need() > this.H) return null;                       // la réserve elle-même ne tient pas
+        const copy = reds.map((el) => el.cloneNode(true));
+        copy.forEach(uncut);
+        const tail = carve(copy, words(copy), kk);
+        const posts = Array.from({ length: nn }, () => mk(0, nn, gg.pw, hh));
+        posts.forEach((p) => { p.style.visibility = 'hidden'; slot.append(p); });
+        fill(posts, tail);
+        const lb = posts[nn - 1].body, ex = lb.scrollHeight - lb.clientHeight;
+        posts.forEach((p) => p.remove());
+        return { k: kk, ex };
+      };
+      // rien ne suffit : la disposition qui laisse le moins de reste au dernier post-it
+      let best = Infinity;
+      pick: for (let nn = 1; nn <= POST_MAX; nn++) {
+        const gg = geo(nn), top = Math.round(Math.min(gg.pw * 1.4, 290));
+        for (let hh = 118; hh <= top; hh += 20) {
+          const r = trial(nn, gg, hh);
+          if (!r) break;
+          if (r.ex < best) { best = r.ex; n = nn; g = gg; ph = hh; k = r.k; }
+          if (r.ex <= 1) break pick;
+        }
+      }
+      slot.style.height = slotH(g, ph) + 'px';
+      place(k);
+      // découpe réelle
+      uncut(pg);
+      more.remove();
+      const pieces = carve(reds, ws, k);
+      pieces.forEach((p) => { p.classList.remove('nb-writing'); p.removeAttribute('data-nb-split'); });
+      const kept = reds.filter((el) => el.isConnected && pg.contains(el));
+      if (kept.length) {
+        kept[kept.length - 1].after(slot);
+        this.prep(more);
+        more.classList.remove('nb-writing');
+        words(kept).pop().after(more);              // la plume l'écrit à la suite du texte gardé
+      }
+      const posts = Array.from({ length: n }, (_, i) => mk(i, n, g.pw, ph));
+      const { pw, cols } = g;
+      posts.forEach((p) => slot.append(p));
+      const rest = fill(posts, pieces);
+      if (rest.length) posts[n - 1].body.append(...rest);
+      const last = posts[n - 1].body;
+      for (const f of ['is-fit-1', 'is-fit-2']) { if (fits(last)) break; last.classList.add(f); }
+      if (!fits(last)) { last.classList.add('is-scroll'); last.tabIndex = 0; }
+      // disposition : rangées centrées, chaque post-it un peu de biais
+      const rot = [-2.4, 1.7, -1.1];
+      posts.forEach((p, i) => {
+        const r = Math.floor(i / cols), inRow = Math.min(cols, n - r * cols), col = i % cols;
+        const x0 = (aw - (inRow * pw + (inRow - 1) * gap)) / 2;
+        p.style.left = Math.round(x0 + col * (pw + gap) + (i % 2 ? 3 : -2)) + 'px';
+        p.style.top = r * (ph + gap) + 'px';
+        p.style.setProperty('--r', rot[i % 3] + 'deg');
+        p.style.opacity = '0';
+      });
+      slot.style.height = slotH(g, ph) + 'px';
+      const after = slot.previousElementSibling;
+      return done({ slot, after, posts, run: () => this._stick(posts) });
+    },
+
+    // chaque post-it apparaît, s'écrit au stylo, puis se décolle de la main et vient se coller
+    async _stick(posts) {
+      for (const p of posts) {
+        const rm = reduced();
+        if (this.fast || rm) {
+          p.style.opacity = '';
+          if (rm && !this.fast) await p.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' }).finished;
+          await this.write(p.body, { ink: 'red', lift: true });
+          continue;
+        }
+        const r = parseFloat(p.style.getPropertyValue('--r')) || 0;
+        // en main : plus haut, plus grand, plus de biais, ombre large et douce
+        const air = { x: 16, y: -54, r: r - 5, s: 1.08 };
+        const T = (x, y, rr, sx, sy = sx) => `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rr.toFixed(2)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+        const SH = (y, b, a) => `0 ${y.toFixed(1)}px ${b.toFixed(1)}px rgba(40, 30, 0, ${a.toFixed(3)})`;
+        const sh = p.querySelector('.nb-postit-shadow');
+        p.style.opacity = '';
+        // 1. apparition : la feuille se détache du bloc, se déplie vers le lecteur
+        const a1 = p.animate([
+          { transform: T(air.x - 6, air.y + 14, air.r + 6, 0.86), opacity: 0 },
+          { opacity: 1, offset: 0.5 },
+          { transform: T(air.x, air.y, air.r, air.s), opacity: 1 },
+        ], { duration: 280, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'forwards' });
+        const s1 = sh.animate([{ boxShadow: SH(10, 14, 0) }, { boxShadow: SH(26, 30, 0.2) }], { duration: 280, easing: 'ease-out', fill: 'forwards' });
+        this.cur = { anims: [a1, s1], pen: null };
+        await a1.finished.catch(() => {});
+        // 2. écriture, la feuille tenue en l'air
+        await this.write(p.body, { ink: 'red', lift: true, max: 1800 });
+        if (this.fast) { a1.cancel(); s1.cancel(); continue; }
+        // 3. anticipation (se tasse, recule), arc, contact écrasé, retour ; le coin traîne et se recolle
+        const N = 40, D = 880, kf = [], ks = [], kc = [];
+        const tA = 0.15, tB = 0.64, tC = 0.73;          // fin anticipation · contact · écrasement maxi
+        const arc = E.io;
+        for (let i = 0; i <= N; i++) {
+          const t = i / N;
+          let x, y, rr, sx, sy, shY, shB, shA;
+          if (t <= tA) {
+            const u = smooth(t / tA);
+            x = air.x + 3 * u; y = air.y + 5 * u; rr = air.r - 1.6 * u; sx = air.s + 0.02 * u; sy = air.s - 0.035 * u;
+            shY = 26 - 4 * u; shB = 30 - 4 * u; shA = 0.2 + 0.02 * u;
+          } else if (t <= tB) {
+            const u = arc((t - tA) / (tB - tA));
+            const q0 = { x: air.x + 3, y: air.y + 5 }, q1 = { x: air.x * 0.35 - 10, y: air.y - 30 };
+            x = (1 - u) * (1 - u) * q0.x + 2 * u * (1 - u) * q1.x;            // arc : monte puis descend sur la place
+            y = (1 - u) * (1 - u) * q0.y + 2 * u * (1 - u) * q1.y;
+            rr = lerp(air.r - 1.6, r, u) + 1.2 * Math.sin(Math.PI * u);
+            const st = 0.04 * Math.sin(Math.PI * Math.min(1, u * 1.4));    // étiré dans le mouvement
+            sx = lerp(air.s + 0.02, 1, u) - st * 0.4; sy = lerp(air.s - 0.035, 1, u) + st;
+            shY = lerp(22, 1.5, u); shB = lerp(26, 3, u); shA = lerp(0.22, 0.26, u);
+          } else if (t <= tC) {
+            const u = smooth((t - tB) / (tC - tB));
+            x = 0; y = 0; rr = r; sx = 1 + 0.035 * u; sy = 1 - 0.055 * u;
+            shY = 1.5; shB = 3 - u; shA = 0.26;
+          } else {
+            const u = (t - tC) / (1 - tC), sp = Math.exp(-5 * u) * Math.cos(Math.PI * 2.2 * u);
+            x = 0; y = 0; rr = r; sx = 1 + 0.035 * sp; sy = 1 - 0.055 * sp;
+            shY = 1.5; shB = 2 + 0.5 * u; shA = 0.26 - 0.04 * u;
+          }
+          kf.push({ transform: T(x, y, rr, sx, sy), offset: t });
+          ks.push({ boxShadow: SH(shY, shB, shA), offset: t });
+        }
+        // le coin libre : soulevé par l'air pendant l'arc, il claque au contact puis se recolle à peine
+        kc.push({ transform: 'scale(1)', offset: 0 }, { transform: 'scale(1.5)', offset: tB - 0.12 }, { transform: 'scale(1.9)', offset: tB },
+          { transform: 'scale(0.7)', offset: tC + 0.06 }, { transform: 'scale(1.12)', offset: 0.9 }, { transform: 'scale(1)', offset: 1 });
+        const opt = { duration: D, easing: 'linear', fill: 'forwards' };
+        a1.cancel(); s1.cancel();
+        const all = [p.animate(kf, { ...opt, fill: 'none' }), sh.animate(ks, { ...opt, fill: 'none' }), p.querySelector('.nb-postit-curl').animate(kc, { ...opt, fill: 'none' })];
+        this.cur = { anims: all, pen: null };
+        await Promise.all(all.map((a) => a.finished)).catch(() => {});
+        if (this.cur && this.cur.anims === all) this.cur = null;
+      }
     },
 
     // ---- ouverture -----------------------------------------------------------

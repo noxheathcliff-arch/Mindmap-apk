@@ -247,6 +247,7 @@
     // ordre du DOM : le rabat (titre) d'abord pour la lecture ; la grille place la feuille au-dessus
     card.append(
       h('span.fiche-back', { 'aria-hidden': 'true' }),
+      h('span.fiche-lid', { 'aria-hidden': 'true' }),
       h('div.fiche-front', { dataset: { hero: 'course:' + c.id + ':band' } }, band, foot),
       paper);
     return card;
@@ -289,11 +290,11 @@
         grid.appendChild(add);
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
         if (intro && !R.motion.reduced()) for (const f of grid.querySelectorAll('.fiche')) {
-          // la feuille sort après le dossier ; la classe part à la fin (sinon « both » figerait la
-          // feuille et couperait le survol)
+          // fermé, puis le volet bascule et la feuille sort ; la classe part quand le rabat s'est
+          // posé, en dernier (sinon « both » figerait la feuille et couperait le survol)
           f.classList.add('emerge');
-          const body = f.querySelector('.fiche-body');
-          body.addEventListener('animationend', function done(e) { if (e.target !== body) return; f.classList.remove('emerge'); body.removeEventListener('animationend', done); });
+          const front = f.querySelector('.fiche-front');
+          front.addEventListener('animationend', function done(e) { if (e.target !== front) return; f.classList.remove('emerge'); front.removeEventListener('animationend', done); });
         }
 
         const recents = S.recentMaps(5);
