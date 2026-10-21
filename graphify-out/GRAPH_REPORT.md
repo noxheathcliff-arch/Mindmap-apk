@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-21)
 
 ## Corpus Check
-- 48 files · ~182,272 words
+- 49 files · ~182,264 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 7 file(s) not represented in the graph (top: .css 5, (none) 1, .webmanifest 1)
+- Unclassified: 8 file(s) not represented in the graph (top: .css 6, (none) 1, .webmanifest 1)
 
 ## Summary
-- 781 nodes · 1787 edges · 40 communities (33 shown, 7 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 142 edges (avg confidence: 0.86)
+- 810 nodes · 1858 edges · 41 communities (34 shown, 7 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 147 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b20a8d49`
+- Built from commit: `5507db6a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -52,6 +52,7 @@
 - exercises.test.cjs
 - sw.js
 - Mindmap-apk
+- carnet.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `Editor()` - 154 edges
@@ -62,25 +63,25 @@
 6. `select()` - 25 edges
 7. `U` - 24 edges
 8. `renderBottomBar()` - 24 edges
-9. `mount()` - 23 edges
+9. `mount()` - 24 edges
 10. `audit()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Éditeur, store` --references--> `sanitize()`  [INFERRED]
   docs/audit-organisation-3.md → js/store.js
-- `Routage et libellés (`js/layout.js`, `js/views/editor.js`)` --references--> `route()`  [INFERRED]
-  docs/audit-organisation-3.md → js/layout.js
-- `Routage et libellés (`js/layout.js`, `js/views/editor.js`)` --references--> `placeLabel()`  [INFERRED]
-  docs/audit-organisation-3.md → js/layout.js
-- `4.4 Types de nœuds (différenciation monochrome)` --references--> `separate()`  [INFERRED]
-  DESIGN.md → js/layout.js
 - `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
   docs/audit-organisation-3.md → js/organize.js
+- `Moteur (`js/organize.js`)` --references--> `mergeNodes()`  [INFERRED]
+  docs/audit-organisation-3.md → js/organize.js
+- `L'essentiel` --references--> `note()`  [INFERRED]
+  skills/ratio-livre-vers-cours/SKILL.md → js/organize.js
+- `4.4 ter Relations d'abord, définitions modulaires` --references--> `applyVerified()`  [INFERRED]
+  DESIGN.md → js/organize.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (40 total, 7 thin omitted)
+## Communities (41 total, 7 thin omitted)
 
 ### Community 0 - "Editor"
 Cohesion: 0.05
@@ -92,11 +93,11 @@ Nodes (80): addCourse(), addFolder(), addMap(), ancestors(), applyImport(), blan
 
 ### Community 2 - "layout.js"
 Cohesion: 0.10
-Nodes (48): aerate(), arrange(), bbox(), buildTree(), busDown(), busySides(), childSlot(), columns() (+40 more)
+Nodes (50): 4.4 Types de nœuds (différenciation monochrome), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), arrange(), bbox(), buildTree(), busDown(), busySides() (+42 more)
 
 ### Community 3 - "organize.js"
-Cohesion: 0.09
-Nodes (42): 1. Défauts constatés (v3), 2. Agents et contributions, 3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut, 4. Changements, 5. Tests et résultats, 6. Limites et reporté (honnêteté), Moteur (`js/organize.js`), Organisation V4 — intelligence structurelle et sémantique du graphe (+34 more)
+Cohesion: 0.11
+Nodes (38): 1. Défauts constatés (v3), 2. Agents et contributions, 3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut, 4. Changements, 5. Tests et résultats, 6. Limites et reporté (honnêteté), Moteur (`js/organize.js`), Organisation V4 — intelligence structurelle et sémantique du graphe (+30 more)
 
 ### Community 4 - "ui"
 Cohesion: 0.10
@@ -111,8 +112,8 @@ Cohesion: 0.25
 Nodes (19): apply(), closePairs(), contrast(), css(), currentTheme(), derive(), distance(), ensureContrast() (+11 more)
 
 ### Community 8 - "mount"
-Cohesion: 0.19
-Nodes (25): cardState(), hintFor(), mount(), bringAnswer(), choose(), commit(), current(), emTitle() (+17 more)
+Cohesion: 0.20
+Nodes (26): hintFor(), mount(), advance(), build(), choose(), commit(), correct(), current() (+18 more)
 
 ### Community 9 - "eval.cjs"
 Cohesion: 0.17
@@ -127,11 +128,11 @@ Cohesion: 0.16
 Nodes (18): crosses(), ctx, files, fs, inRect(), measure(), ov(), overlapLen() (+10 more)
 
 ### Community 12 - "metrics.cjs"
-Cohesion: 0.19
+Cohesion: 0.17
 Nodes (14): applySure(), fall, files, fs, heading(), indicators(), measure(), n0() (+6 more)
 
 ### Community 13 - "organize.test.cjs"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (8): fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath, sure(), test()
 
 ### Community 14 - "Inventaire"
@@ -147,11 +148,11 @@ Cohesion: 0.30
 Nodes (11): articleRef(), byMap(), highlight(), open(), finish(), group(), paint(), paintScopes() (+3 more)
 
 ### Community 17 - "4. Système de design (Material Design 3)"
-Cohesion: 0.17
-Nodes (12): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.4 Types de nœuds (différenciation monochrome) (+4 more)
+Cohesion: 0.18
+Nodes (11): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.5 Classes de fenêtre M3 → composition (+3 more)
 
 ### Community 18 - "skill-rules.cjs"
-Cohesion: 0.27
+Cohesion: 0.36
 Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), write()
 
 ### Community 19 - "harness.cjs"
@@ -214,23 +215,27 @@ Nodes (17): contentsText(), countUp(), folderBlock(), levelBlocks(), mapCard(), 
 Cohesion: 0.25
 Nodes (4): course(), EX, node(), { S }
 
+### Community 40 - "carnet.js"
+Cohesion: 0.12
+Nodes (29): Carnet(), close(), draw(), fit(), flag(), _flipCover(), _flipFrom(), h() (+21 more)
+
 ## Knowledge Gaps
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `onDown()` connect `Editor` to `ui`?**
-  _High betweenness centrality (0.224) - this node is a cross-community bridge._
+- **Why does `rate()` connect `store.js` to `ui`?**
+  _High betweenness centrality (0.272) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Editor` be split into smaller, more focused modules?**
   _Cohesion score 0.05119933829611249 - nodes in this community are weakly interconnected._
-- **Why does `rate()` connect `store.js` to `ui`?**
-  _High betweenness centrality (0.223) - this node is a cross-community bridge._
+- **Why does `onDown()` connect `Editor` to `ui`?**
+  _High betweenness centrality (0.245) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `store.js` be split into smaller, more focused modules?**
   _Cohesion score 0.05136168179646441 - nodes in this community are weakly interconnected._
-- **Should `layout.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.10285714285714286 - nodes in this community are weakly interconnected._
+- **Why does `4. Changements` connect `organize.js` to `layout.js`?**
+  _High betweenness centrality (0.241) - this node is a cross-community bridge._

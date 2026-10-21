@@ -1,15 +1,15 @@
 /* Ratio — Révision : rappel actif + répétition espacée (Leitner)
    Hooked : déclencheur (Aujourd'hui / Réviser) → action (1 tap) → récompense variable → investissement.
 
-   La session est un paquet de fiches : la fiche du dessus porte la teinte et l'empreinte de son
-   cours ; dessous, l'épaisseur du paquet dit ce qu'il reste. Trois temps par fiche :
-   se rappeler (indice possible : la structure de la réponse, sans la réponse) → vérifier → noter.
-   Une note se reprend (Annuler / Z) : la fiche revient du côté où elle était partie.
+   La session est un carnet d'exercices (js/carnet.js) : il s'ouvre, chaque question s'écrit
+   à la main sur sa page, la correction arrive au stylo rouge, la page se tourne ; une question
+   ratée reçoit un marque-page. À la fin, le carnet se ferme, rétrécit et porte le score.
+   Une note se reprend (Annuler / Z) : la page revient, réponse ouverte.
 
    Une carte qui a des exercices se révise par eux (store.reviewItems) :
    - question-réponse : comme une fiche — on se rappelle, on vérifie, on dit si on avait trouvé ;
-   - QCM et vrai ou faux : les choix sont dans la carte, la correction est immédiate et la note
-     en découle (store.gradeFor) — juste deux fois de suite = maîtrisé, faux = à revoir. */
+   - QCM et vrai ou faux : on entoure (ou coche) au stylo bleu, la correction est immédiate et la
+     note en découle (store.gradeFor) — juste deux fois de suite = maîtrisé, faux = à revoir. */
 (function (R) {
   'use strict';
   const { U, ui, store: S, motion } = R;
@@ -21,6 +21,8 @@
   const LETTERS = 'ABCDEFGH';
   const isAuto = (it) => !!(it && it.ex && it.ex.kind !== 'qa');
   const isMulti = (ex) => Array.isArray(ex.answer);
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
 
   function nextLabel(review, rating) {
     const b = review.box;
@@ -35,30 +37,19 @@
     const kids = S.childrenOf(map, node.id);
     const nums = S.structNumbers(map);
     if (kids.length) {
-      return h('ol.hint-list', kids.map((c) => {
+      return kids.map((c) => {
         const t = (c.title || '').trim();
-        return h('li',
-          S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
-          h('span.hint-mask', t ? t[0] + '…' : '…'));
-      }));
+        return [S.TYPES[c.type].kicker ? S.kickerOf(map, c, nums) : null, t ? t[0] + '…' : '…'].filter(Boolean).join(' ');
+      }).join(' · ');
     }
     const plain = R.md.plain(node.note).trim();
     if (!plain) return null;
     const words = plain.split(/\s+/);
-    return h('p.hint-text', words.slice(0, Math.min(4, Math.max(2, Math.floor(words.length / 5)))).join(' ') + ' …');
+    return words.slice(0, Math.min(4, Math.max(2, Math.floor(words.length / 5)))).join(' ') + ' …';
   }
 
-  /** État de la fiche dans la boîte de Leitner : nouvelle, ou vue il y a…, avec sa boîte (1–5) */
-  function cardState(r) {
-    if (!r.last) return h('span.rcard-state.is-new', 'Nouvelle');
-    return h('span.rcard-state', { title: `Boîte ${r.box} sur 5` },
-      h('span', 'Vue ' + U.relTime(r.last)),
-      h('span.box-pips', { 'aria-label': `Boîte ${r.box} sur 5` }, [1, 2, 3, 4, 5].map((i) => h('i', { class: i <= r.box ? 'on' : '' }))));
-  }
-
-  /** Types dont la question porte sur le parent (« Qu'illustre cet exemple ? », « d'où vient-elle ? ») :
-      le parent est masqué dans le fil d'Ariane jusqu'à la réponse */
-  const RELATIONAL = new Set(['juris']);
+  // une boîte tracée au feutre, pas tout à fait carrée
+  const boxPath = () => { const j = () => (Math.random() - 0.5) * 1.4; return `M${2 + j()} ${3 + j()} L${22 + j()} ${2 + j()} L${22.5 + j()} ${22 + j()} L${2.5 + j()} ${22.5 + j()} Z`; };
 
   R.views.review = {
     mount(el, route) {
@@ -89,9 +80,11 @@
       const missed = new Map(); // clé → { mapId, key } notés « À revoir » (fin de session)
       const score = { asked: 0, right: 0 }; // QCM et vrai ou faux : corrigés par l'app
       const noun = queue.some((x) => x.exId) ? 'question' : 'carte';
-      let idx = 0, revealed = false, hinted = false, done = 0, busy = false, ended = false;
+      let idx = 0, hinted = false, done = 0, ended = false, dead = false, opened = false;
       let cur = null; // l'élément affiché (idx avance dès la note, la correction reste à l'écran)
-      let pick = new Set(), verdict = null, validateBtn = null;
+      // busy : le stylo écrit · answer : à toi · rate : réponse ouverte, à noter · next : corrigé
+      let state = 'busy', gen = 0, P = null, verdict = null, validateBtn = null, nb = null, sig = '';
+      const alive = (g) => !dead && g === gen;
 
       const counter = h('span.review-count');
       const undoBtn = ui.iconBtn('undo', { title: 'Annuler la dernière note', onClick: () => undo() });
@@ -102,18 +95,36 @@
         ui.iconBtn('close', { title: 'Terminer la session', onClick: () => R.app.go(exitHref) }),
         h('div.topbar-title', h('span.review-scope', 'Révision'), h('span.review-scope-name', scopeName || '')),
         h('div.topbar-actions', undoBtn, counter));
-      const deck = h('div.rdeck');
+      const host = h('div.review-nb');
       const actions = h('div.review-actions');
-      const stage = h('div.review-stage', deck, actions);
+      const stage = h('div.review-stage', host, actions);
       const page = h('div.page.page-review', topbar, h('div.review-progress', bar), stage);
       el.appendChild(page);
 
       if (!queue.length) { empty(); return { unmount() {} }; }
 
       let total = queue.length;
-      let cardEl = null;
-      showCard('stack');
+      const theme = new MutationObserver(() => nb && nb.setDark(isDark()));
+      theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      const mq = matchMedia('(prefers-color-scheme: dark)');
+      const onScheme = () => nb && nb.setDark(isDark());
+      mq.addEventListener('change', onScheme);
+      let rz = 0;
+      const onResize = () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(() => { if (nb && !ended) nb.layout(); }); };
+      window.addEventListener('resize', onResize);
+
+      mountBook();
+      updateProgress();
       document.addEventListener('keydown', onKey);
+      // l'écriture a besoin de ses polices : on les attend (un peu), sinon le texte « saute » en cours de route
+      const fonts = document.fonts ? Promise.all([document.fonts.load('19px Kalam'), document.fonts.load('23px Caveat'), document.fonts.load('21px "Playwrite FR Moderne"')]).catch(() => {}) : null;
+      Promise.race([fonts, wait(1500)]).then(() => { if (!dead) present('open'); });
+
+      function mountBook() {
+        host.replaceChildren();
+        opened = false;
+        nb = Carnet.mount(host, { kicker: 'Cahier de révision', title: scopeName || 'Révision', subtitle: U.plural(total, noun), count: total, reserve: 250, dark: isDark() });
+      }
 
       function current() {
         const it = queue[idx];
@@ -134,245 +145,260 @@
         undoBtn.disabled = !history.length;
       }
 
-      /** L'épaisseur du paquet : 0, 1 ou 2 feuilles sous la fiche, selon ce qu'il reste */
-      function paintStack() {
-        const left = total - done - 1;
-        const want = left >= 2 ? 2 : left;
-        // u1 juste sous la fiche, u2 au fond (avant dans le DOM = peint dessous) ; on retire par le fond
-        for (const i of [1, 2]) {
-          const u = deck.querySelector(`.rdeck-under.u${i}:not(.gone)`);
-          if (i <= want && !u) deck.prepend(h('div.rdeck-under', { class: 'u' + i, 'aria-hidden': 'true' }));
-          if (i > want && u) { u.classList.add('gone'); setTimeout(() => u.remove(), 240); }
+      /* ---- une page du carnet ---------------------------------------------------------------
+         Tout est posé (et découpé en lettres) d'avance, invisible : le carnet mesure la page,
+         réduit l'écriture ou allonge la feuille pour que rien ne déborde, puis le stylo écrit. */
+      function build(it) {
+        const { map, node, ex } = it;
+        const course = S.course(map.courseId);
+        const p = { it, choices: [], pick: new Set(), parts: [], hint: null };
+        const pg = h('div.nb-page');
+        const head = h('div.nb-head', h('span', [course ? course.title : null, map.title].filter(Boolean).join(' · ')), h('span', `${done + 1}/${total}`));
+        p.num = h('span.nb-num', `${done + 1}.`);
+        p.verdict = h('div.nb-verdict', { role: 'status' });
+        pg.append(head);
+        if (ex) {
+          const K = S.EXERCISE_KINDS[ex.kind];
+          p.qt = h('span.nb-qt', ex.q);
+          p.note = h('div.nb-q-note.nb-lead', (K.short || K.label) + (ex.kind === 'qcm' && isMulti(ex) ? ' · plusieurs réponses possibles' : ''));
+          pg.append(h('div.nb-q', p.num, p.qt), p.note);
+          if (ex.kind === 'qcm') {
+            pg.append(h('div.nb-choices', { role: 'group', 'aria-label': 'Choix' }, ex.choices.map((c, k) => {
+              const L = h('span.nb-letter', LETTERS[k]), T = h('span.nb-ctext', c);
+              const b = h('button.nb-choice', { type: 'button', 'aria-pressed': 'false', onclick: () => choose(k) }, L, T);
+              b.disabled = true;
+              p.choices.push({ b, L, T });
+              return b;
+            })));
+          } else if (ex.kind === 'vf') {
+            pg.append(h('div.nb-vf', { role: 'group', 'aria-label': 'Vrai ou faux' }, ['Vrai', 'Faux'].map((c, k) => {
+              const B = h('span.nb-box', { html: '<svg viewBox="0 0 24 24" aria-hidden="true"></svg>' }), T = h('span.nb-ctext', c);
+              const b = h('button.nb-choice', { type: 'button', 'aria-pressed': 'false', onclick: () => choose(k) }, B, T);
+              b.disabled = true;
+              p.choices.push({ b, B, T });
+              return b;
+            })));
+          }
+          const ans = [];
+          if (ex.kind === 'qa') ans.push([h('div.nb-answer-k.nb-lead', 'Réponse :'), 'lead', 500], [h('div.nb-md.nb-red', { html: R.md.render(ex.a) }), 'red', 2200]);
+          if (ex.explain) ans.push([h('div.nb-md.nb-red.nb-explain', { html: R.md.render(ex.explain) }), 'red', 1900]);
+          if (node) ans.push([h('a.nb-open.nb-lead', { href: `#/carte/${map.id}?n=${node.id}` }, 'Revoir dans la carte →'), 'lead', 500]);
+          p.ans = h('div.nb-answer', { hidden: true, 'aria-live': 'polite' }, ans.map((x) => x[0]));
+          p.parts = ans;
+          if (ex.kind === 'qa') pg.append(p.ans, p.verdict);
+          else pg.append(p.verdict, p.ans);
+        } else {
+          const T = S.TYPES[node.type];
+          const nums = S.structNumbers(map);
+          const kids = S.childrenOf(map, node.id);
+          p.qt = h('span.nb-qt', node.title || 'Sans titre');
+          p.note = h('div.nb-q-note.nb-lead', `${S.isStruct(node.type) ? S.kickerOf(map, node, nums) || T.label : T.label} · ${S.promptFor(map, node)}`);
+          pg.append(h('div.nb-q', p.num, p.qt), p.note);
+          const hintTxt = hintFor(map, node);
+          if (hintTxt) { p.hint = h('div.nb-hint.nb-blue', { hidden: true }, 'Indice : ' + hintTxt); pg.append(p.hint); }
+          // définition décomposée : la réponse déroule la chaîne de composantes, en retrait
+          const chain = [];
+          if (node.type === 'definition') {
+            const walk = (id, depth) => { for (const k of S.childrenOf(map, id)) { chain.push({ c: k, depth }); if (k.type === 'idee') walk(k.id, depth + 1); } };
+            walk(node.id, 0);
+          }
+          const rows = chain.length ? chain : kids.map((c) => ({ c, depth: 0 }));
+          const rel = [];
+          for (const e of map.edges) {
+            if (e.kind !== 'link') continue;
+            const out = e.from === node.id, inn = e.to === node.id;
+            if (!out && !inn) continue;
+            const o = S.node(map, out ? e.to : e.from);
+            if (o) rel.push((out ? (e.label || 'voir') + ' → ' : '← ' + (e.label || 'voir') + ' ') + (o.title || 'Sans titre'));
+          }
+          const ans = [[h('div.nb-answer-k.nb-lead', 'Réponse :'), 'lead', 500]];
+          const noteEl = node.note.trim() ? [h('div.nb-md.nb-red', { html: R.md.render(node.note) }), 'red', 2200] : null;
+          if (noteEl && chain.length) ans.push(noteEl); // définition : le texte exact d'abord, sa décomposition ensuite
+          if (rows.length) {
+            ans.push([h('ol.nb-list.nb-red', rows.map(({ c, depth }) => {
+              const pe = S.parentEdge(map, c.id);
+              const pre = node.logic ? (node.logic === 'et' ? 'ET' : 'OU') : pe && pe.label ? pe.label : S.TYPES[c.type].kicker ? S.kickerOf(map, c, nums) : null;
+              return h('li', { style: depth ? `margin-left:${depth * 18}px` : null }, pre ? h('span.nb-lead', pre + ' ') : null, c.title || 'Sans titre');
+            })), 'red', 2200]);
+          }
+          if (noteEl && !chain.length) ans.push(noteEl);
+          if (rel.length) ans.push([h('div.nb-rel.nb-lead', 'Relié à : ' + rel.slice(0, 3).join(' · ') + (rel.length > 3 ? ` (+ ${rel.length - 3})` : '')), 'lead', 900]);
+          ans.push([h('a.nb-open.nb-lead', { href: `#/carte/${map.id}?n=${node.id}` }, 'Ouvrir dans la carte →'), 'lead', 500]);
+          p.ans = h('div.nb-answer', { hidden: true, 'aria-live': 'polite' }, ans.map((x) => x[0]));
+          p.parts = ans;
+          pg.append(p.ans, p.verdict);
         }
+        pg.append(h('div.nb-pageno.nb-lead', String(done + 1)));
+        p.page = pg;
+        return p;
+      }
+      // le texte est découpé une fois la page posée dans le carnet (les lettres ont besoin du DOM)
+      function prepAll(p) {
+        [p.num, p.qt, p.note, p.hint, ...p.choices.flatMap((c) => [c.L, c.T]), ...p.parts.map((x) => x[0])].forEach((n) => n && nb.prep(n));
+      }
+
+      /* petit écran : ce qui s'écrit sous les boutons remonte (défilement doux) — l'œil suit le stylo */
+      function follow(n) {
+        if (!n || !n.isConnected) return;
+        const r = n.getBoundingClientRect(), s = stage.getBoundingClientRect();
+        const bottom = s.bottom - actions.offsetHeight - 12;
+        if (r.bottom > bottom) stage.scrollTo({ top: stage.scrollTop + Math.min(r.bottom - bottom, r.top - s.top - 24), behavior: motion.reduced() || nb.fast ? 'auto' : 'smooth' });
+      }
+      async function writeParts(parts, g) {
+        for (let i = 0; i < parts.length; i++) {
+          if (!alive(g)) return false;
+          const [n, ink, max] = parts[i];
+          follow(n);
+          await nb.write(n, { ink, max, lift: i === parts.length - 1 });
+        }
+        return alive(g);
       }
 
       /**
-       * enter : 'stack' (la fiche monte du paquet) | 'left' | 'right' | 'up' (retour après Annuler,
-       * du côté où elle était partie) ; reveal : la réponse est déjà visible (Annuler).
+       * mode : 'open' (le carnet s'ouvre sur la page) | 'turn' (la page se tourne) | 'instant' (Annuler) ;
+       * open : la réponse est déjà là (Annuler une note) ; fast : tout s'affiche d'un coup.
        */
-      /** Titre avec son fragment mis en relief (n.em), comme dans la carte */
-      function emTitle(c) {
-        const t = c.title || 'Sans titre';
-        const i = c.em ? t.toLowerCase().indexOf(c.em.toLowerCase()) : -1;
-        return i < 0 ? h('span', t) : h('span', t.slice(0, i), h('mark.node-em', t.slice(i, i + c.em.length)), t.slice(i + c.em.length));
-      }
-      function showCard(enter, { reveal: open = false } = {}) {
+      async function present(mode, { open = false, fast = false } = {}) {
         let it = current();
         while (!it && idx < queue.length) { idx++; it = current(); }
         if (!it) { finish(); return; }
+        const g = ++gen;
         cur = it;
-        revealed = open && !isAuto(it);
-        hinted = false;
-        pick = new Set(); verdict = null; validateBtn = null;
+        verdict = null; hinted = false; validateBtn = null;
+        state = 'busy';
+        P = build(it);
         updateProgress();
-        const { map } = it;
-        const course = S.course(map.courseId);
-        // première fiche venue d'une carte de cours : elle « devient » la carte de révision
-        // (élément partagé, View Transitions) — pas d'entrée propre qui doublerait le mouvement
-        const shared = first && done === 0 && idx === 0 && !history.length && first.mapId === map.id && first.key === it.key;
-        const hk = it.key.replace(/:/g, '-'); // « : » sépare les parties d'un data-hero
-
-        // élément partagé : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la
-        // fiche ; le bloc « Commencer » devient la première fiche d'une session tous cours
-        const band = h('header.rcard-band', { dataset: scope.folderId ? { hero: 'folder:' + scope.folderId + ':band' } : scope.courseId ? { hero: 'course:' + scope.courseId + ':band' } : {} },
-          course ? (() => { const mk = R.courseArt.dot(course); if (scope.courseId) mk.dataset.hero = 'course:' + scope.courseId + ':mono'; return mk; })() : null,
-          // où vit la fiche : cours › partie › chapitre › carte (le plan du cours, à chaque fiche)
-          h('span.rcard-ctx', [course ? course.title : null, ...S.locate(map).map((f) => f.label || f.title), map.title].filter(Boolean).join(' › ')),
-          cardState(it.review));
-        // pendant une transition de page (View Transitions), la première fiche est portée par
-        // l'élément partagé : pas d'entrée propre qui doublerait le mouvement
-        const viaVT = done === 0 && !history.length && !!document.documentElement.dataset.vt;
-        const enterCls = shared || viaVT ? '' : open ? 'enter-' + enter : enter === 'stack' ? 'from-stack' : 'enter-' + enter;
-        const hero = shared ? `fiche:${hk}:card` : !scope.courseId && !scope.mapId && done === 0 && !history.length ? 'session:all:card' : null;
-        const titleOf = (t) => (shared ? h('span', { dataset: { hero: `fiche:${hk}:q` } }, t) : t);
-        const card = h('article.rcard', { class: enterCls + (revealed ? ' revealed' : '') + (it.ex ? ' rcard-x kind-' + it.ex.kind : ''), dataset: hero ? { hero } : {} },
-          band,
-          h('div.rcard-body', it.ex ? exerciseBody(it, titleOf) : nodeBody(it, titleOf)),
-          isAuto(it) ? null : [
-            h('span.rate-stamp.left', { 'aria-hidden': 'true' }, it.ex ? 'Pas trouvé' : 'À revoir'),
-            h('span.rate-stamp.mid', { 'aria-hidden': 'true' }, 'Compris'),
-            h('span.rate-stamp.right', { 'aria-hidden': 'true' }, 'Maîtrisé')]);
-        if (course) R.courseArt.tint(card, course);
-
-        if (cardEl) {
-          const old = cardEl;
-          if (!old.classList.contains('leaving')) old.classList.add('leaving');
-          setTimeout(() => old.remove(), 260);
-        }
-        cardEl = card;
-        deck.appendChild(card);
-        paintStack();
-        if (!isAuto(it)) swipe(card);
         paintActions();
-        stage.scrollTop = 0;
-      }
-
-      /** Fiche (carte sans exercices) : le nœud posé comme une question, sa réponse = note, décomposition, renvois */
-      function nodeBody({ map, node }, titleOf) {
-        const T = S.TYPES[node.type];
-        const kids = S.childrenOf(map, node.id);
-        // définition décomposée : la réponse déroule la chaîne de composantes, en retrait
-        const chain = [];
-        if (node.type === 'definition') {
-          const walk = (id, depth) => { for (const k of S.childrenOf(map, id)) { chain.push({ c: k, depth }); if (k.type === 'idee') walk(k.id, depth + 1); } };
-          walk(node.id, 0);
+        const auto = isAuto(it);
+        const reveal0 = open && !auto;
+        if (mode === 'turn') {
+          stage.scrollTo({ top: 0, behavior: motion.reduced() ? 'auto' : 'smooth' });
+          prepAll(P);
+          await nb.turn(P.page);
+        } else {
+          nb.setPage(P.page);
+          prepAll(P);
+          if (mode === 'instant' || fast) nb.skip();
+          if (mode === 'open') { await nb.open(); opened = true; }
+          else if (!motion.reduced()) P.page.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,0,0,1)' });
         }
-        const rows = chain.length ? chain : kids.map((c) => ({ c, depth: 0 }));
-        const anc = S.ancestors(map, node.id);
-        const nums = S.structNumbers(map);
-
-        // renvois : la fiche montre aussi les relations transversales (« entraîne → X », « ← fait appel à Y »)
-        const rel = [];
-        for (const e of map.edges) {
-          if (e.kind !== 'link') continue;
-          const out = e.from === node.id, inn = e.to === node.id;
-          if (!out && !inn) continue;
-          const o = S.node(map, out ? e.to : e.from);
-          if (o) rel.push({ out, label: e.label || 'voir', title: o.title || 'Sans titre' });
+        if (!alive(g)) return;
+        nb.setStack(total - done);
+        const head = [[P.num, 'red', 300, 14], [P.qt, 'lead', 1500], [P.note, 'lead', 600]];
+        for (let i = 0; i < head.length; i++) {
+          const [n, ink, max, cps] = head[i];
+          const last = i === head.length - 1 && !P.choices.length && !reveal0;
+          await nb.write(n, { ink, max, cps: cps || 36, lift: last });
+          if (!alive(g)) return;
         }
-        const relBlock = rel.length ? h('div.answer-block.answer-rel', h('p.overline', 'Relié à'),
-          h('ul.answer-rel-list', rel.slice(0, 3).map((r) => h('li',
-            h('span.decomp-rel', r.out ? r.label + ' →' : '← ' + r.label), h('span', r.title)))),
-          rel.length > 3 ? h('p.answer-more', `+ ${rel.length - 3} autre${rel.length - 3 > 1 ? 's' : ''} dans la carte`) : null) : null;
-        const noteBlock = node.note.trim() ? h('div.answer-block', h('p.overline', chain.length ? 'Définition complète' : 'Note'), h('div.md.answer-note', { html: R.md.render(node.note) })) : null;
-        const answer = h('div.answer', { 'aria-live': 'polite' },
-          h('div.answer-inner',
-            chain.length ? noteBlock : null, // définition : le texte exact d'abord, sa décomposition ensuite
-            kids.length ? h('div.answer-block',
-              h('p.overline', node.logic === 'et' ? 'Éléments cumulatifs (ET)' : node.logic === 'ou' ? 'Éléments alternatifs (OU)' : 'Décomposition'),
-              h('ol.answer-list', rows.map(({ c, depth }) => h('li', { style: depth ? `margin-inline-start:${depth * 18}px` : null },
-                node.logic ? h('span.decomp-logic', node.logic === 'et' ? 'ET' : 'OU') : null,
-                (S.parentEdge(map, c.id) || {}).label ? h('span.decomp-rel', S.parentEdge(map, c.id).label)
-                  : S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
-                emTitle(c))))) : null,
-            chain.length ? null : noteBlock,
-            relBlock,
-            h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Ouvrir dans la carte')));
-        return [
-          anc.length && !(anc.length === 1 && U.norm(anc[0].title) === U.norm(map.title)) ? h('div.rcard-path', anc.map((a, i) => {
-            // un exemple, une cause, une conséquence… : son parent EST la réponse — masqué jusqu'à la réponse
-            const hide = i === anc.length - 1 && RELATIONAL.has(node.type) && !S.isStruct(a.type);
-            return [i ? ' › ' : '', hide ? [h('span.path-mask', { 'aria-label': 'masqué jusqu’à la réponse' }, '···'), h('span.path-last', a.title)] : a.title];
-          })) : null,
-          h('div.rcard-kicker', S.isStruct(node.type) ? S.kickerOf(map, node, nums) : T.label),
-          h('h2.rcard-title', titleOf(node.title)),
-          h('p.rcard-prompt', S.promptFor(map, node)),
-          h('div.rcard-hint', { hidden: true }),
-          answer,
-        ];
-      }
-
-      /**
-       * Exercice : la question, ses choix (QCM : une liste ; vrai ou faux : deux grandes tuiles),
-       * puis, dépliés après la réponse : le verdict, la réponse attendue, l'explication.
-       * Le sujet (le nœud couvert, dans son plan) situe la question sans la souffler.
-       */
-      function exerciseBody({ map, ex, node }, titleOf) {
-        const K = S.EXERCISE_KINDS[ex.kind];
-        const where = node ? [...S.ancestors(map, node.id), node].map((a) => a.title).filter(Boolean) : [];
-        if (where.length && U.norm(where[0]) === U.norm(map.title)) where.shift();
-        const choice = (val, key, text) => h('button.rq-choice', {
-          type: 'button', role: isMulti(ex) ? 'checkbox' : 'radio', 'aria-checked': 'false',
-          dataset: { v: String(val) }, onclick: () => choose(val),
-        }, h('span.rq-key', { 'aria-hidden': 'true' }, key), h('span.rq-text', text), h('span.rq-mark', { 'aria-hidden': 'true' }));
-        const choices = ex.kind === 'qcm'
-          ? h('div.rq-choices', { role: isMulti(ex) ? 'group' : 'radiogroup', 'aria-label': 'Choix' }, ex.choices.map((c, i) => choice(i, LETTERS[i], c)))
-          : ex.kind === 'vf' ? h('div.rq-choices.rq-tf', { role: 'radiogroup', 'aria-label': 'Vrai ou faux' }, choice(true, 'V', 'Vrai'), choice(false, 'F', 'Faux'))
-            : null;
-        const answer = h('div.answer', { 'aria-live': 'polite' },
-          h('div.answer-inner',
-            ex.kind === 'qa' ? h('div.answer-block', h('p.overline', 'Réponse'), h('div.md.answer-note', { html: R.md.render(ex.a) })) : null,
-            ex.explain ? h('div.answer-block', h('p.overline', 'Explication'), h('div.md.answer-note', { html: R.md.render(ex.explain) })) : null,
-            node ? h('a.answer-open', { href: `#/carte/${map.id}?n=${node.id}` }, R.icon('map', 16), 'Revoir dans la carte') : null));
-        return [
-          where.length ? h('div.rcard-path', where.join(' › ')) : null,
-          h('div.rcard-kicker', h('span.rq-kind', K.short || K.label), ex.kind === 'qcm' && isMulti(ex) ? h('span.rq-multi', 'Plusieurs réponses') : null),
-          h('h2.rcard-title.rq-q', titleOf(ex.q)),
-          choices,
-          answer,
-        ];
+        for (let k = 0; k < P.choices.length; k++) {
+          const c = P.choices[k], last = k === P.choices.length - 1;
+          follow(c.b);
+          if (c.L) await nb.write(c.L, { ink: 'lead', lift: false, max: 120 });
+          else await nb.draw(c.B.firstChild, boxPath(), { ink: 'lead', lift: false, speed: 0.45 });
+          if (!alive(g)) return;
+          await nb.write(c.T, { ink: 'lead', lift: last, max: 700 });
+          if (!alive(g)) return;
+        }
+        if (reveal0) {
+          P.ans.hidden = false;
+          if (!(await writeParts(P.parts, g))) return;
+        }
+        nb.fast = false;
+        P.choices.forEach((c) => (c.b.disabled = false));
+        state = reveal0 ? 'rate' : 'answer';
+        paintActions();
       }
 
       /* Actions : l'ancien jeu sort (100 ms, ease-in, −4 px), le nouveau entre avec 50 % de
          chevauchement (rise 240 ms) — jamais deux jeux lisibles en même temps. */
       function paintActions() {
+        const it = cur;
+        const s = [state, it ? it.key : '', hinted].join('|');
+        if (s === sig) return;
+        sig = s;
         const old = [...actions.children].filter((x) => !x.classList.contains('leaving'));
         old.forEach((x) => { x.classList.add('leaving'); setTimeout(() => x.remove(), motion.reduced() ? 0 : 110); });
-        const set = h('div.act-set', { class: old.length && !(revealed && !isAuto(cur)) ? 'enter' : '' }); // les notes ont leur propre cascade
+        const set = h('div.act-set', { class: old.length && state !== 'rate' ? 'enter' : '' }); // les notes ont leur propre cascade
         actions.appendChild(set);
-        const it = cur;
+        validateBtn = null;
         if (!it) return;
         const put = (x) => set.appendChild(x);
         const withKbd = (b, k) => { b.appendChild(h('kbd.btn-kbd', k)); return b; };
-        if (isAuto(it)) {
-          if (verdict) {
-            const last = idx >= queue.length;
-            const b = withKbd(ui.btn(last ? 'Voir le bilan' : 'Continuer', { variant: 'filled', cls: 'reveal-btn', onClick: next }), 'Entrée');
-            put(h('div.reveal-row', b));
-            setTimeout(() => b.focus({ preventScroll: true }), 50);
-          } else if (it.ex.kind === 'qcm' && isMulti(it.ex)) {
-            validateBtn = withKbd(ui.btn('Valider', { variant: 'filled', cls: 'reveal-btn', disabled: !pick.size, onClick: submit }), 'Entrée');
-            put(h('div.reveal-row', validateBtn));
-            put(h('p.review-hint', 'Coche toutes les bonnes réponses, puis valide.'));
-          } else {
-            put(h('p.review-hint', it.ex.kind === 'vf' ? 'Vrai ou faux ? La correction est immédiate.' : 'Choisis une réponse : la correction est immédiate.'));
-          }
+        if (state === 'busy') {
+          put(h('p.review-hint', 'Touche le carnet (ou Espace) pour aller plus vite.'));
           return;
         }
-        if (!revealed) {
-          const b = withKbd(ui.btn('Afficher la réponse', { variant: 'filled', cls: 'reveal-btn', onClick: reveal }), 'Espace');
-          const canHint = !it.ex && !hinted && (S.childrenOf(it.map, it.node.id).length || it.node.note.trim());
-          put(h('div.reveal-row',
-            canHint ? withKbd(ui.btn('Indice', { icon: 'sparkle', variant: 'text', cls: 'hint-btn', onClick: hint }), 'H') : null,
-            b));
-          put(h('p.review-hint', hinted ? 'Avec l’indice, essaie de retrouver le reste avant de vérifier.' : 'Formule ta réponse dans ta tête (ou à voix haute) avant de la découvrir.'));
-          setTimeout(() => b.focus({ preventScroll: true }), 50);
-        } else {
+        if (state === 'next') {
+          const last = idx >= queue.length;
+          const b = withKbd(ui.btn(last ? 'Voir le bilan' : 'Continuer', { variant: 'filled', cls: 'reveal-btn', onClick: next }), 'Entrée');
+          put(h('div.reveal-row', b));
+          if (verdict) put(h('p.review-hint', `Elle reviendra ${verdict.when}.`));
+          setTimeout(() => b.isConnected && b.focus({ preventScroll: true }), 50);
+          return;
+        }
+        if (state === 'rate') {
           const label = it.ex ? { revoir: 'Pas trouvé', compris: 'Trouvé', maitrise: 'Facile' } : null;
           const mk = (rating, variant, key) => h('button.rate-btn', { type: 'button', class: 'rate-' + rating + ' btn-' + variant, onclick: () => rate(rating) },
             ui.mastery(rating, 14),
             h('span.rate-l', label ? label[rating] : S.RATINGS[rating].label),
             h('span.rate-next', nextLabel(it.review, rating)),
             h('kbd.rate-kbd', key));
-          if (it.ex) put(h('p.review-hint.rq-ask', 'Tu avais trouvé ?'));
+          put(h('p.review-hint.rq-ask', it.ex ? 'Tu avais trouvé ?' : 'Tu la connaissais ?'));
           put(h('div.rate-row', mk('revoir', 'outlined', '1'), mk('compris', 'tonal', '2'), mk('maitrise', 'filled', '3')));
-          put(h('p.review-hint.only-touch', 'Astuce : glisse la fiche ← ' + (it.ex ? 'pas trouvé' : 'à revoir') + ' · → maîtrisé'));
           // les notes arrivent après la réponse (overlap), en cascade courte : 30 ms
           R.motion.stagger(Array.from(set.querySelectorAll('.rate-btn')), 0, { step: 30 });
+          return;
         }
+        // state === 'answer'
+        if (isAuto(it)) {
+          if (it.ex.kind === 'qcm' && isMulti(it.ex)) {
+            validateBtn = withKbd(ui.btn('Valider', { variant: 'filled', cls: 'reveal-btn', disabled: !P.pick.size, onClick: submit }), 'Entrée');
+            put(h('div.reveal-row', validateBtn));
+            put(h('p.review-hint', 'Entoure toutes les bonnes réponses, puis valide.'));
+          } else {
+            put(h('p.review-hint', it.ex.kind === 'vf' ? 'Coche Vrai ou Faux · V / F' : `Entoure la bonne réponse · 1 à ${it.ex.choices.length}`));
+          }
+          return;
+        }
+        const b = withKbd(ui.btn('Afficher la réponse', { variant: 'filled', cls: 'reveal-btn', onClick: reveal }), 'Espace');
+        const canHint = !it.ex && !hinted && P.hint;
+        put(h('div.reveal-row',
+          canHint ? withKbd(ui.btn('Indice', { icon: 'sparkle', variant: 'text', cls: 'hint-btn', onClick: hint }), 'H') : null,
+          b));
+        put(h('p.review-hint', hinted ? 'Avec l’indice, essaie de retrouver le reste avant de vérifier.' : 'Formule ta réponse dans ta tête (ou à voix haute) avant de la découvrir.'));
+        setTimeout(() => b.isConnected && b.focus({ preventScroll: true }), 50);
       }
 
-      /* Indice : la structure apparaît sous la consigne (fondu + 4 px, 200 ms) */
-      function hint() {
-        if (revealed || hinted || busy || !cur || cur.ex) return;
-        const content = hintFor(cur.map, cur.node);
-        if (!content) return;
+      /* Indice : il s'écrit au stylo bleu sous la consigne */
+      async function hint() {
+        if (state !== 'answer' || hinted || !cur || cur.ex || !P.hint) return;
+        const g = gen;
         hinted = true;
-        const slot = cardEl.querySelector('.rcard-hint');
-        U.clear(slot);
-        slot.append(h('p.overline', 'Indice'), content);
-        slot.hidden = false;
+        nb.fast = false;
+        state = 'busy';
+        paintActions();
+        P.hint.hidden = false;
+        follow(P.hint);
+        await nb.write(P.hint, { ink: 'blue', max: 1400 });
+        if (!alive(g)) return;
+        nb.fast = false;
+        state = 'answer';
         paintActions();
       }
 
-      /* Révéler : feedback immédiat (pas d'anticipation, action répétée à chaque carte).
-         La réponse se déplie (280 ms) puis son contenu suit en cascade (40 ms). */
-      function reveal() {
-        if (revealed || busy || isAuto(cur)) return;
-        revealed = true;
-        cardEl.classList.add('revealed');
+      /* Révéler : la réponse s'écrit au rouge, sous la question */
+      async function reveal() {
+        if (state !== 'answer' || !cur || isAuto(cur)) return;
+        const g = gen;
+        nb.fast = false;
+        state = 'busy';
         paintActions();
-        bringAnswer();
-      }
-      // petit écran : si la réponse commence sous la ligne de flottaison, on l'y amène
-      // (défilement doux, après le dépliage — l'œil suit la réponse, pas un saut)
-      function bringAnswer() {
-        setTimeout(() => {
-          const a = cardEl && cardEl.querySelector('.answer');
-          if (!a || !a.isConnected) return;
-          const top = a.getBoundingClientRect().top - stage.getBoundingClientRect().top;
-          if (top > stage.clientHeight * 0.55) stage.scrollTo({ top: stage.scrollTop + top - 96, behavior: motion.reduced() ? 'auto' : 'smooth' });
-        }, motion.reduced() ? 0 : 200);
+        P.ans.hidden = false;
+        if (!(await writeParts(P.parts, g))) return;
+        nb.fast = false;
+        state = 'rate';
+        paintActions();
       }
 
       /** Enregistre la note de l'élément affiché : état, journal, file (« à revoir » revient une fois), Annuler */
@@ -396,129 +422,142 @@
         idx++;
       }
 
-      /* Choisir (QCM, vrai ou faux) : un seul choix → corrigé tout de suite ;
-         plusieurs réponses attendues → on coche, puis Valider. */
-      function choose(val) {
-        if (!isAuto(cur) || verdict || busy) return;
+      /* Choisir (QCM, vrai ou faux) : un seul choix → entouré (ou coché) puis corrigé tout de suite ;
+         plusieurs réponses attendues → on entoure, puis Valider. */
+      async function choose(k) {
+        if (state !== 'answer' || !isAuto(cur) || !P || k >= P.choices.length) return;
+        const g = gen, c = P.choices[k];
+        nb.fast = false;
         if (cur.ex.kind === 'qcm' && isMulti(cur.ex)) {
-          if (pick.has(val)) pick.delete(val); else pick.add(val);
-          for (const b of U.$$('.rq-choice', cardEl)) {
-            const on = pick.has(+b.dataset.v);
-            b.classList.toggle('is-picked', on);
-            b.setAttribute('aria-checked', String(on));
+          if (P.drawing) return;
+          if (P.pick.has(k)) {
+            P.pick.delete(k);
+            if (c.svg) { c.svg.remove(); c.svg = null; }
+            c.b.setAttribute('aria-pressed', 'false');
+          } else {
+            P.pick.add(k);
+            c.b.setAttribute('aria-pressed', 'true');
+            P.drawing = true;
+            motion.haptic(6);
+            c.svg = await nb.mark(c.L, 'circle', { ink: 'blue' });
+            P.drawing = false;
+            if (!alive(g)) return;
           }
-          motion.haptic(6);
-          if (validateBtn) validateBtn.disabled = !pick.size;
+          if (validateBtn) validateBtn.disabled = !P.pick.size;
           return;
         }
-        pick = new Set([val]);
-        submit();
+        P.pick = new Set([k]);
+        c.b.setAttribute('aria-pressed', 'true');
+        state = 'busy';
+        P.choices.forEach((x) => (x.b.disabled = true));
+        paintActions();
+        motion.haptic(6);
+        if (cur.ex.kind === 'qcm') await nb.mark(c.L, 'circle', { ink: 'blue' });
+        else await nb.mark(c.B, 'cross', { ink: 'blue' });
+        if (!alive(g)) return;
+        correct(g);
+      }
+      function submit() {
+        if (state !== 'answer' || !isAuto(cur) || !P.pick.size || P.drawing) return;
+        state = 'busy';
+        P.choices.forEach((x) => (x.b.disabled = true));
+        paintActions();
+        correct(gen);
       }
 
-      /* Corriger : la note découle de la réponse (juste deux fois de suite = maîtrisé, faux = à revoir).
-         Les choix se colorent (juste : primaire, faux : erreur, oublié : contour), le verdict et
-         l'explication se déplient sous la question. */
-      function submit() {
-        if (!isAuto(cur) || verdict || busy || !pick.size) return;
+      /* Corriger au stylo rouge : coche devant les bonnes réponses, rature les mauvaises, verdict
+         souligné, puis l'explication. La note découle de la réponse (juste deux fois de suite = maîtrisé). */
+      async function correct(g) {
         const ex = cur.ex;
-        const given = ex.kind === 'qcm' && isMulti(ex) ? [...pick] : [...pick][0];
-        const correct = S.isCorrect(ex, given);
-        const rating = S.gradeFor(ex.review, correct);
+        const given = ex.kind === 'vf' ? P.pick.has(0) : isMulti(ex) ? [...P.pick].sort((a, b) => a - b) : [...P.pick][0];
+        const ok = S.isCorrect(ex, given);
+        const rating = S.gradeFor(ex.review, ok);
         const when = nextLabel(ex.review, rating);
-        commit(rating, { correct });
-        verdict = { correct, rating };
-        revealed = true;
-        const right = (v) => (ex.kind === 'vf' ? v === ex.answer : isMulti(ex) ? ex.answer.includes(v) : v === ex.answer);
-        for (const b of U.$$('.rq-choice', cardEl)) {
-          const v = ex.kind === 'vf' ? b.dataset.v === 'true' : +b.dataset.v;
-          const ok = right(v), picked = pick.has(v);
-          b.classList.remove('is-picked');
-          b.classList.add(ok && picked ? 'is-right' : picked ? 'is-wrong' : ok ? 'is-missed' : 'is-dim');
-          b.setAttribute('aria-checked', String(picked));
-          b.disabled = true;
-          const mark = b.querySelector('.rq-mark');
-          if (ok || picked) mark.appendChild(R.icon(ok ? 'check' : 'close', 18));
-        }
-        const good = ex.kind === 'vf' ? (ex.answer ? 'Vrai' : 'Faux')
-          : (isMulti(ex) ? ex.answer : [ex.answer]).map((i) => LETTERS[i]).join(', ');
-        const verdictEl = h('div.rq-verdict', { class: correct ? 'is-ok' : 'is-ko', role: 'status' },
-          h('span.rq-verdict-ic', R.icon(correct ? 'check' : 'close', 20)),
-          h('div',
-            h('p.rq-verdict-t', correct ? (rating === 'maitrise' ? 'Juste — maîtrisé' : 'Bonne réponse') : 'Pas tout à fait'),
-            h('p.rq-verdict-s', correct ? `Elle reviendra ${when}.` : `Bonne réponse : ${good}. Elle reviendra ${when}.`)));
-        cardEl.querySelector('.answer-inner').prepend(verdictEl);
-        cardEl.classList.add('revealed', 'answered', correct ? 'is-ok' : 'is-ko');
+        commit(rating, { correct: ok });
+        verdict = { correct: ok, rating, when };
         bar.querySelector('.progress-bar').style.setProperty('--p', String(done / total));
         undoBtn.disabled = false;
-        if (correct) {
-          const r = cardEl.querySelector('.rq-choice.is-right') || cardEl;
-          const box = r.getBoundingClientRect();
-          motion.burst(box.left + box.width / 2, box.top + box.height / 2, { count: rating === 'maitrise' ? 10 : 6, spread: 40 });
+        if (ex.kind === 'vf') {
+          const right = ex.answer ? 0 : 1;
+          await nb.mark(P.choices[right].T, 'check', { ink: 'red', at: 'after', lift: ok });
+          if (!alive(g)) return;
+          if (!ok) await nb.mark(P.choices[1 - right].T, 'strike', { ink: 'red' });
+        } else {
+          const good = new Set(isMulti(ex) ? ex.answer : [ex.answer]);
+          const todo = [];
+          P.choices.forEach((c, k) => { if (good.has(k)) todo.push(['check', c.T]); else if (P.pick.has(k)) todo.push(['strike', c.T]); });
+          for (let n = 0; n < todo.length; n++) {
+            await nb.mark(todo[n][1], todo[n][0], { ink: 'red', lift: n === todo.length - 1 });
+            if (!alive(g)) return;
+          }
+        }
+        if (!alive(g)) return;
+        P.verdict.textContent = ok ? (rating === 'maitrise' ? 'Juste — maîtrisé' : 'Bien !') : 'À revoir';
+        follow(P.verdict);
+        await nb.write(P.verdict, { ink: 'red', cps: 16, max: 600, lift: false });
+        if (!alive(g)) return;
+        await nb.mark(P.verdict, 'underline', { ink: 'red', lift: !P.parts.length });
+        if (!alive(g)) return;
+        if (ok) {
+          const r = P.verdict.getBoundingClientRect();
+          motion.burst(r.left + r.width / 2, r.top + r.height / 2, { count: rating === 'maitrise' ? 10 : 6, spread: 40 });
           motion.haptic(10);
         } else {
           motion.haptic([10, 40, 10]);
         }
+        if (P.parts.length) {
+          P.ans.hidden = false;
+          if (!(await writeParts(P.parts, g))) return;
+        }
+        nb.fast = false;
+        state = 'next';
         paintActions();
-        bringAnswer();
       }
 
-      /* Continuer (après une correction) : la carte part du côté de sa note, la suivante monte du paquet */
-      function next() {
-        if (!verdict || busy) return;
-        busy = true;
-        const leave = cardEl;
-        leave.classList.add('leaving', verdict.correct ? 'out-right' : 'out-left');
-        setTimeout(() => {
-          busy = false;
-          if (idx >= queue.length) finish();
-          else showCard('stack');
-        }, motion.reduced() ? 0 : 200);
-      }
-
-      function rate(rating, fling) {
-        if (!revealed || busy || !cur || isAuto(cur)) return;
-        busy = true;
+      /* Noter (question-réponse, fiche) : le verdict s'écrit en rouge, puis la page se tourne */
+      async function rate(rating) {
+        if (state !== 'rate' || !cur || isAuto(cur)) return;
+        const g = gen, ex = !!cur.ex;
+        nb.fast = false;
+        state = 'busy';
         commit(rating);
+        updateProgress();
+        paintActions();
         if (rating === 'maitrise') {
-          // action secondaire discrète : vue à chaque carte maîtrisée, donc petite
-          const r = cardEl.getBoundingClientRect();
-          motion.burst(r.left + r.width / 2, r.top + 40, { count: 8, spread: 48 });
+          const r = nb.book.getBoundingClientRect();
+          motion.burst(r.left + r.width / 2, r.top + 60, { count: 8, spread: 48 });
         }
-        if (fling && cardEl.animate && !motion.reduced()) {
-          // la carte lancée garde sa vitesse : on prolonge le geste plutôt que de rejouer une sortie
-          const dir = Math.sign(fling.dx) || 1;
-          const dist = window.innerWidth * 0.9;
-          const ms = U.clamp((dist - Math.abs(fling.dx)) / Math.max(1.2, Math.abs(fling.v)), 120, 220);
-          cardEl.classList.add('leaving');
-          cardEl.animate([
-            { transform: `translateX(${fling.dx}px) rotate(${fling.dx / 24}deg)`, opacity: 1 },
-            { transform: `translateX(${dir * dist}px) translateY(20px) rotate(${dir * 10}deg)`, opacity: 0 },
-          ], { duration: ms, easing: motion.css.in, fill: 'forwards' });
-        } else {
-          // le tampon de la note frappe la fiche (scale 1.5 → 1, 140 ms), puis elle part dans sa direction
-          const stamp = cardEl.querySelector(rating === 'revoir' ? '.rate-stamp.left' : rating === 'maitrise' ? '.rate-stamp.right' : '.rate-stamp.mid');
-          const leave = cardEl;
-          const out = rating === 'revoir' ? 'out-left' : rating === 'maitrise' ? 'out-right' : 'out-up';
-          if (motion.reduced()) leave.classList.add('leaving', out);
-          else {
-            stamp.classList.add('slam');
-            leave.classList.add('stamped');
-            setTimeout(() => leave.classList.add('leaving', out), 140);
-          }
-        }
-        // chevauchement : la fiche suivante monte du paquet quand la précédente est à mi-sortie
-        setTimeout(() => {
-          busy = false;
-          if (idx >= queue.length) finish();
-          else showCard('stack');
-        }, motion.reduced() ? 0 : fling ? 120 : 260);
+        P.verdict.textContent = ex ? { revoir: 'Pas trouvé', compris: 'Trouvé', maitrise: 'Facile !' }[rating] : { revoir: 'À revoir', compris: 'Compris', maitrise: 'Maîtrisé !' }[rating];
+        follow(P.verdict);
+        await nb.write(P.verdict, { ink: 'red', cps: 16, max: 600, lift: rating !== 'revoir' });
+        if (!alive(g)) return;
+        if (rating === 'revoir') await nb.mark(P.verdict, 'underline', { ink: 'red' });
+        if (!alive(g)) return;
+        await wait(motion.reduced() ? 0 : 320);
+        if (alive(g)) advance(g, rating === 'revoir');
+      }
+
+      /* Continuer (après une correction) */
+      function next() {
+        if (state !== 'next' || !verdict) return;
+        state = 'busy';
+        paintActions();
+        advance(gen, !verdict.correct);
+      }
+      // une question ratée reçoit un marque-page, puis on tourne la page
+      async function advance(g, flag) {
+        nb.fast = false;
+        if (flag) await nb.flag();
+        if (!alive(g)) return;
+        if (idx >= queue.length) finish();
+        else present('turn');
       }
 
       /* Annuler la dernière note : l'état de la fiche, le journal du jour et la file reviennent
-         en arrière ; la fiche revient du côté où elle était partie, réponse ouverte.
-         Un QCM ou un vrai ou faux revient sans sa correction : on peut y répondre à nouveau. */
+         en arrière ; la page revient, réponse ouverte. Un QCM ou un vrai ou faux revient sans sa
+         correction : on peut y répondre à nouveau. */
       function undo() {
-        if (busy || !history.length) return;
+        if (!history.length || !['answer', 'rate', 'next', 'done'].includes(state) || (P && P.drawing)) return;
         const last = history.pop();
         const map = S.map(last.mapId);
         const it = map && S.reviewItem(map, last.key);
@@ -531,71 +570,21 @@
         if (last.requeued) { queue.pop(); total--; requeued.delete(map.id + '|' + last.key); }
         done--;
         idx = last.qIdx;
+        const auto = 'correct' in last;
         if (ended) {
           ended = false;
-          const end = deck.querySelector('.review-end');
+          const end = stage.querySelector('.review-end');
           if (end) end.remove();
           stage.classList.remove('is-end');
           document.removeEventListener('keydown', onEndKey);
           document.addEventListener('keydown', onKey);
-        } else if (cardEl) {
-          cardEl.classList.add('leaving', 'out-down');
+          stage.scrollTop = 0;
+          mountBook();
+          present('open', { open: !auto, fast: true });
+        } else {
+          present('instant', { open: !auto });
         }
-        const auto = 'correct' in last;
-        const from = auto ? (last.correct ? 'right' : 'left') : last.rating === 'revoir' ? 'left' : last.rating === 'maitrise' ? 'right' : 'up';
-        showCard(from, { reveal: !auto });
         ui.snack(auto ? 'Réponse annulée' : 'Note annulée', { duration: 1400 });
-      }
-
-      /* Glisser pour noter (manipulation directe) :
-         suivi 1:1 + rotation en arc ; les tampons « À revoir » / « Maîtrisé » apparaissent
-         avec la distance (parenting) ; au relâchement, un geste rapide suffit (vélocité),
-         sinon la carte revient en ressort, en conservant l'élan. */
-      function swipe(card) {
-        let sx = 0, sy = 0, active = false, dx = 0, armed = 0, back = null;
-        const vt = motion.velocity();
-        const stampL = card.querySelector('.rate-stamp.left');
-        const stampR = card.querySelector('.rate-stamp.right');
-        const paint = (x) => {
-          card.style.transform = `translateX(${x}px) rotate(${x / 24}deg)`;
-          stampL.style.opacity = String(U.clamp((-x - 24) / 80, 0, 1));
-          stampR.style.opacity = String(U.clamp((x - 24) / 80, 0, 1));
-        };
-        card.addEventListener('pointerdown', (e) => {
-          if (!revealed || busy || e.pointerType === 'mouse' || e.target.closest('a, button')) return;
-          if (back) { back(); back = null; }
-          active = true; sx = e.clientX - dx; sy = e.clientY;
-          vt.reset(); vt.add(e.clientX, 0);
-          card.classList.add('dragging');
-          card.style.animation = 'none';
-          card.setPointerCapture(e.pointerId);
-        });
-        card.addEventListener('pointermove', (e) => {
-          if (!active) return;
-          const ndx = e.clientX - sx;
-          if (Math.abs(e.clientY - sy) > Math.abs(ndx) * 1.5 && Math.abs(ndx) < 20) return;
-          dx = ndx;
-          vt.add(e.clientX, 0);
-          paint(dx);
-          const now = Math.abs(dx) > 110 ? Math.sign(dx) : 0;
-          if (now && now !== armed) motion.haptic(8); // seuil franchi
-          armed = now;
-        });
-        const end = () => {
-          if (!active) return;
-          active = false;
-          card.classList.remove('dragging');
-          const v = vt.get().x;
-          const goes = Math.abs(dx) > 110 || (Math.abs(v) > 0.6 && Math.abs(dx) > 30 && Math.sign(v) === Math.sign(dx));
-          if (goes) { const x = dx; dx = 0; rate(x > 0 ? 'maitrise' : 'revoir', { dx: x, v }); return; }
-          back = motion.spring({
-            from: dx, to: 0, velocity: v, ...motion.springs.snappy,
-            onUpdate: (x) => { dx = x; paint(x); },
-            onDone: () => { back = null; dx = 0; card.style.transform = ''; stampL.style.opacity = '0'; stampR.style.opacity = '0'; },
-          });
-        };
-        card.addEventListener('pointerup', end);
-        card.addEventListener('pointercancel', end);
       }
 
       function onKey(e) {
@@ -604,21 +593,23 @@
         if (e.key === 'Escape') { R.app.go(exitHref); return; }
         if ((k === 'z' && !e.altKey) || e.key === 'Backspace') { e.preventDefault(); undo(); return; }
         if (e.ctrlKey || e.metaKey || e.altKey || !cur) return;
+        if (state === 'busy') { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); nb.skip(); } return; }
+        if (state === 'next') { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); next(); } return; }
+        if (state === 'rate') { if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); rate(KEYS[+e.key - 1]); } return; }
+        if (state !== 'answer') return;
         if (isAuto(cur)) {
-          // QCM, vrai ou faux : 1-8 / A-H (V/F) choisissent, Entrée valide puis continue
-          if (verdict) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); next(); } return; }
+          // QCM, vrai ou faux : 1-8 / A-H (V/F) choisissent, Entrée valide
           if (cur.ex.kind === 'vf') {
-            if (k === 'v' || k === '1') { e.preventDefault(); choose(true); } else if (k === 'f' || k === '2') { e.preventDefault(); choose(false); }
+            if (k === 'v' || k === '1') { e.preventDefault(); choose(0); } else if (k === 'f' || k === '2') { e.preventDefault(); choose(1); }
             return;
           }
           const n = /^[1-8]$/.test(k) ? +k - 1 : /^[a-h]$/.test(k) ? LETTERS.indexOf(k.toUpperCase()) : -1;
           if (n >= 0 && n < cur.ex.choices.length) { e.preventDefault(); choose(n); return; }
-          if (e.key === 'Enter' && pick.size) { e.preventDefault(); submit(); }
+          if (e.key === 'Enter' && P.pick.size) { e.preventDefault(); submit(); }
           return;
         }
-        if (!revealed && k === 'h') { e.preventDefault(); hint(); return; }
-        if (!revealed && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); reveal(); return; }
-        if (revealed && ['1', '2', '3'].includes(e.key)) { e.preventDefault(); rate(KEYS[+e.key - 1]); }
+        if (k === 'h') { e.preventDefault(); hint(); return; }
+        if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); reveal(); }
       }
       // Annuler reste disponible sur l'écran de fin (Z)
       function onEndKey(e) {
@@ -628,19 +619,31 @@
       }
 
       /* Fin de session — le seul moment vraiment expressif (pic-fin) :
-         chorégraphie en 4 temps, ≈ 1 s, jamais bloquante.
+         le carnet se ferme, rétrécit et porte le score au rouge ; puis, dessous,
          1) la flamme surgit (ease-pop) et sa série défile  2) le titre est surligné
          3) le bilan arrive, chaque barre grandit en décalé  4) ce qui est à retravailler, les actions. */
-      function finish() {
+      async function finish() {
         ended = true;
+        state = 'closing';
+        const g = ++gen;
+        cur = null;
         document.removeEventListener('keydown', onKey);
         bar.querySelector('.progress-bar').style.setProperty('--p', '1');
         counter.textContent = `${total} / ${total}`;
-        undoBtn.disabled = !history.length;
+        undoBtn.disabled = true;
         U.clear(actions);
-        U.$$('.rdeck-under', deck).forEach((u) => u.remove());
-        if (cardEl) { if (!cardEl.classList.contains('leaving')) cardEl.classList.add('leaving'); const c = cardEl; setTimeout(() => c.remove(), 260); cardEl = null; }
+        sig = '';
         stage.classList.add('is-end');
+        stage.scrollTo({ top: 0, behavior: motion.reduced() ? 'auto' : 'smooth' });
+        if (opened) {
+          nb.fast = false;
+          await nb.close({ score: `${done - results.revoir}/${done}` });
+          if (!alive(g)) return;
+          // le carnet réduit libère sa place : le bilan remonte dessous
+          nb.book.style.marginBottom = -(nb.H * 0.36) + 4 + 'px';
+        } else host.replaceChildren();
+        if (!alive(g)) return;
+        undoBtn.disabled = !history.length;
         const streak = S.streak();
         const fc = S.forecast(2, scope.folderId ? { folderId: scope.folderId } : scope.courseId ? { courseId: scope.courseId } : {});
         const remaining = S.dueCount(scope);
@@ -680,7 +683,8 @@
           h('div.end-actions',
             ui.btn('Terminer', { variant: remaining ? 'tonal' : 'filled', onClick: () => R.app.go(exitHref) }),
             remaining ? ui.btn('Encore une série', { icon: 'play', variant: 'filled', onClick: () => R.app.go(sessionBase() + '?n=' + (q.n != null ? q.n : S.data.settings.sessionSize) + '&r=' + Date.now(), { replace: true }) }) : null));
-        deck.appendChild(end);
+        stage.insertBefore(end, actions);
+        state = 'done';
         document.removeEventListener('keydown', onEndKey);
         document.addEventListener('keydown', onEndKey);
         // la flamme a sa propre entrée (flame-pop) ; le reste suit en cascade de 70 ms
@@ -702,7 +706,7 @@
         const anyReviewable = S.dueCount(scope) > 0 || S.reviewQueue(scope, { all: true, limit: 1 }).length > 0;
         const fc = S.forecast(2, scope.folderId ? { folderId: scope.folderId } : scope.courseId ? { courseId: scope.courseId } : {});
         undoBtn.hidden = true;
-        deck.appendChild(ui.emptyState(anyReviewable ? {
+        stage.insertBefore(ui.emptyState(anyReviewable ? {
           icon: 'check', title: 'Tout est à jour',
           text: fc[1].n ? `Prochaine révision : demain · ${U.plural(fc[1].n, 'élément')}. Tu peux aussi réviser quand même.` : 'Rien n’est dû aujourd’hui. Tu peux réviser quand même pour t’entraîner.',
           action: h('div.end-actions',
@@ -712,11 +716,21 @@
           icon: 'cards', title: 'Pas encore de questions de révision',
           text: 'Importe un cours avec ses exercices (QCM, vrai ou faux, questions) : ils deviennent ta révision. Sans exercices, chaque nœud qui a une note devient une question.',
           action: ui.btn('Retour', { variant: 'filled', onClick: () => R.app.go(exitHref) }),
-        }));
+        }), actions);
         counter.textContent = '';
       }
 
-      return { unmount() { document.removeEventListener('keydown', onKey); document.removeEventListener('keydown', onEndKey); } };
+      return {
+        unmount() {
+          dead = true;
+          gen++;
+          document.removeEventListener('keydown', onKey);
+          document.removeEventListener('keydown', onEndKey);
+          window.removeEventListener('resize', onResize);
+          mq.removeEventListener('change', onScheme);
+          theme.disconnect();
+        },
+      };
     },
   };
 })(window.R);
