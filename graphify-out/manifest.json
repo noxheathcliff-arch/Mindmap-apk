@@ -156,8 +156,8 @@
     "semantic_hash": ""
   },
   "tests/skill-bench.cjs": {
-    "mtime": 1792502593.143497,
-    "seen": 1792502676.637899,
+    "mtime": 1792502684.8402355,
+    "seen": 1792564641.9333673,
     "ast_hash": "48e2b361c0d32d9def2f7b79ebfda281",
     "semantic_hash": ""
   },
@@ -240,8 +240,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792502582.1971192,
-    "seen": 1792502676.637926,
+    "mtime": 1792502684.8297567,
+    "seen": 1792564641.933389,
     "ast_hash": "3b3eb74433507b720ec4ed846326306a",
     "semantic_hash": ""
   },
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792502664.5833454,
-    "seen": 1792502676.6379364,
-    "ast_hash": "a4be2b21d8f4db7da086f33d86dd2ea9",
+    "mtime": 1792564630.021829,
+    "seen": 1792564641.9333951,
+    "ast_hash": "03ee52d917af9c0bdcbc80f8bd3e6af0",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.1.json": {
-    "mtime": 1792502664.6175814,
-    "seen": 1792502676.637881,
-    "ast_hash": "6952c1750cf4868058f46ff4b75ffab0",
+    "mtime": 1792564630.0052764,
+    "seen": 1792564641.9333458,
+    "ast_hash": "dd9699717a08f1cafda36c40c7813df0",
     "semantic_hash": ""
   }
 }

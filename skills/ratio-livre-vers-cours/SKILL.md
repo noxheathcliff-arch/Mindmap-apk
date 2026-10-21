@@ -11,7 +11,7 @@ La spécification complète est dans `ratio_book_to_course_compiler_v4.1.json` (
 
 Le lecteur doit comprendre la carte **sans ouvrir une seule note**. Test des 3 secondes : lis chaque arête comme une phrase « titre du parent + libellé + titre de l'enfant ». Si la phrase est fausse, vague ou parle du livre, refais-la.
 
-- **Le titre EST le contenu (L1).** Jamais un titre-étiquette (« Illustration », « Exemple », « La leçon pratique », « Une affirmation du texte », « La distinction », « Première étape ») avec le vrai contenu caché dans la note.
+- **Le titre EST le contenu (L1).** Sauf les intitulés (chapitre, leçon, section, carte, plan) : titre exact du livre, explication en note. Pour les autres nœuds : Jamais un titre-étiquette (« Illustration », « Exemple », « La leçon pratique », « Une affirmation du texte », « La distinction », « Première étape ») avec le vrai contenu caché dans la note.
   - Mauvais : Refus assertif —illustré par→ « Exemple du collègue qui crie » (note : « Un collègue vous crie dessus… »).
   - Bon : Refus assertif —illustré par→ « Face au collègue qui crie : « Je t'écoute quand tu baisses le ton » ».
 - **Le libellé dit une relation vraie au sujet, pas au livre (L2, L3).** Bannis sous un intitulé : « sert à », « vise à », « commence par », « présente », « rappelle », « introduit », « met en lumière », « invite à », « développe », « aborde ».
@@ -23,7 +23,7 @@ Le lecteur doit comprendre la carte **sans ouvrir une seule note**. Test des 3 s
 - **Pas de voix méta (L6)** : jamais « le chapitre avance que », « le récit rapporte », « l'autrice explique », « cette carte ». On énonce directement : « 95 % de nos paroles visent à être aimé ». Pas de note-gabarit répétée (L7).
 - **Promesse tenue (L8)** : « 3 formulations pour dire non » donne 3 nœuds `formule` avec la phrase exacte en titre. Un `exercice` a ses `etape`, pas des `idee`.
 - **Type selon la fonction (L9)** : conseil, formule, exercice, etape, chiffre, etude avant `idee` (le validateur signale plus de 70 % d'`idee`).
-- **Titres propres (L11)** : pas de « : » ni de « . » final ; le titre de carte ou de racine énonce la thèse. Au plus 7 enfants, sinon regroupe (L13). ET/OU justes (L10).
+- **Titres propres (L11)** : pas de « : » ni de « . » final ; les intitulés (chapitre, leçon, section, titre de carte, plan) gardent le titre exact du livre, la thèse va dans leur note. Au plus 7 enfants, sinon regroupe (L13). ET/OU justes (L10).
 - **Pas de renvoi entre frères (L12)** sauf contraste (« se distingue de », « s'oppose à »). Plan : verbe concret de la transition, pas le même verbe partout (L14).
 - **Livre hors droit (essai, développement personnel)** : `reader_first.essay_mode`. Les conseils deviennent des `conseil` à l'impératif, les phrases à dire des `formule`, les cas réels des titres qui racontent le cas.
 - **Passe finale** (`reader_first.final_pass`) : relis chaque carte en lisant seulement titres et libellés ; le validateur Python émet des avertissements « lecture directe — … » à corriger tous avant livraison.
