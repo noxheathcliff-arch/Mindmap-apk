@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792565036.9902813,
-    "seen": 1792565165.3003018,
-    "ast_hash": "3617f0bf6264fdbff746478efb745431",
+    "mtime": 1792565767.2011223,
+    "seen": 1792565835.6648993,
+    "ast_hash": "2778d79006ced095a66e127c30e5e5fd",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -12,9 +12,9 @@
     "semantic_hash": ""
   },
   "js/icons.js": {
-    "mtime": 1792565036.9858108,
-    "seen": 1792565165.3003156,
-    "ast_hash": "262e9a01adfcf51ac1c6ab88799340cd",
+    "mtime": 1792565767.2045712,
+    "seen": 1792565835.6649134,
+    "ast_hash": "c193e379b2deea4e2c8f1f394177129e",
     "semantic_hash": ""
   },
   "js/layout.js": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "js/ui.js": {
-    "mtime": 1792565020.9863448,
-    "seen": 1792565165.3003316,
+    "mtime": 1792565167.5974038,
+    "seen": 1792565835.6649284,
     "ast_hash": "9e631213c9c7ebf2753a1348c88c8e52",
     "semantic_hash": ""
   },
@@ -72,26 +72,26 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792565036.9883926,
-    "seen": 1792565165.300336,
+    "mtime": 1792565167.5977063,
+    "seen": 1792565835.6649323,
     "ast_hash": "eaa51ff6374bf5aa5e6867ff917a1774",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1792467866.1056862,
-    "seen": 1792480628.6365364,
-    "ast_hash": "ded5b66e9fde1078b3ddf595fba41ad9",
+    "mtime": 1792565785.369962,
+    "seen": 1792565835.6649342,
+    "ast_hash": "af3ff34c1d58908eebd49bd51407bb34",
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1792565120.1518443,
-    "seen": 1792565165.3003395,
+    "mtime": 1792565167.5979927,
+    "seen": 1792565835.6649356,
     "ast_hash": "cbbb77ac2f256847274da070d47d95b8",
     "semantic_hash": ""
   },
   "js/views/outline.js": {
-    "mtime": 1792565036.986702,
-    "seen": 1792565165.3003411,
+    "mtime": 1792565167.5981705,
+    "seen": 1792565835.6649368,
     "ast_hash": "8693be089465ec2d0ef38b43ad36f056",
     "semantic_hash": ""
   },
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792565161.105308,
-    "seen": 1792565165.3003502,
-    "ast_hash": "f57ba1df3e74bb620cd9f142f424d410",
+    "mtime": 1792565831.5515666,
+    "seen": 1792565835.6649454,
+    "ast_hash": "30531b5e2b7d1909a71f6e2ae6ef9a0e",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {

@@ -3098,7 +3098,7 @@
 
     /* Bottom sheet : glisser la poignée (mobile) */
     /* Bottom sheet : manipulation directe (Apple Fluid Interfaces)
-       — suivi 1:1, résistance élastique au-delà du haut (rubber band),
+       — suivi 1:1, butée nette au plein écran (ne décolle jamais du bas),
        — au relâchement, projection de la position avec la vitesse du doigt,
        — ressort vers le cran le plus proche (plein / mi-hauteur / fermé). */
     (function sheetDrag() {
@@ -3109,7 +3109,6 @@
         return { full: 0, half: Math.max(0, H - window.innerHeight * 0.52), closed: H };
       };
       const currentY = () => pane.getBoundingClientRect().top - (window.innerHeight - pane.offsetHeight);
-      const rubber = (over) => over * 0.55 / (1 + over / 300);
       const onDownH = (e) => {
         if (paneMode() !== 'bottom') return;
         if (springStop) { springStop(); springStop = null; }
@@ -3125,7 +3124,7 @@
         if (!dragging) return;
         const raw = y0 + e.clientY - startY;
         if (Math.abs(e.clientY - startY) > 4) moved = true;
-        y = raw < 0 ? -rubber(-raw) : raw;
+        y = Math.max(0, raw); // butée nette en plein écran
         vt.add(0, e.clientY);
         pane.style.transform = `translateY(${y}px)`;
       };
@@ -3143,11 +3142,12 @@
         const v = vt.get().y; // px/ms
         const S2 = snaps();
         const projected = y + v * 99; // decelerationRate 0.99
+        const v0 = y <= 0 && v < 0 ? 0 : v; // déjà en butée : pas d'élan vers le haut
         let target = 'full', best = Infinity;
         for (const [k, val] of Object.entries(S2)) { const d = Math.abs(projected - val); if (d < best) { best = d; target = k; } }
         springStop = motion.spring({
-          from: y, to: S2[target], velocity: v, ...motion.springs.drawer,
-          onUpdate: (val) => { pane.style.transform = `translateY(${val}px)`; },
+          from: y, to: S2[target], velocity: v0, ...motion.springs.drawer,
+          onUpdate: (val) => { pane.style.transform = `translateY(${Math.max(0, val)}px)`; },
           onDone: () => {
             springStop = null;
             if (target === 'closed') { st.paneOpen = false; st.sheet = 'closed'; if (pane.contains(document.activeElement)) canvas.focus({ preventScroll: true }); }

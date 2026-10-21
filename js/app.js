@@ -569,10 +569,18 @@
   function openImport() {
     let parsed = null, mode = 'add', closeFn = null;
     const KIND = { backup: 'Sauvegarde complète', course: 'Cours', map: 'Carte seule', maps: 'Cartes' };
-    const fileInput = h('input', { type: 'file', accept: 'application/json,.json,.txt', hidden: true });
-    const drop = h('div.imp-drop', { tabindex: '0', role: 'button', autofocus: true, 'aria-label': 'Choisir un fichier à importer' },
-      R.icon('import', 28), h('b', 'Dépose un fichier .json ici'), h('span', 'ou touche pour en choisir un'));
-    const paste = h('textarea.imp-paste', { id: 'imp-paste', rows: 5, spellcheck: 'false', placeholder: 'Ou colle ici le JSON (par exemple la réponse d’une IA, balises ```json comprises)' });
+    // input natif dans un <label> : le sélecteur s'ouvre au toucher, sans passer par du JS
+    const fileInput = h('input.imp-file', { type: 'file', accept: '.json,application/json,text/plain', id: 'imp-file' });
+    const drop = h('label.imp-drop', { for: 'imp-file' },
+      h('span.imp-drop-ic', R.icon('import', 24)),
+      h('span.imp-drop-t', h('b', 'Choisir un fichier'), h('span', '.json · ou dépose-le ici')),
+      R.icon('chevronRight', 20));
+    const paste = h('textarea.imp-paste', { id: 'imp-paste', rows: 5, spellcheck: 'false', placeholder: '{ "courses": … }' });
+    const pasteBtn = navigator.clipboard && navigator.clipboard.readText
+      ? ui.btn('Coller', { icon: 'paste', variant: 'tonal', onClick: async () => {
+        try { const t = await navigator.clipboard.readText(); if (t.trim()) { paste.value = t; paste.dispatchEvent(new Event('input')); } }
+        catch { paste.focus(); }
+      } }) : null;
     const preview = h('div.imp-preview', { 'aria-live': 'polite' });
     const go = ui.btn('Importer', { icon: 'import', variant: 'filled', disabled: true });
     const cancel = ui.btn('Annuler', { variant: 'text', onClick: () => closeFn && closeFn() });
@@ -620,11 +628,10 @@
     }
     const readFile = async (f) => { if (!f) return; paste.value = ''; analyse(await f.text()); };
     fileInput.addEventListener('change', () => readFile(fileInput.files[0]));
-    drop.addEventListener('click', () => fileInput.click());
-    drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
     drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('over'));
     drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); });
+    paste.addEventListener('input', () => pasteBox.classList.toggle('filled', !!paste.value));
     paste.addEventListener('input', U.debounce(() => { if (paste.value.trim()) analyse(paste.value); else { parsed = null; paint(); } }, 250));
 
     go.addEventListener('click', async () => {
@@ -642,12 +649,16 @@
       });
     });
 
+    const pasteBox = h('div.imp-pbox',
+      h('label.imp-plabel', { for: 'imp-paste' }, 'JSON'),
+      paste,
+      h('div.imp-pfoot', h('span.imp-psup', 'Réponse d’une IA acceptée, balises ```json comprises.'), pasteBtn));
     const body = h('div.imp',
-      drop, fileInput,
-      h('label.imp-or', { for: 'imp-paste' }, 'ou'),
-      paste, preview,
+      fileInput, drop,
+      h('div.imp-or', h('span', 'ou colle le texte')),
+      pasteBox, preview,
       h('div.dialog-actions', cancel, go));
-    ui.dialog({ title: 'Importer', icon: 'import', body, cls: 'dialog-wide dialog-import', onOpen: (_, close) => { closeFn = close; } });
+    ui.dialog({ title: 'Importer', icon: 'import', body, cls: 'dialog-wide dialog-import m3-form', onOpen: (_, close) => { closeFn = close; } });
   }
   app.openImport = openImport;
 

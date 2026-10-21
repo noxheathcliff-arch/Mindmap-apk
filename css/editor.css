@@ -414,7 +414,6 @@
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   height: var(--sheet-h);
   border-radius: var(--shape-xl) var(--shape-xl) 0 0;
-  box-shadow: var(--elev-3);
   display: flex; flex-direction: column;
   --sheet-y: 100%;
   transform: translateY(var(--sheet-y));
@@ -433,7 +432,8 @@
 .pane-body > * { min-width: 0; }
 .pane-sec, .note-write { grid-template-columns: minmax(0, 1fr); }
 .decomp-list li, .link-list li { min-width: 0; }
-.page-editor[data-pane="bottom"] .pane-body { padding-top: 0; }
+.page-editor[data-pane="bottom"] .pane-body { padding-top: var(--sp-1); }
+.page-editor[data-pane="bottom"] .pane-crumbs { margin-top: 0; }
 .pane-head { display: flex; align-items: center; justify-content: space-between; margin: 0 -12px 0 0; min-height: 48px; }
 .pane-head-actions { display: flex; }
 .pane-overline { font: var(--label-m); color: var(--on-surface-variant); }

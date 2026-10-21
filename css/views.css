@@ -848,19 +848,32 @@
 }
 /* Import */
 .imp { display: grid; gap: var(--sp-3); }
+.imp-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .imp-drop {
-  display: grid; justify-items: center; gap: 4px; padding: var(--sp-6) var(--sp-4); text-align: center; cursor: pointer;
-  border: 1.5px dashed color-mix(in srgb, var(--on-surface) 30%, transparent); border-radius: var(--shape-l); color: var(--on-surface-variant);
-  transition: background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out);
+  display: flex; align-items: center; gap: var(--sp-4); min-height: 72px; padding: var(--sp-3) var(--sp-4); cursor: pointer;
+  border-radius: var(--shape-l); background: var(--surface-container-highest); color: var(--on-surface-variant);
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-effects, 150ms) var(--effects, ease), border-radius var(--dur-sm) var(--ease-out);
 }
-.imp-drop b { color: var(--on-surface); font: var(--title-s); }
-.imp-drop span { font: var(--body-s); }
-.imp-drop:hover, .imp-drop.over { background: var(--surface-container-low); border-color: var(--on-surface); }
-.imp-drop:focus-visible { outline: 2px solid var(--on-surface); outline-offset: 2px; }
-.imp-or { justify-self: center; font: var(--label-m); color: var(--on-surface-variant); }
-.imp-paste { width: 100%; min-height: 96px; resize: vertical; padding: var(--sp-3); border: 0; border-radius: var(--shape-xs) var(--shape-xs) 0 0; background: var(--surface-container-highest); box-shadow: inset 0 -1px 0 var(--on-surface-variant); color: var(--on-surface); font: 13px/1.5 var(--font-mono, ui-monospace, monospace); }
-.imp-paste:focus-visible { outline: none; box-shadow: inset 0 -2px 0 var(--primary); }
-.imp-paste:focus { outline: 2px solid var(--on-surface); outline-offset: 1px; }
+.imp-drop-ic { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: var(--shape-m); background: var(--primary-container); color: var(--on-primary-container); transition: border-radius var(--dur-sm) var(--ease-out); }
+.imp-drop-t { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.imp-drop-t b { color: var(--on-surface); font: var(--title-m); }
+.imp-drop-t span { font: var(--body-m); }
+.imp-drop:hover { background: color-mix(in srgb, var(--on-surface) 8%, var(--surface-container-highest)); }
+.imp-drop:active { background: color-mix(in srgb, var(--on-surface) 12%, var(--surface-container-highest)); border-radius: var(--shape-xl); }
+.imp-drop:active .imp-drop-ic, .imp-drop.over .imp-drop-ic { border-radius: 50%; }
+.imp-drop.over { background: var(--secondary-container); color: var(--on-secondary-container); outline: 2px solid var(--primary); outline-offset: -2px; }
+.imp-file:focus-visible + .imp-drop { outline: 2px solid var(--on-surface); outline-offset: 2px; }
+.imp-or { display: flex; align-items: center; gap: var(--sp-3); font: var(--label-m); color: var(--on-surface-variant); }
+.imp-or::before, .imp-or::after { content: ""; flex: 1; height: 1px; background: var(--outline-variant); }
+.imp-pbox { position: relative; display: grid; gap: 4px; }
+.imp-plabel { position: absolute; top: -8px; left: 12px; z-index: 1; padding: 0 4px; background: var(--surface-container-high, var(--surface)); font: var(--body-s); color: var(--on-surface-variant); }
+.imp-paste { width: 100%; min-height: 112px; resize: vertical; padding: var(--sp-4); border: 1px solid var(--outline); border-radius: var(--shape-xs); background: transparent; color: var(--on-surface); font: 13px/1.5 var(--font-mono, ui-monospace, monospace); outline: none; }
+.imp-paste::placeholder { color: var(--on-surface-variant); opacity: .6; }
+.imp-paste:focus { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.imp-pbox:focus-within .imp-plabel { color: var(--primary); }
+.imp-pfoot { display: flex; align-items: center; gap: var(--sp-3); padding-left: var(--sp-4); }
+.imp-psup { flex: 1; font: var(--body-s); color: var(--on-surface-variant); }
 .imp-preview { display: grid; gap: var(--sp-3); }
 .imp-preview:empty { display: none; }
 .imp-preview.in > * { animation: rise var(--dur-md) var(--ease-out) both; }
