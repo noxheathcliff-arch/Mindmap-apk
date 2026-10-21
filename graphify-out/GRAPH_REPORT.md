@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-21)
 
 ## Corpus Check
-- 49 files · ~182,264 words
+- 55 files · ~184,426 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 8 file(s) not represented in the graph (top: .css 6, (none) 1, .webmanifest 1)
 
 ## Summary
-- 810 nodes · 1858 edges · 41 communities (34 shown, 7 thin omitted)
+- 827 nodes · 1873 edges · 46 communities (36 shown, 10 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 147 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5507db6a`
+- Built from commit: `8e4afe1c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -53,6 +53,8 @@
 - sw.js
 - Mindmap-apk
 - carnet.js
+- quota-router
+- quota-router.sh
 
 ## God Nodes (most connected - your core abstractions)
 1. `Editor()` - 154 edges
@@ -81,7 +83,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (41 total, 7 thin omitted)
+## Communities (46 total, 10 thin omitted)
 
 ### Community 0 - "Editor"
 Cohesion: 0.05
@@ -128,11 +130,11 @@ Cohesion: 0.16
 Nodes (18): crosses(), ctx, files, fs, inRect(), measure(), ov(), overlapLen() (+10 more)
 
 ### Community 12 - "metrics.cjs"
-Cohesion: 0.17
+Cohesion: 0.19
 Nodes (14): applySure(), fall, files, fs, heading(), indicators(), measure(), n0() (+6 more)
 
 ### Community 13 - "organize.test.cjs"
-Cohesion: 0.18
+Cohesion: 0.20
 Nodes (8): fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath, sure(), test()
 
 ### Community 14 - "Inventaire"
@@ -152,7 +154,7 @@ Cohesion: 0.18
 Nodes (11): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.5 Classes de fenêtre M3 → composition (+3 more)
 
 ### Community 18 - "skill-rules.cjs"
-Cohesion: 0.36
+Cohesion: 0.27
 Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), write()
 
 ### Community 19 - "harness.cjs"
@@ -160,19 +162,19 @@ Cohesion: 0.12
 Nodes (10): applyAll(), ctx, edge(), files, fs, path, root, vm (+2 more)
 
 ### Community 20 - "gen.cjs"
-Cohesion: 0.31
-Nodes (6): dense(), fs, L(), N(), path, T()
+Cohesion: 0.27
+Nodes (7): Dans une carte, dense(), fs, L(), N(), path, T()
 
 ### Community 21 - "revhub.js"
 Cohesion: 0.44
 Nodes (8): courseRow(), dayDeck(), forecastCard(), loyaltyCard(), masteryRing(), mount(), sessionHref(), weakList()
 
 ### Community 22 - "Utilisation"
-Cohesion: 0.20
-Nodes (10): Apprendre un chapitre entier, Couleurs des nœuds (option), Dans une carte, Lecture seule, Notes (Markdown), Ranger une carte (disposition), Révision, Sauvegarder, importer, partager (+2 more)
+Cohesion: 0.22
+Nodes (9): Apprendre un chapitre entier, Couleurs des nœuds (option), Lecture seule, Notes (Markdown), Ranger une carte (disposition), Révision, Sauvegarder, importer, partager, Transformer un livre en cours (skill pour IA) (+1 more)
 
 ### Community 23 - "folders.test.cjs"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (4): course(), node(), { S, win }, win
 
 ### Community 24 - "Ratio — Dossier de conception"
@@ -212,30 +214,38 @@ Cohesion: 0.22
 Nodes (17): contentsText(), countUp(), folderBlock(), levelBlocks(), mapCard(), mount(), notFound(), numeral() (+9 more)
 
 ### Community 33 - "exercises.test.cjs"
-Cohesion: 0.25
+Cohesion: 0.29
 Nodes (4): course(), EX, node(), { S }
+
+### Community 39 - "Mindmap-apk"
+Cohesion: 0.50
+Nodes (3): Graphify, Mindmap-apk, Quota
 
 ### Community 40 - "carnet.js"
 Cohesion: 0.12
-Nodes (29): Carnet(), close(), draw(), fit(), flag(), _flipCover(), _flipFrom(), h() (+21 more)
+Nodes (31): Carnet(), clip(), close(), draw(), fit(), flag(), _flipCover(), _flipFrom() (+23 more)
+
+### Community 41 - "quota-router"
+Cohesion: 0.22
+Nodes (8): 1. Caveman (toujours), 2. Graphify avant toute lecture de code, 3. Routage du modèle (tri à chaque requête), 4. Effort et réflexion, 5. Hygiène du contexte, 6. Garde-fous coûteux, 7. Suivi hebdomadaire (rappels à l'utilisateur, une ligne max, rarement), quota-router
 
 ## Knowledge Gaps
-- **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `rate()` connect `store.js` to `ui`?**
-  _High betweenness centrality (0.272) - this node is a cross-community bridge._
+- **Why does `onDown()` connect `Editor` to `ui`?**
+  _High betweenness centrality (0.236) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Editor` be split into smaller, more focused modules?**
   _Cohesion score 0.05119933829611249 - nodes in this community are weakly interconnected._
-- **Why does `onDown()` connect `Editor` to `ui`?**
-  _High betweenness centrality (0.245) - this node is a cross-community bridge._
+- **Why does `4. Changements` connect `organize.js` to `layout.js`?**
+  _High betweenness centrality (0.234) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `store.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.05136168179646441 - nodes in this community are weakly interconnected._
-- **Why does `4. Changements` connect `organize.js` to `layout.js`?**
-  _High betweenness centrality (0.241) - this node is a cross-community bridge._
+  _Cohesion score 0.05049088359046283 - nodes in this community are weakly interconnected._
+- **Should `layout.js` be split into smaller, more focused modules?**
+  _Cohesion score 0.09728506787330317 - nodes in this community are weakly interconnected._
