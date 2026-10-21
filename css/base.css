@@ -422,7 +422,7 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
   scroll-behavior: auto !important;
 }
 :root[data-motion="reduce"] .stagger, :root[data-motion="reduce"] .page-wrap.entering,
-:root[data-motion="reduce"] .dialog:not(.out), :root[data-motion="reduce"] .rcard:not(.leaving),
+:root[data-motion="reduce"] .dialog:not(.out),
 :root[data-motion="reduce"] .empty, :root[data-motion="reduce"] .today, :root[data-motion="reduce"] .tip-card,
 :root[data-motion="reduce"] .onb.swap > *, :root[data-motion="reduce"] .fab, :root[data-motion="reduce"] .node.born,
 :root[data-motion="reduce"] .vtoolbar, :root[data-motion="reduce"] .bottombar.swap .ctx-btn,
@@ -438,7 +438,7 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 /* rotations des formes cookie : supprimées (la silhouette est la même à chaque lobe) */
 :root[data-motion="reduce"] :is(.today-shape, .dd-top, .end-flame)::before { animation: none !important; transition: none !important; }
 :root[data-motion="reduce"] .page-wrap.leaving, :root[data-motion="reduce"] .dialog.out,
-:root[data-motion="reduce"] .rcard.leaving, :root[data-motion="reduce"] .node.dying {
+:root[data-motion="reduce"] .node.dying {
   animation-name: rm-fade-out !important;
 }
 :root[data-motion="reduce"] .ripple-wave, :root[data-motion="reduce"] .burst { display: none !important; }
