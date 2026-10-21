@@ -379,14 +379,15 @@
         h('span.resume-body', h('span.overline', 'Révision'), h('span.resume-q', 'Tout est à jour'),
           h('span.resume-sub', days ? `Prochaine révision ${days === 1 ? 'demain' : `dans ${days} jours`}` : 'Écris des notes : elles deviendront des fiches')));
     }
-    const m = S.map(nx.mapId), n = S.node(m, nx.nodeId);
-    const T = S.TYPES[n.type];
+    const m = S.map(nx.mapId), it = S.reviewItem(m, nx.key), n = it.node;
+    const T = it.ex ? null : S.TYPES[n.type];
     const path = [...S.locate(m).map(kindLabel), m.label || m.title];
-    return h('a.resume.ripple', { href: `${startBase}?start=${m.id}.${n.id}` },
+    return h('a.resume.ripple', { href: `${startBase}?start=${m.id}.${encodeURIComponent(nx.key)}` },
       h('span.resume-body',
-        h('span.overline', n.review.last ? 'Reprendre · en retard' : 'Reprendre · prochaine fiche'),
-        h('span.resume-q', n.title),
-        h('span.resume-path', path.map((t, k) => [k ? R.icon('chevronRight', 14) : null, h('span', t)]), T ? h('span.resume-type', m.role === 'plan' ? S.kickerOf(m, n) : T.label) : null)),
+        h('span.overline', it.review.last ? 'Reprendre · en retard' : it.ex ? 'Reprendre · prochaine question' : 'Reprendre · prochaine fiche'),
+        h('span.resume-q', it.ex ? it.ex.q : n.title),
+        h('span.resume-path', path.map((t, k) => [k ? R.icon('chevronRight', 14) : null, h('span', t)]),
+          it.ex ? h('span.resume-type', S.EXERCISE_KINDS[it.ex.kind].label) : T ? h('span.resume-type', m.role === 'plan' ? S.kickerOf(m, n) : T.label) : null)),
       h('span.resume-play', R.icon('play', 20), 'Réviser'));
   }
 

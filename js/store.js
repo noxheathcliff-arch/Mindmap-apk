@@ -150,6 +150,67 @@
     maitrise: { label: 'Maîtrisé', fill: 3 },
   };
   const INTERVALS = [0, 1, 3, 7, 15, 30]; // jours, boîtes de Leitner 0→5
+  /** Exercices d'une carte (révision) : question-réponse (auto-évaluée), QCM et vrai/faux (corrigés par l'app) */
+  const EXERCISE_KINDS = {
+    qa:  { label: 'Question', short: 'Question' },
+    qcm: { label: 'QCM', short: 'QCM' },
+    vf:  { label: 'Vrai ou faux', short: 'Vrai / faux' },
+  };
+  const blankReview = () => ({ box: 0, due: 0, last: 0, rating: null });
+  const cleanReview = (r) => (r && typeof r === 'object' ? {
+    box: U.clamp(+r.box || 0, 0, 5), due: +r.due || 0, last: +r.last || 0,
+    rating: RATINGS[r.rating] ? r.rating : null,
+  } : blankReview());
+  /** Vrai / faux écrit à la main ou par une IA : true, "vrai", "V", "true", 1… */
+  const truthOf = (v) => {
+    if (typeof v === 'boolean') return v;
+    const t = String(v ?? '').trim().toLowerCase();
+    if (['vrai', 'v', 'true', '1', 'oui'].includes(t)) return true;
+    if (['faux', 'f', 'false', '0', 'non'].includes(t)) return false;
+    return null;
+  };
+  /** Exercices d'une carte, nettoyés : identifiants uniques, choix et réponses valides, couverture limitée aux nœuds présents */
+  function sanitizeExercises(list, ids, note) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const out = [];
+    for (const x of list) {
+      if (!x || typeof x !== 'object') { note('badExercises'); continue; }
+      const kind = EXERCISE_KINDS[x.kind] ? x.kind : x.kind === 'vrai-faux' || x.kind === 'tf' ? 'vf' : x.kind === 'mcq' ? 'qcm' : null;
+      const q = String(x.q ?? x.question ?? '').trim();
+      if (!kind || !q) { note('badExercises'); continue; }
+      let id = x.id != null && String(x.id) ? String(x.id) : U.uid('x');
+      if (seen.has(id)) id = U.uid('x');
+      seen.add(id);
+      const ex = { id, kind, q };
+      if (kind === 'qa') {
+        const a = String(x.a ?? x.answer ?? '').trim();
+        if (!a) { note('badExercises'); continue; }
+        ex.a = a;
+      } else if (kind === 'qcm') {
+        const choices = Array.isArray(x.choices) ? x.choices.map((c) => String(c ?? '').trim()) : [];
+        // réponse(s) : un rang (0, 1…) ou une liste de rangs (plusieurs bonnes réponses)
+        const raw = Array.isArray(x.answer) ? x.answer : [x.answer];
+        const good = [...new Set(raw.map((i) => +i).filter((i) => Number.isInteger(i) && i >= 0 && i < choices.length && choices[i]))];
+        if (choices.length < 2 || choices.length > 8 || choices.some((c) => !c) || !good.length || good.length === choices.length) { note('badExercises'); continue; }
+        ex.choices = choices;
+        ex.answer = good.length === 1 ? good[0] : good.sort((a, b) => a - b);
+      } else {
+        const v = truthOf(x.answer);
+        if (v === null) { note('badExercises'); continue; }
+        ex.answer = v;
+      }
+      if (x.explain != null && String(x.explain).trim()) ex.explain = String(x.explain).trim();
+      // nœuds couverts : la notion révisée (contexte, lien « Ouvrir dans la carte », maîtrise affichée sur le nœud)
+      const listed = Array.isArray(x.nodeIds) ? x.nodeIds : x.nodeId != null ? [x.nodeId] : [];
+      const cover = [...new Set(listed.map(String))];
+      ex.nodeIds = cover.filter((i) => ids.has(i));
+      if (ex.nodeIds.length < cover.length) note('exerciseRefs', cover.length - ex.nodeIds.length);
+      ex.review = cleanReview(x.review);
+      out.push(ex);
+    }
+    return out;
+  }
 
   const listeners = new Set();
   const branchCache = new WeakMap();
@@ -241,10 +302,7 @@
         ...(n.ref ? { ref: String(n.ref) } : {}),
         // mise en relief : un fragment du titre à retenir (« une ou plusieurs »)
         ...(n.em && String(n.title ?? '').toLowerCase().includes(String(n.em).toLowerCase()) ? { em: String(n.em).slice(0, 60) } : {}),
-        review: n.review && typeof n.review === 'object' ? {
-          box: U.clamp(+n.review.box || 0, 0, 5), due: +n.review.due || 0, last: +n.review.last || 0,
-          rating: RATINGS[n.review.rating] ? n.review.rating : null,
-        } : { box: 0, due: 0, last: 0, rating: null },
+        review: cleanReview(n.review),
       }));
       const ids = new Set(nodes.map((n) => n.id));
       const edges = Array.isArray(m.edges) ? m.edges.filter((e) => {
@@ -272,12 +330,15 @@
       const stacked = nodes.length > 1 && (placed.length < nodes.length || nodes.every((n) => n.x === nodes[0].x && n.y === nodes[0].y));
       if (stacked && rep && !m.needsLayout) note('autoLayout'); // demandé explicitement : rien à signaler
       normalizeGroups(edges);
+      const exercises = sanitizeExercises(m.exercises, ids, note);
       return {
         id: String(m.id), courseId: String(m.courseId || ''), title: String(m.title || 'Sans titre'),
         // sans date (import d'IA) : l'ordre du fichier devient l'ordre d'affichage (le plus récent d'abord)
         createdAt: +m.createdAt || Date.now(), updatedAt: +m.updatedAt || Date.now() - mi,
         viewport: m.viewport && Number.isFinite(+m.viewport.k) ? { x: +m.viewport.x || 0, y: +m.viewport.y || 0, k: +m.viewport.k || 1 } : null,
         nodes, edges,
+        // exercices de révision (QCM, vrai/faux, questions) : ils remplacent les fiches de la carte en révision
+        ...(exercises.length ? { exercises } : {}),
         // place dans le plan du cours : dossier (null = racine du cours), rang, numéro (« Section 1 »), rôle
         folderId: m.folderId != null && folderOf.get(String(m.folderId)) === String(m.courseId || '') ? String(m.folderId) : null,
         ...(Number.isFinite(+m.order) && m.order !== null && m.order !== '' ? { order: +m.order } : {}),
@@ -343,7 +404,7 @@
   }
 
   const store = {
-    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, REMOVED_TYPES, RATINGS, INTERVALS, FOLDER_KINDS, FOLDER_LABELS,
+    TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, REMOVED_TYPES, RATINGS, INTERVALS, EXERCISE_KINDS, FOLDER_KINDS, FOLDER_LABELS,
     isStruct,
     normalizeGroups,
     sanitize, // exposé pour les tests (journal et refus du rangement survivent à l’export)
@@ -637,6 +698,7 @@
       if (Number.isFinite(src.order)) copy.order = src.order + 0.5;
       for (const n of copy.nodes) { const nid = U.uid('n'); idMap[n.id] = nid; n.id = nid; }
       for (const e of copy.edges) { e.id = U.uid('e'); e.from = idMap[e.from]; e.to = idMap[e.to]; }
+      for (const x of copy.exercises || []) { x.id = U.uid('x'); x.nodeIds = x.nodeIds.map((i) => idMap[i]).filter(Boolean); }
       this.data.maps.push(copy);
       this.changed();
       return copy;
@@ -780,16 +842,8 @@
       if (!cache || cache.stamp !== stamp) { cache = { stamp, by: new Map() }; branchCache.set(map, cache); }
       if (cache.by.has(id)) return cache.by.get(id);
       const ids = [id, ...this.descendants(map, id)];
-      const now = Date.now();
       const s = { nodes: ids.length - 1, reviewable: 0, mastered: 0, understood: 0, due: 0, progress: 0 };
-      for (const nid of ids) {
-        const n = this.node(map, nid);
-        if (!n || !this.isReviewable(map, n)) continue;
-        s.reviewable++;
-        if (n.review.rating === 'maitrise') s.mastered++;
-        else if (n.review.rating === 'compris') s.understood++;
-        if (this.isDue(n, now)) s.due++;
-      }
+      this.tally(s, this.reviewItems(map, new Set(ids)));
       s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
       cache.by.set(id, s);
       return s;
@@ -813,18 +867,57 @@
       return !!(p && p.type === 'definition');
     },
     isDue(n, now = Date.now()) { return !n.review.last || n.review.due <= now; },
-    mapStats(m) {
-      let reviewable = 0, mastered = 0, due = 0, understood = 0;
-      const now = Date.now();
-      for (const n of m.nodes) {
-        if (!this.isReviewable(m, n)) continue;
-        reviewable++;
-        if (n.review.rating === 'maitrise') mastered++;
-        else if (n.review.rating === 'compris') understood++;
-        if (this.isDue(n, now)) due++;
+    /**
+     * Ce qui se révise dans une carte : ses exercices (QCM, vrai/faux, questions) quand elle en a,
+     * sinon ses fiches (nœuds révisables, posés comme des questions). `branch` : ensemble d'identifiants
+     * de nœuds (une branche) — un exercice en fait partie s'il couvre l'un d'eux.
+     * Le plan d'un dossier sert à naviguer : il ne se révise pas.
+     * Élément : { map, key, review, ex? (exercice), node (nœud couvert ou fiche, contexte), nodes (couverts) }
+     */
+    reviewItems(map, branch = null) {
+      const out = [];
+      if (map.role === 'plan') return out;
+      if (map.exercises && map.exercises.length) {
+        for (const ex of map.exercises) {
+          const nodes = ex.nodeIds.map((i) => this.node(map, i)).filter(Boolean);
+          if (branch && !nodes.some((n) => branch.has(n.id))) continue;
+          out.push({ map, key: 'x:' + ex.id, review: ex.review, ex, node: nodes[0] || null, nodes });
+        }
+        return out;
       }
-      return { nodes: m.nodes.length, reviewable, mastered, understood, due,
-        progress: reviewable ? (mastered + understood * 0.5) / reviewable : 0 };
+      for (const n of map.nodes) {
+        if (branch && !branch.has(n.id)) continue;
+        if (this.isReviewable(map, n)) out.push({ map, key: n.id, review: n.review, node: n, nodes: [n] });
+      }
+      return out;
+    },
+    /** Élément de révision désigné par sa clé (identifiant de nœud, ou « x: » + identifiant d'exercice) */
+    reviewItem(map, key) {
+      if (!map || key == null) return null;
+      key = String(key);
+      if (key.startsWith('x:')) {
+        const ex = (map.exercises || []).find((x) => x.id === key.slice(2));
+        if (!ex) return null;
+        const nodes = ex.nodeIds.map((i) => this.node(map, i)).filter(Boolean);
+        return { map, key, review: ex.review, ex, node: nodes[0] || null, nodes };
+      }
+      const n = this.node(map, key);
+      return n ? { map, key, review: n.review, node: n, nodes: [n] } : null;
+    },
+    /** Exercices qui couvrent un nœud (révision : la maîtrise du nœud en découle) */
+    exercisesFor(map, nodeId) { return (map.exercises || []).filter((x) => x.nodeIds.includes(nodeId)); },
+    tally(s, items, now = Date.now()) {
+      for (const it of items) {
+        s.reviewable++;
+        if (it.review.rating === 'maitrise') s.mastered++;
+        else if (it.review.rating === 'compris') s.understood++;
+        if (this.isDue(it, now)) s.due++;
+      }
+      s.progress = s.reviewable ? (s.mastered + s.understood * 0.5) / s.reviewable : 0;
+      return s;
+    },
+    mapStats(m) {
+      return this.tally({ nodes: m.nodes.length, exercises: (m.exercises || []).length, reviewable: 0, mastered: 0, understood: 0, due: 0, progress: 0 }, this.reviewItems(m));
     },
     courseStats(id) {
       const s = { maps: 0, nodes: 0, reviewable: 0, mastered: 0, understood: 0, due: 0, progress: 0 };
@@ -880,11 +973,13 @@
       const seq = this.planSequence(this.mapsOf(courseId));
       const maps = this.mapsOf(courseId).slice().sort((a, b) => (seq.size ? seq.get(a.id) - seq.get(b.id) : a.createdAt - b.createdAt));
       for (const m of maps) {
-        for (const n of m.nodes) {
-          if (!this.isReviewable(m, n) || !this.isDue(n, now)) continue;
-          if (n.review.last) { if (!late || n.review.due < late.node.review.due) late = { map: m, node: n }; }
-          else if (!fresh) fresh = { map: m, node: n };
-          else if (fresh.map === m && (n.y < fresh.node.y || (n.y === fresh.node.y && n.x < fresh.node.x))) fresh = { map: m, node: n };
+        const rank = this.readingOrder(m);
+        for (const it of this.reviewItems(m)) {
+          if (!this.isDue(it, now)) continue;
+          if (it.review.last) { if (!late || it.review.due < late.review.due) late = it; }
+          else if (!fresh) fresh = it;
+          // fiches : la première dans l'ordre du plan ; exercices : l'ordre du fichier
+          else if (fresh.map === m && !it.ex && rank.get(it.node.id) < rank.get(fresh.node.id)) fresh = it;
         }
       }
       return late || fresh;
@@ -898,31 +993,36 @@
       const due = [], fresh = [];
       // portée « branche » : un chapitre, une leçon… (le nœud et sa descendance)
       const branch = scope.mapId && scope.nodeId && maps[0] ? new Set([scope.nodeId, ...this.descendants(maps[0], scope.nodeId)]) : null;
+      const order = new Map();
       for (const m of maps) {
-        for (const n of m.nodes) {
-          if (branch && !branch.has(n.id)) continue;
-          if (!this.isReviewable(m, n)) continue;
-          if (all || this.isDue(n, now)) (n.review.last ? due : fresh).push({ mapId: m.id, nodeId: n.id, due: n.review.due });
-        }
+        const rank = this.readingOrder(m);
+        this.reviewItems(m, branch).forEach((it, i) => {
+          if (!(all || this.isDue(it, now))) return;
+          // ordre de découverte : celui du plan pour les fiches, celui du fichier pour les exercices
+          order.set(m.id + '|' + it.key, it.ex ? i : rank.get(it.node.id));
+          (it.review.last ? due : fresh).push({ mapId: m.id, key: it.key, nodeId: it.node ? it.node.id : null, exId: it.ex ? it.ex.id : null, due: it.review.due, fresh: !it.review.last });
+        });
       }
       due.sort((a, b) => a.due - b.due);
       // nouvelles : dans l'ordre du plan (carte la plus ancienne, puis ordre de lecture) — on
       // découvre une notion avant ses conséquences, une cause avant ses effets
-      const rank = new Map(), age = new Map();
+      const age = new Map();
       const seq = this.planSequence(maps);
-      for (const m of maps) { rank.set(m.id, this.readingOrder(m)); age.set(m.id, seq.has(m.id) ? seq.get(m.id) : m.createdAt || 0); }
-      fresh.sort((a, b) => (age.get(a.mapId) - age.get(b.mapId)) || (rank.get(a.mapId).get(a.nodeId) - rank.get(b.mapId).get(b.nodeId)));
+      for (const m of maps) age.set(m.id, seq.has(m.id) ? seq.get(m.id) : m.createdAt || 0);
+      fresh.sort((a, b) => (age.get(a.mapId) - age.get(b.mapId)) || (order.get(a.mapId + '|' + a.key) - order.get(b.mapId + '|' + b.key)));
       const queue = [...due, ...fresh];
       if (first) {
-        const i = queue.findIndex((q) => q.mapId === first.mapId && q.nodeId === first.nodeId);
+        const k = first.key != null ? String(first.key) : first.nodeId;
+        const i = queue.findIndex((q) => q.mapId === first.mapId && (q.key === k || (!q.exId && q.nodeId === k)));
         if (i > 0) queue.unshift(...queue.splice(i, 1));
       }
       return queue.slice(0, limit);
     },
     dueCount(scope = {}) { return this.reviewQueue(scope, { limit: 1e9 }).length; },
     /** Annule une note (révision) : remet l'état d'avant et retire la carte du journal du jour */
-    unrate(map, node, before, day) {
-      node.review = { ...before };
+    unrate(map, target, before, day) {
+      target.review = { ...before };
+      if (target.nodeIds) this.syncCoverage(map, target.nodeIds);
       const log = this.data.settings.reviewLog;
       if (log[day] > 1) log[day]--; else delete log[day];
       this.changed('review');
@@ -938,10 +1038,9 @@
       const out = Array.from({ length: days }, (_, i) => ({ day: t0 + i * U.DAY, n: 0, by: {} }));
       const now = Date.now();
       const add = (i, m) => { out[i].n++; out[i].by[m.courseId] = (out[i].by[m.courseId] || 0) + 1; };
-      for (const m of maps) for (const n of m.nodes) {
-        if (!this.isReviewable(m, n)) continue;
-        if (this.isDue(n, now)) { add(0, m); continue; }
-        const i = Math.floor((U.startOfDay(n.review.due) - t0) / U.DAY);
+      for (const m of maps) for (const it of this.reviewItems(m)) {
+        if (this.isDue(it, now)) { add(0, m); continue; }
+        const i = Math.floor((U.startOfDay(it.review.due) - t0) / U.DAY);
         if (i > 0 && i < days) add(i, m);
       }
       return out;
@@ -949,13 +1048,39 @@
     /** Cartes dont la dernière note est « À revoir », les plus récentes d'abord */
     weakCards(limit = 6) {
       const list = [];
-      for (const m of this.data.maps) for (const n of m.nodes) {
-        if (n.review.rating === 'revoir' && this.isReviewable(m, n)) list.push({ map: m, node: n });
-      }
-      return list.sort((a, b) => b.node.review.last - a.node.review.last).slice(0, limit);
+      for (const m of this.data.maps) for (const it of this.reviewItems(m)) if (it.review.rating === 'revoir') list.push(it);
+      return list.sort((a, b) => b.review.last - a.review.last).slice(0, limit);
     },
-    rate(map, node, rating) {
-      const r = node.review;
+    /** Note d'un exercice corrigé par l'app (QCM, vrai/faux) : faux → à revoir ; juste → compris,
+        puis maîtrisé quand c'était déjà juste la fois d'avant */
+    gradeFor(review, correct) {
+      if (!correct) return 'revoir';
+      return review.last && (review.rating === 'compris' || review.rating === 'maitrise') ? 'maitrise' : 'compris';
+    },
+    /** Bonne réponse ? `pick` : rang choisi (QCM), liste de rangs (QCM à plusieurs réponses), booléen (vrai/faux) */
+    isCorrect(ex, pick) {
+      if (ex.kind === 'vf') return pick === ex.answer;
+      if (ex.kind !== 'qcm') return false;
+      const good = Array.isArray(ex.answer) ? ex.answer : [ex.answer];
+      const got = [...new Set(Array.isArray(pick) ? pick : [pick])];
+      return got.length === good.length && got.every((i) => good.includes(i));
+    },
+    /** Maîtrise d'un nœud couvert par des exercices : la moins bonne de ses exercices déjà faits
+        (le nœud affiche ainsi ce qui reste à travailler), échéance la plus proche */
+    syncCoverage(map, ids) {
+      const worst = { revoir: 0, compris: 1, maitrise: 2 };
+      for (const id of ids) {
+        const n = this.node(map, id);
+        if (!n) continue;
+        const done = this.exercisesFor(map, id).filter((x) => x.review.last);
+        if (!done.length) { n.review = blankReview(); continue; }
+        const r = done.reduce((a, x) => (worst[x.review.rating] < worst[a.review.rating] ? x : a)).review;
+        n.review = { box: Math.min(...done.map((x) => x.review.box)), due: Math.min(...done.map((x) => x.review.due)), last: Math.max(...done.map((x) => x.review.last)), rating: r.rating };
+      }
+    },
+    /** Note une fiche (nœud) ou un exercice */
+    rate(map, target, rating) {
+      const r = target.review;
       const now = Date.now();
       if (rating === 'revoir') r.box = 1;
       else if (rating === 'compris') r.box = Math.min(5, Math.max(1, r.box + 1));
@@ -966,6 +1091,7 @@
       const log = this.data.settings.reviewLog;
       const k = U.dayKey();
       log[k] = (log[k] || 0) + 1;
+      if (target.nodeIds) this.syncCoverage(map, target.nodeIds);
       map.updatedAt = now;
       this.changed('review');
     },
@@ -982,10 +1108,10 @@
       const maps = scope.courseId ? this.mapsOf(scope.courseId) : this.data.maps;
       const tomorrow = U.startOfDay() + U.DAY;
       let count = 0, next = Infinity;
-      for (const m of maps) for (const n of m.nodes) {
-        if (!this.isReviewable(m, n) || !n.review.last) continue;
-        if (n.review.due <= tomorrow) count++;
-        if (n.review.due > Date.now()) next = Math.min(next, n.review.due);
+      for (const m of maps) for (const it of this.reviewItems(m)) {
+        if (!it.review.last) continue;
+        if (it.review.due <= tomorrow) count++;
+        if (it.review.due > Date.now()) next = Math.min(next, it.review.due);
       }
       return { tomorrow: count, next };
     },
@@ -1053,9 +1179,9 @@
       const data = sanitize(raw, rep);
       if (parsed.settings) data.settings = { ...data.settings, ...sanitize({ settings: parsed.settings }).settings };
       // aperçu
-      let nodes = 0, edges = 0, notes = 0, links = 0, labels = 0;
+      let nodes = 0, edges = 0, notes = 0, links = 0, labels = 0, exercises = 0;
       for (const m of data.maps) {
-        nodes += m.nodes.length; edges += m.edges.length;
+        nodes += m.nodes.length; edges += m.edges.length; exercises += (m.exercises || []).length;
         notes += m.nodes.filter((n) => n.note.trim()).length;
         links += m.edges.filter((e) => e.kind === 'link').length;
         labels += m.edges.filter((e) => e.label).length;
@@ -1076,8 +1202,10 @@
       say('orphanMaps', (n) => `${U.plural(n, 'carte')} sans cours → rangée${n > 1 ? 's' : ''} dans « Importé »`);
       say('folderParents', (n) => `${U.plural(n, 'dossier')} au parent introuvable → à la racine du cours`);
       say('brokenRefs', (n) => `${U.plural(n, 'renvoi')} du plan vers une unité absente, retiré${n > 1 ? 's' : ''}`);
+      say('badExercises', (n) => `${U.plural(n, 'exercice')} incomplet${n > 1 ? 's' : ''} (question, choix ou réponse manquants), ignoré${n > 1 ? 's' : ''}`);
+      say('exerciseRefs', (n) => `${U.plural(n, 'renvoi')} d’exercice vers un nœud absent, retiré${n > 1 ? 's' : ''}`);
       say('autoLayout', (n) => `${U.plural(n, 'carte')} sans positions → rangée${n > 1 ? 's' : ''} automatiquement à l’ouverture`);
-      return { kind, data, fixes, issues, collide, stats: { courses: data.courses.length, folders: data.folders.length, maps: data.maps.length, nodes, edges, notes, links, labels } };
+      return { kind, data, fixes, issues, collide, stats: { courses: data.courses.length, folders: data.folders.length, maps: data.maps.length, nodes, edges, notes, links, labels, exercises } };
     },
 
     /**

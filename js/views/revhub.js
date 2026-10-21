@@ -120,13 +120,13 @@
     return h('section.lib-sec',
       h('div.sec-head', h('h2.sec-title', 'À retravailler'), h('span.sec-count', String(list.length))),
       h('p.hub-hint', 'Les dernières fiches notées « À revoir ». Elles reviennent dès demain ; un détour par la carte aide à comprendre ce qui coince.'),
-      h('div.dogs', list.map(({ map, node }) => {
+      h('div.dogs', list.map(({ map, node, ex }) => {
         const c = S.course(map.courseId);
-        const card = h('a.dog', { href: `#/carte/${map.id}?n=${node.id}`, dataset: { hero: `map:${map.id}:node` } },
+        const card = h('a.dog', { href: `#/carte/${map.id}${node ? '?n=' + node.id : ''}`, dataset: { hero: `map:${map.id}:node` } },
           // forme de la fiche (sous le texte) : la feuille coupée en diagonale + le rabat posé dessus
           h('span.dog-shape', { 'aria-hidden': 'true' }, h('span.dog-paper', h('span.dog-band')), h('span.dog-shade'), h('span.dog-flap')),
-          h('span.dog-k', S.isStruct(node.type) ? S.kickerOf(map, node) : S.TYPES[node.type].label),
-          h('span.dog-t', node.title),
+          h('span.dog-k', ex ? S.EXERCISE_KINDS[ex.kind].label : S.isStruct(node.type) ? S.kickerOf(map, node) : S.TYPES[node.type].label),
+          h('span.dog-t', ex ? ex.q : node.title),
           h('span.dog-s', map.title),
           h('span.dog-stamp', 'À revoir'));
         if (c) R.courseArt.tint(card, c);
@@ -202,7 +202,7 @@
         U.clear(el);
         const due = S.dueCount();
         const anyReviewable = S.data.maps.some((m) => S.mapStats(m).reviewable);
-        const fresh = S.reviewQueue({}, { limit: 1e9 }).filter((q) => { const m = S.map(q.mapId); const n = m && S.node(m, q.nodeId); return n && !n.review.last; }).length;
+        const fresh = S.reviewQueue({}, { limit: 1e9 }).filter((q) => q.fresh).length;
         const size = S.data.settings.sessionSize;
         const take = size ? Math.min(size, due) : due;
 

@@ -13,7 +13,7 @@ const dir = path.join(__dirname, '../skills/ratio-livre-vers-cours');
 const file = path.join(dir, fs.readdirSync(dir).filter((f) => /^ratio_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
 const raw = fs.readFileSync(file, 'utf8');
 const skill = JSON.parse(raw);
-const MAX_BYTES = 150 * 1000;
+const MAX_BYTES = 175 * 1000;
 
 let passed = 0, failed = 0;
 function check(name, fn) {
@@ -46,7 +46,7 @@ console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')
 
 check('version 4 et fichier choisi par le tri', () => {
   ok(/^4\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.1.json', path.basename(file));
+  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.2.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {
@@ -92,7 +92,7 @@ check('contradictions connues absentes', () => {
   ok(cases === 'ABCDEFGHIJKLMNOP', 'cas ' + cases);
 });
 
-check('taille ≤ 120 ko', () => {
+check('taille ≤ 175 ko', () => {
   const n = Buffer.byteLength(raw);
   ok(n <= MAX_BYTES, n + ' octets');
   return (n / 1000).toFixed(1) + ' ko';
@@ -179,11 +179,11 @@ check('cours en dossiers : validateur sans erreur ni avertissement (droit)', () 
 check('cours en dossiers : import Ratio sans remarque, renvois gardés', () => {
   const p = S.parseImport(folderText);
   ok(!p.issues.length, JSON.stringify(p.issues));
-  ok(p.stats.folders === 3 && p.stats.maps === 9, JSON.stringify(p.stats));
+  ok(p.stats.folders === 3 && p.stats.maps === 9 && p.stats.exercises > 0, JSON.stringify(p.stats));
   const d = S.sanitize(folderEx());
   const refs = d.maps.filter((m) => m.role === 'plan').flatMap((m) => m.nodes.filter((n) => n.ref));
   ok(refs.length === folderEx().maps.filter((m) => m.role === 'plan').flatMap((m) => m.nodes.filter((n) => n.ref)).length, 'renvoi perdu');
-  return `${p.stats.folders} dossiers, ${p.stats.maps} cartes, ${refs.length} renvois`;
+  return `${p.stats.folders} dossiers, ${p.stats.maps} cartes, ${refs.length} renvois, ${p.stats.exercises} exercices`;
 });
 
 check('cours en dossiers : intègre pour le moteur (O.check), cartes de contenu sans correction établie', () => {
@@ -199,6 +199,55 @@ check('cours en dossiers : intègre pour le moteur (O.check), cartes de contenu 
     info.push(m.id + ' ' + map.nodes.length);
   }
   return info.join(' · ');
+});
+
+/* exercices de révision (v4.2) : spec, exemples complets, erreurs du validateur */
+check('exercices : spec (section exercises, P5b, G13, target_format.exercise)', () => {
+  const ids = skill.pipeline.phases.map((p) => p.id);
+  ok(ids.indexOf('P5b') === ids.indexOf('P5') + 1, 'P5b après P5 : ' + ids.join(' '));
+  ok(skill.exercises && ['qa', 'qcm', 'vf'].every((k) => skill.exercises.kinds[k]) && skill.exercises.coverage, 'section exercises');
+  ok(skill.quality_gates.some((g) => /^G13 Exercices/.test(g)), 'G13');
+  ok(/nodeIds/.test(skill.target_format.exercise), 'target_format.exercise');
+});
+
+check('exercices : exemples couverts et lisibles par Ratio (S.sanitize)', () => {
+  const info = [];
+  for (const d of [skill.example.json, folderEx()]) {
+    const clean = S.sanitize(JSON.parse(JSON.stringify(d)));
+    for (const m of d.maps) {
+      if (m.role === 'plan') { ok(!m.exercises, m.id + ' : carte du plan avec exercices'); continue; }
+      const kept = clean.maps.find((x) => x.id === m.id).exercises || [];
+      ok(kept.length === m.exercises.length, m.id + ' : ' + kept.length + '/' + m.exercises.length + ' exercices gardés à l’import');
+      ok(['qa', 'qcm', 'vf'].every((k) => m.exercises.some((x) => x.kind === k)), m.id + ' : genres mêlés');
+      const cov = new Set(m.exercises.flatMap((x) => x.nodeIds));
+      const miss = m.nodes.filter((n) => !['chapitre', 'lecon', 'section'].includes(n.type) && !cov.has(n.id));
+      ok(!miss.length, m.id + ' : non couverts ' + miss.map((n) => n.title).join(' | '));
+      info.push(m.id + ' ' + m.exercises.length);
+    }
+  }
+  return info.join(', ');
+});
+
+check('validateur Python : exercices absents, nœud non couvert, mauvais rang, vf non booléen signalés', () => {
+  const base = () => JSON.parse(JSON.stringify(skill.example.json));
+  let d = base(); delete d.maps[0].exercises;
+  let r = validate(d, 'sans-ex', ['--hors-droit']);
+  ok(r.code === 1 && /exercises absent/.test(r.out), r.out.trim());
+  ok(validate(d, 'sans-ex-ok', ['--hors-droit', '--sans-exercices']).code === 0, '--sans-exercices refusé');
+  d = base(); const n = d.maps[0].exercises.find((x) => x.kind === 'qcm').nodeIds[0];
+  d.maps[0].exercises = d.maps[0].exercises.filter((x) => !x.nodeIds.includes(n));
+  r = validate(d, 'couverture', ['--hors-droit']);
+  ok(r.code === 1 && /sans exercice \(couverture\)/.test(r.out), r.out.trim());
+  d = base(); d.maps[0].exercises.find((x) => x.kind === 'qcm').answer = 9;
+  r = validate(d, 'rang', ['--hors-droit']);
+  ok(r.code === 1 && /answer = rang/.test(r.out), r.out.trim());
+  d = base(); d.maps[0].exercises.find((x) => x.kind === 'vf').answer = 'vrai';
+  r = validate(d, 'vf', ['--hors-droit']);
+  ok(r.code === 1 && /booléen/.test(r.out), r.out.trim());
+  d = base(); d.maps[0].exercises.filter((x) => x.kind === 'qcm' && !Array.isArray(x.answer)).forEach((x) => { x.choices.unshift(x.choices.splice(x.answer, 1)[0]); x.answer = 0; });
+  d.maps[0].exercises.push(...[1, 2, 3].map((i) => ({ id: 'y' + i, kind: 'qcm', q: 'Q' + i, choices: ['a' + i, 'b' + i, 'c' + i], answer: 0, explain: 'e', nodeIds: [d.maps[0].nodes[1].id] })));
+  r = validate(d, 'position', ['--hors-droit']);
+  ok(r.code === 0 && warnings(r.out).some((l) => /position 1/.test(l)), r.out.trim());
 });
 
 check('validateur Python : plan absent, peigne, renvoi cassé et lien hors vocabulaire signalés', () => {

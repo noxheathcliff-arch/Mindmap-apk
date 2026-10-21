@@ -188,16 +188,22 @@
   function courseCard(c, rerender) {
     const st = S.courseStats(c.id);
     const next = st.due ? S.nextCard(c.id) : null;
-    const reviewHref = next ? `#/reviser/cours/${c.id}?start=${next.map.id}.${next.node.id}` : null;
+    const reviewHref = next ? `#/reviser/cours/${c.id}?start=${next.map.id}.${encodeURIComponent(next.key)}` : null;
+    const hk = next ? next.key.replace(/:/g, '-') : '';
     const card = R.courseArt.tint(h('article.fiche.course-scope', { 'aria-labelledby': 'cc-' + c.id }), c);
 
     // la feuille qui dépasse : la prochaine fiche à réviser, ou l'état du cours
     let kicker, q, qHero = null;
     if (next) {
-      const T = S.TYPES[next.node.type];
-      kicker = 'Prochaine fiche' + (T.kicker || T.label ? ' · ' + (S.kickerOf(next.map, next.node) || T.label) : '');
-      q = next.node.title;
-      qHero = `fiche:${next.node.id}:q`;
+      if (next.ex) {
+        kicker = 'Prochaine question · ' + S.EXERCISE_KINDS[next.ex.kind].label;
+        q = next.ex.q;
+      } else {
+        const T = S.TYPES[next.node.type];
+        kicker = 'Prochaine fiche' + (T.kicker || T.label ? ' · ' + (S.kickerOf(next.map, next.node) || T.label) : '');
+        q = next.node.title;
+      }
+      qHero = `fiche:${hk}:q`;
     } else if (st.reviewable) {
       const nx = S.nextDueInfo({ courseId: c.id }).next;
       kicker = 'À jour';
@@ -209,7 +215,7 @@
       kicker = 'Dossier vide';
       q = 'Commence par une première carte';
     }
-    const paper = h('div.fiche-body', next ? { dataset: { hero: `fiche:${next.node.id}:card` } } : {},
+    const paper = h('div.fiche-body', next ? { dataset: { hero: `fiche:${hk}:card` } } : {},
       h('p.fiche-k', kicker),
       h('p.fiche-q', qHero ? h('span', { dataset: { hero: qHero } }, q) : q));
     paper.addEventListener('click', () => R.app.go(reviewHref || '#/cours/' + c.id));

@@ -531,6 +531,115 @@
           "kind": "tree",
           "label": "suppose"
         }
+      ],
+      "exercises": [
+        {
+          "id": "x1",
+          "kind": "qcm",
+          "q": "Quels sont les éléments du contrat de travail ?",
+          "choices": [
+            "Une prestation de travail",
+            "Une rémunération",
+            "Un lien de subordination",
+            "Un écrit signé"
+          ],
+          "answer": [
+            0,
+            1,
+            2
+          ],
+          "explain": "Un travail pour le compte et sous la subordination d’une autre personne, moyennant rémunération. L’écrit n’en fait pas partie.",
+          "nodeIds": [
+            "n2",
+            "n3",
+            "n4",
+            "n5"
+          ]
+        },
+        {
+          "id": "x2",
+          "kind": "qcm",
+          "q": "Quel est le critère décisif du contrat de travail ?",
+          "choices": [
+            "Le lien de subordination",
+            "La rémunération",
+            "La durée du contrat",
+            "Le travail fourni"
+          ],
+          "answer": 0,
+          "explain": "La subordination distingue le salarié de celui qui travaille pour son propre compte.",
+          "nodeIds": [
+            "n5"
+          ]
+        },
+        {
+          "id": "x3",
+          "kind": "qa",
+          "q": "Comment la Cour de cassation définit-elle le lien de subordination (Cass. soc., 13 nov. 1996, Société générale) ?",
+          "a": "Un travail exécuté sous l’autorité d’un employeur qui a le pouvoir de donner des ordres, d’en contrôler l’exécution et d’en sanctionner les manquements.",
+          "nodeIds": [
+            "n6"
+          ]
+        },
+        {
+          "id": "x4",
+          "kind": "vf",
+          "q": "Le salarié fournit un travail personnel.",
+          "answer": true,
+          "explain": "La prestation de travail est personnelle.",
+          "nodeIds": [
+            "n3"
+          ]
+        },
+        {
+          "id": "x5",
+          "kind": "qa",
+          "q": "Quelles sont les trois conditions de validité du contrat de travail ?",
+          "a": "Le consentement des parties, libre et éclairé ; la capacité de contracter ; un contenu licite et certain (C. civ., art. 1128, auquel renvoie l’article L. 1221-1).",
+          "nodeIds": [
+            "n7",
+            "n8",
+            "n9",
+            "n10"
+          ]
+        },
+        {
+          "id": "x6",
+          "kind": "vf",
+          "q": "Le contrat de travail peut déroger à l’ordre public si les deux parties y consentent.",
+          "answer": false,
+          "explain": "Le contenu doit être licite : le contrat ne peut déroger à l’ordre public.",
+          "nodeIds": [
+            "n10"
+          ]
+        },
+        {
+          "id": "x7",
+          "kind": "vf",
+          "q": "La période d’essai se présume.",
+          "answer": false,
+          "explain": "Elle ne se présume pas : elle est prévue dans le contrat ou la lettre d’engagement (L. 1221-23).",
+          "nodeIds": [
+            "n11",
+            "n13"
+          ]
+        },
+        {
+          "id": "x8",
+          "kind": "qcm",
+          "q": "Quelle est la durée maximale de la période d’essai d’un cadre en CDI ?",
+          "choices": [
+            "2 mois",
+            "3 mois",
+            "4 mois",
+            "6 mois"
+          ],
+          "answer": 2,
+          "explain": "2 mois pour les ouvriers et employés, 3 pour les agents de maîtrise et techniciens, 4 pour les cadres (L. 1221-19).",
+          "nodeIds": [
+            "n12"
+          ]
+        }
       ]
     },
     {
@@ -679,6 +788,102 @@
           "to": "n11",
           "kind": "tree",
           "label": ""
+        }
+      ],
+      "exercises": [
+        {
+          "id": "x1",
+          "kind": "vf",
+          "q": "Un CDI à temps plein peut être conclu sans écrit.",
+          "answer": true,
+          "explain": "Le contrat peut être établi selon les formes que les parties décident d’adopter (L. 1221-1).",
+          "nodeIds": [
+            "n2",
+            "n3"
+          ]
+        },
+        {
+          "id": "x2",
+          "kind": "qcm",
+          "q": "Pour quels contrats l’écrit est-il exigé ?",
+          "choices": [
+            "Le CDI à temps plein",
+            "Le contrat à durée déterminée",
+            "Le contrat à temps partiel"
+          ],
+          "answer": [
+            1,
+            2
+          ],
+          "explain": "L’écrit est exigé pour les contrats qui s’écartent du CDI à temps plein.",
+          "nodeIds": [
+            "n4",
+            "n5",
+            "n7"
+          ]
+        },
+        {
+          "id": "x3",
+          "kind": "qcm",
+          "q": "Quelle est la sanction d’un CDD conclu sans écrit ?",
+          "choices": [
+            "La requalification en CDI",
+            "La nullité du contrat",
+            "Une amende",
+            "Aucune sanction"
+          ],
+          "answer": 0,
+          "explain": "Le CDD sans écrit est réputé conclu pour une durée indéterminée (L. 1242-12).",
+          "nodeIds": [
+            "n6"
+          ]
+        },
+        {
+          "id": "x4",
+          "kind": "qa",
+          "q": "Que doit mentionner l’écrit d’un CDD ? Et celui d’un contrat à temps partiel ?",
+          "a": "Le CDD : la définition précise de son motif (L. 1242-12). Le temps partiel : la durée du travail et sa répartition (L. 3123-6).",
+          "nodeIds": [
+            "n5",
+            "n7"
+          ]
+        },
+        {
+          "id": "x5",
+          "kind": "qa",
+          "q": "Quelles sont les deux formalités de l’embauche ?",
+          "a": "La déclaration préalable à l’embauche, adressée aux organismes de protection sociale avant l’embauche (L. 1221-10) ; un contrat écrit rédigé en français (L. 1221-3).",
+          "nodeIds": [
+            "n8",
+            "n9",
+            "n10"
+          ]
+        },
+        {
+          "id": "x6",
+          "kind": "vf",
+          "q": "La déclaration préalable à l’embauche peut être faite après l’embauche.",
+          "answer": false,
+          "explain": "Elle est adressée avant l’embauche (L. 1221-10).",
+          "nodeIds": [
+            "n9"
+          ]
+        },
+        {
+          "id": "x7",
+          "kind": "qcm",
+          "q": "Quel est le principe pour la forme du contrat de travail ?",
+          "choices": [
+            "L’écrit obligatoire",
+            "La liberté de forme",
+            "L’acte notarié",
+            "L’accord de l’inspection"
+          ],
+          "answer": 1,
+          "explain": "Principe : liberté de forme. Exception : l’écrit pour le CDD et le temps partiel.",
+          "nodeIds": [
+            "n11"
+          ]
         }
       ]
     },
@@ -878,6 +1083,145 @@
           "kind": "link",
           "label": "se distingue de"
         }
+      ],
+      "exercises": [
+        {
+          "id": "x1",
+          "kind": "qcm",
+          "q": "À l’initiative de qui intervient le licenciement ?",
+          "choices": [
+            "Du salarié",
+            "De l’employeur",
+            "D’un commun accord",
+            "De l’administration"
+          ],
+          "answer": 1,
+          "explain": "Le licenciement est la rupture à l’initiative de l’employeur ; la démission, à celle du salarié.",
+          "nodeIds": [
+            "n2"
+          ]
+        },
+        {
+          "id": "x2",
+          "kind": "vf",
+          "q": "Tout licenciement pour motif personnel est justifié par une cause réelle et sérieuse.",
+          "answer": true,
+          "explain": "Article L. 1232-1.",
+          "nodeIds": [
+            "n3"
+          ]
+        },
+        {
+          "id": "x3",
+          "kind": "qa",
+          "q": "Sans cause réelle et sérieuse, que reçoit le salarié licencié ?",
+          "a": "Une indemnité fixée par le juge entre des montants minimaux et maximaux selon l’ancienneté (L. 1235-3).",
+          "nodeIds": [
+            "n4"
+          ]
+        },
+        {
+          "id": "x4",
+          "kind": "qa",
+          "q": "Quelles sont les trois étapes de la procédure de licenciement, dans l’ordre ?",
+          "a": "La convocation à l’entretien, l’entretien préalable (motifs et explications du salarié), puis la lettre de licenciement.",
+          "nodeIds": [
+            "n5",
+            "n6",
+            "n7"
+          ]
+        },
+        {
+          "id": "x5",
+          "kind": "qcm",
+          "q": "Quand la lettre de licenciement peut-elle être envoyée ?",
+          "choices": [
+            "Le jour de l’entretien",
+            "Un mois après l’entretien",
+            "15 jours après l’entretien",
+            "Au moins deux jours ouvrables après l’entretien"
+          ],
+          "answer": 3,
+          "explain": "Au moins deux jours ouvrables après l’entretien préalable (L. 1232-6).",
+          "nodeIds": [
+            "n8"
+          ]
+        },
+        {
+          "id": "x6",
+          "kind": "vf",
+          "q": "La démission suppose une volonté claire et non équivoque du salarié.",
+          "answer": true,
+          "explain": "Elle est à l’initiative du salarié.",
+          "nodeIds": [
+            "n9"
+          ]
+        },
+        {
+          "id": "x7",
+          "kind": "qcm",
+          "q": "Qu’est-ce qui peut fixer la durée du préavis de démission ?",
+          "choices": [
+            "La loi",
+            "La convention collective",
+            "L’usage",
+            "Le juge"
+          ],
+          "answer": [
+            0,
+            1,
+            2
+          ],
+          "explain": "La loi, la convention collective ou l’usage (L. 1237-1).",
+          "nodeIds": [
+            "n10"
+          ]
+        },
+        {
+          "id": "x8",
+          "kind": "vf",
+          "q": "L’employeur peut imposer une rupture conventionnelle au salarié.",
+          "answer": false,
+          "explain": "Rupture d’un commun accord (L. 1237-11) : aucune partie ne l’impose à l’autre, à la différence de la démission.",
+          "nodeIds": [
+            "n11"
+          ]
+        },
+        {
+          "id": "x9",
+          "kind": "qcm",
+          "q": "De combien de temps l’administration dispose-t-elle pour homologuer une rupture conventionnelle ?",
+          "choices": [
+            "15 jours calendaires",
+            "15 jours ouvrables",
+            "1 mois",
+            "2 jours ouvrables"
+          ],
+          "answer": 1,
+          "explain": "15 jours ouvrables (L. 1237-14) ; les 15 jours calendaires sont le délai de rétractation.",
+          "nodeIds": [
+            "n12"
+          ]
+        },
+        {
+          "id": "x10",
+          "kind": "vf",
+          "q": "Chaque partie dispose de 15 jours ouvrables pour se rétracter d’une rupture conventionnelle.",
+          "answer": false,
+          "explain": "15 jours calendaires (L. 1237-13) ; les 15 jours ouvrables sont le délai d’homologation.",
+          "nodeIds": [
+            "n13"
+          ]
+        },
+        {
+          "id": "x11",
+          "kind": "qa",
+          "q": "Pourquoi le licenciement est-il le plus encadré des trois modes de rupture ?",
+          "a": "Pour protéger le salarié.",
+          "nodeIds": [
+            "n14"
+          ]
+        }
       ]
     },
     {
@@ -1009,6 +1353,97 @@
           "to": "n5",
           "kind": "link",
           "label": "mesurée lors de"
+        }
+      ],
+      "exercises": [
+        {
+          "id": "x1",
+          "kind": "qa",
+          "q": "Quel texte fonde la participation des travailleurs à la vie de l’entreprise ?",
+          "a": "Le Préambule de 1946, al. 8 : tout travailleur participe, par ses délégués, à la détermination collective des conditions de travail et à la gestion des entreprises.",
+          "nodeIds": [
+            "n2"
+          ]
+        },
+        {
+          "id": "x2",
+          "kind": "qcm",
+          "q": "Dans quelles entreprises le CSE est-il mis en place ?",
+          "choices": [
+            "Au moins 50 salariés",
+            "Au moins 11 salariés",
+            "Au moins 20 salariés",
+            "Au moins 300 salariés"
+          ],
+          "answer": 1,
+          "explain": "Dès onze salariés (L. 2311-2). Le seuil de 50 salariés est celui du délégué syndical.",
+          "nodeIds": [
+            "n3",
+            "n4"
+          ]
+        },
+        {
+          "id": "x3",
+          "kind": "vf",
+          "q": "Les membres du CSE sont élus pour quatre ans.",
+          "answer": true,
+          "explain": "Article L. 2314-33.",
+          "nodeIds": [
+            "n5"
+          ]
+        },
+        {
+          "id": "x4",
+          "kind": "vf",
+          "q": "Le CSE coexiste avec d’autres instances élues du personnel.",
+          "answer": false,
+          "explain": "C’est une instance élue unique, issue des ordonnances de 2017.",
+          "nodeIds": [
+            "n3"
+          ]
+        },
+        {
+          "id": "x5",
+          "kind": "qcm",
+          "q": "Quelle audience rend un syndicat représentatif ?",
+          "choices": [
+            "5 % des inscrits",
+            "50 % des suffrages",
+            "10 % des salariés",
+            "10 % des suffrages au premier tour"
+          ],
+          "answer": 3,
+          "explain": "Au moins 10 % des suffrages exprimés au premier tour des élections (L. 2122-1).",
+          "nodeIds": [
+            "n6",
+            "n7"
+          ]
+        },
+        {
+          "id": "x6",
+          "kind": "qcm",
+          "q": "Dans quelles entreprises un délégué syndical est-il désigné ?",
+          "choices": [
+            "Au moins 50 salariés",
+            "Au moins 11 salariés",
+            "Au moins 300 salariés",
+            "Toutes"
+          ],
+          "answer": 0,
+          "explain": "Au moins 50 salariés (L. 2143-3).",
+          "nodeIds": [
+            "n8"
+          ]
+        },
+        {
+          "id": "x7",
+          "kind": "qa",
+          "q": "Quels sont les deux canaux de la représentation du personnel ?",
+          "a": "Les élus du CSE et les syndicats, dont l’audience se mesure aux élections ; les syndicats représentatifs négocient les accords collectifs.",
+          "nodeIds": [
+            "n9",
+            "n6"
+          ]
         }
       ]
     },
@@ -1146,6 +1581,97 @@
           "to": "n10",
           "kind": "tree",
           "label": "sauf"
+        }
+      ],
+      "exercises": [
+        {
+          "id": "x1",
+          "kind": "vf",
+          "q": "Le droit de grève a valeur constitutionnelle.",
+          "answer": true,
+          "explain": "Préambule de 1946, al. 7 : il s’exerce dans le cadre des lois qui le réglementent.",
+          "nodeIds": [
+            "n2"
+          ]
+        },
+        {
+          "id": "x2",
+          "kind": "qcm",
+          "q": "Quels éléments définissent la grève ?",
+          "choices": [
+            "Un préavis d’un mois",
+            "Une cessation totale du travail",
+            "Un mouvement collectif et concerté",
+            "Des revendications professionnelles"
+          ],
+          "answer": [
+            1,
+            2,
+            3
+          ],
+          "explain": "Une cessation de travail collective et concertée pour appuyer des revendications professionnelles.",
+          "nodeIds": [
+            "n3",
+            "n4",
+            "n5",
+            "n6"
+          ]
+        },
+        {
+          "id": "x3",
+          "kind": "vf",
+          "q": "Un simple ralentissement du travail (grève perlée) est une grève.",
+          "answer": false,
+          "explain": "La grève suppose une cessation totale du travail.",
+          "nodeIds": [
+            "n4"
+          ]
+        },
+        {
+          "id": "x4",
+          "kind": "qa",
+          "q": "Quel est l’effet de la grève sur le contrat de travail ?",
+          "a": "Le contrat est suspendu, pas rompu : retenue de salaire proportionnelle à l’arrêt, aucun licenciement pour fait de grève.",
+          "nodeIds": [
+            "n7",
+            "n8",
+            "n9"
+          ]
+        },
+        {
+          "id": "x5",
+          "kind": "qcm",
+          "q": "Quelle est la sanction d’un licenciement pour fait de grève ?",
+          "choices": [
+            "Une indemnité",
+            "La nullité",
+            "Une amende",
+            "Aucune"
+          ],
+          "answer": 1,
+          "explain": "Le licenciement pour fait de grève est nul (L. 2511-1).",
+          "nodeIds": [
+            "n9"
+          ]
+        },
+        {
+          "id": "x6",
+          "kind": "qa",
+          "q": "Dans quel cas un gréviste peut-il être licencié ?",
+          "a": "En cas de faute lourde, commise avec l’intention de nuire à l’employeur.",
+          "nodeIds": [
+            "n10"
+          ]
+        },
+        {
+          "id": "x7",
+          "kind": "vf",
+          "q": "La retenue de salaire pour fait de grève est forfaitaire.",
+          "answer": false,
+          "explain": "Elle est proportionnelle à la durée de l’arrêt.",
+          "nodeIds": [
+            "n8"
+          ]
         }
       ]
     }

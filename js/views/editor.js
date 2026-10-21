@@ -2908,13 +2908,16 @@
 
       // révision
       const r = n.review;
-      const reviewable = S.isReviewable(map, n);
+      // carte avec exercices : le nœud se révise par les questions qui le couvrent
+      const exs = map.exercises && map.exercises.length ? S.exercisesFor(map, n.id) : null;
+      const reviewable = exs ? exs.length > 0 : S.isReviewable(map, n);
+      const exLine = exs && exs.length ? `${U.plural(exs.length, 'exercice')} · ` : '';
       const revSec = h('section.pane-sec.pane-review',
         h('h3.pane-sec-title', 'Révision'),
         h('p.pane-review-line', ui.mastery(r.rating, 12),
           reviewable
-            ? (r.rating ? `${S.RATINGS[r.rating].label} · ${r.due > Date.now() ? 'prochaine révision ' + dueLabel(r.due) : 'à réviser maintenant'}` : 'Jamais révisé — sera proposé en révision')
-            : 'Ajoute une note ou des éléments rattachés pour en faire une carte de révision.'));
+            ? exLine + (r.rating ? `${S.RATINGS[r.rating].label} · ${r.due > Date.now() ? 'prochaine révision ' + dueLabel(r.due) : 'à réviser maintenant'}` : (exs ? 'jamais faits' : 'Jamais révisé — sera proposé en révision'))
+            : exs ? 'Aucun exercice ne porte sur ce nœud.' : 'Ajoute une note ou des éléments rattachés pour en faire une carte de révision.'));
 
       const typeRow = h('div.pane-type-row', typeChip,
         kids.length <= 1 && !struct ? h('span.pane-hint', n.logic ? (n.logic === 'et' ? 'Cumulatifs (ET)' : 'Alternatifs (OU)') : '') : null);

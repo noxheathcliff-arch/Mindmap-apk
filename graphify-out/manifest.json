@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792565767.2011223,
-    "seen": 1792565835.6648993,
-    "ast_hash": "2778d79006ced095a66e127c30e5e5fd",
+    "mtime": 1792566576.0006864,
+    "seen": 1792568127.8880117,
+    "ast_hash": "344533842770378026cb101cc3a1311d",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -12,8 +12,8 @@
     "semantic_hash": ""
   },
   "js/icons.js": {
-    "mtime": 1792565767.2045712,
-    "seen": 1792565835.6649134,
+    "mtime": 1792565837.9139566,
+    "seen": 1792568127.888027,
     "ast_hash": "c193e379b2deea4e2c8f1f394177129e",
     "semantic_hash": ""
   },
@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "js/organize.js": {
-    "mtime": 1792459113.1285584,
-    "seen": 1792459242.2342408,
-    "ast_hash": "5dcd5244bb4df5f61a09f4f942a92ed3",
+    "mtime": 1792566352.3137624,
+    "seen": 1792568127.8880382,
+    "ast_hash": "7758a4ef16b774f759d8ac73932975ac",
     "semantic_hash": ""
   },
   "js/search.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792500754.127493,
-    "seen": 1792502676.6378627,
-    "ast_hash": "9078cb08324f95407c0f66a8444bd0d2",
+    "mtime": 1792568059.221229,
+    "seen": 1792568127.8880522,
+    "ast_hash": "14ebc5b23f51bd18857f2749a36f4973",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -72,21 +72,21 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792565167.5977063,
-    "seen": 1792565835.6649323,
-    "ast_hash": "eaa51ff6374bf5aa5e6867ff917a1774",
+    "mtime": 1792566435.8675408,
+    "seen": 1792568127.888059,
+    "ast_hash": "cb5b15843e3f0a5c7ca2a61ebdb4eef1",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1792565785.369962,
-    "seen": 1792565835.6649342,
-    "ast_hash": "af3ff34c1d58908eebd49bd51407bb34",
+    "mtime": 1792566444.9853845,
+    "seen": 1792568127.8880615,
+    "ast_hash": "1f48190cd438b0a50d72e57dac023e51",
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1792565167.5979927,
-    "seen": 1792565835.6649356,
-    "ast_hash": "cbbb77ac2f256847274da070d47d95b8",
+    "mtime": 1792566435.8666637,
+    "seen": 1792568127.8880634,
+    "ast_hash": "b0356d260a1092d768c6e947401fa0ee",
     "semantic_hash": ""
   },
   "js/views/outline.js": {
@@ -96,21 +96,21 @@
     "semantic_hash": ""
   },
   "js/views/revhub.js": {
-    "mtime": 1792464513.186,
-    "seen": 1792467857.4424715,
-    "ast_hash": "9e806c490a25d05859b9d9c630f15287",
+    "mtime": 1792566435.8659215,
+    "seen": 1792568127.8880677,
+    "ast_hash": "4bc4b8d85230ec38f86d82f5f964b205",
     "semantic_hash": ""
   },
   "js/views/review.js": {
-    "mtime": 1792467866.1070132,
-    "seen": 1792480628.6365423,
-    "ast_hash": "56f4dd69bf6bb0283c46ea8e37453064",
+    "mtime": 1792566957.2711608,
+    "seen": 1792568127.8880696,
+    "ast_hash": "3303ff863abe9562b84b57789fec4e66",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792565831.5515666,
-    "seen": 1792565835.6649454,
-    "ast_hash": "30531b5e2b7d1909a71f6e2ae6ef9a0e",
+    "mtime": 1792568123.8083415,
+    "seen": 1792568127.8880777,
+    "ast_hash": "ca66a6f776941bb0fe4b6f6f852ec5a0",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -156,9 +156,9 @@
     "semantic_hash": ""
   },
   "tests/skill-bench.cjs": {
-    "mtime": 1792502684.8402355,
-    "seen": 1792564641.9333673,
-    "ast_hash": "48e2b361c0d32d9def2f7b79ebfda281",
+    "mtime": 1792567528.5619237,
+    "seen": 1792568127.888102,
+    "ast_hash": "549568aee7f25be34a675b13183a5dc2",
     "semantic_hash": ""
   },
   "tests/skill-rules.cjs": {
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792502684.8297567,
-    "seen": 1792564641.933389,
-    "ast_hash": "3b3eb74433507b720ec4ed846326306a",
+    "mtime": 1792567512.194,
+    "seen": 1792568127.888136,
+    "ast_hash": "ee7cfbf14e77df073f311816e06e49d1",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792564644.8612773,
-    "seen": 1792565165.3003948,
-    "ast_hash": "03ee52d917af9c0bdcbc80f8bd3e6af0",
+    "mtime": 1792567512.1928985,
+    "seen": 1792568127.888145,
+    "ast_hash": "0fa37435c7c095f3fe8f7505473d3b77",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -300,9 +300,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/exemple-cours-en-dossiers.json": {
-    "mtime": 1792482591.6025653,
-    "seen": 1792490621.5188642,
-    "ast_hash": "dea4bfc3a6dec5a4e6a4286c2ad38c6d",
+    "mtime": 1792567488.6989348,
+    "seen": 1792568127.8880727,
+    "ast_hash": "eba3fbe53c5b5b09634166e1361ad361",
     "semantic_hash": ""
   },
   "tests/folders.test.cjs": {
@@ -311,10 +311,28 @@
     "ast_hash": "4096ff32ec2e8b80defad8a930f4ecb7",
     "semantic_hash": ""
   },
-  "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.1.json": {
-    "mtime": 1792564644.8638434,
-    "seen": 1792565165.3003485,
-    "ast_hash": "dd9699717a08f1cafda36c40c7813df0",
+  "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.2.json": {
+    "mtime": 1792567488.6934464,
+    "seen": 1792568127.8880756,
+    "ast_hash": "1270df5c27929d6abc37eda640681b48",
+    "semantic_hash": ""
+  },
+  "tests/exercises.test.cjs": {
+    "mtime": 1792568069.967676,
+    "seen": 1792568127.8880794,
+    "ast_hash": "c1e4a0cff83b3f69e94386ec556b7b59",
+    "semantic_hash": ""
+  },
+  "e2e-end.png": {
+    "mtime": 1792568120.3651369,
+    "seen": 1792568127.8881464,
+    "ast_hash": "02935309b8d15b7003f9e925bad06161",
+    "semantic_hash": ""
+  },
+  "e2e-mid.png": {
+    "mtime": 1792568087.3614821,
+    "seen": 1792568127.8881483,
+    "ast_hash": "7ca2662b5c4b503197110fdc1ed2f884",
     "semantic_hash": ""
   }
 }

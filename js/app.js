@@ -63,7 +63,7 @@
     if (r.name === 'folder') return 'folder:' + r.id;
     if (r.name === 'editor') return 'map:' + r.id;
     // révision lancée depuis la fiche d'un cours : la fiche devient la carte de révision
-    if (r.name === 'review' && r.q && r.q.start) return 'fiche:' + String(r.q.start).split('.')[1];
+    if (r.name === 'review' && r.q && r.q.start) { const st = String(r.q.start); return 'fiche:' + st.slice(st.indexOf('.') + 1).replace(/:/g, '-'); }
     // session d'un dossier : son bloc (sommaire) ou son en-tête devient la bande de la fiche
     if (r.name === 'review' && r.scope && r.scope.folderId) return 'folder:' + r.scope.folderId;
     // session d'un cours : la ligne du cours (Réviser) ou l'en-tête du cours devient la bande de la fiche
@@ -605,7 +605,7 @@
       preview.append(
         h('div.imp-sum',
           h('p.overline', KIND[parsed.kind] || 'Données'),
-          h('div.imp-stats', chip(st.courses, st.courses > 1 ? 'cours' : 'cours'), chip(st.maps, st.maps > 1 ? 'cartes' : 'carte'), chip(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'), chip(st.notes, st.notes > 1 ? 'notes' : 'note'), chip(st.edges, st.edges > 1 ? 'liens' : 'lien')),
+          h('div.imp-stats', chip(st.courses, st.courses > 1 ? 'cours' : 'cours'), chip(st.maps, st.maps > 1 ? 'cartes' : 'carte'), chip(st.nodes, st.nodes > 1 ? 'nœuds' : 'nœud'), chip(st.notes, st.notes > 1 ? 'notes' : 'note'), chip(st.edges, st.edges > 1 ? 'liens' : 'lien'), st.exercises ? chip(st.exercises, st.exercises > 1 ? 'exercices' : 'exercice') : null),
           h('ul.imp-courses', courses.slice(0, 6).map((c) => {
             const n = parsed.data.maps.filter((m) => m.courseId === c.id).length;
             return h('li', h('b', c.title), h('span', ` · ${U.plural(n, 'carte')}`));

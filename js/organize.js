@@ -696,6 +696,7 @@
     const seen = new Set();
     m.edges = m.edges.filter((e) => { if (e.from === e.to) return false; const k = e.kind === 'link' ? [e.from, e.to].sort().join('|') + '|' + e.label : e.id; if (seen.has(k)) return false; seen.add(k); return true; });
     m.nodes = m.nodes.filter((n) => n.id !== dropId);
+    for (const x of m.exercises || []) if (x.nodeIds.includes(dropId)) x.nodeIds = [...new Set(x.nodeIds.map((i) => (i === dropId ? keepId : i)))];
   }
 
   /* ---- Décomposition mal reliée : les composantes suivent l'ordre de la phrase source ----
