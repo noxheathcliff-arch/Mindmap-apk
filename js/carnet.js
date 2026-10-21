@@ -2,8 +2,6 @@
    const nb = Carnet.mount(host, { kicker, title, subtitle, count })
    nb.setPage(node) · nb.open() · nb.prep(el) · nb.write(el, { ink, cps, lift }) · nb.skip()
    nb.mark(target, kind, { ink, lift }) · nb.flag() · nb.turn(next) · nb.close({ score }) · nb.setDark(bool)
-   nb.clip(el, { tail, all }) → string[] : tronque `el` à la dernière phrase qui tient, rend le reste (la feuille ne s'allonge JAMAIS pour la correction rouge)
-   nb.postit(text | string[], { ink }) : le reste s'écrit sur un post-it, puis se colle dans la zone libre (3 max, empilés)
    ink : 'lead' (énoncé), 'blue' (l'élève), 'red' (la correction). */
 (function () {
   'use strict';
@@ -164,11 +162,9 @@
           c.classList.remove('nb-fit-1');
           c.classList.add(k);
         }
-        // la feuille ne s'allonge que pour le contenu non rouge : la correction déborde sur un post-it
-        c.classList.add('nb-measure-base');
         const n = need();
         if (n > H) H = Math.ceil(n / 7) * 7;
-        c.classList.remove('nb-measure', 'nb-measure-base');
+        c.classList.remove('nb-measure');
       }
       this.H = H;
       this.root.style.setProperty('--nb-h', H + 'px');
@@ -178,7 +174,6 @@
 
     setPage(node) {
       this.content.replaceChildren(node);
-      this._notes = [];
       this.fast = false;
       this.fit();
     },
@@ -321,114 +316,10 @@
     },
     skip() {
       this.fast = true;
-      (this._pa || []).slice().forEach((a) => a.finish());
       const c = this.cur;
       if (!c) return;
       c.anims.forEach((a) => a.finish());
       if (c.pen) c.pen.finish();
-    },
-    // ---- débordement de la correction : post-it -------------------------------------
-    postitRoom: 140,                                   // place réservée en bas de feuille quand ça déborde
-    /* Tronque `el` (texte rouge) pour qu'il tienne sans allonger la feuille : coupe à la dernière
-       phrase qui tient (sinon au mot, avec « … »). `tail` : éléments qui suivent (restent sur la page).
-       Rend le reste, un paragraphe par entrée ([] si tout tient). Mesure via .nb-measure. */
-    clip(el, { tail = [], all = false } = {}) {
-      const c = this.content, nodes = [];
-      const wk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-      while (wk.nextNode()) if (wk.currentNode.nodeValue.trim()) nodes.push(wk.currentNode);
-      if (!nodes.length) return [];
-      c.classList.add('nb-measure');
-      const bottom = (e) => { const r = this._local(e.getBoundingClientRect()); return r.y + r.h; };
-      const tailH = tail.reduce((a, e) => a + this._local(e.getBoundingClientRect()).h + 8, 0);
-      const orig = nodes.map((n) => n.nodeValue);
-      const toks = orig.map((v) => v.split(/(\s+)/));
-      const isW = (t) => t && !/^\s+$/.test(t);
-      const words = toks.map((t) => t.filter(isW));
-      const total = words.reduce((a, w) => a + w.length, 0);
-      const apply = (k) => {
-        let left = k;
-        nodes.forEach((n, i) => {
-          const take = clamp(left, 0, words[i].length); left -= take;
-          if (take >= words[i].length) { n.nodeValue = orig[i]; return; }
-          let seen = 0, out = '';
-          for (const t of toks[i]) { if (!isW(t)) { out += t; continue; } if (seen >= take) break; out += t; seen++; }
-          n.nodeValue = take ? out.trimEnd() : '';
-        });
-      };
-      let k = 0;
-      if (!all && bottom(el) + tailH <= this.H - 30) { c.classList.remove('nb-measure'); return []; }
-      if (!all) {
-        const limit = this.H - 30 - this.postitRoom - tailH;
-        let lo = 0, hi = total;
-        while (lo < hi) { const m = (lo + hi + 1) >> 1; apply(m); if (bottom(el) <= limit) lo = m; else hi = m - 1; }
-        k = lo;
-        const flat = words.flat();
-        let j = -1;
-        for (let i = k - 1; i >= 0; i--) if (/[.!?…]$/.test(flat[i])) { j = i; break; }
-        if (j >= 0 && j + 1 >= k * 0.5) k = j + 1;
-      }
-      apply(k);
-      if (k > 0 && k < total && !/[.!?…]$/.test(words.flat()[k - 1])) {
-        const last = nodes.filter((n) => n.nodeValue.trim()).pop(); if (last) last.nodeValue += '…';
-      }
-      c.classList.remove('nb-measure');
-      const rest = []; let g = 0;
-      words.forEach((w) => { const part = w.slice(Math.max(0, k - g)); g += w.length; if (part.length) rest.push(part.join(' ')); });
-      nodes.forEach((n) => { if (!n.nodeValue.trim()) { const b = n.parentElement && n.parentElement.closest('li, p'); if (b && el.contains(b)) b.remove(); } });
-      if (!k) el.style.display = 'none';
-      return rest;
-    },
-    /* Le reste de la correction s'écrit sur un post-it (détaché, au-dessus de la page), puis se colle. */
-    async postit(text, { ink = 'red' } = {}) {
-      const paras = (Array.isArray(text) ? text : String(text && text.textContent != null ? text.textContent : text).split(/\n+/)).filter(Boolean);
-      if (!paras.length) return null;
-      const list = this._notes || (this._notes = []);
-      const fill = (box) => paras.forEach((t) => box.append(h('p', '', '').appendChild(document.createTextNode(t)).parentNode));
-      if (list.length >= 3) { fill(list[2].querySelector('.nb-postit-text')); return list[2]; }   // au-delà : on complète le dernier, rien ne se perd
-      const i = list.length, r = [-2.6, 2.2, -0.8][i];
-      const el = h('div', 'nb-postit');
-      el.setAttribute('role', 'note');
-      el.setAttribute('aria-label', 'Suite de la correction' + (i ? ' (' + (i + 1) + ')' : ''));
-      el.style.setProperty('--r', r + 'deg');
-      el.style.setProperty('--i', i);
-      const tx = h('div', 'nb-postit-text nb-md');
-      tx.tabIndex = 0;
-      fill(tx);
-      const curl = h('span', 'nb-postit-curl');
-      curl.setAttribute('aria-hidden', 'true');
-      el.append(curl, tx);
-      list.push(el);
-      this.content.append(el);
-      if (this.fast) { await this.write(tx, { ink }); return el; }
-      if (reduced()) { await el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }).finished; await this.write(tx, { ink }); return el; }
-      const T = (x, y, a, sc = '1') => `translate(${x}px, ${y}px) rotate(${a}deg) scale(${sc})`;
-      const UP = '0 16px 22px -6px rgba(0,0,0,.34), 0 4px 7px rgba(0,0,0,.14)', DOWN = '0 1px 1.5px rgba(0,0,0,.28), 0 3px 5px -1px rgba(0,0,0,.18)';
-      const lifted = T(-6, -34, r - 5, 0.92);
-      const keep = (a) => { (this._pa || (this._pa = [])).push(a); a.finished.catch(() => {}).then(() => { this._pa = (this._pa || []).filter((x) => x !== a); }); return a; };
-      // 1. il apparaît, petit, au-dessus de la page, détaché
-      await keep(el.animate([{ opacity: 0, transform: T(-10, -62, r - 11, 0.7), boxShadow: UP }, { opacity: 1, transform: lifted, boxShadow: UP }],
-        { duration: 240, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'forwards' })).finished.catch(() => {});
-      el.style.opacity = '1'; el.style.transform = lifted; el.style.boxShadow = UP;
-      // 2. le stylo y écrit le reste
-      await this.write(tx, { ink });
-      // 3. il se pose : anticipation (se soulève), arc, impact (squash, bord haut collé), coin qui se décolle
-      if (!this.fast) {
-        const a = keep(el.animate([
-          { transform: lifted, boxShadow: UP },
-          { transform: T(-6, -46, r - 7, 0.94), boxShadow: UP, offset: 0.2, easing: 'cubic-bezier(.55,.05,.67,.19)' },
-          { transform: T(-1, -8, r - 1, 1), boxShadow: '0 8px 12px -4px rgba(0,0,0,.28), 0 2px 4px rgba(0,0,0,.14)', offset: 0.56, easing: 'cubic-bezier(.23,1,.32,1)' },
-          { transform: T(0, 2, r, '1.03,0.95'), boxShadow: DOWN, offset: 0.68, easing: 'cubic-bezier(.23,1,.32,1)' },
-          { transform: T(0, -0.5, r, '0.995,1.012'), offset: 0.84 },
-          { transform: T(0, 0, r), boxShadow: DOWN },
-        ], { duration: 560, easing: 'linear', fill: 'forwards' }));
-        keep(curl.animate([{ transform: 'rotate(0deg) scale(1)' }, { transform: 'rotate(0deg) scale(1)', offset: 0.66 }, { transform: 'rotate(-16deg) scale(1.2)', offset: 0.82 }, { transform: 'rotate(-6deg) scale(1.06)' }],
-          { duration: 560, easing: 'ease-out', fill: 'forwards' }));
-        await a.finished.catch(() => {});
-      }
-      el.style.transform = el.style.boxShadow = el.style.opacity = '';
-      el.getAnimations().forEach((x) => x.cancel());
-      curl.style.transform = 'rotate(-6deg) scale(1.06)';
-      return el;
     },
     _pen(ink, pts, total, lift) {
       if (!pts.length) return null;

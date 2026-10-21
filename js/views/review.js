@@ -245,17 +245,11 @@
         if (r.bottom > bottom) stage.scrollTo({ top: stage.scrollTop + Math.min(r.bottom - bottom, r.top - s.top - 24), behavior: motion.reduced() || nb.fast ? 'auto' : 'smooth' });
       }
       async function writeParts(parts, g) {
-        let over = 0;
         for (let i = 0; i < parts.length; i++) {
           if (!alive(g)) return false;
           const [n, ink, max] = parts[i];
           follow(n);
-          // la correction rouge ne fait jamais grandir le carnet : ce qui ne tient pas passe sur un post-it
-          const rest = ink === 'red' ? nb.clip(n, { tail: parts.slice(i + 1).filter((x) => x[1] !== 'red').map((x) => x[0]), all: over > 0 }) : [];
-          if (rest.length) over++;
-          if (n.style.display !== 'none') await nb.write(n, { ink, max, lift: i === parts.length - 1 && !rest.length });
-          if (!alive(g)) return false;
-          if (rest.length) await nb.postit(rest, { ink: 'red' });
+          await nb.write(n, { ink, max, lift: i === parts.length - 1 });
         }
         return alive(g);
       }

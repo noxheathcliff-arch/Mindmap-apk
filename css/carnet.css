@@ -307,8 +307,6 @@
 /* mesure : on compte la place de ce qui viendra (verdict, réponse) */
 .nb-measure .nb-verdict:empty { display: block; height: var(--nb-line); }
 .nb-measure .nb-answer[hidden] { display: block !important; }
-/* mesure de base : la correction (rouge) n'allonge jamais la feuille */
-.nb-measure.nb-measure-base .nb-answer { display: none !important; }
 /* textes longs : l'écriture se resserre avant que la feuille ne s'allonge */
 .nb-content.nb-fit-1 { font-size: 17px; }
 .nb-content.nb-fit-1 .nb-red { font-size: 21px; }
@@ -337,29 +335,3 @@
 @media (prefers-reduced-motion: reduce) {
   .nb-edges { transition: none; }
 }
-
-/* ---- post-it : le reste de la correction, collé dans la zone libre ----- */
-.nb-root { --nb-postit: #fff3a3; --nb-postit-ink: #b3261b; --nb-postit-curl: #e3d36f; }
-.nb-root.is-dark { --nb-postit: #5b5430; --nb-postit-ink: #ffb4a8; --nb-postit-curl: #433d22; }
-.nb-postit {
-  position: absolute; z-index: calc(2 + var(--i, 0));
-  right: calc(14px + var(--i, 0) * 9px); bottom: calc(24px + var(--i, 0) * 7px);
-  width: clamp(148px, calc(var(--nb-w) * 0.58), 232px);
-  background: var(--nb-postit);
-  transform: rotate(var(--r, -2deg)); transform-origin: 50% 0;
-  box-shadow: 0 1px 1.5px rgba(0,0,0,.28), 0 3px 5px -1px rgba(0,0,0,.18);
-  border-radius: 1px 1px 2px 2px;
-  font: 500 18px/1.15 var(--nb-font-red); color: var(--nb-postit-ink);
-}
-.nb-postit-text { max-height: 118px; overflow-y: auto; padding: 8px 12px 14px; scrollbar-width: thin; }
-.nb-postit-text:focus-visible { outline: 2px dashed var(--nb-postit-ink); outline-offset: -3px; }
-.nb-postit-text p { margin: 0 0 3px; }
-.nb-postit-text .nb-c { color: inherit; }
-.nb-postit-curl {
-  position: absolute; right: 0; bottom: 0; width: 17px; height: 17px; pointer-events: none;
-  background: linear-gradient(315deg, var(--nb-postit-curl) 50%, transparent 50%);
-  box-shadow: -2px -2px 3px -1px rgba(0,0,0,.14);
-  transform-origin: 0 0; transform: rotate(-6deg) scale(1.06);
-}
-:root[data-motion="reduce"] .nb-postit-curl { transform: none; }
-@media (max-width: 380px) { .nb-postit { font-size: 16.5px; } }

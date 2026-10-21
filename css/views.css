@@ -125,22 +125,9 @@
   cursor: pointer;
   transition: transform var(--dur-spring-default) var(--spring-default);
 }
-/* arrivée (une fois, classe .emerge posée par library.js) : le dossier est FERMÉ (rabat remonté, feuille cachée
-   derrière), le rabat bascule vers le bas en s'ouvrant (léger overshoot), puis la feuille glisse vers le haut en
-   se mettant de biais (suivi : elle dépasse un peu son repos, puis se pose). Les deux finissent sur l'état de repos. */
-.fiche.emerge .fiche-front { transform-origin: 50% 100%; animation: fold-open var(--dur-xl) var(--ease-drawer) calc(var(--i, 0) * 40ms + 120ms) both; }
-.fiche.emerge .fiche-body { animation: paper-out calc(var(--dur-xl) + 80ms) var(--ease-out) calc(var(--i, 0) * 40ms + 300ms) both; }
-@keyframes fold-open {
-  from { transform: translateY(-12px) scaleY(1.03); box-shadow: 0 0 0 0 transparent; }
-  45%  { transform: translateY(5px) scaleY(.985); }
-  72%  { transform: translateY(-1.5px); }
-}
-@keyframes paper-out {
-  from { transform: translateY(96%) rotate(0deg); }
-  62%  { transform: translateY(-11px) rotate(-3deg); }
-  82%  { transform: translateY(1.5px) rotate(-1.1deg); }
-}
-@media (prefers-reduced-motion: reduce) { .fiche.emerge .fiche-body, .fiche.emerge .fiche-front { animation: none; } }
+/* première visite : la feuille sort du dossier une fois celui-ci posé (action secondaire, +200 ms) */
+.fiche.emerge .fiche-body { animation: paper-out var(--dur-spring-default) var(--spring-default) calc(var(--i, 0) * 40ms + 200ms) both; }
+@keyframes paper-out { from { transform: translateY(26px) rotate(0deg); } }
 :root[data-theme="dark"] .fiche-body { background: var(--surface-container-highest); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche-body { background: var(--surface-container-highest); } }
 .fiche-k { font: var(--label-s); font-weight: 600; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
