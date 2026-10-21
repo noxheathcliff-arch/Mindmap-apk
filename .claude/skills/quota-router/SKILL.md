@@ -29,6 +29,7 @@ l'agent `quota-triage` (Haiku) qui renvoie un verdict d'une ligne.
 | T3 difficile | **Opus** | architecture, bug introuvable après 2 essais, refacto multi-modules, conception d'algorithme, revue de sécurité | session principale |
 
 Règles :
+- **Toute question de l'utilisateur → déléguer à `haiku-worker` (`model: haiku`)**, même sur le code. La session principale ne répond pas elle-même ; elle relaie la réponse. Exceptions : question purement conversationnelle triviale (oui/non sur la session) ou question T3 explicite (raison en une ligne).
 - Par défaut T2. Monter en T3 seulement avec une raison écrite en une ligne.
 - La session principale (Opus) ne fait qu'orchestrer pour T1/T2 : elle délègue avec `model` explicite et ne relit pas le travail ligne à ligne.
 - Le paramètre `model` de l'outil Agent prime sur tout : toujours le passer (`haiku` / `sonnet`).
