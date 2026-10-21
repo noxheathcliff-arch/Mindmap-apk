@@ -9,7 +9,7 @@ But : tenir la semaine. On optimise la limite **hebdomadaire** (et le plafond Op
 Règle d'or : le modèle le moins cher qui fait le travail correctement, le moins de contexte possible.
 
 ## 1. Caveman (toujours)
-Invoquer `caveman:caveman` au premier tour de la session (une fois suffit, il reste actif).
+**Caveman TOUJOURS actif, sur toutes les réponses, sans exception.** Invoquer `caveman:caveman` au premier tour de la session et de nouveau après chaque `/clear` ou `/compact`. Ne jamais le désactiver sauf demande explicite de l'utilisateur.
 Réponses courtes. Pas de récapitulatif de ce qui vient d'être fait si le diff le montre.
 
 ## 2. Graphify avant toute lecture de code
