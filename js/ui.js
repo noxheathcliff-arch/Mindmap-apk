@@ -205,7 +205,24 @@
   };
 
   /** Formulaire : fields = [{key,label,value,placeholder,multiline,required}] */
-  ui.form = function ({ title, icon, fields, ok = 'Créer', origin, lead, cls }) {
+  /** Champ M3 « outlined » : label flottant posé sur le contour, icône de tête, texte d'aide */
+  ui.fieldOutlined = function ({ label, value = '', placeholder = '', icon, support, maxlength = 200, required }) {
+    const id = U.uid('f');
+    const input = h('input.fo-input', { id, type: 'text', placeholder, maxlength, autocomplete: 'off', spellcheck: 'true', 'aria-describedby': support ? id + '-s' : null });
+    input.value = value;
+    const wrap = h('div.field.fo', { class: icon ? 'fo-lead' : '' },
+      h('label.fo-box', { for: id },
+        icon ? h('span.fo-ic', R.icon(icon, 24)) : null,
+        input,
+        h('span.fo-label', label, required ? h('span.fo-req', { 'aria-hidden': 'true' }, ' *') : null),
+        h('span.fo-outline', { 'aria-hidden': 'true' })),
+      support ? h('span.fo-support', { id: id + '-s' }, support) : null);
+    const sync = () => wrap.classList.toggle('filled', !!input.value);
+    input.addEventListener('input', sync); sync();
+    return { wrap, input };
+  };
+
+  ui.form = function ({ title, icon, fields, ok = 'Créer', origin, lead, cls, outlined = false }) {
     const inputs = {};
     const body = h('div.form');
     let closeFn = null;
@@ -216,20 +233,34 @@
         const state = { value: f.value ?? f.choices[0].value };
         const list = h('div.choice-list.form-choice', { role: 'radiogroup', 'aria-label': f.label },
           f.choices.map((c) => {
-            const b = h('button.list-item.choice', { type: 'button', role: 'radio', 'aria-checked': String(c.value === state.value) },
-              h('span.choice-l', h('b', c.label), c.text ? h('span.choice-sub', c.text) : null), h('span.choice-check', R.icon('check', 20)));
+            const b = outlined
+              // carte radio M3 : icône tonale, libellé + aide, bouton radio en bout
+              ? h('button.rc.ripple', { type: 'button', role: 'radio', 'aria-checked': String(c.value === state.value), tabindex: c.value === state.value ? '0' : '-1' },
+                c.icon ? h('span.rc-ic', R.icon(c.icon, 24)) : null,
+                h('span.rc-t', h('b', c.label), c.text ? h('span', c.text) : null),
+                h('span.rc-radio', { 'aria-hidden': 'true' }))
+              : h('button.list-item.choice', { type: 'button', role: 'radio', 'aria-checked': String(c.value === state.value) },
+                h('span.choice-l', h('b', c.label), c.text ? h('span.choice-sub', c.text) : null), h('span.choice-check', R.icon('check', 20)));
             b.addEventListener('click', () => {
               state.value = c.value;
-              U.$$('.choice', list).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+              U.$$('[role="radio"]', list).forEach((x) => { x.setAttribute('aria-checked', String(x === b)); if (outlined) x.tabIndex = x === b ? 0 : -1; });
               if (f.onChange) f.onChange(c.value, inputs);
             });
             return b;
           }));
+        if (outlined) list.className = 'rc-group';
+        // flèches : radio group au clavier
+        list.addEventListener('keydown', (e) => {
+          const all = U.$$('[role="radio"]', list), i0 = all.indexOf(document.activeElement);
+          const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+          if (!d || i0 < 0) return;
+          e.preventDefault(); const nx = all[(i0 + d + all.length) % all.length]; nx.click(); nx.focus();
+        });
         inputs[f.key] = state;
         body.appendChild(h('div.field', h('span.field-label', f.label), list));
         return;
       }
-      const fld = ui.field({ ...f, autofocus: i === 0 });
+      const fld = outlined ? ui.fieldOutlined(f) : ui.field({ ...f, autofocus: i === 0 });
       inputs[f.key] = fld.input;
       body.appendChild(fld.wrap);
     });

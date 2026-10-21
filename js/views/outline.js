@@ -56,7 +56,7 @@
     const doc = h('article.plan');
 
     const printBtn = ui.btn('Imprimer / PDF', { icon: 'print', variant: 'tonal', onClick: () => window.print() });
-    const mdBtn = ui.btn('Markdown', { icon: 'download', variant: 'text', onClick: () => U.download(`${U.slug(map.title)}.md`, markdown(map), 'text/markdown') });
+    const mdBtn = ui.btn('Markdown', { icon: 'export', variant: 'text', onClick: () => U.download(`${U.slug(map.title)}.md`, markdown(map), 'text/markdown') });
 
     doc.appendChild(h('header.plan-head',
       h('p.overline', c ? c.title : 'Fiche'),

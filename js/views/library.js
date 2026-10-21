@@ -51,17 +51,17 @@
   /* from : élément d'où naît le formulaire (emplacement « Nouveau cours / Nouvelle carte ») */
   R.actions.newCourse = async function ({ from } = {}) {
     const v = await ui.form({
-      title: 'Nouveau cours', icon: 'folder', ok: 'Créer', origin: from, cls: 'new-course',
+      title: 'Nouveau cours', icon: 'folder', ok: 'Créer', origin: from, cls: 'new-course m3-form', outlined: true,
       // deux départs : un cours vide, ou un cours déjà prêt (fichier, JSON d'une IA)
       lead: (close) => h('div.nc-start',
         h('button.nc-opt.ripple', { type: 'button', onclick: () => close('__import') },
-          h('span.nc-ic', R.icon('upload', 22)),
+          h('span.nc-ic', R.icon('import', 24)),
           h('span.nc-t', h('b', 'Importer un cours'), h('span', 'Fichier .json ou texte d\'une IA')),
-          R.icon('chevronRight', 18)),
+          h('span.nc-go', R.icon('chevronRight', 20))),
         h('p.nc-or', h('span', 'ou partir de zéro'))),
       fields: [
-        { key: 'title', label: 'Intitulé du cours', placeholder: 'Ex. Droit des obligations', required: true },
-        { key: 'description', label: 'Précision (facultatif)', placeholder: 'Ex. M1 · S1 · Pr. Dupont' },
+        { key: 'title', label: 'Intitulé du cours', placeholder: 'Ex. Droit des obligations', icon: 'library', required: true },
+        { key: 'description', label: 'Précision', placeholder: 'Ex. M1 · S1 · Pr. Dupont', icon: 'edit', support: 'Facultatif · niveau, semestre, enseignant' },
       ],
     });
     if (v === '__import') { R.app.openImport(); return null; }
@@ -99,12 +99,12 @@
       courseId = courses[0].id;
     }
     const v = await ui.form({
-      title: 'Nouvelle carte', icon: 'map', ok: 'Créer', origin: from,
+      title: 'Nouvelle carte', icon: 'map', ok: 'Créer', origin: from, cls: 'm3-form', outlined: true,
       fields: [
-        { key: 'title', label: 'Notion ou chapitre', placeholder: 'Ex. La formation du contrat', required: true },
+        { key: 'title', label: 'Notion ou chapitre', placeholder: 'Ex. La formation du contrat', icon: 'map', required: true },
         { key: 'root', label: 'Point de départ', choices: [
-          { value: 'notion', label: 'Une notion', text: 'Un concept à décomposer : définition, conditions, effets…' },
-          { value: 'chapitre', label: 'Un chapitre de cours', text: 'Leçons, sections, puis les notions de chacune.' },
+          { value: 'notion', icon: 'target', label: 'Une notion', text: 'Un concept à décomposer\u00a0: définition, conditions, effets…' },
+          { value: 'chapitre', icon: 'outline', label: 'Un chapitre de cours', text: 'Leçons, sections, puis les notions de chacune.' },
         ], onChange: (val, inputs) => { inputs.title.placeholder = val === 'chapitre' ? 'Ex. Les sources du droit' : 'Ex. La formation du contrat'; } },
       ],
     });
@@ -118,7 +118,7 @@
     ui.menu(anchor, [
       { label: 'Modifier', icon: 'edit', onClick: () => R.actions.editCourse(c) },
       inCourse ? null : { label: 'Réviser ce cours', icon: 'cards', onClick: () => R.app.go('#/reviser/cours/' + c.id) },
-      { label: 'Exporter le cours (JSON)', icon: 'download', onClick: () => {
+      { label: 'Exporter le cours (JSON)', icon: 'export', onClick: () => {
         U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id));
         ui.snack('Cours exporté · à importer avec Réglages › Importer');
       } },

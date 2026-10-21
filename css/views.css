@@ -1479,26 +1479,87 @@ a.resume:active { transform: none; }
 @media (hover: hover) { .pager a:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); } }
 .pager .ic { color: var(--c-pri, var(--primary)); }
 
-/* 10. Nouveau cours : importer d'abord (carte tonale), ou partir de zéro */
-.dialog.new-course { box-shadow: none; }
-.nc-start { display: grid; gap: var(--sp-4); margin-bottom: var(--sp-2); }
+/* 10. Formulaires M3 (Nouveau cours, Nouvelle carte) : dialogue basique, champs outlined,
+   cartes radio, carte d'import. Spec : conteneur 28, marges 24, icône 24 centrée, 16 icône→titre. */
+.dialog.m3-form { box-shadow: none; width: min(440px, 100%); padding: 24px; }
+.dialog.m3-form .dialog-icon { color: var(--secondary); margin-bottom: 16px; }
+.dialog.m3-form .dialog-title { font: var(--headline-s); margin-bottom: 16px; }
+.dialog.m3-form .form { gap: 20px; }
+.dialog.m3-form .field-label { font: var(--title-s); color: var(--on-surface); padding-left: 4px; }
+.dialog.m3-form .dialog-actions { margin-top: 24px; gap: 8px; }
+
+/* champ outlined : 56 de haut, coin 4, label qui monte sur le contour */
+.fo { display: grid; gap: 4px; }
+.fo-box { position: relative; display: flex; align-items: center; min-height: 56px; border-radius: var(--shape-xs); cursor: text; }
+.fo-outline { position: absolute; inset: 0; border: 1px solid var(--outline); border-radius: inherit; pointer-events: none;
+  transition: border-color var(--dur-effects) var(--effects), border-width var(--dur-xs) var(--effects); }
+@media (hover: hover) { .fo-box:hover .fo-outline { border-color: var(--on-surface); } }
+.fo-ic { flex: none; display: grid; place-items: center; margin-left: 12px; color: var(--on-surface-variant); transition: color var(--dur-effects) var(--effects); }
+.fo-input { flex: 1; min-width: 0; height: 56px; padding: 0 16px; border: 0; background: none; font: var(--body-l); color: var(--on-surface); outline: none; }
+.fo-lead .fo-input { padding-left: 16px; }
+.fo-input::placeholder { color: var(--on-surface-variant); opacity: 0; transition: opacity var(--dur-sm) var(--effects); }
+.fo-label { position: absolute; left: 12px; top: 50%; padding: 0 4px; max-width: calc(100% - 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  z-index: 1; font: var(--body-l); color: var(--on-surface-variant); background: var(--surface-container-high); pointer-events: none;
+  transform: translateY(-50%); transform-origin: left center;
+  transition: transform var(--dur-spring-std-fast) var(--spring-std-fast), color var(--dur-effects) var(--effects), left var(--dur-spring-std-fast) var(--spring-std-fast); }
+.fo-lead .fo-label { left: 48px; }
+.fo-req { color: var(--error); }
+.fo-box:focus-within .fo-outline { border: 2px solid var(--primary); }
+.fo-box:focus-within .fo-label { color: var(--primary); }
+.fo-box:focus-within .fo-ic { color: var(--primary); }
+.fo-box:focus-within .fo-input::placeholder { opacity: .7; }
+.fo-box:focus-within .fo-label, .fo.filled .fo-label { left: 12px; transform: translateY(calc(-50% - 28px)) scale(.75); }
+.fo-support { padding: 0 16px; font: var(--body-s); color: var(--on-surface-variant); }
+.fo.invalid .fo-outline { border: 2px solid var(--error); }
+.fo.invalid .fo-label, .fo.invalid .fo-ic, .fo.invalid .fo-support { color: var(--error); }
+
+/* cartes radio : surface tonale, couche d'état, radio M3 (anneau 20, point 10 qui pousse) */
+.rc-group { display: grid; gap: 8px; }
+.rc { position: relative; display: flex; align-items: center; gap: 16px; width: 100%; min-height: 72px; padding: 12px 16px; text-align: left;
+  border: 1px solid var(--outline-variant); border-radius: var(--shape-l); background: transparent; color: var(--on-surface); cursor: pointer;
+  transition: background-color var(--dur-effects) var(--effects), border-color var(--dur-effects) var(--effects), border-radius var(--dur-spring-fast) var(--spring-fast); }
+@media (hover: hover) { .rc:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); } }
+.rc:active { border-radius: var(--shape-m); }
+.rc:focus-visible { outline: 3px solid var(--secondary); outline-offset: 2px; }
+.rc[aria-checked="true"] { background: var(--secondary-container); color: var(--on-secondary-container); border-color: transparent; border-radius: var(--shape-li); }
+@media (hover: hover) { .rc[aria-checked="true"]:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); } }
+.rc-ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--shape-m);
+  background: var(--surface-container-highest); color: var(--on-surface-variant);
+  transition: background-color var(--dur-effects) var(--effects), color var(--dur-effects) var(--effects), border-radius var(--dur-spring-default) var(--spring-default); }
+.rc[aria-checked="true"] .rc-ic { background: var(--secondary); color: var(--on-secondary); border-radius: 50%; }
+.rc-t { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.rc-t b { font: var(--title-s); }
+.rc-t span { font: var(--body-m); color: var(--on-surface-variant); }
+.rc[aria-checked="true"] .rc-t span { color: inherit; opacity: .8; }
+.rc-radio { flex: none; position: relative; width: 20px; height: 20px; margin: 0 2px; border: 2px solid var(--on-surface-variant); border-radius: 50%;
+  transition: border-color var(--dur-effects) var(--effects); }
+.rc-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--primary); transform: scale(0);
+  transition: transform var(--dur-spring-fast) var(--spring-fast); }
+.rc[aria-checked="true"] .rc-radio { border-color: var(--primary); }
+.rc[aria-checked="true"] .rc-radio::after { transform: scale(1); }
+
+/* Nouveau cours : importer d'abord (carte tonale), ou partir de zéro */
+.nc-start { display: grid; gap: 20px; }
 .nc-opt {
-  display: flex; align-items: center; gap: var(--sp-4); width: 100%; min-height: 72px; text-align: left;
-  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
-  border: 0; border-radius: var(--shape-l);
-  background: var(--secondary-container); color: var(--on-secondary-container); cursor: pointer;
-  transition: background-color var(--dur-effects) var(--effects);
+  display: flex; align-items: center; gap: 16px; width: 100%; min-height: 80px; text-align: left;
+  padding: 16px 12px 16px 16px; border: 0; border-radius: var(--shape-l);
+  background: var(--primary-container); color: var(--on-primary-container); cursor: pointer;
+  transition: background-color var(--dur-effects) var(--effects), border-radius var(--dur-spring-fast) var(--spring-fast);
 }
-@media (hover: hover) { .nc-opt:hover { background: color-mix(in srgb, var(--on-secondary-container) 8%, var(--secondary-container)); } }
-.nc-opt:active { background: color-mix(in srgb, var(--on-secondary-container) 10%, var(--secondary-container)); }
+@media (hover: hover) { .nc-opt:hover { background: color-mix(in srgb, var(--on-primary-container) 8%, var(--primary-container)); } }
+.nc-opt:active { background: color-mix(in srgb, var(--on-primary-container) 10%, var(--primary-container)); border-radius: var(--shape-li); }
 .nc-opt:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
-.nc-ic { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: var(--on-primary); }
+.nc-ic { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: var(--shape-l); background: var(--primary); color: var(--on-primary);
+  transition: border-radius var(--dur-spring-default) var(--spring-default); }
+.nc-opt:hover .nc-ic, .nc-opt:focus-visible .nc-ic { border-radius: 50%; }
 .nc-t { flex: 1; display: grid; gap: 2px; }
 .nc-t b { font: var(--title-m); }
 .nc-t span { font: var(--body-m); opacity: .8; }
-.nc-opt > .ic { color: inherit; opacity: .8; }
-.nc-or { display: flex; align-items: center; gap: var(--sp-3); font: var(--label-l); color: var(--on-surface-variant); }
+.nc-go { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; transition: transform var(--dur-spring-std-fast) var(--spring-std-fast); }
+@media (hover: hover) { .nc-opt:hover .nc-go { transform: translateX(3px); } }
+.nc-or { display: flex; align-items: center; gap: 12px; margin: 0; font: var(--label-l); color: var(--on-surface-variant); }
 .nc-or::before, .nc-or::after { content: ''; flex: 1; height: 1px; background: var(--outline-variant); }
+@media (prefers-reduced-motion: reduce) { .fo-label, .rc, .rc-ic, .rc-radio::after, .nc-opt, .nc-ic, .nc-go { transition-duration: 1ms; } }
 
 /* ==========================================================================
    À plat : plus d'élévation, sauf la barre d'onglets et ses boutons (lux),

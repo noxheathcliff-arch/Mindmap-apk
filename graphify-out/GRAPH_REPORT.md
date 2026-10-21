@@ -1,17 +1,17 @@
-# Graph Report - Mindmap-apk  (2026-10-20)
+# Graph Report - Mindmap-apk  (2026-10-21)
 
 ## Corpus Check
-- 47 files · ~169,437 words
+- 47 files · ~169,988 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 7 file(s) not represented in the graph (top: .css 5, (none) 1, .webmanifest 1)
 
 ## Summary
-- 757 nodes · 1739 edges · 39 communities (32 shown, 7 thin omitted)
+- 758 nodes · 1741 edges · 39 communities (32 shown, 7 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 140 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2c2659eb`
+- Built from commit: `bbedbd87`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -47,7 +47,7 @@
 - library.js
 - 5. Motion design
 - render
-- 1. Le besoin (Lean UX)
+- 6. Composition par écran
 - course.js
 - sw.js
 - Mindmap-apk
@@ -67,14 +67,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `Éditeur, store` --references--> `sanitize()`  [INFERRED]
   docs/audit-organisation-3.md → js/store.js
-- `4.4 Types de nœuds (différenciation monochrome)` --references--> `separate()`  [INFERRED]
-  DESIGN.md → js/layout.js
 - `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
   docs/audit-organisation-3.md → js/organize.js
 - `Moteur (`js/organize.js`)` --references--> `mergeNodes()`  [INFERRED]
   docs/audit-organisation-3.md → js/organize.js
 - `L'essentiel` --references--> `note()`  [INFERRED]
   skills/ratio-livre-vers-cours/SKILL.md → js/organize.js
+- `4.4 ter Relations d'abord, définitions modulaires` --references--> `applyVerified()`  [INFERRED]
+  DESIGN.md → js/organize.js
 
 ## Import Cycles
 - None detected.
@@ -91,7 +91,7 @@ Nodes (74): addCourse(), addFolder(), addMap(), ancestors(), applyImport(), blan
 
 ### Community 2 - "layout.js"
 Cohesion: 0.10
-Nodes (49): Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), arrange(), bbox(), buildTree(), busDown(), busySides(), childSlot() (+41 more)
+Nodes (50): 4.4 Types de nœuds (différenciation monochrome), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), arrange(), bbox(), buildTree(), busDown(), busySides() (+42 more)
 
 ### Community 3 - "organize.js"
 Cohesion: 0.09
@@ -146,8 +146,8 @@ Cohesion: 0.30
 Nodes (11): articleRef(), byMap(), highlight(), open(), finish(), group(), paint(), paintScopes() (+3 more)
 
 ### Community 17 - "4. Système de design (Material Design 3)"
-Cohesion: 0.17
-Nodes (12): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.4 Types de nœuds (différenciation monochrome) (+4 more)
+Cohesion: 0.18
+Nodes (11): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.5 Classes de fenêtre M3 → composition (+3 more)
 
 ### Community 18 - "skill-rules.cjs"
 Cohesion: 0.36
@@ -175,7 +175,7 @@ Nodes (4): course(), node(), { S, win }, win
 
 ### Community 24 - "Ratio — Dossier de conception"
 Cohesion: 0.25
-Nodes (8): 2. Inventaire de contenu, 6. Composition par écran, 7. Lois de l'UX appliquées, 8. Modèle Hooked (Nir Eyal), Desktop (large / extra-large), Mobile (compact, Android), Ratio — Dossier de conception, Tablette (medium / expanded)
+Nodes (8): 1. Le besoin (Lean UX), 2. Inventaire de contenu, 7. Lois de l'UX appliquées, 8. Modèle Hooked (Nir Eyal), Hypothèses (format Lean UX), MVP — ce qui est livré, Problème, Ratio — Dossier de conception
 
 ### Community 25 - "mark.js"
 Cohesion: 0.43
@@ -201,9 +201,9 @@ Nodes (6): 5.1 Diagnostic, 5.2 Tokens (un seul système, CSS et JS), 5.3 Spécif
 Cohesion: 0.80
 Nodes (5): logicText(), markdown(), relations(), render(), tree()
 
-### Community 31 - "1. Le besoin (Lean UX)"
+### Community 31 - "6. Composition par écran"
 Cohesion: 0.50
-Nodes (4): 1. Le besoin (Lean UX), Hypothèses (format Lean UX), MVP — ce qui est livré, Problème
+Nodes (4): 6. Composition par écran, Desktop (large / extra-large), Mobile (compact, Android), Tablette (medium / expanded)
 
 ### Community 32 - "course.js"
 Cohesion: 0.22
@@ -228,4 +228,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `store.js` be split into smaller, more focused modules?**
   _Cohesion score 0.05679862306368331 - nodes in this community are weakly interconnected._
 - **Should `layout.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.1003921568627451 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09728506787330317 - nodes in this community are weakly interconnected._

@@ -98,8 +98,8 @@
         ? { label: 'Autoriser les modifications', icon: 'lockOpen', onClick: () => S.setReadOnly(m.id, false) }
         : { label: 'Lecture seule', icon: 'lock', onClick: () => { S.setReadOnly(m.id, true); ui.snack(`« ${m.title} » en lecture seule`, { action: 'Annuler', onAction: () => S.setReadOnly(m.id, false) }); } },
       { divider: true },
-      { label: 'Exporter en Markdown', icon: 'download', onClick: () => U.download(`${U.slug(m.title)}.md`, R.outline.markdown(m), 'text/markdown') },
-      { label: 'Exporter (JSON)', icon: 'download', onClick: () => U.download(`${U.slug(m.title)}.json`, JSON.stringify(m, null, 2)) },
+      { label: 'Exporter en Markdown', icon: 'export', onClick: () => U.download(`${U.slug(m.title)}.md`, R.outline.markdown(m), 'text/markdown') },
+      { label: 'Exporter (JSON)', icon: 'export', onClick: () => U.download(`${U.slug(m.title)}.json`, JSON.stringify(m, null, 2)) },
       inEditor ? { label: 'Imprimer la fiche', icon: 'print', onClick: () => R.app.go('#/carte/' + m.id + '/plan?print=1') } : null,
       inEditor ? { divider: true } : null,
       inEditor && !m.readOnly && R.actions.chooseLayout ? { label: 'Disposition…', icon: 'tidy', onClick: () => R.actions.chooseLayout() } : null,

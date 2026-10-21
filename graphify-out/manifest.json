@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792467866.1042085,
-    "seen": 1792480628.6364992,
-    "ast_hash": "79bb2a807f3937cc19d929d0adb1b1d6",
+    "mtime": 1792565036.9902813,
+    "seen": 1792565165.3003018,
+    "ast_hash": "3617f0bf6264fdbff746478efb745431",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -12,9 +12,9 @@
     "semantic_hash": ""
   },
   "js/icons.js": {
-    "mtime": 1791694193.8421624,
-    "seen": 1792459242.2342348,
-    "ast_hash": "3ea89480c2ffae38c59efe7ca5a95366",
+    "mtime": 1792565036.9858108,
+    "seen": 1792565165.3003156,
+    "ast_hash": "262e9a01adfcf51ac1c6ab88799340cd",
     "semantic_hash": ""
   },
   "js/layout.js": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "js/ui.js": {
-    "mtime": 1792495675.6255794,
-    "seen": 1792495748.877601,
-    "ast_hash": "c19fea68bee129409685342be0689ad6",
+    "mtime": 1792565020.9863448,
+    "seen": 1792565165.3003316,
+    "ast_hash": "9e631213c9c7ebf2753a1348c88c8e52",
     "semantic_hash": ""
   },
   "js/util.js": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792496912.4041977,
-    "seen": 1792500751.166566,
-    "ast_hash": "e2983ff043f9de989d6ff6fb63d83527",
+    "mtime": 1792565036.9883926,
+    "seen": 1792565165.300336,
+    "ast_hash": "eaa51ff6374bf5aa5e6867ff917a1774",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
@@ -84,15 +84,15 @@
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1792495675.6263328,
-    "seen": 1792495748.8776155,
-    "ast_hash": "8aa8feccc9764239d04c27ea1c52c942",
+    "mtime": 1792565120.1518443,
+    "seen": 1792565165.3003395,
+    "ast_hash": "cbbb77ac2f256847274da070d47d95b8",
     "semantic_hash": ""
   },
   "js/views/outline.js": {
-    "mtime": 1791748150.4261913,
-    "seen": 1792459242.2342517,
-    "ast_hash": "7e9e2177a9441d8f4ef9d7748755d698",
+    "mtime": 1792565036.986702,
+    "seen": 1792565165.3003411,
+    "ast_hash": "8693be089465ec2d0ef38b43ad36f056",
     "semantic_hash": ""
   },
   "js/views/revhub.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792500754.127493,
-    "seen": 1792502676.6378834,
-    "ast_hash": "9e1718e171e7fbeadb888ae428f1d6c1",
+    "mtime": 1792565161.105308,
+    "seen": 1792565165.3003502,
+    "ast_hash": "f57ba1df3e74bb620cd9f142f424d410",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -264,8 +264,8 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792564630.021829,
-    "seen": 1792564641.9333951,
+    "mtime": 1792564644.8612773,
+    "seen": 1792565165.3003948,
     "ast_hash": "03ee52d917af9c0bdcbc80f8bd3e6af0",
     "semantic_hash": ""
   },
@@ -312,8 +312,8 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.1.json": {
-    "mtime": 1792564630.0052764,
-    "seen": 1792564641.9333458,
+    "mtime": 1792564644.8638434,
+    "seen": 1792565165.3003485,
     "ast_hash": "dd9699717a08f1cafda36c40c7813df0",
     "semantic_hash": ""
   }
