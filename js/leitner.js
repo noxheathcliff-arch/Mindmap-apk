@@ -1,8 +1,9 @@
 /* Ratio — la boîte de Leitner de l'accueil (DESIGN.md §4.7)
    Une boîte à fiches en 2,5D (CSS 3D) : six compartiments, un par boîte de Leitner (0 → 5,
    aujourd'hui → 30 jours), séparés par des intercalaires à onglet ; les fiches sont les vraies
-   fiches de l'utilisateur. On regarde la boîte de trois quarts, à hauteur des yeux ou d'en haut
-   (la caméra bascule par ressort). Le doigt (ou la souris) qui passe sur les fiches les écarte
+   fiches de l'utilisateur. La caméra tourne librement autour de la boîte, comme un vrai objet :
+   on la fait pivoter au doigt (glissé vertical ou deux doigts) ou à la souris (glisser), avec
+   élan et butées élastiques ; le bouton passe de face, de trois quarts, de dessus. Le doigt (ou la souris) qui passe sur les fiches les écarte
    comme dans un vrai fichier : celles d'un côté penchent à gauche, les autres à droite, et
    chacune frémit au passage. Toucher une fiche la sort de la boîte : elle monte, vient vers soi
    et se tourne face à l'écran ; la toucher encore lance la révision sur elle.
@@ -28,8 +29,13 @@
   const DH = 112, TAB = 20;        // intercalaire : hauteur, onglet
   const CL = L / 6;                // un compartiment
   const GAP = 8.5, CAP = 7;        // pas entre fiches, fiches dessinées au plus par compartiment
-  /* caméra : 0 = à hauteur des yeux, 1 = vue de dessus */
-  const VIEW = { tx: [-8, -58], ty: [42, 16], dy: [0, 0] };
+  /* caméra : tangage (tx, négatif = vu d'en haut) et lacet (ty) en degrés ; vues prédéfinies */
+  const VIEWS = [
+    { name: 'De trois quarts', tx: -12, ty: 40 },
+    { name: 'De face', tx: -16, ty: 0 },
+    { name: 'De dessus', tx: -62, ty: 14 },
+  ];
+  const PITCH = [-88, 6];          // butées du tangage (au-delà : élastique)
   const BOX_LABEL = ['Aujourd’hui', 'Chaque jour', 'Tous les 3 j', 'Chaque semaine', 'Tous les 15 j', 'Chaque mois'];
   const SHORT = ['0', '1 j', '3 j', '7 j', '15 j', '30 j'];
 
@@ -73,9 +79,9 @@
     const world = h('div.lbx-world');
     const stage = h('div.lbx-stage', {
       tabindex: '0', role: 'group', 'aria-roledescription': 'boîte de Leitner',
-      'aria-label': `Boîte de Leitner : ${U.plural(total, 'fiche')}, ${due} à réviser. Flèches pour parcourir, Entrée pour sortir une fiche.`,
+      'aria-label': `Boîte de Leitner : ${U.plural(total, 'fiche')}, ${due} à réviser. Flèches pour parcourir, Entrée pour sortir une fiche, Maj et flèches ou haut et bas pour tourner la boîte, V pour changer de vue.`,
     }, world, read);
-    const viewBtn = h('button.lbx-view.icon-btn', { type: 'button', title: 'Vue de dessus', 'aria-pressed': 'false' }, R.icon('view3d', 22));
+    const viewBtn = h('button.lbx-view.icon-btn', { type: 'button' }, R.icon('view3d', 22));
     const sec = h('section.today.lbx', { 'aria-label': 'Aujourd’hui', dataset: { hero: 'session:all:card' } },
       h('div.lbx-head', h('div.lbx-titles', h('h2.today-title', title), h('p.today-sub', sub)), viewBtn),
       stage,
@@ -126,54 +132,55 @@
     );
 
     /* ---- état animé ---- */
-    const cam = sp(intro ? .55 : 0);        // vue : 0 yeux → 1 dessus
+    const pitch = sp(VIEWS[0].tx);          // caméra (degrés)
+    const yaw = sp(VIEWS[0].ty);
     const drop = sp(intro ? -70 : 0);       // chute d'entrée (px monde)
     const dim = sp(0);                      // la boîte s'assombrit derrière une fiche sortie
-    let view = 0;                           // vue choisie
+    let view = 0;                           // vue prédéfinie choisie (-1 : orbite libre)
     let finger = null;                      // x monde du doigt, ou null
     let fingerV = 0, lastFX = null, lastFT = 0;
     let sel = null;                         // fiche ou intercalaire désigné par le doigt
     let pulled = null;                      // fiche sortie
     let lifted = null;                      // intercalaire soulevé
     let squash = 0;
+    let orbiting = false;                   // un doigt (ou la souris) tient la caméra
     let W = 0, H = 0, sc = .6, ox = 0, oy = 0;
     const reduced = () => R.motion.reduced();
     for (const p of parts) { p.lean.x = p.lean.t = p.rest; }
     if (intro && !reduced()) {
       // entrée : la boîte tombe, les fiches arrivent affaissées et se redressent en cascade
       parts.forEach((p, i) => { p.lean.x = p.rest - 22 - (i % 3) * 3; p.wait = 160 + p.box * 55 + (p.idx || 0) * 14; });
-    } else { cam.x = cam.t = 0; drop.x = drop.t = 0; }
+      pitch.x = -34;                        // et la caméra redescend de plus haut
+    } else { pitch.x = pitch.t; drop.x = drop.t = 0; }
 
-    /* cadrage : la boîte (intercalaires compris) tient dans la scène, aux deux vues ;
-       l'échelle est la plus petite des deux (pas de zoom en basculant), le centre suit la caméra */
+    /* cadrage : la boîte (intercalaires compris) tient dans la scène aux angles courants.
+       L'échelle est celle des vues prédéfinies (pas de zoom en tournant) ; elle ne diminue que si
+       l'orbite libre montre la boîte sous un angle plus encombrant. Le centre suit la caméra. */
     const CORNERS = [];
     for (const x of [-L / 2 - 4, L / 2 + 4]) for (const y of [0, -DH - 4]) for (const z of [-D / 2 - 4, D / 2 + 4]) CORNERS.push([x, y, z]);
-    function bounds(t) {
-      const tx = lerp(VIEW.tx[0], VIEW.tx[1], t) * rad, ty = lerp(VIEW.ty[0], VIEW.ty[1], t) * rad;
+    function bounds(tx, ty) {
       let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
       for (const c of CORNERS) { const [x, y] = rot(c, tx, ty); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
       return { x0, x1, y0, y1 };
     }
-    let B0, B1, room = 0;
+    let room = 0, scMax = .6;
+    const fit = (b) => Math.min((W * .94) / (b.x1 - b.x0), (room * .9) / (b.y1 - b.y0));
     function measure() {
       W = stage.clientWidth; H = stage.clientHeight;
       room = H - 26;                                   // la ligne de lecture en bas
-      B0 = bounds(0); B1 = bounds(1);
-      sc = Math.min(...[B0, B1].map((b) => Math.min((W * .94) / (b.x1 - b.x0), (room * .9) / (b.y1 - b.y0))));
+      scMax = Math.min(...VIEWS.map((v) => fit(bounds(v.tx * rad, v.ty * rad))));
       center();
     }
     function center() {
-      const t = clamp(cam.x, 0, 1);
-      const b = { x0: lerp(B0.x0, B1.x0, t), x1: lerp(B0.x1, B1.x1, t), y0: lerp(B0.y0, B1.y0, t), y1: lerp(B0.y1, B1.y1, t) };
+      const { tx, ty } = camAngles();
+      const b = bounds(tx, ty);
+      sc = Math.min(scMax, fit(b));
       ox = W / 2 - ((b.x0 + b.x1) / 2) * sc;
       oy = room / 2 + 4 - ((b.y0 + b.y1) / 2) * sc;
       // on regarde depuis le centre de la boîte : la perspective n'ajoute pas de plongée parasite
       stage.style.perspectiveOrigin = `${ox.toFixed(1)}px ${(oy - DH * .45 * sc).toFixed(1)}px`;
     }
-    const camAngles = () => {
-      const t = cam.x;
-      return { tx: lerp(VIEW.tx[0], VIEW.tx[1], t) * rad, ty: lerp(VIEW.ty[0], VIEW.ty[1], t) * rad, dy: lerp(VIEW.dy[0], VIEW.dy[1], t) };
-    };
+    const camAngles = () => ({ tx: pitch.x * rad, ty: yaw.x * rad, dy: 0 });
     /** Point monde → écran (px dans la scène), perspective comprise */
     const PERSP = 1500;
     function project(p) {
@@ -182,13 +189,23 @@
       const k = PERSP / (PERSP - z * sc), py = oy - DH * .45 * sc;
       return [ox + x * sc * k, py + (oy + y * sc - py) * k];
     }
-    /** Abscisse écran → abscisse monde le long du haut des fiches (table échantillonnée) */
-    function worldX(px) {
-      let a = project([-L / 2, -CH * .7, 0])[0], b = project([L / 2, -CH * .7, 0])[0];
-      if (px <= a) return -L / 2 - (a - px) / sc;
-      if (px >= b) return L / 2 + (px - b) / sc;
+    /** Point écran → abscisse monde le long du haut des fiches : on remonte le doigt le long de la
+        verticale des fiches (telle qu'elle apparaît à l'écran) jusqu'à l'axe de la boîte ; marche
+        sous tous les angles, même retournée. Axe vu de bout : projection perpendiculaire. */
+    function worldX(px, py) {
+      const Y = -CH * .7;
+      const a = project([-L / 2, Y, 0]), b = project([L / 2, Y, 0]);
+      const o = project([0, 0, 0]), t = project([0, -CH, 0]);
+      const ux = b[0] - a[0], uy = b[1] - a[1], n = Math.hypot(ux, uy) || 1;
+      const vx = t[0] - o[0], vy = t[1] - o[1];
+      const det = ux * vy - uy * vx, wx = px - a[0], wy = py - a[1];
+      // P + s·v coupe l'axe en a + k·u : k = (w × v) / (u × v)
+      const want = Math.abs(det) > n * Math.hypot(vx, vy) * .25 ? ((wx * vy - wy * vx) / det) * n : (wx * ux + wy * uy) / n;
+      const along = (q) => ((q[0] - a[0]) * ux + (q[1] - a[1]) * uy) / n;
+      if (want <= 0) return -L / 2 + want / sc;
+      if (want >= n) return L / 2 + (want - n) / sc;
       let lo = -L / 2, hi = L / 2;
-      for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (project([m, -CH * .7, 0])[0] < px) lo = m; else hi = m; }
+      for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (along(project([m, Y, 0])) < want) lo = m; else hi = m; }
       return (lo + hi) / 2;
     }
 
@@ -230,6 +247,7 @@
       const sq = clamp(squash, -.08, .08);
       world.style.transform = `translate(${ox}px,${oy}px) scale(${sc}) rotateX(${(tx / rad).toFixed(2)}deg) rotateY(${(ty / rad).toFixed(2)}deg) translateY(${(dy + drop.x).toFixed(2)}px) scale3d(${(1 + sq * .5).toFixed(3)},${(1 - sq).toFixed(3)},${(1 + sq * .5).toFixed(3)})`;
       world.style.setProperty('--dim', dim.x.toFixed(3));
+      sec.classList.toggle('is-top', pitch.x < -38);
     }
 
     /* ---- cibles ---- */
@@ -286,10 +304,14 @@
       let moving = false;
       if (reduced()) {
         for (const p of parts) { p.lean.x = p.lean.t; p.up.x = p.up.t; p.out.x = p.out.t; p.lean.v = p.up.v = p.out.v = 0; }
-        cam.x = cam.t; drop.x = drop.t; dim.x = dim.t; squash = 0;
+        pitch.x = pitch.t; yaw.x = yaw.t; drop.x = drop.t; dim.x = dim.t; squash = 0;
       } else {
         const el = now - t0;
-        moving = spring(cam, 150, 23, dt) | moving;
+        if (!orbiting) {
+          // élan : la cible est le point où l'élan l'aurait porté ; ressort presque critique
+          moving = spring(pitch, 90, 17, dt) | moving;
+          moving = spring(yaw, 90, 17, dt) | moving;
+        }
         const v0 = drop.v;
         moving = spring(drop, 240, 15, dt) | moving;
         // écrasement selon la décélération (lissé) : s'étire en tombant, se tasse en touchant
@@ -343,7 +365,6 @@
       pulled = p; finger = null; sel = null;
       p.up.t = 1; p.out.t = 1;
       if (!reduced()) p.up.v = -2.2;                  // anticipation : elle s'enfonce d'abord
-      if (view !== 0) setView(0, true);               // on se remet à hauteur des yeux pour la lire
       sec.classList.add('has-pulled');
       R.motion.haptic(10); say(); kick();
     }
@@ -358,57 +379,102 @@
       const key = `${p.it.map.id}.${encodeURIComponent(p.it.key)}`;
       R.app.go(`#/reviser/tout?start=${key}${p.due ? '' : '&all=1'}`, { from: sec });
     }
-    function setView(v, auto) {
-      view = v; cam.t = v;
-      if (!reduced() && !auto) cam.v = v ? -.9 : .9;  // anticipation : un léger recul avant de basculer
-      viewBtn.setAttribute('aria-pressed', String(!!v));
-      viewBtn.title = v ? 'Vue de face' : 'Vue de dessus';
-      sec.classList.toggle('is-top', !!v);
+    /** Vue prédéfinie : la caméra y glisse par le plus court chemin */
+    function setView(i, auto) {
+      view = i; const v = VIEWS[i];
+      pitch.t = v.tx; yaw.t = v.ty + 360 * Math.round((yaw.x - v.ty) / 360);
+      if (!reduced() && !auto) pitch.v += pitch.t < pitch.x ? 25 : -25;  // anticipation : un léger recul
+      const next = VIEWS[(i + 1) % VIEWS.length].name;
+      viewBtn.title = next; viewBtn.setAttribute('aria-label', `Vue : ${v.name.toLowerCase()}. Passer à : ${next.toLowerCase()}`);
       kick();
     }
-    viewBtn.addEventListener('click', () => { if (pulled) putBack(); setView(view ? 0 : 1); });
+    viewBtn.addEventListener('click', () => setView(view < 0 ? 0 : (view + 1) % VIEWS.length));
+    setView(0, true);
+
+    /* orbite libre : le glissé fait tourner la boîte comme un objet tenu en main (elle suit le
+       doigt), avec élan à la relâche et butées élastiques en tangage */
+    const rubber = (v) => v < PITCH[0] ? PITCH[0] - (PITCH[0] - v) * .3 : v > PITCH[1] ? PITCH[1] + (v - PITCH[1]) * .3 : v;
+    let orb = null;    // { x, y, p, t, vp, vy }
+    function orbitStart(x, y, t) {
+      if (!pulled) release();
+      orbiting = true; view = -1;
+      orb = { x, y, p: pitch.x, t, vp: 0, vy: 0 };
+      pitch.v = yaw.v = 0;
+      stage.classList.add('is-drag');
+    }
+    function orbitMove(x, y, t) {
+      const dx = x - orb.x, dy = y - orb.y, dt = Math.max(8, t - orb.t) / 1000;
+      orb.x = x; orb.y = y; orb.t = t;
+      const k = 260 / Math.max(260, Math.min(W, 520));   // ~un demi-tour pour la largeur de la scène
+      orb.p -= dy * .45 * k;
+      const p2 = rubber(orb.p), y2 = yaw.x + dx * .55 * k;
+      orb.vp = lerp(orb.vp, (p2 - pitch.x) / dt, .4); orb.vy = lerp(orb.vy, (y2 - yaw.x) / dt, .4);
+      pitch.x = pitch.t = p2; yaw.x = yaw.t = y2;
+      kick();
+    }
+    function orbitEnd(t) {
+      if (!orb) return;
+      orbiting = false; stage.classList.remove('is-drag');
+      const still = t - orb.t > 90;                     // doigt arrêté avant de lâcher : pas d'élan
+      const vp = still || reduced() ? 0 : clamp(orb.vp, -700, 700), vy = still || reduced() ? 0 : clamp(orb.vy, -900, 900);
+      pitch.v = vp; yaw.v = vy;
+      pitch.t = clamp(pitch.x + vp * .22, PITCH[0], PITCH[1]);
+      yaw.t = yaw.x + vy * .22;
+      orb = null; kick();
+    }
 
     // le point touché est-il sur la fiche sortie ? (son rectangle à l'écran)
     const onPulled = (e) => { if (!pulled) return false; const r = pulled.el.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
     const local = (e) => { const r = stage.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 
-    let down = null;   // { id, x, y, t, type, cam }
+    /* gestes : souris — survoler parcourt les fiches, glisser fait tourner, cliquer sort la fiche ;
+       doigt — glissé horizontal parcourt, glissé vertical (puis libre) ou deux doigts font
+       tourner, toucher sort la fiche */
+    const pts = new Map();   // pointeurs posés
+    let down = null;         // { id, x, y, t, type, moved }
+    const mid = () => { let x = 0, y = 0; for (const [a, b] of pts.values()) { x += a; y += b; } return [x / pts.size, y / pts.size]; };
     stage.addEventListener('pointermove', (e) => {
       const [x, y] = local(e);
-      if (down && down.id === e.pointerId && down.camDrag) {
-        cam.t = clamp(down.cam + (y - down.y) / -120, -.15, 1.15); cam.t = cam.t > 1 ? 1 + (cam.t - 1) * .4 : cam.t < 0 ? cam.t * .4 : cam.t;
-        cam.x = cam.t; cam.v = 0; kick(); return;
-      }
-      if (down && down.id === e.pointerId) {
+      if (pts.has(e.pointerId)) pts.set(e.pointerId, [x, y]);
+      if (orb) { if (pts.has(e.pointerId)) { const [mx, my] = mid(); orbitMove(mx, my, e.timeStamp); } return; }
+      if (down && down.id === e.pointerId && !down.moved) {
         const dx = x - down.x, dy = y - down.y;
-        if (!down.moved && Math.hypot(dx, dy) > 6) {
+        if (Math.hypot(dx, dy) > 6) {
           down.moved = true;
-          // souris : un glissé surtout vertical bascule la caméra
-          if (e.pointerType === 'mouse' && Math.abs(dy) > Math.abs(dx) && !pulled) { down.camDrag = true; down.cam = cam.x; stage.setPointerCapture(e.pointerId); stage.classList.add('is-drag'); return; }
+          if (e.pointerType === 'mouse' || Math.abs(dy) > Math.abs(dx) * 1.1 || pulled) {
+            stage.setPointerCapture(e.pointerId);
+            orbitStart(down.x, down.y, down.t); orbitMove(x, y, e.timeStamp); return;
+          }
         }
       }
       if (pulled) return;
-      if (e.pointerType === 'mouse' || (down && down.id === e.pointerId)) setFinger(worldX(x), e.timeStamp);
+      if (e.pointerType === 'mouse' ? !down : (down && down.id === e.pointerId)) setFinger(worldX(x, y), e.timeStamp);
     });
     stage.addEventListener('pointerdown', (e) => {
       if (e.button) return;
       const [x, y] = local(e);
+      pts.set(e.pointerId, [x, y]);
+      if (pts.size === 2 && !orb) {
+        // deux doigts : on tient la boîte, quel que soit le geste
+        if (down) down.moved = true;
+        const [mx, my] = mid(); orbitStart(mx, my, e.timeStamp); return;
+      }
+      if (pts.size > 1) return;
       down = { id: e.pointerId, x, y, t: e.timeStamp, type: e.pointerType, moved: false };
-      if (!pulled && e.pointerType !== 'mouse') setFinger(worldX(x), e.timeStamp);
+      if (!pulled && e.pointerType !== 'mouse') setFinger(worldX(x, y), e.timeStamp);
     });
     const up = (e) => {
+      pts.delete(e.pointerId);
+      if (orb) {
+        if (pts.size) { const [mx, my] = mid(); orb.x = mx; orb.y = my; return; }   // il reste un doigt : il garde la main
+        orbitEnd(e.timeStamp); down = null; return;
+      }
       if (!down || down.id !== e.pointerId) return;
       const d = down; down = null;
-      stage.classList.remove('is-drag');
-      if (d.camDrag) {
-        // projection à la relâche, puis la vue la plus proche
-        const proj = cam.x + (cam.v || 0) * .15;
-        setView(proj > .5 ? 1 : 0, true); return;
-      }
       if (e.type === 'pointercancel') { release(); return; }
-      if (!d.moved || e.pointerType === 'mouse') {
+      if (!d.moved) {
         if (pulled) { if (onPulled(e)) openReview(pulled); else putBack(); }
-        else if (!d.moved) pullOut(pick(worldX(local(e)[0])));
+        else { const [x, y] = local(e); pullOut(pick(worldX(x, y))); }
       }
       if (e.pointerType !== 'mouse') release();
     };
@@ -420,11 +486,14 @@
     const outside = (e) => { if (!sec.isConnected) { document.removeEventListener('pointerdown', outside, true); return; } if (pulled && !stage.contains(e.target)) putBack(); if (lifted && !stage.contains(e.target)) { lifted = null; say(); kick(); } };
     document.addEventListener('pointerdown', outside, true);
 
-    // clavier : ← → parcourent, Entrée sort la fiche (puis la révise), Échap la range, ↑ ↓ la vue
+    // clavier : ← → parcourent, Entrée sort la fiche (puis la révise), Échap la range,
+    // ↑ ↓ inclinent la caméra, Maj + ← → la font tourner, V passe à la vue suivante
     let kx = null;
     stage.addEventListener('keydown', (e) => {
       const i = sel ? parts.indexOf(sel) : -1;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+        e.preventDefault(); view = -1; yaw.t += e.key === 'ArrowRight' ? 20 : -20; kick();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault(); if (pulled) putBack();
         const n = clamp(i + (e.key === 'ArrowRight' ? 1 : -1), 0, parts.length - 1);
         kx = parts[n].x - 3; setFinger(kx, e.timeStamp); sel = parts[n]; say();
@@ -432,7 +501,9 @@
         e.preventDefault();
         if (pulled) openReview(pulled); else if (sel) pullOut(sel);
       } else if (e.key === 'Escape') { if (pulled) { e.preventDefault(); putBack(); } }
-      else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); setView(e.key === 'ArrowUp' ? 1 : 0); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault(); view = -1; pitch.t = clamp(pitch.t + (e.key === 'ArrowUp' ? -15 : 15), PITCH[0], PITCH[1]); kick();
+      } else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); setView(view < 0 ? 0 : (view + 1) % VIEWS.length); }
     });
     stage.addEventListener('blur', () => { if (kx != null) { kx = null; release(); } });
 

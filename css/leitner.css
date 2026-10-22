@@ -26,7 +26,7 @@
 .lbx-stage {
   grid-area: stage; position: relative; height: 270px; margin: calc(-1 * var(--sp-2)) 0;
   perspective: 1500px;
-  touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   cursor: grab; outline: none; border-radius: var(--shape-xl);
 }
 .lbx-stage:focus-visible { box-shadow: 0 0 0 3px var(--on-primary-container); }

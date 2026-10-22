@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 59 files · ~262,034 words
+- 59 files · ~262,894 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 9 file(s) not represented in the graph (top: .css 7, (none) 1, .webmanifest 1)
 
 ## Summary
-- 911 nodes · 2075 edges · 52 communities (41 shown, 11 thin omitted)
+- 914 nodes · 2081 edges · 52 communities (41 shown, 11 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 173 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `73bdd1ae`
+- Built from commit: `9b113683`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -132,8 +132,8 @@ Cohesion: 0.10
 Nodes (12): dir, { execFileSync }, file, folderText, fs, os, path, raw (+4 more)
 
 ### Community 11 - "leitner.js"
-Cohesion: 0.16
-Nodes (22): bounds(), center(), frame(), kick(), measure(), openReview(), pick(), pose() (+14 more)
+Cohesion: 0.14
+Nodes (25): bounds(), center(), frame(), kick(), measure(), openReview(), orbitEnd(), orbitMove() (+17 more)
 
 ### Community 12 - "metrics.cjs"
 Cohesion: 0.19
@@ -262,7 +262,7 @@ Nodes (13): animateView(), applyView(), autoPan(), bbox(), buildBar(), fit(), in
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `key()` connect `ui` to `checkvis.cjs`?**
-  _High betweenness centrality (0.259) - this node is a cross-community bridge._
+  _High betweenness centrality (0.262) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `render` be split into smaller, more focused modules?**
