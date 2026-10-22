@@ -461,3 +461,43 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 :root[data-motion="reduce"] .ripple-wave, :root[data-motion="reduce"] .burst { display: none !important; }
 @keyframes rm-fade { from { opacity: 0; } }
 @keyframes rm-fade-out { to { opacity: 0; } }
+
+/* ── Écran d'ouverture (splash) ────────────────────────────────
+   Acte 1 en CSS pur, dès la première peinture : chaque lettre se trace (contour, slow in/slow out),
+   en décalé (overlapping action), puis l'encre remplit le tracé et le contour s'efface.
+   Actes 2-3 dans js/splash.js : anticipation du p, envol en arc, l'icône pousse autour. */
+.splash {
+  position: fixed; inset: 0; z-index: 9999;
+  display: grid; place-items: center;
+  background: var(--surface, #fff);
+  color: var(--on-surface, #1a1c22);
+  /* filet de sécurité : si le script ne vient jamais, l'écran s'efface seul */
+  animation: sp-fallback 300ms ease 4.5s forwards;
+}
+.splash-wm { width: min(62vw, 300px); height: auto; overflow: visible; animation: sp-settle 900ms var(--ease-out, ease-out) both; }
+.sp-l {
+  fill: currentColor; fill-opacity: 0;
+  stroke: currentColor; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 1 2; stroke-dashoffset: 1;
+  transform-box: fill-box; transform-origin: 50% 100%;
+  animation:
+    sp-draw 420ms cubic-bezier(.65, 0, .35, 1) calc(80ms + var(--i) * 45ms) forwards,
+    sp-ink 260ms cubic-bezier(.2, 0, 0, 1) calc(320ms + var(--i) * 45ms) forwards,
+    sp-rise 520ms var(--spring-default, cubic-bezier(.3, 1.25, .5, 1)) calc(80ms + var(--i) * 45ms) both;
+}
+@keyframes sp-draw { to { stroke-dashoffset: 0; } }
+@keyframes sp-ink { to { fill-opacity: 1; stroke-opacity: 0; } }
+@keyframes sp-rise { from { translate: 0 10px; } }
+@keyframes sp-settle { from { scale: .96; } }
+@keyframes sp-fallback { to { opacity: 0; visibility: hidden; } }
+/* pendant l'envol, la vraie icône attend : la copie volante prend sa place au pixel près */
+.splash-flying .topbar-brand .logo, .splash-flying .rail-brand .logo { visibility: hidden; }
+.splash-fly { position: fixed; z-index: 10000; pointer-events: none; }
+.splash-fly > div, .splash-fly > div > div { width: 100%; height: 100%; }
+.splash-fly svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@media (prefers-reduced-motion: reduce) {
+  .splash-wm, .sp-l { animation: none; }
+  .sp-l { fill-opacity: 1; stroke: none; }
+}
+:root[data-motion="reduce"] .splash-wm, :root[data-motion="reduce"] .sp-l { animation: none; }
+:root[data-motion="reduce"] .sp-l { fill-opacity: 1; stroke: none; }

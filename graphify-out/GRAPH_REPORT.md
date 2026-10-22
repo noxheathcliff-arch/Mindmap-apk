@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 60 files · ~275,410 words
+- 61 files · ~276,953 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 936 nodes · 2133 edges · 53 communities (42 shown, 11 thin omitted)
+- 938 nodes · 2133 edges · 54 communities (42 shown, 12 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 186 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3852b74d`
+- Built from commit: `1adfc26f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -30,7 +30,7 @@
 - leitner.js
 - metrics.cjs
 - organize.test.cjs
-- Inventaire
+- sanitize
 - markdown.js
 - paint
 - 4. Système de design (Material Design 3)
@@ -82,31 +82,31 @@
   DESIGN.md → js/carnet.js
 - `3. Style par nœud (données)` --references--> `h()`  [INFERRED]
   docs/plan-refonte-cartes.md → js/carnet.js
-- `Routage et libellés (`js/layout.js`, `js/views/editor.js`)` --references--> `route()`  [INFERRED]
-  docs/audit-organisation-3.md → js/layout.js
-- `Routage et libellés (`js/layout.js`, `js/views/editor.js`)` --references--> `placeLabel()`  [INFERRED]
-  docs/audit-organisation-3.md → js/layout.js
+- `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
+  docs/audit-organisation-3.md → js/organize.js
+- `Moteur (`js/organize.js`)` --references--> `mergeNodes()`  [INFERRED]
+  docs/audit-organisation-3.md → js/organize.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (53 total, 11 thin omitted)
+## Communities (54 total, 12 thin omitted)
 
 ### Community 0 - "render"
 Cohesion: 0.12
 Nodes (37): addFree(), applyReadOnly(), auditNow(), autoOrganize(), chooseLayout(), customLabels(), declineKeys(), deleteSilently() (+29 more)
 
 ### Community 1 - "changed"
-Cohesion: 0.12
-Nodes (26): addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder(), deleteMap() (+18 more)
+Cohesion: 0.14
+Nodes (23): addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder(), deleteMap() (+15 more)
 
 ### Community 2 - "layout.js"
 Cohesion: 0.06
-Nodes (67): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur, 5. Typographie (+59 more)
+Nodes (68): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur (+60 more)
 
 ### Community 3 - "organize.js"
-Cohesion: 0.11
-Nodes (39): 1. Défauts constatés (v3), 2. Agents et contributions, 3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut, 4. Changements, 5. Tests et résultats, 6. Limites et reporté (honnêteté), Moteur (`js/organize.js`), Organisation V4 — intelligence structurelle et sémantique du graphe (+31 more)
+Cohesion: 0.07
+Nodes (49): A. Qualité des relations, Audit de l'organisation des cartes — deuxième génération, B. Organisation des sous-graphes, C. Décomposition modulaire, Constat principal, D. Révision, E. Contrôle, paramètres, mesure, Inventaire (+41 more)
 
 ### Community 4 - "ui"
 Cohesion: 0.09
@@ -144,9 +144,9 @@ Nodes (14): applySure(), fall, files, fs, heading(), indicators(), measure(), n0
 Cohesion: 0.18
 Nodes (8): fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath, sure(), test()
 
-### Community 14 - "Inventaire"
-Cohesion: 0.17
-Nodes (11): A. Qualité des relations, Audit de l'organisation des cartes — deuxième génération, B. Organisation des sous-graphes, C. Décomposition modulaire, Constat principal, D. Révision, E. Contrôle, paramètres, mesure, Inventaire (+3 more)
+### Community 14 - "sanitize"
+Cohesion: 0.22
+Nodes (10): blank(), cleanEdgeStyle(), cleanNodeStyle(), load(), normalizeGroups(), readAll(), reset(), restoreSnapshot() (+2 more)
 
 ### Community 15 - "markdown.js"
 Cohesion: 0.30
@@ -193,7 +193,7 @@ Cohesion: 0.43
 Nodes (6): dot(), hueFor(), mark(), paper(), tint(), vars()
 
 ### Community 26 - "syncCoverage"
-Cohesion: 0.50
+Cohesion: 0.40
 Nodes (4): exercisesFor(), rate(), syncCoverage(), unrate()
 
 ### Community 27 - "binder.js"
@@ -229,12 +229,12 @@ Cohesion: 0.10
 Nodes (38): Editor(), anchorOf(), anchors(), applyStyle(), bez(), branchCurve(), bundleGeometry(), bundleLabel() (+30 more)
 
 ### Community 47 - "store.js"
-Cohesion: 0.09
-Nodes (21): blank(), cleanEdgeStyle(), cleanNodeStyle(), courseActivity(), coursesSorted(), emit(), folderPath(), load() (+13 more)
+Cohesion: 0.10
+Nodes (14): courseActivity(), coursesSorted(), emit(), folderPath(), locate(), planOf(), prefixOf(), roman() (+6 more)
 
 ### Community 48 - "mapsOf"
-Cohesion: 0.13
-Nodes (24): branchStats(), canTree(), courseStats(), deleteCourse(), descendants(), dueCount(), folderStats(), foldersUnder() (+16 more)
+Cohesion: 0.16
+Nodes (21): branchStats(), courseStats(), deleteCourse(), dueCount(), folderStats(), foldersUnder(), forecast(), hasFolders() (+13 more)
 
 ### Community 49 - "renderBottomBar"
 Cohesion: 0.24
@@ -253,30 +253,30 @@ Cohesion: 0.20
 Nodes (14): addSource(), continueList(), dueLabel(), editTable(), fireInput(), fmtBtn(), indentLine(), paneNode() (+6 more)
 
 ### Community 54 - "childrenOf"
-Cohesion: 0.21
-Nodes (13): ancestors(), childrenOf(), isComponent(), isReviewable(), kickerOf(), node(), parentEdge(), parentOf() (+5 more)
+Cohesion: 0.16
+Nodes (16): ancestors(), canTree(), childrenOf(), descendants(), hiddenSet(), isComponent(), isReviewable(), kickerOf() (+8 more)
 
 ### Community 56 - "fit"
 Cohesion: 0.27
 Nodes (13): animateView(), applyView(), autoPan(), bbox(), buildBar(), fit(), initialView(), onDragStart() (+5 more)
 
 ## Knowledge Gaps
-- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `key()` connect `ui` to `checkvis.cjs`?**
-  _High betweenness centrality (0.264) - this node is a cross-community bridge._
+  _High betweenness centrality (0.263) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `render` be split into smaller, more focused modules?**
   _Cohesion score 0.11740890688259109 - nodes in this community are weakly interconnected._
 - **Why does `4. Système de design (Material Design 3)` connect `4. Système de design (Material Design 3)` to `layout.js`, `app.js`, `Utilisation`?**
-  _High betweenness centrality (0.229) - this node is a cross-community bridge._
+  _High betweenness centrality (0.228) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `changed` be split into smaller, more focused modules?**
-  _Cohesion score 0.12 - nodes in this community are weakly interconnected._
-- **Why does `4.4 Types de nœuds — trois apparences (v4.1)` connect `layout.js` to `carnet.js`, `4. Système de design (Material Design 3)`, `store.js`?**
-  _High betweenness centrality (0.179) - this node is a cross-community bridge._
+  _Cohesion score 0.1383399209486166 - nodes in this community are weakly interconnected._
+- **Why does `4.4 Types de nœuds — trois apparences (v4.1)` connect `layout.js` to `carnet.js`, `4. Système de design (Material Design 3)`, `sanitize`?**
+  _High betweenness centrality (0.178) - this node is a cross-community bridge._

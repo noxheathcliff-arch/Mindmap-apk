@@ -401,6 +401,27 @@ Règle : **entrées en ease-out** (un ressort parti du repos démarre lentement,
 
 **Règle : jamais de `scale` sur un nœud relié.** Les liens s'accrochent à la boîte réelle du nœud ; un nœud grossi (même 3 %) déborde et paraît détaché de ses liens. Appui = luminosité, cible / sélection multiple / liaison réussie = anneau surligneur (pseudo-élément ou `box-shadow`), prise = élévation. Seule la suppression garde un léger rétrécissement : ses liens disparaissent en même temps.
 
+**Écran d'ouverture (v4.2.12, `js/splash.js` + `base.css`).** À chaque chargement, environ 2 s, en 3 actes.
+1. **Le mot-symbole se trace.** Chaque lettre de « pioneer » est tracée au contour (`pathLength=1`, `dashoffset` 1 → 0, 420 ms, *in-out*), avec 45 ms d'écart entre lettres. L'encre remplit ensuite la lettre et le contour s'efface. La lettre monte de 10 px avec un ressort, et le mot entier passe d'une échelle de 0,96 à 1.
+2. **Anticipation.** Le p se tasse vers le sol (`translateY 14px`, `scale 1.07/.88`, 150 ms). Les lettres « ioneer » glissent à droite et s'effacent, l'une après l'autre (200 ms, 25 ms d'écart).
+3. **Envol.** Une copie de l'icône est posée à sa place finale, puis animée en FLIP depuis le p. La position horizontale et la position verticale suivent deux courbes différentes, ce qui fait voler le p en arc. Au départ, le p s'étire ; à l'arrivée, il s'écrase (`scale 1.08/.9`) puis se pose sur un ressort. La tuile primary pousse depuis le centre du p : d'abord un cercle, elle devient le carré arrondi `rx 115`, avec un petit dépassement à 1,06. L'encre passe de *on-surface* à *on-primary*. Le fond se lève pendant le vol, si bien que le p atterrit sur la page déjà vivante (logo de la barre du haut sur mobile, du rail sur bureau).
+
+Principes d'animation appliqués :
+- anticipation ;
+- squash & stretch ;
+- arcs ;
+- slow in / slow out ;
+- overlapping (lettres décalées) ;
+- follow-through (écrasement, rebond de la tuile) ;
+- staging (un seul sujet, le p) ;
+- action secondaire (la tuile, la couleur).
+
+Garde-fous :
+- le splash attend `body.ready` (3 s maximum) ;
+- une animation CSS de secours le retire après 4,5 s si le JS échoue ;
+- l'onboarding attend `R.splash.done` ;
+- en mouvement réduit, le mot apparaît plein puis disparaît en fondu (200 ms).
+
 ### 5.4 Performance
 On n'anime que `transform` et `opacity`. Ombres portées par des pseudo-éléments dont seule l'opacité change ; grille de points sur son propre calque (translation modulo un pas) ; `will-change` posé seulement pendant le mouvement (le texte reste net après un zoom) ; panneau docké animé en `transform`, jamais en largeur ; barres de progression en `scaleX`.
 

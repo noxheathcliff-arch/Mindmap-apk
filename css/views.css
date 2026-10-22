@@ -241,7 +241,8 @@
   .fiche-cta { height: 32px; padding: 0 4px 0 8px; gap: 2px; }
   .fiche-cta-l { display: none; }
   .fiche-count { min-width: 22px; height: 22px; padding: 0 6px; font-size: 11px; }
-  .btn-tonal.fiche-cta { padding: 0 10px 0 6px; font-size: 12px; }
+  /* sans libellé : bouton icône rond, le + au centre exact */
+  .btn-tonal.fiche-cta { width: 36px; height: 36px; padding: 0; gap: 0; justify-content: center; }
   .btn-tonal.fiche-cta .btn-label, .btn-tonal.fiche-cta > span:not(.ic) { display: none; }
 }
 

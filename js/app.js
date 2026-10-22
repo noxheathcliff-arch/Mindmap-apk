@@ -890,7 +890,8 @@
     });
     render();
     document.body.classList.add('ready');
-    if (!S.data.settings.onboarded) setTimeout(onboarding, 450);
+    // l'accueil attend la fin de l'écran d'ouverture
+    if (!S.data.settings.onboarded) (R.splash ? R.splash.done : Promise.resolve()).then(() => setTimeout(onboarding, 450));
 
     if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
       // Mise à jour : sw.js jamais pris dans le cache HTTP, vérifié au retour sur l'app ; nouvelle version = rechargement
