@@ -115,13 +115,20 @@
 
   /** origin : élément déclencheur (facultatif). Le dialogue naît de lui et y retourne
    *  (transform-origin sur son centre), et il reste « actif » tant que le dialogue est ouvert. */
-  ui.dialog = function ({ title, icon, body, actions = [], cls = '', dismissible = true, onOpen, full, origin, autoFocus = true }) {
+  ui.dialog = function ({ title, icon, body, actions = [], cls = '', dismissible = true, onOpen, full, origin, autoFocus = true, sheet = false }) {
     return new Promise((resolve) => {
       const prevFocus = document.activeElement;
       const scrim = h('div.scrim');
-      const box = h('div.dialog', { role: 'dialog', 'aria-modal': 'true', class: cls + (full ? ' dialog-full' : '') });
+      // sheet : sur téléphone, vraie feuille du bas (plein écran, poignée, glisser comme la note)
+      const asSheet = sheet && U.isCompact();
+      const box = h('div.dialog', { role: 'dialog', 'aria-modal': 'true', class: cls + (full ? ' dialog-full' : '') + (asSheet ? ' as-sheet' : '') });
+      let grip = null;
+      if (asSheet) {
+        grip = h('div.sheet-top', h('div.sheet-handle', { 'aria-hidden': 'true' }, h('span')), title ? h('h2.dialog-title', title) : null);
+        box.appendChild(grip);
+      }
       if (icon) box.appendChild(h('div.dialog-icon', R.icon(icon, 24)));
-      if (title) box.appendChild(h('h2.dialog-title', title));
+      if (title && !asSheet) box.appendChild(h('h2.dialog-title', title));
       const content = h('div.dialog-body');
       if (body) U.append(content, [body]);
       box.appendChild(content);
@@ -130,11 +137,29 @@
       const close = (val) => {
         if (closed) return;
         closed = true;
-        box.classList.add('out');
-        scrim.classList.add('out');
+        let wait = motion.reduced() ? 120 : 180;
+        if (asSheet) {
+          // la feuille redescend depuis là où elle est (aucun saut), le voile s'efface
+          if (sheetStop) { sheetStop(); sheetStop = null; }
+          wait = motion.reduced() ? 0 : 260;
+          if (box.style.height) {
+            // posée à mi-hauteur (raccourcie) : on reprend la vraie position avant de descendre
+            const shown = box.offsetHeight;
+            box.style.transition = 'none'; box.style.height = '';
+            box.style.transform = `translateY(${box.offsetHeight - shown}px)`;
+            void box.offsetHeight;
+          }
+          box.style.transition = `transform ${wait}ms var(--ease-in)`;
+          box.style.transform = 'translateY(100%)';
+          scrim.style.transition = `opacity ${wait}ms var(--ease-in)`;
+          scrim.style.opacity = '0';
+        } else {
+          box.classList.add('out');
+          scrim.classList.add('out');
+        }
         if (origin) origin.classList.remove('dialog-source');
         document.removeEventListener('keydown', onKey, true);
-        setTimeout(() => { wrap.remove(); if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); }, motion.reduced() ? 120 : 180);
+        setTimeout(() => { wrap.remove(); if (prevFocus && prevFocus.focus) prevFocus.focus({ preventScroll: true }); }, wait);
         resolve(val);
       };
       for (const a of actions) {
@@ -158,7 +183,9 @@
       };
       document.addEventListener('keydown', onKey, true);
       layer().appendChild(wrap);
-      if (origin && origin.isConnected) {
+      let sheetStop = null;
+      if (asSheet) sheetGestures(box, grip, scrim, () => close(undefined), (stop) => { sheetStop = stop; });
+      if (origin && origin.isConnected && !asSheet) {
         // offsetLeft/Top : position de mise en page, indépendante de l'animation en cours
         const o = origin.getBoundingClientRect(), w = wrap.getBoundingClientRect();
         const ox = o.left + o.width / 2 - w.left - box.offsetLeft, oy = o.top + o.height / 2 - w.top - box.offsetTop;
@@ -176,6 +203,69 @@
       if (onOpen) onOpen(box, close);
     });
   };
+
+  /* Feuille du bas (dialogue `sheet`) : même manipulation directe que la note de l'éditeur
+     — monte en entier (ressort tiroir), suivi 1:1 à la poignée, butée nette en haut,
+     — au relâchement, projection avec la vitesse du doigt, ressort vers plein / mi-hauteur / fermé,
+     — un simple toucher sur la poignée bascule plein ↔ mi-hauteur ; le voile suit la feuille. */
+  function sheetGestures(box, grip, scrim, close, setStop) {
+    let y = 0, y0 = 0, startY = 0, dragging = false, moved = false, stop = null, state = 'full';
+    const vt = motion.velocity();
+    let Hf = 0; // hauteur pleine, mesurée à l'ouverture
+    const H = () => Hf || box.offsetHeight;
+    // au repos à mi-hauteur la feuille raccourcit au lieu de descendre : la barre d'actions reste à l'écran
+    const settle = () => { if (y > 0.5) { box.style.height = `${Math.round(Hf - y)}px`; box.style.transform = 'translateY(0)'; } };
+    const unsettle = () => { box.style.height = ''; box.style.transform = `translateY(${Math.max(0, y)}px)`; };
+    const snaps = () => ({ full: 0, half: Math.max(0, H() - window.innerHeight * 0.52), closed: H() });
+    const put = (v) => {
+      y = v;
+      box.style.transform = `translateY(${Math.max(0, v)}px)`;
+      scrim.style.opacity = String(U.clamp(1 - v / H(), 0, 1));
+    };
+    const springTo = (target, velocity = 0) => {
+      if (stop) stop();
+      box.style.transition = 'none';
+      unsettle();
+      stop = motion.spring({
+        from: y, to: snaps()[target], velocity, ...motion.springs.drawer,
+        onUpdate: put,
+        onDone: () => { stop = null; setStop(null); state = target; if (target === 'closed') close(); else settle(); },
+      });
+      setStop(stop);
+    };
+    // entrée : de sous l'écran jusqu'en haut, ressort tiroir (rien ne saute si on la rattrape)
+    box.style.transition = 'none';
+    scrim.style.animation = 'none';
+    requestAnimationFrame(() => { Hf = box.offsetHeight; put(H()); springTo('full'); });
+    grip.addEventListener('pointerdown', (e) => {
+      if (e.button > 0 || e.target.closest('button, input')) return;
+      if (stop) { stop(); stop = null; setStop(null); }
+      dragging = true; moved = false;
+      unsettle();
+      startY = e.clientY; y0 = y;
+      vt.reset(); vt.add(0, e.clientY);
+      box.style.transition = 'none';
+      grip.setPointerCapture(e.pointerId);
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      if (Math.abs(e.clientY - startY) > 4) moved = true;
+      vt.add(0, e.clientY);
+      put(Math.max(0, y0 + e.clientY - startY)); // butée nette en plein écran
+    });
+    const up = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (!moved) { springTo(state === 'full' ? 'half' : 'full'); return; }
+      const v = vt.get().y;
+      const projected = y + v * 99; // decelerationRate 0.99
+      let target = 'full', best = Infinity;
+      for (const [k, val] of Object.entries(snaps())) { const d = Math.abs(projected - val); if (d < best) { best = d; target = k; } }
+      springTo(target, y <= 0 && v < 0 ? 0 : v);
+    };
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
+  }
 
   function trapFocus(e, box) {
     const f = U.$$('button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"]), a[href]', box)

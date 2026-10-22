@@ -1896,7 +1896,7 @@
       }
       paint();
       // st.styleSheet : redessine la fiche quand le type change depuis son menu (préfixe, apparence)
-      ui.dialog({ title: ids.length > 1 ? `Apparence · ${ids.length} nœuds` : 'Apparence', body: box, cls: 'dialog-style', origin, autoFocus: false,
+      ui.dialog({ title: ids.length > 1 ? `Apparence · ${ids.length} nœuds` : 'Apparence', body: box, cls: 'dialog-style', origin, autoFocus: false, sheet: true,
         actions: [{ label: 'Terminé', value: true, variant: 'filled', primary: true }],
         onOpen: (dlg) => {
           st.styleSheet = paint;
@@ -2081,7 +2081,7 @@
           h('div.es-ends', h('span.es-node', title(e.from)), h('span.es-arrow', R.icon('chevronRight', 18)), h('span.es-node', title(e.to))),
           h('span.es-kind', R.icon(e.kind === 'tree' ? 'fork' : 'link', 16), e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi')),
         labelSec, look);
-      ui.dialog({ title: 'Lien', body: box, cls: 'dialog-style dialog-edge', origin, autoFocus: !U.isCompact(),
+      ui.dialog({ title: 'Lien', body: box, cls: 'dialog-style dialog-edge', origin, autoFocus: !U.isCompact(), sheet: true,
         actions: [{ label: 'Annuler', value: false }, { label: 'Valider', value: true, variant: 'filled', primary: true }],
         onOpen: () => {
           st.edgeSheet = paint;

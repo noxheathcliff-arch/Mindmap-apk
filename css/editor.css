@@ -784,6 +784,14 @@
   .dialog-style .dialog-body { padding: var(--sp-1) var(--sp-5) var(--sp-5); }
   .dialog-style .dialog-actions { padding-inline: var(--sp-5); }
   .dialog-style .dialog-actions .btn { flex: 1; }
+  /* vraie feuille du bas (ui.dialog sheet) : monte en entier comme la note, poignée qu'on tire */
+  .dialog.dialog-style.as-sheet { height: 92dvh; max-height: none; animation: none; transform: translateY(100%); will-change: transform; }
+  .dialog.dialog-style.as-sheet::before { content: none; }
+  .dialog.as-sheet > * { animation: none; }
+  .dialog.as-sheet .sheet-top { flex: none; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .dialog.as-sheet .sheet-top:active { cursor: grabbing; }
+  .dialog.as-sheet .sheet-handle { display: grid; place-items: center; height: 28px; }
+  .dialog.as-sheet .sheet-top .dialog-title { padding: var(--sp-1) var(--sp-5) var(--sp-3); }
 }
 .sty { display: grid; gap: 0; min-width: 0; }
 /* sections séparées par un trait fin, titre title-s en casse de phrase */
