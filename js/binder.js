@@ -238,16 +238,18 @@
     const DX = SX + (W + P) / 2 - (130 - 147), DY = SY + H / 2 - 160;   // son centre, relatif au centre ouvert (mm)
     const S = Math.max(vh * 1.3 / (H * u), vw * 1.25 / ((W + P) * u));
 
-    const st = { a: 0, b: 0, open: 0, z: 0, f: 0 };
+    const st = { a: 0, b: 0, open: 0, q: 0, z: 0, f: 0 };
     let clip = true;
     const frame = () => {
-      const { a, b: t, z } = st;
+      const { a, b: t, q, z } = st;
       const open = st.open > 1 ? 2 - st.open : st.open;    // la couverture rebondit sur la table
       // sortie (a) puis vol vers le centre (t), en arc : x en retard sur y
       const ya = Y0 + (Y1 - Y0) * a, sa = s0 * (1 + .04 * a);
       const tx = Math.min(1, Math.max(0, t)), ease = 1 - Math.pow(1 - tx, 1.6);
       let X = X0 + (Xc - X0) * ease, Y = ya + (Yc - ya) * t, s = sa + (1 - sa) * t;
-      let pitch = 4 + 22 * t - 4 * a * (1 - t), yaw = -7 * t * (1 - z);
+      // q : une fois ouvert, la caméra se redresse et vient de face (on vise l'intercalaire avant d'y entrer)
+      const lean = 1 - q;
+      let pitch = (4 + 22 * t - 4 * a * (1 - t)) * lean, yaw = -7 * t * lean * (1 - z);
       const o = Math.min(1, Math.max(0, open));
       if (z > 0) {
         // FLIP en espace écran : le centre de l'intercalaire file droit vers le centre de l'écran,
@@ -256,7 +258,7 @@
         const px = X + DX * u, py = Y + DY * u;            // le centre de l'intercalaire à s = 1
         const cx = px + (vw / 2 - px) * z, cy = py + (vh / 2 - py) * z;
         X = cx - DX * u * s; Y = cy - DY * u * s;
-        pitch = 26 * (1 - z);
+        pitch = 26 * lean * (1 - z);
         // entré : dès que l'intercalaire couvre l'écran, la page du cours se monte dessous
         const hw = (W + P) / 2 * u * s, hh = H / 2 * u * s;
         if (!swapped && cx - hw <= 0 && cx + hw >= vw && cy - hh <= 0 && cy + hh >= vh) { swap(); run('f', 1, 300, 35, finish); }
@@ -291,7 +293,9 @@
     later(470, () => tabs.forEach((n, i) => n.animate && n.animate(
       [{ transform: `translateX(${-7 * u}px)` }, { transform: 'none' }],
       { duration: 380, delay: i * 40, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'backwards' })));
-    later(820, zoom);
+    // redressement de face quand la couverture s'est posée, le zoom part juste avant la fin (chevauchement)
+    later(800, () => run('q', 1, 190, 26, null));
+    later(1120, zoom);
     function zoom() {
       if (zooming || ended) return;
       zooming = true;
