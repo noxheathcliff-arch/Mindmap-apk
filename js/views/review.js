@@ -41,6 +41,7 @@
   const RATE_ICONS = {
     revoir: ['M4.5 9.5A8 8 0 1 1 4 14', 'M4 4.5v5h5'],
     compris: ['M8.5 15.5a4.5 4.5 0 1 1 3.2-1.3L20 22', 'M16.5 18.5l2-2', 'M8.5 11.5h.01'],
+    go: ['M5 12h13', 'M13 7l5 5-5 5'],
     maitrise: ['M12 2.5c.7 5 2.5 6.8 7.5 7.5-5 .7-6.8 2.5-7.5 7.5-.7-5-2.5-6.8-7.5-7.5 5-.7 6.8-2.5 7.5-7.5Z', 'M19 17v4', 'M17 19h4'],
   };
   function rateIcon(rating) {
@@ -53,6 +54,82 @@
       svg.append(p);
     });
     return svg;
+  }
+
+  /* La jauge de mémoire : on pousse la plume aussi loin que c'est revenu. Le curseur part à
+     gauche ; trois crans (Oublié · Retrouvé · Évident), l'encre suit le doigt et prend la
+     couleur du cran, un petit choc à chaque cran franchi. Lâcher sur un cran note ; lâcher
+     avant le premier ramène la plume. Toucher un cran ou un mot y va directement. */
+  function rateGauge(review, W, ask, onPick) {
+    let L = 0, x = 0, k = 0, drag = null, done = false;
+    const thumb = h('span.rg-thumb', rateIcon('go'));
+    const stops = KEYS.map((r, i) => h('button.rg-stop', { type: 'button', class: 'rate-' + r, tabindex: -1, 'aria-hidden': 'true',
+      style: { '--k': i + 1 }, onclick: () => !done && onPick(r) },
+      h('span.rg-l', W[r]), h('span.rg-next', nextLabel(review, r, true)), h('kbd.rate-kbd', String(i + 1))));
+    const track = h('div.rg-track',
+      h('span.rg-hint', 'glisse jusqu’où c’est revenu'),
+      h('span.rg-ink'),
+      KEYS.map((r, i) => h('span.rg-notch', { style: { '--k': i + 1 } })),
+      thumb);
+    const el = h('div.rate-gauge', { role: 'slider', tabindex: 0, 'aria-label': ask, 'aria-valuemin': 0, 'aria-valuemax': 3, 'aria-valuenow': 0, 'aria-valuetext': 'pas encore noté' },
+      h('div.rg-stops', stops), track);
+    const measure = () => { L = track.clientWidth - thumb.offsetWidth - 2 * thumb.offsetLeft; return track.getBoundingClientRect(); };
+    function set(nx, live) {
+      x = Math.max(0, Math.min(L, nx));
+      el.classList.toggle('is-drag', !!live);
+      el.style.setProperty('--x', x + 'px');
+      const nk = L ? Math.round(x / (L / 3)) : 0;
+      if (nk === k) return;
+      k = nk;
+      const r = KEYS[k - 1];
+      el.dataset.at = r || '';
+      thumb.replaceChildren(rateIcon(r || 'go'));
+      el.setAttribute('aria-valuenow', k);
+      el.setAttribute('aria-valuetext', r ? `${W[r]}, ${nextLabel(review, r, true)}` : 'pas encore noté');
+      if (live) R.motion.haptic(5);
+    }
+    const go = (nk) => { measure(); set(L * nk / 3, false); };
+    track.addEventListener('pointerdown', (e) => {
+      if (done || e.button > 0) return;
+      const rc = measure(), x0 = rc.left + thumb.offsetLeft;
+      const onThumb = thumb.contains(e.target);
+      drag = { off: onThumb ? e.clientX - x0 - x : thumb.offsetWidth / 2, moved: false, onThumb };
+      track.setPointerCapture(e.pointerId);
+      if (!onThumb) set(e.clientX - x0 - drag.off, false);
+      el.classList.add('is-hold');
+    });
+    track.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const x0 = track.getBoundingClientRect().left + thumb.offsetLeft;
+      drag.moved = true;
+      set(e.clientX - x0 - drag.off, true);
+    });
+    const release = (e, cancel) => {
+      if (!drag) return;
+      const d = drag; drag = null;
+      el.classList.remove('is-hold');
+      if (cancel || !k) {
+        go(0);
+        if (d.onThumb && !d.moved) { el.classList.remove('nudge'); void el.offsetWidth; el.classList.add('nudge'); }
+        return;
+      }
+      onPick(KEYS[k - 1]);
+    };
+    track.addEventListener('pointerup', (e) => release(e, false));
+    track.addEventListener('pointercancel', (e) => release(e, true));
+    el.step = (dk) => { if (!done) go(Math.max(0, Math.min(3, k + dk))); };
+    el.current = () => KEYS[k - 1];
+    // le choix : la plume file au cran, s'y pose, l'encre s'allume, le reste s'efface
+    el.pick = async (r) => {
+      done = true;
+      go(KEYS.indexOf(r) + 1);
+      await wait(220);
+      el.classList.add('picked');
+      motion.haptic(r === 'revoir' ? [10, 40, 10] : r === 'compris' ? 10 : [6, 30, 14]);
+      await wait(360);
+    };
+    requestAnimationFrame(() => { measure(); set(0, false); });
+    return el;
   }
 
   /** Indice : la forme de la réponse sans la réponse (nombre d'éléments, leur nature, l'initiale) */
@@ -368,21 +445,7 @@
           return;
         }
         if (state === 'rate') {
-          const W = it.ex ? WORDS.ex : WORDS.card;
-          // l'appui enfonce la touche ; un doigt qui glisse hors d'elle la relâche
-          const down = (e) => e.currentTarget.classList.add('is-down');
-          const up = (e) => e.currentTarget.classList.remove('is-down');
-          const mk = (rating, key) => h('button.rate-key', { type: 'button', class: 'rate-' + rating, onclick: () => rate(rating),
-            onpointerdown: down, onpointerup: up, onpointerleave: up, onpointercancel: up,
-            'aria-label': `${W[rating]}, ${nextLabel(it.review, rating, true)}` },
-            h('span.rate-cap',
-              rateIcon(rating),
-              h('span.rate-l', W[rating]),
-              h('span.rate-next', nextLabel(it.review, rating, true)),
-              h('kbd.rate-kbd', key)));
-          put(h('div.rate-row', { role: 'group', 'aria-label': it.ex ? 'Tu avais trouvé ?' : 'Tu la connaissais ?' }, mk('revoir', '1'), mk('compris', '2'), mk('maitrise', '3')));
-          // les touches montent l'une après l'autre (30 ms), leurs icônes se dessinent au passage
-          R.motion.stagger(Array.from(set.querySelectorAll('.rate-key')), 0, { step: 30 });
+          put(rateGauge(it.review, it.ex ? WORDS.ex : WORDS.card, it.ex ? 'Tu avais trouvé ?' : 'Tu la connaissais ?', rate));
           return;
         }
         // state === 'answer'
@@ -557,12 +620,10 @@
         state = 'busy';
         commit(rating);
         updateProgress();
-        // la touche choisie reste enfoncée et s'allume, les autres s'affaissent, puis la rangée s'en va
-        const btn = actions.querySelector('.act-set:not(.leaving) .rate-' + rating);
-        if (btn && !motion.reduced()) {
-          btn.parentNode.classList.add('picked'); btn.classList.add('is-pick');
-          motion.haptic(rating === 'revoir' ? [10, 40, 10] : rating === 'compris' ? 10 : [6, 30, 14]);
-          await wait(340);
+        // la plume file au cran choisi et s'y pose, puis la jauge s'en va
+        const gauge = actions.querySelector('.act-set:not(.leaving) .rate-gauge');
+        if (gauge && !motion.reduced()) {
+          await gauge.pick(rating);
           if (!alive(g)) return;
         }
         paintActions();
@@ -638,7 +699,13 @@
         if (e.ctrlKey || e.metaKey || e.altKey || !cur) return;
         if (state === 'busy') { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); nb.skip(); } return; }
         if (state === 'next') { if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') { e.preventDefault(); next(); } return; }
-        if (state === 'rate') { if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); rate(KEYS[+e.key - 1]); } return; }
+        if (state === 'rate') {
+          const gauge = actions.querySelector('.act-set:not(.leaving) .rate-gauge');
+          if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); rate(KEYS[+e.key - 1]); }
+          else if (gauge && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { e.preventDefault(); gauge.step(e.key === 'ArrowRight' ? 1 : -1); }
+          else if (gauge && e.key === 'Enter' && gauge.current()) { e.preventDefault(); rate(gauge.current()); }
+          return;
+        }
         if (state !== 'answer') return;
         if (isAuto(cur)) {
           // QCM, vrai ou faux : 1-8 / A-H (V/F) choisissent, Entrée valide

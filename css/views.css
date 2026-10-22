@@ -398,90 +398,108 @@
 .reveal-btn:active:not(:disabled) { border-radius: var(--shape-l); }
 .hint-btn { height: 56px; flex: none; }
 .review-hint { font: var(--body-s); color: var(--on-surface-variant); text-align: center; }
-/* notes : trois touches mécaniques. Un capuchon clair posé sur une jupe à l'accent
-   (rouge · ambre · bleu) : le doigt l'enfonce, la touche choisie reste en bas et s'allume,
-   son icône s'anime (la boucle repart, la clé tourne, l'éclat jaillit), les deux autres
-   s'affaissent, puis la page se tourne. Icônes au trait, dessinées à l'arrivée. */
-.review-actions .rate-row {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-  width: min(540px, 100%); padding: 0 0 2px;
+/* notes : la jauge de mémoire (DESIGN.md §4.7). Une rainure, une plume ronde partie de la
+   gauche, trois crans ; l'encre suit le doigt et prend la couleur du cran atteint
+   (rouge · ambre · bleu), les mots au-dessus s'allument cran par cran. */
+.rate-gauge {
+  --t: 52px; --p: 6px; --x: 0px;
+  --ink: var(--outline);
+  position: relative; width: min(520px, 100%); margin-top: 10px; outline: none; touch-action: none;
+  -webkit-user-select: none; user-select: none;
 }
-.rate-revoir   { --acc: var(--error); }
-.rate-compris  { --acc: #b36800; }
-.rate-maitrise { --acc: var(--primary); }
-.rate-key {
-  --key-h: 6px;
-  --skirt: color-mix(in srgb, var(--acc) 72%, #000);
-  --face: var(--surface-container-lowest);
-  position: relative; display: block; padding: 0 0 var(--key-h); border: 0; background: none;
-  color: var(--on-surface); cursor: pointer; -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none; user-select: none; border-radius: 20px;
-  transition: opacity 260ms var(--ease-out), filter 260ms var(--ease-out), transform 420ms var(--spring-default);
+.rate-gauge[data-at="revoir"]   { --ink: var(--error); }
+.rate-gauge[data-at="compris"]  { --ink: #b36800; }
+.rate-gauge[data-at="maitrise"] { --ink: var(--primary); }
+:root[data-theme="dark"] .rate-gauge[data-at="compris"] { --ink: #ffb95c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rate-gauge[data-at="compris"] { --ink: #ffb95c; } }
+/* position d'un cran k (1…3) sur la rainure, partagée par les mots et les encoches */
+.rg-stop, .rg-notch { --cx: calc(var(--p) + var(--t) / 2 + (100% - 2 * var(--p) - var(--t)) * var(--k) / 3); }
+.rg-stops { position: relative; height: 46px; margin-bottom: 8px; }
+.rg-stop {
+  position: absolute; bottom: 0; left: var(--cx); translate: -50% 0;
+  display: grid; justify-items: center; gap: 1px; min-width: 76px; padding: 4px 6px;
+  border: 0; background: none; border-radius: 12px; cursor: pointer; color: var(--on-surface-variant);
+  transition: color 200ms var(--ease-out), opacity 260ms var(--ease-out), transform 360ms var(--spring-default);
 }
-.rate-key:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
-.rate-cap {
-  position: relative; display: grid; justify-items: center; align-content: center; gap: 2px;
-  min-height: 80px; padding: 11px 6px 9px; border-radius: 18px; overflow: hidden; isolation: isolate;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 4%, var(--face)), color-mix(in srgb, var(--acc) 11%, var(--face)));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent) inset,
-    0 1.5px 0 rgb(255 255 255 / .7) inset,
-    0 var(--key-h) 0 var(--skirt),
-    0 calc(var(--key-h) + 3px) 14px -4px color-mix(in srgb, var(--acc) 55%, rgb(0 0 0 / .4));
-  transition: transform 300ms var(--spring-default), box-shadow 300ms var(--spring-default), color 160ms var(--ease-out);
+/* le dernier mot ne déborde pas : il s'aligne sur le bord droit */
+.rg-stop.rate-maitrise { translate: calc(-100% + var(--t) / 2 + var(--p)) 0; justify-items: end; }
+.rg-l { font: var(--title-s); font-weight: 650; letter-spacing: -.01em; }
+.rg-next { font: var(--label-s); font-variant-numeric: tabular-nums; opacity: .7; white-space: nowrap; }
+.rate-gauge[data-at="revoir"] .rg-stop.rate-revoir,
+.rate-gauge[data-at="compris"] .rg-stop.rate-compris,
+.rate-gauge[data-at="maitrise"] .rg-stop.rate-maitrise { color: var(--ink); transform: translateY(-3px) scale(1.08); }
+.rg-stop .rate-kbd { position: static; justify-self: center; margin-top: 2px; }
+.rg-track {
+  position: relative; height: calc(var(--t) + 2 * var(--p)); border-radius: 999px; cursor: grab; overflow: hidden; isolation: isolate;
+  background: var(--surface-container-high);
+  box-shadow: 0 2px 4px rgb(20 24 40 / .14) inset, 0 0 0 1px color-mix(in srgb, var(--outline-variant) 70%, transparent) inset, 0 1px 0 rgb(255 255 255 / .6);
 }
-/* l'allumage : l'accent monte du bas du capuchon */
-.rate-cap::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / .28), transparent 62%), var(--acc);
-  clip-path: inset(100% 0 0 0 round 18px);
-  transition: clip-path 260ms cubic-bezier(.2, .8, .2, 1);
+.is-hold .rg-track { cursor: grabbing; }
+.rg-hint {
+  position: absolute; inset: 0 var(--p) 0 calc(var(--t) + var(--p) * 3); display: grid; place-items: center;
+  font: var(--label-l); color: var(--on-surface-variant); opacity: .75; pointer-events: none;
+  background: linear-gradient(90deg, currentColor 0 40%, color-mix(in srgb, currentColor 30%, transparent) 50%, currentColor 60% 100%) 0 0 / 300% 100% text;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: rg-shine 2.6s 1.2s ease-in-out infinite; transition: opacity 160ms;
 }
-@media (hover: hover) { .rate-key:hover .rate-cap { transform: translateY(-1px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent) inset, 0 1.5px 0 rgb(255 255 255 / .7) inset, 0 calc(var(--key-h) + 1px) 0 var(--skirt), 0 calc(var(--key-h) + 6px) 18px -4px color-mix(in srgb, var(--acc) 55%, rgb(0 0 0 / .4)); } }
-.rate-key.is-down .rate-cap, .rate-key.is-pick .rate-cap {
-  transform: translateY(calc(var(--key-h) - 1px));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent) inset, 0 1px 0 var(--skirt), 0 2px 4px -1px rgb(0 0 0 / .25);
-  transition-duration: 90ms; transition-timing-function: var(--ease-out);
+@keyframes rg-shine { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.rate-gauge[data-at] .rg-hint, .rate-gauge.is-hold .rg-hint { opacity: 0; }
+.rg-notch {
+  position: absolute; top: 50%; left: var(--cx); width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+  background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent); z-index: 1; pointer-events: none;
+  opacity: 0; transition: opacity 200ms, transform 300ms var(--spring-default);
 }
-.rate-key.is-pick .rate-cap { color: #fff; }
-.rate-key.is-pick .rate-cap::before { clip-path: inset(0 0 0 0 round 18px); }
-.rate-ic {
-  width: 26px; height: 26px; margin-bottom: 4px; overflow: visible;
-  fill: none; stroke: var(--acc); stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round;
-  transition: stroke 160ms var(--ease-out);
+.rate-gauge.is-hold .rg-notch, .rate-gauge[data-at]:not([data-at=""]) .rg-notch { opacity: 1; }
+/* l'encre : du bord gauche jusque sous la plume */
+.rg-ink {
+  position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--x) + var(--t) + 2 * var(--p)); border-radius: inherit;
+  background: radial-gradient(140% 120% at 0 0, rgb(255 255 255 / .3), transparent 55%), var(--ink);
+  box-shadow: 0 -2px 0 rgb(0 0 0 / .12) inset;
+  transition: width 420ms var(--spring-default), background-color 220ms var(--ease-out);
 }
-.rate-ic path { stroke-dasharray: 1; stroke-dashoffset: 0; animation: rate-draw 520ms calc(140ms + var(--i) * 110ms) cubic-bezier(.65, 0, .35, 1) backwards; }
-@keyframes rate-draw { from { stroke-dashoffset: 1; } }
-.rate-maitrise .rate-ic path:first-child { fill: color-mix(in srgb, var(--acc) 16%, transparent); }
-.rate-key.is-pick .rate-ic { stroke: currentColor; }
-.rate-key.is-pick .rate-ic path:first-child { fill: none; }
-.rate-revoir.is-pick .rate-ic   { animation: rate-loop 560ms var(--ease-out); }
-.rate-compris.is-pick .rate-ic  { animation: rate-turn 460ms var(--spring-default); }
-.rate-maitrise.is-pick .rate-ic { animation: rate-pop 520ms var(--spring-default); }
+.rate-gauge:not([data-at]) .rg-ink, .rate-gauge[data-at=""] .rg-ink { background: color-mix(in srgb, var(--outline) 30%, transparent); box-shadow: none; }
+.rg-thumb {
+  position: absolute; left: var(--p); top: var(--p); z-index: 2; display: grid; place-items: center;
+  width: var(--t); height: var(--t); border-radius: 50%; pointer-events: auto;
+  background: var(--surface-container-lowest); color: var(--ink);
+  box-shadow: 0 1px 0 rgb(255 255 255 / .8) inset, 0 2px 3px rgb(20 24 40 / .18), 0 8px 18px -6px rgb(20 24 40 / .35);
+  translate: var(--x) 0;
+  transition: translate 420ms var(--spring-default), scale 200ms var(--spring-default), color 200ms, background-color 200ms;
+}
+.rate-gauge:not([data-at]) .rg-thumb, .rate-gauge[data-at=""] .rg-thumb { color: var(--on-surface-variant); }
+.rate-gauge.is-drag .rg-thumb, .rate-gauge.is-drag .rg-ink { transition-property: scale, color, background-color, width; transition-duration: 200ms, 200ms, 200ms, 0s; }
+.rate-gauge.is-hold .rg-thumb { scale: 1.08; }
+.rg-thumb .rate-ic { width: 24px; height: 24px; margin: 0; stroke: currentColor; }
+.rg-thumb .rate-ic path { animation-duration: 300ms; animation-delay: calc(var(--i) * 60ms); }
+.rate-gauge:not([data-at]) .rg-thumb .rate-ic, .rate-gauge[data-at=""] .rg-thumb .rate-ic { animation: rg-nudge 2.6s 1.2s var(--ease-out) infinite; }
+@keyframes rg-nudge { 0%, 70%, 100% { transform: none; } 80% { transform: translateX(4px); } 90% { transform: translateX(-1px); } }
+.rate-gauge.nudge .rg-thumb { animation: rg-tug 420ms var(--spring-default); }
+@keyframes rg-tug { 40% { transform: translateX(14px); } }
+.rate-gauge:focus-visible .rg-track { outline: 2px solid var(--ink); outline-offset: 3px; }
+/* le choix : la plume se pose, son icône joue sa geste, l'encre s'éclaire, le reste s'efface */
+.rate-gauge.picked { pointer-events: none; }
+.rate-gauge.picked .rg-thumb { scale: 1.12; background: var(--ink); color: #fff; }
+.rate-gauge.picked .rg-ink { filter: brightness(1.08) saturate(1.1); }
+.rate-gauge.picked[data-at="revoir"] .rg-stop:not(.rate-revoir),
+.rate-gauge.picked[data-at="compris"] .rg-stop:not(.rate-compris),
+.rate-gauge.picked[data-at="maitrise"] .rg-stop:not(.rate-maitrise) { opacity: .25; }
+.rate-gauge.picked[data-at="revoir"] .rg-thumb .rate-ic   { animation: rate-loop 560ms var(--ease-out); }
+.rate-gauge.picked[data-at="compris"] .rg-thumb .rate-ic  { animation: rate-turn 460ms var(--spring-default); }
+.rate-gauge.picked[data-at="maitrise"] .rg-thumb .rate-ic { animation: rate-pop 520ms var(--spring-default); }
 @keyframes rate-loop { to { transform: rotate(-360deg); } }
 @keyframes rate-turn { 40% { transform: rotate(-28deg); } to { transform: rotate(0); } }
 @keyframes rate-pop { 0% { transform: scale(1); } 35% { transform: scale(1.35) rotate(18deg); } to { transform: scale(1.12) rotate(0); } }
-.rate-l { font: var(--title-m); font-weight: 650; letter-spacing: -.01em; line-height: 1.15; }
-.rate-next { font: var(--label-s); font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 62%, transparent); white-space: nowrap; }
-.rate-key.is-pick .rate-next { color: rgb(255 255 255 / .82); }
-/* le choix fait : les autres touches s'affaissent et pâlissent */
-.rate-row.picked .rate-key { pointer-events: none; }
-.rate-row.picked .rate-key:not(.is-pick) { opacity: .35; filter: saturate(.3); transform: translateY(3px) scale(.96); }
-.rate-kbd { position: absolute; top: 7px; right: 8px; font-size: 10px; line-height: 15px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, currentColor 8%, transparent); border: 0; color: inherit; opacity: .6; }
-:root[data-theme="dark"] .rate-key { --face: var(--surface-container-high); --skirt: color-mix(in srgb, var(--acc) 50%, #000); }
-:root[data-theme="dark"] .rate-compris { --acc: #ffb95c; }
-:root[data-theme="dark"] .rate-cap { box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent) inset, 0 1px 0 rgb(255 255 255 / .08) inset, 0 var(--key-h) 0 var(--skirt), 0 calc(var(--key-h) + 3px) 14px -4px rgb(0 0 0 / .6); }
-:root[data-theme="dark"] .rate-key.is-pick .rate-cap { color: #10131a; }
-:root[data-theme="dark"] .rate-key.is-pick .rate-next { color: rgb(16 19 26 / .75); }
+.rate-ic { fill: none; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.rate-ic path { stroke-dasharray: 1; stroke-dashoffset: 0; animation: rate-draw 520ms calc(140ms + var(--i) * 110ms) cubic-bezier(.65, 0, .35, 1) backwards; }
+@keyframes rate-draw { from { stroke-dashoffset: 1; } }
+.rate-kbd { font-size: 10px; line-height: 15px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, currentColor 10%, transparent); border: 0; color: inherit; opacity: .7; }
+:root[data-theme="dark"] .rg-track { background: var(--surface-container-highest); box-shadow: 0 2px 5px rgb(0 0 0 / .45) inset, 0 0 0 1px color-mix(in srgb, var(--outline-variant) 60%, transparent) inset; }
+:root[data-theme="dark"] .rate-gauge.picked .rg-thumb { color: #10131a; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .rate-key { --face: var(--surface-container-high); --skirt: color-mix(in srgb, var(--acc) 50%, #000); }
-  :root:not([data-theme="light"]) .rate-compris { --acc: #ffb95c; }
-  :root:not([data-theme="light"]) .rate-cap { box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent) inset, 0 1px 0 rgb(255 255 255 / .08) inset, 0 var(--key-h) 0 var(--skirt), 0 calc(var(--key-h) + 3px) 14px -4px rgb(0 0 0 / .6); }
-  :root:not([data-theme="light"]) .rate-key.is-pick .rate-cap { color: #10131a; }
-  :root:not([data-theme="light"]) .rate-key.is-pick .rate-next { color: rgb(16 19 26 / .75); }
+  :root:not([data-theme="light"]) .rg-track { background: var(--surface-container-highest); box-shadow: 0 2px 5px rgb(0 0 0 / .45) inset, 0 0 0 1px color-mix(in srgb, var(--outline-variant) 60%, transparent) inset; }
+  :root:not([data-theme="light"]) .rate-gauge.picked .rg-thumb { color: #10131a; }
 }
-:root[data-motion="reduce"] .rate-key, :root[data-motion="reduce"] .rate-cap, :root[data-motion="reduce"] .rate-cap::before { transition: none; }
-:root[data-motion="reduce"] .rate-ic, :root[data-motion="reduce"] .rate-ic path { animation: none; }
+:root[data-motion="reduce"] .rate-gauge *, :root[data-motion="reduce"] .rate-gauge *::before { transition: none !important; animation: none !important; }
 @media (hover: none) { .rate-kbd, .btn-kbd { display: none; } }
 .review-stage.is-end .review-actions { display: none; }
 :root[data-motion="reduce"] .act-set.enter { animation-name: rm-fade !important; }
