@@ -75,7 +75,10 @@
     // étiquettes de fourche au-dessus des nœuds : le libellé commun ne doit jamais être masqué
     const junctionLayer = h('div.edge-labels.junctions');
     // libellés au-dessus des nœuds : un libellé masqué par un nœud est une information perdue
-    const world = h('div.world', svg, nodesLayer, labelsLayer, junctionLayer);
+    // poignées du lien sélectionné (départ, arrivée, courbure) : au-dessus de tout, taille constante à l'écran
+    const handlesLayer = h('div.edge-handles', { hidden: true },
+      ['a1', 'a2', 'bend'].map((w) => h('div.eh', { dataset: { eh: w }, class: 'eh-' + w, 'aria-hidden': 'true' }, h('i', h('b')))));
+    const world = h('div.world', svg, nodesLayer, labelsLayer, junctionLayer, handlesLayer);
     const marquee = h('div.marquee', { hidden: true });
     const grid = h('div.grid', { 'aria-hidden': 'true' });
     const canvas = h('div.canvas', { tabindex: '0', role: 'application', 'aria-label': 'Carte mentale — ' + map.title, dataset: { hero: 'map:' + map.id + ':thumb' } }, grid, world, marquee);
@@ -236,6 +239,7 @@
     function applyView() {
       const { x, y, k } = st.view;
       world.style.transform = `translate(${x}px, ${y}px) scale(${k})`;
+      world.style.setProperty('--ik', String(1 / k));
       const g = 24 * k;
       if (g !== lastGrid) { grid.style.backgroundSize = `${g}px ${g}px`; lastGrid = g; }
       // la grille ne bouge que modulo un pas : translation composite, pas de repeinte
@@ -955,11 +959,13 @@
             polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
           } else c = R.layout.calm(branchCurve(gm.J, gm.d1, b, e.kind), calmK);
           rec.mid = gm.J;
+          rec.cv = c; rec.bundled = true;
           setLabel(rec.label, '', {});
           if (e.kind === 'tree') polys.push({ pts: R.layout.sample(c.at ? c : { at: (t) => bez(c, t) }, 6), ends: new Set([e.from, e.to]) });
         } else {
           let cv;
-          const prevStep = e.kind === 'tree' && seq.get(e.to) ? byId.get(seq.get(e.to)) : null;
+          // un lien retouché à la main quitte la séquence : il se dessine depuis son parent
+          const prevStep = e.kind === 'tree' && !shaped(e) && seq.get(e.to) ? byId.get(seq.get(e.to)) : null;
           if (prevStep) {
             // étape suivante d'une séquence : flèche depuis l'étape précédente (« puis »)
             const sp = size(prevStep), sb = size(b);
@@ -982,6 +988,7 @@
             cv = shaped(e) ? R.layout.manualCurve(e, a, sa, b, sb, cv) : R.layout.calm(cv, calmK, rects, [e.from, e.to]);
           }
           c = { d: cv.d };
+          rec.cv = cv; rec.bundled = false;
           polys.push({ pts: R.layout.sample(cv, e.kind === 'tree' ? 6 : 14), ends: new Set([e.from, e.to]) });
           const lbl = prevStep ? '' : edgeLabel(e);
           setLabel(rec.label, lbl, { sel, logic: !e.label && !!lbl });
@@ -1023,6 +1030,7 @@
       }
       ed.labelClashes = clashes;
       if (ed._newEdges) ed._newEdges.clear();
+      positionHandles();
       for (const [id, rec] of st.edgeEls) {
         if (alive.has(id)) continue;
         rec.g.remove(); rec.label.remove();
@@ -1030,6 +1038,38 @@
       }
     }
     ed._newEdges = new Set();
+
+    /** Extrémités et point de courbure du lien tel qu'il est dessiné (les poignées s'y posent) */
+    function edgeGeom(e) {
+      const rec = st.edgeEls.get(e.id);
+      const a = S.node(map, e.from), b = S.node(map, e.to);
+      if (!rec || !rec.cv || !rec.cv.at || !a || !b) return null;
+      const sa = size(a), sb = size(b), L = R.layout;
+      // branche de fourche : le tracé part de la jonction — la poignée de départ se pose sur le bord le plus proche
+      const p1 = e.a1 ? L.anchorPoint(a, sa, e.a1) : rec.bundled ? L.anchorPoint(a, sa, L.nearestAnchor(a, sa, rec.cv.at(0))) : rec.cv.at(0);
+      const p2 = e.a2 ? L.anchorPoint(b, sb, e.a2) : rec.cv.at(1);
+      const m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+      const k = e.bend ? [m[0] + e.bend.x, m[1] + e.bend.y] : rec.cv.at(0.5);
+      return { a, b, sa, sb, p1, p2, m, k };
+    }
+    function positionHandles() {
+      const e = st.selEdge && !ro() && !st.masked && !st.linking ? map.edges.find((x) => x.id === st.selEdge) : null;
+      const g = e && edgeGeom(e);
+      if (!g) { handlesLayer.hidden = true; return; }
+      const dragging = st.ehDrag;
+      const pos = { a1: g.p1, a2: g.p2, bend: g.k };
+      for (const el of handlesLayer.children) {
+        const w = el.dataset.eh, p = pos[w];
+        el.style.transform = `translate(${p[0]}px, ${p[1]}px)`;
+        el.classList.toggle('set', !!e[w]);
+        el.classList.toggle('grab', dragging === w);
+      }
+      if (handlesLayer.hidden) {
+        handlesLayer.hidden = false;
+        // apparition : les poignées naissent depuis le trait (échelonnées, départ → courbure → arrivée)
+        if (!motion.reduced()) [...handlesLayer.children].forEach((el, i) => el.firstChild.firstChild.animate([{ scale: 0 }, { scale: 1.15 }, { scale: 1 }], { duration: 320, delay: [0, 80, 40][i], easing: 'cubic-bezier(.42,1.67,.21,.9)', fill: 'backwards' }));
+      }
+    }
 
     /* ------------------------------------------------------------------ */
     /* Sélection                                                          */
@@ -1672,7 +1712,8 @@
       const grp = S.groupOf(map, e);
       const menu = edgeMenuItems(e);
       return [
-        { chip: true, label: e.label || 'Libellé', act: run((x, b) => edgeLabelMenu(b, x)), tip: grp.length ? `Libellé commun aux ${grp.length} branches` : 'Libellé du lien', v: `${e.group || ''}|${grp.length}` },
+        { chip: true, label: e.label || 'Libellé', act: run((x, b) => edgeSheet(x, b)), tip: grp.length ? `Libellé commun aux ${grp.length} branches` : 'Libellé du lien', v: `${e.group || ''}|${grp.length}` },
+        { icon: 'palette', label: 'Apparence', act: run((x, b) => edgeSheet(x, b)), tip: 'Couleur, trait, flèche, ancres et tracé' },
         { icon: 'fork', label: 'Branche', act: run((x) => startLinking(x.from, { extend: x.id })), tip: grp.length ? 'Ajouter une branche à la fourche' : 'Ajouter une branche (même libellé)' },
         { icon: 'swap', label: e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi', act: run((x) => toggleEdgeKind(x)), tip: e.kind === 'tree' ? 'Transformer en renvoi (pointillé)' : 'Transformer en lien hiérarchique' },
         menu.length ? { icon: 'more', label: 'Plus', act: run((x, b) => ui.menu(b, edgeMenuItems(x))), v: menu.map((m) => m.label).join('/') } : null,
@@ -1932,24 +1973,132 @@
       }
       return [...count.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([l]) => l);
     }
-    function edgeLabelMenu(anchor, e) {
-      const mine = customLabels();
+    /** Fiche du lien : libellé (80 car.), apparence, ancres, tracé — aperçu en direct, Annuler restaure, Valider = un seul pas */
+    function edgeSheet(e, origin) {
+      if (guard() || !e) return;
+      const id = e.id;
+      const cur = () => map.edges.find((x) => x.id === id);
+      const before = snapshot();
       const grp = S.groupOf(map, e);
-      ui.menu(anchor, [
-        grp.length ? { header: `Libellé commun · ${grp.length} branches` } : null,
-        { label: 'Écrire un libellé…', icon: 'edit', onClick: async () => {
-          const v = await ui.form({
-            title: 'Libellé du lien', icon: 'link', ok: 'Valider',
-            fields: [{ key: 'l', label: 'Libellé (40 caractères max.)', value: e.label, maxlength: 40, placeholder: 'Ex. sauf si, à défaut, renvoie à…' }],
+      let scope = grp.length ? 'fork' : 'edge';
+      const targets = () => { const x = cur(); if (!x) return []; const g = S.groupOf(map, x); return scope === 'fork' && g.length ? g : [x]; };
+      // aperçu : on modifie la carte sans pas d'annulation ; Valider l'enregistre d'un bloc
+      const live = (fn) => { if (!cur()) return; fn(); S.normalizeGroups(map.edges); render(); };
+      const styleSet = (k, v) => live(() => {
+        for (const x of targets()) {
+          const sty = { ...(x.style || {}) };
+          if (v == null) delete sty[k]; else sty[k] = v;
+          if (Object.keys(sty).length) x.style = sty; else delete x.style;
+        }
+      });
+      const box = h('div.sty.es');
+      const sec = (label, ...kids) => h('section.sty-sec', h('p.sty-label', label), ...kids);
+      const seg = (label, opts, value, onPick, cls = '') => {
+        const el = h('div.segmented.seg-xs.es-seg', { role: 'radiogroup', 'aria-label': label, class: cls },
+          opts.map(([v, l, ic]) => {
+            const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(value === v), 'aria-label': ic ? l : null, 'data-tip': ic ? l : null }, ic ? h('span.es-ic', { html: ic }) : l);
+            b.addEventListener('click', () => { onPick(v); paint(); });
+            return b;
+          }));
+        return el;
+      };
+      const title = (nid) => { const n = S.node(map, nid); return (n && (n.title || '').trim()) || 'Sans titre'; };
+      // mini-tracés des options (forme, trait, flèche) : on choisit en voyant
+      const svgI = (d, extra = '') => `<svg viewBox="0 0 32 16" width="32" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ${extra}><path d="${d}"/></svg>`;
+      const SHAPES = [['auto', 'Auto'], ['curve', 'Courbe', svgI('M3 13C12 13 20 3 29 3')], ['straight', 'Droit', svgI('M3 13L29 3')], ['elbow', 'Coude', svgI('M3 13H16V3H29', 'stroke-linejoin="round"')]];
+      const DASHES = [['solid', 'Plein', svgI('M3 8H29')], ['dash', 'Tirets', svgI('M3 8H29', 'stroke-dasharray="6 4"')], ['dot', 'Points', svgI('M3 8H29', 'stroke-dasharray="0.5 5"')]];
+      const ARROWS = [['auto', 'Auto'], ['none', 'Aucune', svgI('M3 8H29')], ['end', 'Fin', svgI('M3 8H28M23 3L28 8L23 13', 'stroke-linejoin="round"')], ['both', 'Deux', svgI('M4 8H28M23 3L28 8L23 13M9 3L4 8L9 13', 'stroke-linejoin="round"')]];
+      const SIDE_OPTS = [['auto', 'Auto'], ['t', 'Haut'], ['r', 'Droite'], ['b', 'Bas'], ['l', 'Gauche']];
+
+      // libellé : champ contouré, compteur, puces (le libellé est commun à toute la fourche)
+      const field = ui.fieldOutlined({ label: grp.length ? `Libellé commun · ${grp.length} branches` : 'Libellé du lien', value: e.label || '', icon: 'edit', maxlength: S.LABEL_MAX, placeholder: 'Ex. sauf si, à défaut, renvoie à…' });
+      const count = h('span.es-count');
+      const syncCount = () => { const n = field.input.value.length; count.textContent = `${n} / ${S.LABEL_MAX}`; count.classList.toggle('near', n >= S.LABEL_MAX - 10); };
+      field.wrap.appendChild(h('div.es-support', h('span', 'Court et parlant : il se lit sur la carte et en révision.'), count));
+      const setLabel = (l) => live(() => { const x = cur(); for (const y of (S.groupOf(map, x).length ? S.groupOf(map, x) : [x])) y.label = l; });
+      field.input.addEventListener('input', () => { syncCount(); setLabel(field.input.value.trim().slice(0, S.LABEL_MAX)); paintChips(); });
+      syncCount();
+      const chips = h('div.es-chips');
+      const mineAtOpen = customLabels();
+      function paintChips() {
+        U.clear(chips);
+        const v = field.input.value.trim();
+        const chip = (l, mine) => {
+          const b = h('button.chip.chip-filter', { type: 'button', 'aria-pressed': String(v === l), class: mine ? 'mine' : '' }, v === l ? R.icon('check', 16) : null, h('span', l));
+          b.addEventListener('click', () => {
+            field.input.value = v === l ? '' : l;
+            field.input.dispatchEvent(new Event('input'));
           });
-          if (v) setEdgeLabel(e, v.l.trim().slice(0, 40));
-        } },
-        { label: 'Aucun', checked: !e.label, onClick: () => setEdgeLabel(e, '') },
-        mine.length ? { header: 'Mes libellés' } : null,
-        ...mine.map((l) => ({ label: l, checked: e.label === l, onClick: () => setEdgeLabel(e, l) })),
-        { header: 'Suggestions' },
-        ...EDGE_PRESETS.map((p) => ({ label: p, checked: e.label === p, onClick: () => setEdgeLabel(e, p) })),
-      ], { align: 'start' });
+          return b;
+        };
+        const mine = mineAtOpen;
+        if (mine.length) chips.appendChild(h('div.es-chiprow', h('span.es-chip-h', 'Mes libellés'), mine.map((l) => chip(l, true))));
+        chips.appendChild(h('div.es-chiprow', h('span.es-chip-h', 'Suggestions'), EDGE_PRESETS.map((l) => chip(l))));
+      }
+      paintChips();
+      const labelSec = sec('Libellé', field.wrap, chips);
+      const look = h('div.es-look');
+
+      function paint() {
+        const x = cur();
+        if (!x) return;
+        const es = x.style || {};
+        U.clear(look);
+        // portée de l'apparence : cette branche ou toute la fourche
+        if (S.groupOf(map, x).length) {
+          const sc = seg('Portée', [['edge', 'Cette branche'], ['fork', 'Toute la fourche']], scope, (v) => { scope = v; }, 'sty-scope');
+          look.appendChild(sc); ui.segIndicator(sc, 'es-scope');
+        }
+        const sw = h('div.sty-swatches', { role: 'radiogroup', 'aria-label': 'Couleur du lien' },
+          h('button.sty-sw.sty-sw-none', { type: 'button', role: 'radio', 'aria-checked': String(!es.c), 'aria-label': 'Couleur par défaut', 'data-tip': 'Par défaut', onclick: () => { styleSet('c', null); paint(); } }, R.icon('close', 16)),
+          Object.entries(S.HUES).map(([k, c]) => h('button.sty-sw', { type: 'button', role: 'radio', 'aria-checked': String(es.c === k), 'aria-label': c.label, 'data-tip': c.label, style: { background: hueCss(k) }, onclick: () => { styleSet('c', k); paint(); } })));
+        look.appendChild(sec('Couleur', sw));
+        // épaisseur : 0 = Auto (épaisseur du thème)
+        const out = h('output.sty-val');
+        const inp = h('input.slider', { type: 'range', min: '0.5', max: '8', step: '0.5', value: String(es.w || 0.5), 'aria-label': 'Épaisseur' });
+        const sync = () => { const v = +inp.value; out.textContent = v < 1 ? 'Auto' : v + ' px'; inp.style.setProperty('--p', ((v - 0.5) / 7.5 * 100) + '%'); };
+        sync();
+        inp.addEventListener('input', () => { sync(); const v = +inp.value; styleSet('w', v < 1 ? null : v); });
+        look.appendChild(sec('Trait',
+          h('div.sty-slide', h('div.sty-slide-h', h('span', 'Épaisseur'), out), inp),
+          seg('Trait', DASHES, es.dash || 'solid', (v) => styleSet('dash', v === 'solid' ? null : v)),
+          h('div.es-row', h('span.es-row-l', 'Flèche'), seg('Flèche', ARROWS, es.arrow || 'auto', (v) => styleSet('arrow', v === 'auto' ? null : v)))));
+        // tracé : forme, ancres, courbure
+        const sideSeg = (k) => seg(k === 'a1' ? 'Départ' : 'Arrivée', SIDE_OPTS, x[k] ? x[k].s : 'auto', (v) => live(() => { const y = cur(); if (v === 'auto') delete y[k]; else y[k] = { s: v, t: 0.5 }; }), 'es-sides');
+        const reshaped = x.a1 || x.a2 || x.bend || es.shape;
+        const reset = ui.btn('Réinitialiser le tracé', { icon: 'undo', variant: 'text', onClick: () => {
+          live(() => { for (const y of targets()) { delete y.a1; delete y.a2; delete y.bend; if (y.style) { const s2 = { ...y.style }; delete s2.shape; if (Object.keys(s2).length) y.style = s2; else delete y.style; } } });
+          paint();
+        } });
+        reset.disabled = !reshaped;
+        look.appendChild(sec('Tracé',
+          seg('Forme', SHAPES, es.shape || 'auto', (v) => styleSet('shape', v === 'auto' ? null : v)),
+          h('div.es-row', h('span.es-row-l', `Départ · ${title(x.from)}`), sideSeg('a1')),
+          h('div.es-row', h('span.es-row-l', `Arrivée · ${title(x.to)}`), sideSeg('a2')),
+          h('p.sty-help', 'Sur la carte, glissez les poignées du lien sélectionné : les extrémités s’aimantent aux bords, le losange courbe le trait. Double-clic sur une poignée : retour à l’automatique.'),
+          h('div.sty-foot', reset)));
+      }
+      paint();
+      box.append(
+        h('div.es-head', h('span.es-node', title(e.from)), h('span.es-arrow', R.icon('chevronRight', 18)), h('span.es-node', title(e.to)),
+          h('span.es-kind', e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi')),
+        labelSec, look);
+      ui.dialog({ title: 'Lien', body: box, cls: 'dialog-style dialog-edge', origin,
+        actions: [{ label: 'Annuler', value: false }, { label: 'Valider', value: true, variant: 'filled', primary: true }],
+        onOpen: () => {
+          st.edgeSheet = paint;
+          if (!U.isCompact()) setTimeout(() => field.input.focus({ preventScroll: true }), 60);
+        } }).then((ok) => {
+        st.edgeSheet = null;
+        const after = snapshot();
+        if (after === before) return;
+        if (!ok) { restoreSnap(before); return; }
+        st.undo.push(before); if (st.undo.length > 150) st.undo.shift();
+        st.redo = []; st.coalesce = null;
+        S.touchMap(map, 'edit');
+        render(); renderPane(true); updateHistoryBtns();
+        ui.snack('Lien mis à jour', { action: 'Annuler', onAction: undo });
+      });
     }
     function setEdgeLabel(e, l) {
       const members = S.groupOf(map, e);
@@ -2040,7 +2189,7 @@
       if (st.selEdge !== e.id) selectEdge(e.id);
       requestAnimationFrame(() => {
         const anchor = (!U.isCompact() && ctxBar.querySelector('.chip')) || bottomBar.querySelector('.ctx-btn') || (st.edgeEls.get(e.id) || {}).label;
-        if (anchor) edgeLabelMenu(anchor, e);
+        edgeSheet(e, anchor || null);
       });
     }
 
@@ -2295,6 +2444,21 @@
       if (pointers.size > 2) return;
       flushEdit();
 
+      const eh = e.target.closest && e.target.closest('[data-eh]');
+      if (eh && st.selEdge && !ro() && !st.masked && !st.linking) {
+        const which = eh.dataset.eh, now = Date.now(), cur = map.edges.find((x) => x.id === st.selEdge);
+        // double-clic sur une poignée : elle revient au tracé automatique
+        if (st.lastEhTap && st.lastEhTap.w === which && now - st.lastEhTap.t < 350) {
+          st.lastEhTap = null;
+          if (cur && cur[which]) { mutate(() => { delete cur[which]; }); ui.snack(which === 'bend' ? 'Courbure automatique' : 'Ancre automatique'); }
+          return;
+        }
+        st.lastEhTap = { w: which, t: now };
+        gesture = { type: 'edge-handle', which, edgeId: st.selEdge, start: { x: e.clientX, y: e.clientY }, moved: false, id: e.pointerId };
+        st.ehDrag = which; // anticipation : la poignée s'écrase à la prise
+        positionHandles();
+        return;
+      }
       const nodeId = hitNode(e.target);
       if (nodeId && e.target.closest('[data-resize]') && !ro() && !st.masked && !st.linking) {
         const n = S.node(map, nodeId), s = size(n), now = Date.now();
@@ -2427,6 +2591,25 @@
         st.sizes.set(n.id, { w: el.offsetWidth, h: el.offsetHeight });
         st.fastEdges = true; renderEdges(); st.fastEdges = false;
         positionCtx();
+      } else if (gesture.type === 'edge-handle') {
+        const ex = map.edges.find((x) => x.id === gesture.edgeId);
+        if (!ex) return;
+        const p = toWorld(e.clientX, e.clientY);
+        if (gesture.which === 'bend') {
+          const b = { x: Math.round(p.x - gesture.m[0]), y: Math.round(p.y - gesture.m[1]) };
+          // près de l'axe des ancres : la courbure s'aimante à « aucune » (trait sans détour)
+          const near = Math.hypot(b.x, b.y) < 10 / st.view.k;
+          if (near && ex.bend) motion.haptic(6);
+          if (near) delete ex.bend; else ex.bend = b;
+        } else {
+          const n = S.node(map, gesture.which === 'a1' ? ex.from : ex.to);
+          const a = R.layout.nearestAnchor(n, size(n), [p.x, p.y]);
+          const prev = ex[gesture.which];
+          if (prev && (prev.s !== a.s || (a.t === 0.5) !== (prev.t === 0.5))) motion.haptic(6); // changement de bord ou milieu atteint
+          ex[gesture.which] = a;
+        }
+        st.fastEdges = true; renderEdges(); st.fastEdges = false;
+        positionCtx();
       } else if (gesture.type === 'connect') {
         const from = S.node(map, gesture.from);
         const s = size(from);
@@ -2469,6 +2652,20 @@
       if (gesture.type === 'resize') {
         st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
         canvas.classList.add('is-resizing');
+        return;
+      }
+      if (gesture.type === 'edge-handle') {
+        const ex = map.edges.find((x) => x.id === gesture.edgeId), g = ex && edgeGeom(ex);
+        if (!g) { gesture.type = 'none'; st.ehDrag = null; return; }
+        st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+        if (gesture.which === 'bend') {
+          // les ancres se figent : le point de courbure se mesure depuis un milieu qui ne bouge plus
+          if (!ex.a1) ex.a1 = R.layout.nearestAnchor(g.a, g.sa, g.p1);
+          if (!ex.a2) ex.a2 = R.layout.nearestAnchor(g.b, g.sb, g.p2);
+          const p1 = R.layout.anchorPoint(g.a, g.sa, ex.a1), p2 = R.layout.anchorPoint(g.b, g.sb, ex.a2);
+          gesture.m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+        }
+        canvas.classList.add('is-eh');
         return;
       }
       if (gesture.type === 'node') {
@@ -2524,8 +2721,20 @@
       }
       if (!g || g.id !== e.pointerId) return;
       gesture = null;
-      canvas.classList.remove('is-dragging', 'is-panning', 'is-resizing');
+      canvas.classList.remove('is-dragging', 'is-panning', 'is-resizing', 'is-eh');
 
+      if (g.type === 'edge-handle') {
+        st.ehDrag = null;
+        if (g.moved) {
+          // follow-through : la poignée relâchée rebondit avant de se poser (transition ressort)
+          S.normalizeGroups(map.edges);
+          S.touchMap(map, 'edit');
+          updateHistoryBtns();
+          render();
+          if (st.edgeSheet) st.edgeSheet();
+        } else positionHandles();
+        return;
+      }
       if (g.type === 'resize') {
         const el = st.els.get(g.nodeId);
         if (el) {
@@ -2605,10 +2814,12 @@
         const el = st.els.get(gesture.nodeId); if (el) el.classList.remove('resizing');
         if (gesture.moved) { st.sizes.delete(gesture.nodeId); S.touchMap(map, 'edit'); }
       }
+      if (gesture && gesture.type === 'edge-handle' && gesture.moved) S.touchMap(map, 'edit');
+      st.ehDrag = null;
       tempEdge.setAttribute('d', '');
       marquee.hidden = true;
       if (pointers.size === 0) gesture = null;
-      canvas.classList.remove('is-dragging', 'is-panning', 'is-resizing');
+      canvas.classList.remove('is-dragging', 'is-panning', 'is-resizing', 'is-eh');
       render();
     }
 
@@ -2815,7 +3026,7 @@
       page.classList.toggle('pane-open', shown);
       paneBtn.setAttribute('aria-pressed', String(shown));
       if (m === 'bottom') {
-        pane.dataset.sheet = shown ? (st.sheet === 'closed' ? 'half' : st.sheet) : 'closed';
+        pane.dataset.sheet = shown ? (st.sheet === 'closed' ? 'full' : st.sheet) : 'closed';
       } else pane.dataset.sheet = '';
       pane.style.transform = '';
       if (!animate) { pane.classList.add('no-anim'); requestAnimationFrame(() => pane.classList.remove('no-anim')); }
@@ -2825,7 +3036,7 @@
       const m = paneMode();
       const wasShown = isPaneShown();
       if (m === 'docked') { S.data.settings.paneOpen = true; S.save(); }
-      else { st.paneOpen = true; if (m === 'bottom' && st.sheet === 'closed') st.sheet = 'half'; }
+      else { st.paneOpen = true; if (m === 'bottom' && st.sheet === 'closed') st.sheet = 'full'; } // la note s'ouvre en entier
       if (m === 'docked' && closeAnim) {
         // interruption : la fermeture repart en arrière depuis sa position actuelle (aucun saut)
         closeAnim.reverse();
