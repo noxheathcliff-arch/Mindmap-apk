@@ -1,4 +1,4 @@
-/* Carnet de révision — carnet à spirale (reliure Wire-O en haut), papier Seyès.
+/* Carnet de révision — carnet à spirale (reliure Wire-O en haut), feuilles blanches unies.
    Style illustration à plat : aplats et tons, pas d'ombre portée d'interface.
    Encre bleue = l'élève · stylo rouge = la correction. */
 
@@ -11,7 +11,7 @@
   --nb-top: 42px;                /* bande des trous avant la première ligne */
   --nb-margin: 52px;             /* marge rouge */
 
-  --nb-paper: #fffefa;
+  --nb-paper: #fbfbf8;
   --nb-paper-back: #f8f6ef;
   --nb-rule: rgba(110, 120, 196, 0.55);
   --nb-rule-sub: rgba(110, 120, 196, 0.2);
@@ -56,27 +56,28 @@
 :root[data-theme="dark"] .nb-root,
 :root:not([data-theme="light"]) .nb-root.nb-auto-dark { --nb-dark: 1; }
 .nb-root.is-dark {
-  --nb-paper: #2b2a31;
-  --nb-paper-back: #25242a;
+  /* la nuit, le papier reste du papier blanc (un peu moins lumineux) et l'encre reste l'encre */
+  --nb-paper: #e9e8e2;
+  --nb-paper-back: #dedcd4;
   --nb-rule: rgba(150, 160, 230, 0.42);
   --nb-rule-sub: rgba(150, 160, 230, 0.14);
   --nb-rule-v: rgba(150, 160, 230, 0.1);
   --nb-margin-rule: rgba(255, 128, 118, 0.55);
-  --nb-edge-a: #3a3940;
-  --nb-edge-b: #46454d;
+  --nb-edge-a: #cfccc2;
+  --nb-edge-b: #bdb9ad;
   --nb-board: #1d1c21;
   --nb-board-dark: #141317;
   --nb-hole: #0f0e12;
   --nb-cover: #bcc2ff;
   --nb-cover-2: #a6adf0;
   --nb-cover-in: #3a3843;
-  --nb-label: #2b2a31;
+  --nb-label: #e9e8e2;
   --nb-wire: #c9c7d3;
   --nb-wire-hi: #f4f3f8;
-  --nb-ink: #b9c3ff;
-  --nb-lead: #e6e3ee;
-  --nb-red: #ff8a7a;
-  --nb-hl: rgba(255, 214, 64, 0.3);
+  --nb-ink: #26348f;
+  --nb-lead: #33323c;
+  --nb-red: #d23a2f;
+  --nb-hl: rgba(255, 214, 64, 0.38);
   --nb-flag: #ff9a76;
   --nb-flag-back: #c86e50;
   --nb-pen-body: #bcc2ff;
@@ -129,29 +130,20 @@
   position: absolute; inset: 0;
   border-radius: 2px 2px 3px 3px;
   background-color: var(--nb-paper);
-  background-image:
-    linear-gradient(to right, transparent calc(var(--nb-margin) - 1px), var(--nb-margin-rule) calc(var(--nb-margin) - 1px) calc(var(--nb-margin) + 0.5px), transparent calc(var(--nb-margin) + 0.5px)),
-    linear-gradient(to bottom, var(--nb-rule) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--nb-rule-sub) 1px, transparent 1px),
-    linear-gradient(to right, var(--nb-rule-v) 1px, transparent 1px);
-  background-size: 100% 100%, 100% var(--nb-line), 100% var(--nb-sub), var(--nb-line) 100%;
-  background-position: 0 0, 0 calc(var(--nb-top) - 1px), 0 calc(var(--nb-top) - 1px), calc(var(--nb-margin) + 0.5px) 0;
-  background-repeat: no-repeat, repeat-y, repeat-y, repeat-x;
+  /* feuille blanche unie (80 g) : ni lignes ni carreaux, seulement le grain du papier */
+  background-image: var(--blanc-grain, none);
+  background-size: 160px 160px;
   -webkit-mask: var(--nb-holes); mask: var(--nb-holes);
 }
-/* les lignes ne commencent qu'après la bande des trous */
+/* la bande des trous reste nette (pas de grain sous la reliure) */
 .nb-paper::before {
   content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--nb-top) - 2px);
   background: var(--nb-paper);
 }
 .nb-paper.is-back {
   background-color: var(--nb-paper-back);
-  background-image:
-    linear-gradient(to bottom, var(--nb-rule-sub) 1px, transparent 1px),
-    linear-gradient(to right, var(--nb-rule-v) 1px, transparent 1px);
-  background-size: 100% var(--nb-line), var(--nb-line) 100%;
-  background-position: 0 calc(var(--nb-top) - 1px), 0 0;
-  background-repeat: repeat-y, repeat-x;
+  background-image: var(--blanc-grain, none);
+  background-size: 160px 160px;
 }
 .nb-paper.is-back::before { background: var(--nb-paper-back); }
 

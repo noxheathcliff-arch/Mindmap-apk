@@ -1532,3 +1532,119 @@ a.resume:active { transform: none; }
 .part::before { display: none; }
 .folder-why { border-left: 0; padding-left: 0; }
 .md blockquote { border-left: 0; border-radius: var(--shape-m); }
+
+/* ==========================================================================
+   Dans un cours : le classeur (DESIGN.md §4.6 ter)
+   Les parties sont des intercalaires en carte teintée, onglet saillant portant le numéro ;
+   les cartes sont des feuilles blanches unies perforées. Le papier reste du papier la nuit :
+   il garde ses encres de jour (comme la fiche), juste un peu moins lumineux.
+   ========================================================================== */
+.page-course {
+  --sheet-shadow: 0 0 0 .5px rgb(70 60 40 / .14), 0 1px 1px rgb(70 60 40 / .10), 0 4px 10px -6px rgb(70 60 40 / .35);
+  --hole: var(--surface);
+}
+:root[data-theme="dark"] .page-course { --blanc: #e9e8e2; --blanc-ink: #1d1d22; --blanc-sub: #55545b; --sheet-shadow: 0 0 0 .5px rgb(0 0 0 / .5), 0 2px 8px -2px rgb(0 0 0 / .6); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .page-course { --blanc: #e9e8e2; --blanc-ink: #1d1d22; --blanc-sub: #55545b; --sheet-shadow: 0 0 0 .5px rgb(0 0 0 / .5), 0 2px 8px -2px rgb(0 0 0 / .6); } }
+
+/* Encres de jour sur tout ce qui est papier (feuille comme intercalaire) */
+.page-course .part, .page-course .unit-row, .page-course .map-card:not(.map-add) {
+  --c-pc: var(--c-pc-l); --c-onpc: var(--c-onpc-l); --c-pri: var(--c-pri-l); --c-onpri: var(--c-onpri-l); --c-sc: var(--c-sc-l); --c-onsc: var(--c-onsc-l);
+  --primary: var(--c-pri); --on-primary: var(--c-onpri);
+  --on-surface: var(--blanc-ink); --on-surface-variant: var(--blanc-sub);
+  --surface-container-high: rgb(60 50 30 / .07); --surface-container-highest: rgb(60 50 30 / .11);
+  --outline-variant: rgb(60 50 30 / .18);
+  color: var(--blanc-ink);
+}
+
+/* ---- Intercalaire : carte 160 g teintée, coins à peine cassés, onglet en haut décalé selon son rang */
+.page-course .parts { gap: calc(var(--sp-3) + 26px); padding-top: 26px; }
+.page-course .part, .page-course .part:hover {
+  --card-face: var(--tab);
+  position: relative; overflow: visible; border-radius: 3px 3px 4px 4px;
+  background: var(--blanc-grain, none) 0 0 / 160px 160px, linear-gradient(180deg, color-mix(in oklab, var(--card-face) 92%, #fff), var(--card-face) 40%);
+  background-color: var(--card-face);
+  box-shadow: var(--sheet-shadow), inset 0 1px 0 rgb(255 255 255 / .55);
+}
+:root[data-theme="dark"] .page-course .part { --card-face: color-mix(in oklab, var(--tab) 82%, #2a2722); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .page-course .part { --card-face: color-mix(in oklab, var(--tab) 82%, #2a2722); } }
+.part-tab { display: none; }
+.page-course .part-tab {
+  display: grid; place-items: center; position: absolute; z-index: 1;
+  bottom: 100%; left: calc(var(--sp-4) + var(--tab-at, 0) * 17%);
+  min-width: 52px; height: 26px; padding: 0 14px;
+  border-radius: 7px 7px 0 0;
+  background: var(--blanc-grain, none) 0 0 / 160px 160px, var(--card-face);
+  background-color: var(--card-face);
+  /* l'onglet est renforcé (plastique translucide sur la carte) : un filet clair sur l'arête */
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 1px 0 0 rgb(255 255 255 / .25), 0 -1px 1px -0.5px rgb(70 60 40 / .18);
+  color: color-mix(in oklab, var(--blanc-ink) 82%, var(--tab));
+  font: 700 14px/1 var(--font-brand); letter-spacing: .02em;
+}
+.page-course .part-tab::after { /* raccord onglet / carte : pas de coupure, le même carton */
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; background: inherit;
+}
+.page-course .part.sub .part-tab { height: 22px; font-size: 12.5px; min-width: 44px; }
+.page-course .part-num { display: none; }
+.page-course .part-link { grid-template-columns: minmax(0, 1fr) auto; }
+.page-course .part-label { color: color-mix(in oklab, var(--blanc-ink) 70%, var(--tab)); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.page-course .part-title { font-family: var(--font-serif, 'Source Serif 4', Georgia, serif); font-weight: 600; letter-spacing: -.005em; }
+@media (hover: hover) { .page-course .part-link:hover { background: rgb(60 50 30 / .05); } }
+.page-course .due-chip { background: rgb(60 50 30 / .1); color: var(--blanc-ink); }
+/* la perforation de l'intercalaire, dans la marge gauche de son en-tête */
+.page-course .part-head {
+  padding-left: 30px;
+  background: radial-gradient(circle at 16px 50%, var(--surface) 0 5px, rgb(70 60 40 / .42) 5px 5.8px, rgb(70 60 40 / .10) 5.8px 6.6px, transparent 7px) no-repeat;
+}
+/* le contenu déplié : les feuilles rangées derrière l'intercalaire */
+.page-course .part { --hole: var(--card-face); }
+
+/* ---- Feuille blanche : 80 g, unie, perforée (deux trous Ø 5,5 mm sur une vraie A4 ; un trou par bande ici) */
+.page-course .unit-list { gap: 6px; }
+.page-course .unit-row.is-map,
+.page-course .unit-list > li > .unit-row.is-map {
+  position: relative; border-radius: 2px; padding-left: 34px;
+  background:
+    radial-gradient(circle at 16px 50%, var(--hole) 0 5px, rgb(70 60 40 / .42) 5px 5.8px, rgb(70 60 40 / .10) 5.8px 6.6px, transparent 7px),
+    var(--blanc-grain, none) 0 0 / 160px 160px, var(--blanc);
+  background-color: var(--blanc);
+  box-shadow: var(--sheet-shadow);
+}
+@media (hover: hover) {
+  .page-course .unit-row.is-map:hover, .page-course .part .unit-row.is-map:hover {
+    background:
+      radial-gradient(circle at 16px 50%, var(--hole) 0 5px, rgb(70 60 40 / .42) 5px 5.8px, rgb(70 60 40 / .10) 5.8px 6.6px, transparent 7px),
+      var(--blanc-grain, none) 0 0 / 160px 160px, #fffffd;
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 .5px rgb(70 60 40 / .14), 0 2px 3px rgb(70 60 40 / .10), 0 8px 18px -10px rgb(70 60 40 / .45);
+  }
+}
+.page-course .unit-row.is-map { transition: transform var(--dur-sm) var(--ease-out), box-shadow var(--dur-sm) var(--ease-out); }
+.page-course .unit-row.is-map .unit-thumb { background: rgb(60 50 30 / .05); border-radius: 1px; box-shadow: inset 0 0 0 .5px rgb(60 50 30 / .12); }
+.page-course .unit-row.is-map .unit-title { font-family: var(--font-serif, 'Source Serif 4', Georgia, serif); }
+
+/* le papier ne se grise pas au survol : il se soulève */
+.page-course .unit-row.is-map::before, .page-course .map-card:not(.map-add)::before { display: none; }
+
+/* sous-dossier dans une liste : petit intercalaire de la même carte teintée */
+.page-course .unit-row.is-folder,
+.page-course .unit-list > li > .unit-row.is-folder {
+  --card-face: var(--tab);
+  border-radius: 3px;
+  background: var(--blanc-grain, none) 0 0 / 160px 160px, var(--card-face); background-color: var(--card-face);
+  box-shadow: var(--sheet-shadow), inset 0 1px 0 rgb(255 255 255 / .5);
+}
+.page-course .unit-row.is-folder .unit-num { background: rgb(255 255 255 / .55); color: var(--blanc-ink); font-family: var(--font-serif, 'Source Serif 4', Georgia, serif); }
+
+/* ---- Carte en grille (cours sans parties) : une feuille entière, deux trous dans la marge */
+.page-course .map-card:not(.map-add), .page-course .map-card:not(.map-add):hover {
+  border-radius: 2px; padding-left: 22px;
+  background:
+    radial-gradient(circle at 11px 28%, var(--hole) 0 5px, rgb(70 60 40 / .42) 5px 5.8px, rgb(70 60 40 / .10) 5.8px 6.6px, transparent 7px),
+    radial-gradient(circle at 11px 72%, var(--hole) 0 5px, rgb(70 60 40 / .42) 5px 5.8px, rgb(70 60 40 / .10) 5.8px 6.6px, transparent 7px),
+    var(--blanc-grain, none) 0 0 / 160px 160px, var(--blanc);
+  background-color: var(--blanc);
+  box-shadow: var(--sheet-shadow);
+}
+@media (hover: hover) { .page-course .map-card:not(.map-add):hover { box-shadow: 0 0 0 .5px rgb(70 60 40 / .14), 0 2px 3px rgb(70 60 40 / .10), 0 10px 22px -12px rgb(70 60 40 / .5); } }
+.page-course .map-card .mc-thumb { background: rgb(60 50 30 / .05); border-radius: 1px; box-shadow: inset 0 0 0 .5px rgb(60 50 30 / .12); }
+.page-course .map-card .mc-title { font-family: var(--font-serif, 'Source Serif 4', Georgia, serif); }

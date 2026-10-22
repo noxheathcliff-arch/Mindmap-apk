@@ -317,6 +317,24 @@
       },
     };
   }
+  /** Entrer dans un cours : le classeur sort du dossier, s'ouvre sur son premier intercalaire,
+      et l'on plonge dedans (js/binder.js) ; la page du cours s'échange dessous, sans transition. */
+  function openCourse(card, c) {
+    const go = () => R.app.go('#/cours/' + c.id, { still: true });
+    if (!window.Binder) { R.app.go('#/cours/' + c.id); return; }
+    const { items } = S.unitsIn(c.id, null);
+    let nf = 0;
+    const stack = items.slice(0, 9).map((x) => (x.folder
+      ? { kind: 'inter', num: R.numeral ? R.numeral(x.folder.label, nf++) : String(++nf), kicker: x.folder.label || S.FOLDER_LABELS[x.folder.kind], title: x.folder.title }
+      : { kind: 'sheet', content: x.map.title }));
+    if (!stack.length) stack.push({ kind: 'sheet' });
+    window.Binder.enter(card, {
+      binder: { title: c.title, kicker: 'Cours', sub: c.description || '', items: stack },
+      tint: (el) => R.courseArt.tint(el, c),
+      swap: go,
+    });
+  }
+
   function courseCard(c, rerender) {
     const st = S.courseStats(c.id);
     const next = st.due ? S.nextCard(c.id) : null;
@@ -350,7 +368,7 @@
     const paper = h('div.fiche-body', next ? { dataset: { hero: `fiche:${hk}:card` } } : {},
       h('p.fiche-k', kicker),
       h('p.fiche-q', qHero ? h('span', { dataset: { hero: qHero } }, q) : q));
-    paper.addEventListener('click', () => R.app.go(reviewHref || '#/cours/' + c.id));
+    paper.addEventListener('click', () => (reviewHref ? R.app.go(reviewHref) : openCourse(card, c)));
 
     const more = ui.iconBtn('more', { title: 'Options du cours', cls: 'fiche-more' });
     more.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); R.actions.courseMenu(more, c, rerender); });
@@ -358,7 +376,7 @@
     const band = h('header.fiche-band',
       h('div.fiche-id',
         h('h3.fiche-title', { id: 'cc-' + c.id },
-          h('a.fiche-link', { href: '#/cours/' + c.id }, h('span', { dataset: { hero: 'course:' + c.id + ':title' } }, c.title))),
+          h('a.fiche-link', { href: '#/cours/' + c.id, onclick: (e) => { if (e.button || e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openCourse(card, c); } }, h('span', { dataset: { hero: 'course:' + c.id + ':title' } }, c.title))),
         h('p.fiche-sub', sub)),
       more);
 

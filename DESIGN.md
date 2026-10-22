@@ -264,6 +264,12 @@ Le héros de l'accueil est une **boîte de Leitner en vraie 3D CSS** (`js/leitne
 - Fiches dessinées en 2× puis réduites : texte net une fois sortie. `prefers-reduced-motion` : poses directes, sans ressort.
 - Option écartée pour l'instant : **la pile de feuilles** vue de face qui s'ouvre en changeant d'angle — gardée en réserve.
 
+### 4.6 ter Dans un cours — le classeur
+Un cours ouvert est un **classeur à anneaux** : les niveaux de structure sont des **intercalaires à onglet**, les cartes des **feuilles blanches perforées** (`css/views.css` « Dans un cours : le classeur », `css/binder.css`, `js/binder.js`).
+- **Intercalaire** (`.part`) : carte 160 g teintée (8 teintes pastel `Binder.TABS`, une par dossier, en boucle), grain papier, ombre de feuille et reflet intérieur ; **onglet** décalé en escalier (`--tab-at` = rang mod 5, pas de 17 %) qui porte le chiffre romain ; un trou de perforation à gauche de l'en-tête ; titre en serif, libellé en capitales. Un sous-dossier (`.unit-row.is-folder`) est un petit intercalaire à sa couleur.
+- **Feuille** (`.unit-row.is-map`, `.map-card`) : 80 g **blanc uni** (`--blanc #fbfbf8`, grain SVG), sans réglure ni quadrillage ; trous perforés dessinés en dégradé (bord ombré + halo) ; survol : la feuille se soulève de 1 px, ombre plus large, pas de voile d'état.
+- **Sombre** : le papier reste du papier — il garde ses encres de jour et n'est que légèrement assourdi (`--blanc #e9e8e2`), comme la fiche bristol (§4.6). Même règle pour le **carnet de révision** : feuilles blanches unies, encres de jour, en clair comme en sombre.
+
 ### 4.7 Réviser — paquet du jour, session, relevé
 - **Paquet du jour** : héros `primary-container` (coins 48), le nombre de fiches dans un *cookie 12* `primary` ; taille de session en groupe de boutons connecté (choix en `primary`, lisible sur le conteneur). « Commencer » vit dans la barre contextuelle.
 - **Carte de régularité, échéancier, par cours** : cartes tonales ; l'échéancier empile les fiches par couleur de cours ; chaque cours a sa marque dans un anneau de maîtrise.
@@ -343,6 +349,7 @@ Règle : **entrées en ease-out** (un ressort parti du repos démarre lentement,
 | Fiche (survol, pointeur fin) | feuilles dessous en éventail, feuille −2 px, ombre (opacité) | +2 px / +1,2° par couche | 240 | out | anticipation douce, lecture de l'épaisseur |
 | Fiche (appui) / Réviser | scale | 1 → 0.985 / 0.97 | 100 | out | feedback |
 | Emplacement d'ajout (survol / focus, pointeur fin) | les pointillés se referment en feuille pleine (feuille fantôme : opacité + scale .965 → 1), puis la pastille s'encre de jaune depuis son centre (.6 → 1) et le + tourne de 90° | — | 240, pastille +40 | out (retour 160 in) | staging : la feuille, puis l'action |
+| Dossier → classeur (entrée dans un cours) | le classeur sort du dossier (ressort, anticipation vers le bas), la couverture s'ouvre sur sa charnière, on plonge dans l'intercalaire (zoom), la page change sans View Transition (`R.app.go(hash, {still:true})`), puis fondu de la scène | dossier → page du cours | ressorts, ≈ 1,6 s ; scène retirée < 3,2 s | ressort | anticipation, arcs, follow-through, staging, chevauchement ; réduit : page directe, sans scène |
 | Emplacement d'ajout (appui) | feuille scale 1 → .985, pastille 1 → .9 (squash) ; au toucher, l'appui déclenche aussi l'encre | — | 100 | out | feedback, l'appui remplace le survol sur mobile |
 | Emplacement → formulaire | le dialogue naît du centre de l'emplacement (transform-origin) et y retourne ; l'emplacement reste « prêt » tant qu'il est ouvert | scale .9 → 1 / → .94 | 280 / 180 | out / in | continuité spatiale (origine = destination) |
 | Lecture seule (interrupteur) | le cadenas se referme (scale .8 → 1, −2 px → 0), la pastille s'assombrit, le libellé suit (opacité + 4 px) | — | 240, libellé +40 | out | changement d'état lisible ; les outils d'édition disparaissent |

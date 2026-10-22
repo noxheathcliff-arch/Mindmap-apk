@@ -34,10 +34,12 @@
 
   /* from : élément hors de la page (ex. une ligne de la recherche) qui porte les héros de
      départ ; swap(viaVT) : appelé au moment de l'échange de page, pour retirer cet élément
-     de la capture « après » (viaVT = true) ou le fermer normalement (false). */
+     de la capture « après » (viaVT = true) ou le fermer normalement (false).
+     still : la page s'échange sans transition (une animation du dessus, ex. l'entrée dans le
+     classeur, la couvre déjà ; une View Transition figerait son rendu). */
   let pendingNav = null;
-  app.go = (hash, { replace, from, swap } = {}) => {
-    pendingNav = from || swap ? { from, swap } : null;
+  app.go = (hash, { replace, from, swap, still } = {}) => {
+    pendingNav = from || swap || still ? { from, swap, still } : null;
     if (replace) { history.replaceState(null, '', hash); render(); }
     else if (location.hash === hash) render();
     else location.hash = hash;
@@ -109,9 +111,10 @@
     }
     const dir = prev ? Math.sign(depthOf(route) - depthOf(prev)) : 0;
     const host = U.$('#view');
-    const useVT = !!prev && supportsVT && !U.reducedMotion() && !document.hidden;
+    const still = !!(nav && nav.still);
+    const useVT = !!prev && !still && supportsVT && !U.reducedMotion() && !document.hidden;
 
-    if (!useVT) { swap(false); mountRoute(route, prev, dir, false); return; }
+    if (!useVT) { swap(false); mountRoute(route, prev, dir, false, still); return; }
 
     if (vtRunning) { try { vtRunning.skipTransition(); } catch (e) { /* ignore */ } }
     const root = document.documentElement;
@@ -134,19 +137,19 @@
     });
   }
 
-  function mountRoute(route, prev, dir, viaVT) {
+  function mountRoute(route, prev, dir, viaVT, still) {
     const view = R.views[route.name];
     const host = U.$('#view');
     if (app.current && app.current.unmount) app.current.unmount();
     for (const old of U.$$('.page-wrap', host)) {
-      if (viaVT) { old.remove(); continue; }
+      if (viaVT || still) { old.remove(); continue; }
       if (old.classList.contains('leaving')) continue;
       old.classList.add('leaving');
       old.style.setProperty('--dir', dir);
       setTimeout(() => old.remove(), 170);
     }
     const page = h('div.page-wrap', { style: { '--dir': dir } });
-    if (prev && !viaVT) page.classList.add('entering');
+    if (prev && !viaVT && !still) page.classList.add('entering');
     host.appendChild(page);
     app.setFab(null);
     app.setActions(null);
@@ -156,7 +159,7 @@
     if (prev) host.focus({ preventScroll: true });
     app.current = view.mount(page, route) || {};
     updateNav(route);
-    if (prev && !viaVT) setTimeout(() => page.classList.remove('entering'), 400);
+    if (prev && !viaVT && !still) setTimeout(() => page.classList.remove('entering'), 400);
     return page;
   }
 

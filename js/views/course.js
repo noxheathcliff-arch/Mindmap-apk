@@ -18,6 +18,7 @@
     return m ? m[1] : String(i + 1);
   }
   const kindLabel = (f) => f.label || S.FOLDER_LABELS[f.kind];
+  R.numeral = numeral;
   const plain = (s) => (R.md ? R.md.plain(s) : String(s || ''));
   const pct = (p) => Math.round(p * 100) + ' %';
   const dueText = (st) => (st.due && st.reviewable ? `${st.due} à réviser` : st.reviewable ? 'À jour' : 'Pas de fiche');
@@ -301,10 +302,10 @@
   }
 
   /** Ligne d'unité dans un sommaire : un sous-dossier ou une carte, numérotée */
-  function unitRow(x, num, rerender) {
+  function unitRow(x, num, rerender, fi = 0) {
     if (x.folder) {
       const f = x.folder, st = S.folderStats(f.id);
-      return h('li', h('a.unit-row.is-folder.ripple', { href: '#/dossier/' + f.id },
+      return h('li', h('a.unit-row.is-folder.ripple', { href: '#/dossier/' + f.id, style: { '--tab': tabTint(fi) } },
         h('span.unit-num', num),
         h('span.unit-body',
           h('span.unit-label', kindLabel(f)),
@@ -330,8 +331,14 @@
   function unitList(courseId, folderId, rerender, cls = '') {
     const { items } = S.unitsIn(courseId, folderId);
     let nf = 0, nm = 0;
-    return h('ol.unit-list', { class: cls }, items.map((x) => unitRow(x, x.folder ? numeral(x.folder.label, nf++) : numeral(x.map.label, nm++), rerender)));
+    return h('ol.unit-list', { class: cls }, items.map((x) => (x.folder
+      ? unitRow(x, numeral(x.folder.label, nf), rerender, nf++)
+      : unitRow(x, numeral(x.map.label, nm++), rerender))));
   }
+
+  /** Couleur de l'onglet d'intercalaire n° i (la même suite que dans le classeur animé, js/binder.js) */
+  const TABS = ['#f4c6bf', '#f8d4ad', '#c7e5c2', '#b9e1dc', '#bcdcef', '#c4d4f3', '#d6cdf3', '#efc9e5'];
+  function tabTint(i) { return ((window.Binder && window.Binder.TABS) || TABS)[i % TABS.length]; }
 
   /** Bloc d'une partie (ou d'un sous-dossier) : en-tête qui mène à sa page, contenu dépliable sur place */
   function folderBlock(f, i, ctx) {
@@ -343,7 +350,8 @@
     toggle.setAttribute('aria-controls', bodyId);
     const more = ui.iconBtn('more', { title: 'Options du dossier', cls: 'part-more' });
     more.addEventListener('click', () => R.actions.folderMenu(more, f));
-    const sec = h('section.part', { class: (open ? 'open ' : '') + (ctx.sub ? 'sub' : ''), style: { '--i': i } },
+    const sec = h('section.part', { class: (open ? 'open ' : '') + (ctx.sub ? 'sub' : ''), style: { '--i': i, '--tab': tabTint(i), '--tab-at': i % 5 } },
+      h('span.part-tab', { 'aria-hidden': 'true' }, numeral(f.label, i)),
       h('div.part-head',
         h('a.part-link.ripple', { href: '#/dossier/' + f.id, dataset: { hero: 'folder:' + f.id + ':band' } },
           h('span.part-num', { 'aria-hidden': 'true' }, numeral(f.label, i)),
