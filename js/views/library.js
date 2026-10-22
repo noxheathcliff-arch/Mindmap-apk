@@ -174,7 +174,7 @@
     if (!any) return null;
     return due
       ? ui.btn(`Réviser · ${due}`, { icon: 'play', variant: 'filled', cls: 'today-cta', onClick: (e) => R.app.go('#/reviser/tout', { from: e.currentTarget.closest('.today') }) })
-      : ui.btn('Réviser quand même', { icon: 'cards', variant: 'tonal', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') });
+      : ui.btn('Réviser quand même', { icon: 'cards', variant: 'filled', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') });
   }
 
   /* ---------------- Carte de cours : un dossier entrouvert ----------------

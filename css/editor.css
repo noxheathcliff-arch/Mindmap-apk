@@ -599,7 +599,6 @@
     padding: var(--sp-2);
     border-radius: var(--shape-xli);
     background: var(--primary-container); color: var(--on-primary-container);
-    box-shadow: var(--elev-2);
   }
   .bottombar:empty { display: none; }
   .bottombar .ctx-btn { flex: none; display: grid; gap: 2px; place-items: center; height: 56px; width: 64px; border-radius: var(--shape-li); color: inherit; }
