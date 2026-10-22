@@ -653,7 +653,8 @@
        branche par élément. Deux origines :
         - explicite : liens partageant un `group` (libellé commun, choisi par l'utilisateur) ;
         - implicite : enfants d'un nœud ET/OU sans libellé propre → « ET » affiché une fois.
-       Un lien retouché à la main (ancres, courbure, forme) sort de sa fourche et se dessine seul. */
+       Une branche retouchée à la main (courbure, forme, ancre d'arrivée) reste accrochée à la jonction :
+       seul un départ déplacé (ancre a1) la sort de sa fourche. */
     const shaped = (e) => !!(e.a1 || e.a2 || e.bend || (e.style && e.style.shape));
     /** Séquences en ligne (méthode, chronologie) : enfant → étape précédente */
     function seqMap(visible) {
@@ -669,7 +670,7 @@
         bundles.get(key).edges.push(e);
       };
       for (const e of visible) {
-        if (shaped(e)) continue;
+        if (e.a1) continue;
         if (e.group) add('g:' + e.group, e, true);
         else if (e.kind === 'tree' && !e.label && !seqIds.has(e.to)) {
           const p = S.node(map, e.from);
@@ -955,9 +956,13 @@
             // branche de fourche : depuis la jonction, trajet qui évite les nœuds (sortie dans l'axe du tronc)
             const side = gm.d1[0] > 0 ? 'r' : gm.d1[0] < 0 ? 'l' : gm.d1[1] > 0 ? 'b' : 't';
             const cv = R.layout.route({ id: bundle.from, x: gm.J[0], y: gm.J[1] }, { w: 0, h: 0 }, { id: b.id, x: b.x, y: b.y }, size(b), { rects, polys, busy, fromJ: true, fast: !!st.fastEdges, side });
-            c = { d: cv.d, at: cv.at };
+            c = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), Object.assign({}, cv, { d1: gm.d1 })) : { d: cv.d, at: cv.at };
             polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
-          } else c = R.layout.calm(branchCurve(gm.J, gm.d1, b, e.kind), calmK);
+          } else {
+            const base = branchCurve(gm.J, gm.d1, b, e.kind);
+            // branche retouchée : sa forme part de la jonction, elle ne quitte pas la fourche
+            c = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), Object.assign({}, base, { d1: gm.d1 })) : R.layout.calm(base, calmK);
+          }
           rec.mid = gm.J;
           rec.cv = c; rec.bundled = true;
           setLabel(rec.label, '', {});
@@ -1048,9 +1053,11 @@
       // branche de fourche : le tracé part de la jonction — la poignée de départ se pose sur le bord le plus proche
       const p1 = e.a1 ? L.anchorPoint(a, sa, e.a1) : rec.bundled ? L.anchorPoint(a, sa, L.nearestAnchor(a, sa, rec.cv.at(0))) : rec.cv.at(0);
       const p2 = e.a2 ? L.anchorPoint(b, sb, e.a2) : rec.cv.at(1);
-      const m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+      // la courbure se mesure depuis le vrai départ du tracé (la jonction pour une branche)
+      const s0 = rec.bundled ? rec.cv.at(0) : p1;
+      const m = [(s0[0] + p2[0]) / 2, (s0[1] + p2[1]) / 2];
       const k = e.bend ? [m[0] + e.bend.x, m[1] + e.bend.y] : rec.cv.at(0.5);
-      return { a, b, sa, sb, p1, p2, m, k };
+      return { a, b, sa, sb, p1, p2, m, k, bundled: rec.bundled };
     }
     function positionHandles() {
       const e = st.selEdge && !ro() && !st.masked && !st.linking ? map.edges.find((x) => x.id === st.selEdge) : null;
@@ -2658,9 +2665,10 @@
         st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
         if (gesture.which === 'bend') {
           // les ancres se figent : le point de courbure se mesure depuis un milieu qui ne bouge plus
-          if (!ex.a1) ex.a1 = R.layout.nearestAnchor(g.a, g.sa, g.p1);
+          // (branche de fourche : le départ reste la jonction, on ne fige que l'arrivée)
+          if (!ex.a1 && !g.bundled) ex.a1 = R.layout.nearestAnchor(g.a, g.sa, g.p1);
           if (!ex.a2) ex.a2 = R.layout.nearestAnchor(g.b, g.sb, g.p2);
-          const p1 = R.layout.anchorPoint(g.a, g.sa, ex.a1), p2 = R.layout.anchorPoint(g.b, g.sb, ex.a2);
+          const p1 = g.bundled ? st.edgeEls.get(ex.id).cv.at(0) : R.layout.anchorPoint(g.a, g.sa, ex.a1), p2 = R.layout.anchorPoint(g.b, g.sb, ex.a2);
           gesture.m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
         }
         canvas.classList.add('is-eh');
@@ -3245,9 +3253,23 @@
         if (e.key === 'Enter' && !e.shiftKey) continueList(e, noteIn);
         if (e.key === 'Tab') { e.preventDefault(); indentLine(noteIn, e.shiftKey); }
       });
-      const preview = h('div.note-preview.md');
+      /* Aperçu : une page de lecture — repère de durée en tête, corps typographié (css/editor.css « Aperçu ») */
+      const preview = h('div.note-preview');
       const paintPreview = () => {
-        preview.innerHTML = n.note.trim() ? R.md.render(n.note) : `<p class="muted">${locked ? 'Aucune note.' : 'Aucune note pour l’instant. Passe en mode Écrire.'}</p>`;
+        U.clear(preview);
+        if (!n.note.trim()) {
+          preview.appendChild(h('div.np-empty',
+            h('span.np-empty-ic', R.icon('note', 24)),
+            h('p.np-empty-t', locked ? 'Aucune note' : 'Pas encore de note'),
+            locked ? null : h('p.np-empty-s', 'Définition, article, exemple : tout ce qui t’aide à retenir ce nœud.'),
+            locked ? null : h('button.btn.btn-tonal.np-empty-cta', { type: 'button', onclick: () => switchTab('write', true) }, R.icon('edit', 18), h('span', 'Écrire la note'))));
+          return;
+        }
+        const words = R.md.plain(n.note).split(/\s+/).filter(Boolean).length;
+        const min = Math.max(1, Math.round(words / 200));
+        const body = h('div.np-body.md');
+        body.innerHTML = R.md.render(n.note);
+        preview.append(h('div.np-meta', R.icon('clock', 14), h('span', `${min} min de lecture`), h('span.np-dot', '·'), h('span', `${words} mot${words > 1 ? 's' : ''}`)), body);
         // toucher un tableau le rouvre dans la grille (les liens qu'il contient restent cliquables)
         if (!locked) for (const t of U.$$('.md-table[data-table]', preview)) {
           t.title = 'Toucher pour modifier le tableau';

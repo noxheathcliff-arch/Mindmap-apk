@@ -533,7 +533,7 @@
 .note-input:focus, .note-input:focus-visible { outline: none; }
 .note-input::placeholder { color: var(--on-surface-variant); opacity: .7; }
 .page-editor[data-pane="bottom"] .note-input { min-height: 30dvh; resize: none; }
-.note-preview { min-height: 96px; padding: var(--sp-3) var(--sp-4); cursor: text; font-family: var(--note-font, inherit); font-size: var(--note-fs, inherit); font-weight: var(--note-fw, 400); }
+/* .note-preview : voir « Aperçu de la note » en fin de fichier */
 
 /* décomposition & renvois : listes M3 groupées (segments arrondis aux bouts) */
 .decomp-list, .link-list { list-style: none; display: grid; gap: 2px; padding: 0; margin: 0; }
@@ -975,6 +975,141 @@
   .typo-levels { margin: 0 calc(-1 * var(--sp-5)); padding: 2px var(--sp-5); }
 }
 @media (prefers-reduced-motion: reduce) { .typo-preview { transition: none; } }
-.note-preview.md p { line-height: 1.65; }
 /* label flottant du champ outlined : même fond que la feuille */
 .dialog-style .fo-label { background: var(--surface-container-low); }
+
+/* ── Aperçu de la note : une page de lecture (DESIGN.md §4.5) ──
+   Corps à la police choisie dans Réglages (--note-*), interligne 1.7, titres en police de marque,
+   listes numérotées en pastilles, cases à cocher dessinées, citation « texte de loi » en serif. */
+.note-preview { min-height: 120px; padding: var(--sp-4) var(--sp-5) var(--sp-6); cursor: text; }
+.np-meta {
+  display: flex; align-items: center; gap: 6px; margin-bottom: var(--sp-4);
+  font: var(--label-m); letter-spacing: var(--tracking-label); color: var(--on-surface-variant);
+}
+.np-meta .ic { opacity: .8; }
+.np-dot { opacity: .6; }
+.np-body {
+  font-family: var(--note-font, var(--font-plain)); font-size: var(--note-fs, 15px); font-weight: var(--note-fw, 400);
+  line-height: 1.7; color: var(--on-surface);
+  text-wrap: pretty; hyphens: auto;
+}
+.np-body.md > * + * { margin-top: .9em; }
+.np-body.md p { line-height: 1.7; }
+/* chapeau : le premier paragraphe, un cran au-dessus */
+.np-body.md > p:first-child { font-size: 1.07em; line-height: 1.65; }
+.np-body strong { font-weight: 650; }
+
+/* titres : # → h3, ## → h4, ### → h5 */
+.np-body.md h3, .np-body.md h4, .np-body.md h5 { font-family: var(--font-brand); color: var(--on-surface); text-wrap: balance; }
+.np-body.md h3 { font-size: 1.32em; line-height: 1.25; font-weight: 700; letter-spacing: -.01em; margin-top: 1.5em; }
+.np-body.md h4 {
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 1.12em; line-height: 1.35; font-weight: 650; margin-top: 1.6em;
+}
+.np-body.md h4::before { content: ""; flex: none; align-self: center; width: 4px; height: 1.05em; border-radius: 2px; background: var(--primary); }
+.np-body.md h5 {
+  font: 700 11.5px/16px var(--font-brand); letter-spacing: .09em; text-transform: uppercase;
+  color: var(--primary); margin-top: 1.7em;
+}
+.np-body.md > :is(h3, h4, h5):first-child { margin-top: 0; }
+.np-body.md :is(h3, h4, h5) + * { margin-top: .55em; }
+
+/* listes */
+.np-body.md ul, .np-body.md ol { padding-left: 0; list-style: none; }
+.np-body.md li { position: relative; padding-left: 28px; }
+.np-body.md li + li { margin-top: .4em; }
+.np-body.md li > :is(ul, ol) { margin-top: .4em; }
+.np-body.md ul > li::before {
+  content: ""; position: absolute; left: 9px; top: calc(.85em - 3px);
+  width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+}
+.np-body.md li ul > li::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--primary); }
+.np-body.md ol { counter-reset: np; }
+.np-body.md ol > li { counter-increment: np; padding-left: 34px; }
+.np-body.md ol > li::before {
+  content: counter(np); position: absolute; left: 0; top: calc(.85em - 9px);
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font: 700 11.5px/1 var(--font-brand); font-variant-numeric: tabular-nums;
+  background: var(--primary-container); color: var(--on-primary-container);
+}
+/* sous-listes : un filet guide le regard */
+.np-body.md li > :is(ul, ol) { position: relative; }
+.np-body.md li > :is(ul, ol)::before { content: ""; position: absolute; left: -16px; top: 4px; bottom: 4px; width: 1.5px; border-radius: 1px; background: var(--outline-variant); }
+.np-body.md ol > li > :is(ul, ol)::before { left: -23px; }
+
+/* cases à cocher */
+.np-body.md li.md-task { list-style: none; margin-left: 0; padding-left: 30px; }
+.np-body.md li.md-task::before {
+  content: ""; position: absolute; left: 1px; top: calc(.85em - 9px);
+  width: 18px; height: 18px; box-sizing: border-box; border-radius: 5px;
+  border: 2px solid var(--on-surface-variant); background: transparent; box-shadow: none;
+}
+.np-body.md li.md-task.done { color: var(--on-surface-variant); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--on-surface-variant) 60%, transparent); }
+.np-body.md li.md-task.done::before { border-color: var(--primary); background: var(--primary); }
+.np-body.md li.md-task.done::after {
+  content: ""; position: absolute; left: 4px; top: calc(.85em - 6px); width: 12px; height: 12px;
+  background: var(--on-primary);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.3l2.6 2.5L10 3.4' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6.3l2.6 2.5L10 3.4' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* citation : le texte de loi, posé sur un papier tonal, guillemet en exergue */
+.np-body.md blockquote {
+  position: relative; margin: 1.2em 0; padding: var(--sp-4) var(--sp-4) var(--sp-4) calc(var(--sp-4) + 26px);
+  border: 0; border-radius: var(--shape-l);
+  background: color-mix(in srgb, var(--primary-container) 42%, var(--surface-container-low));
+  font-family: var(--font-serif); font-size: 1.04em; line-height: 1.6; color: var(--on-surface);
+}
+.np-body.md blockquote::before {
+  content: "\201C"; position: absolute; left: 12px; top: 6px;
+  font: 700 40px/1 var(--font-serif); color: var(--primary); opacity: .55;
+}
+.np-body.md blockquote p { line-height: 1.6; }
+
+/* surlignage : un vrai coup de feutre */
+.np-body.md mark {
+  color: var(--on-hl-mark); padding: 0 .2em; margin: 0 -.05em; border-radius: .3em .15em .35em .2em;
+  background: linear-gradient(100deg, transparent .1em, var(--hl-mark) .2em, var(--hl-mark) calc(100% - .2em), transparent calc(100% - .1em));
+}
+
+/* articles, code, liens */
+.np-body.md .md-art {
+  font: 600 .84em/1 var(--font-plain); letter-spacing: .01em; padding: 3px 8px; border-radius: var(--shape-full);
+  background: var(--secondary-container); color: var(--on-secondary-container); vertical-align: 1px;
+}
+.np-body.md code { font-size: .86em; padding: 2px 6px; border-radius: var(--shape-xs); background: var(--surface-container-high); }
+.np-body.md pre { padding: var(--sp-3) var(--sp-4); border-radius: var(--shape-m); background: var(--surface-container); border: 1px solid var(--outline-variant); }
+.np-body.md a:not(.md-art):not(.md-wiki) { color: var(--primary); text-decoration-color: color-mix(in srgb, var(--primary) 45%, transparent); text-decoration-thickness: 1.5px; }
+.np-body.md a.md-wiki {
+  border: 0; padding: 0 5px; margin: 0 -1px; border-radius: 6px;
+  background: color-mix(in srgb, var(--primary) 11%, transparent); color: var(--primary); font-weight: 600;
+  transition: background-color var(--dur-xs) var(--ease-out);
+}
+@media (hover: hover) { .np-body.md a.md-wiki:hover { background: color-mix(in srgb, var(--primary) 20%, transparent); } }
+.np-body.md a.md-wiki.missing { background: transparent; color: var(--on-surface-variant); font-weight: 500; box-shadow: inset 0 -1.5px 0 var(--outline); border-radius: 0; }
+
+/* séparateur : trois points centrés */
+.np-body.md hr { height: auto; background: none; margin: 1.6em 0; text-align: center; line-height: 1; }
+.np-body.md hr::before { content: "• • •"; letter-spacing: .6em; padding-left: .6em; font-size: 10px; color: var(--outline); }
+
+/* tableau : carte arrondie, en-tête tonal, rangées alternées */
+.np-body.md .md-table { margin: 1.2em 0; border: 1px solid var(--outline-variant); border-radius: var(--shape-l); }
+.np-body.md table { font-size: .93em; line-height: 1.45; }
+.np-body.md th, .np-body.md td { padding: 10px 14px; border-bottom: 1px solid var(--outline-variant); }
+.np-body.md th + th, .np-body.md td + td { border-left: 0; }
+.np-body.md thead th {
+  background: var(--secondary-container); color: var(--on-secondary-container); border-bottom: 0;
+  font: 650 12px/16px var(--font-brand); letter-spacing: .04em; text-transform: uppercase;
+}
+.np-body.md tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--surface-container) 55%, transparent); }
+.np-body.md tbody td:first-child { font-weight: 600; }
+
+/* état vide : une invitation, pas un message d'erreur */
+.np-empty { display: grid; justify-items: center; gap: 6px; padding: var(--sp-5) var(--sp-4) var(--sp-3); text-align: center; }
+.np-empty-ic {
+  display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 6px;
+  clip-path: var(--shape-cookie9); background: var(--primary-container); color: var(--on-primary-container);
+}
+.np-empty-t { font: var(--title-m); color: var(--on-surface); }
+.np-empty-s { font: var(--body-m); color: var(--on-surface-variant); max-width: 30ch; }
+.np-empty-cta { margin-top: var(--sp-3); }
