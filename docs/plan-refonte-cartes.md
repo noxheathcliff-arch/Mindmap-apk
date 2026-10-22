@@ -7,8 +7,8 @@ Objectif : moins de bruit visuel, beaucoup plus de liberté. Trois apparences de
 
 | Apparence | Types |
 |---|---|
-| **Notion** (aplat sombre, coins larges) | chapitre, section, sous-section, paragraphe, leçon, notion, définition, à retenir |
-| **Idée** (inchangée) | idée, méthode, étape, conseil, exercice, date, chiffre, formule |
+| **Notion** (aplat sombre, coins larges) | chapitre, section, sous-section, paragraphe, leçon, notion |
+| **Idée** (inchangée) | idée, définition, à retenir, méthode, étape, conseil, exercice, date, chiffre, formule |
 | **Référence** (citation : serif italique, filet gauche) | étude, citation, personne, texte, jurisprudence, doctrine |
 
 - `R.store.look(type)` → `notion | idee | ref`. Classes `look-*` sur le nœud ; les règles `.t-*` de forme disparaissent.

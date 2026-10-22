@@ -144,7 +144,7 @@
   /* ---------------- Apparences, palette, polices (refonte des cartes, DESIGN §4.4) ---------------- */
   /** Trois apparences seulement : le type ne change plus la silhouette, juste un détail (sur-titre, chiffres…) */
   const LOOK_REF = new Set(['etude', 'citation', 'personne', 'texte', 'juris', 'doctrine']);
-  const LOOK_NOTION = new Set(['chapitre', 'section', 'soussection', 'paragraphe', 'lecon', 'notion', 'definition', 'retenir']);
+  const LOOK_NOTION = new Set(['chapitre', 'section', 'soussection', 'paragraphe', 'lecon', 'notion']);
   const look = (type) => (LOOK_REF.has(type) ? 'ref' : LOOK_NOTION.has(type) ? 'notion' : 'idee');
   const LOOKS = { notion: 'Notion', idee: 'Idée', ref: 'Référence' };
   /** Palette partagée par les nœuds et les liens : teinte OKLCH (h) et chroma (c) ; les aplats sont dérivés par thème */

@@ -115,7 +115,7 @@
 
   /** origin : élément déclencheur (facultatif). Le dialogue naît de lui et y retourne
    *  (transform-origin sur son centre), et il reste « actif » tant que le dialogue est ouvert. */
-  ui.dialog = function ({ title, icon, body, actions = [], cls = '', dismissible = true, onOpen, full, origin }) {
+  ui.dialog = function ({ title, icon, body, actions = [], cls = '', dismissible = true, onOpen, full, origin, autoFocus = true }) {
     return new Promise((resolve) => {
       const prevFocus = document.activeElement;
       const scrim = h('div.scrim');
@@ -168,7 +168,9 @@
       }
       ui.hideTip();
       requestAnimationFrame(() => {
-        const f = box.querySelector('[autofocus], input, textarea') || box.querySelector('.dialog-actions .btn:last-child');
+        // autoFocus: false — feuilles du bas sur téléphone : pas de clavier d'office
+        const f = autoFocus ? box.querySelector('[autofocus], input, textarea') || box.querySelector('.dialog-actions .btn:last-child') : box;
+        if (f === box) box.tabIndex = -1;
         if (f) f.focus({ preventScroll: true });
       });
       if (onOpen) onOpen(box, close);

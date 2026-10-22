@@ -1801,7 +1801,7 @@
       let scope = 'node';
       const box = h('div.sty');
 
-      const sec = (label, ...kids) => h('section.sty-sec', h('p.sty-label', label), ...kids);
+      const sec = (label, ...kids) => h('section.sty-sec', h('h3.sty-label', label), ...kids);
       /** Curseur avec « Auto » sous le minimum utile : valeur 0/absente = réglage par défaut */
       function slider({ label, min, max, step, value, auto, fmt, onInput }) {
         const out = h('output.sty-val');
@@ -1831,9 +1831,14 @@
         U.clear(box);
 
         // type : la silhouette suit l'apparence (Notion, Idée, Référence)
-        const typeChip = h('button.chip.chip-filter', { type: 'button' }, h('span', types.length > 1 ? 'Types mêlés' : T.label), R.icon('chevronDown', 16));
+        const sw0 = R.colors.swatch(n.type);
+        const dot = sty.color && S.HUES[sty.color] ? hueCss(sty.color) : sw0 ? sw0.line || sw0.bg : 'var(--on-surface-variant)';
+        const typeChip = h('button.chip.type-chip', { type: 'button', 'aria-label': 'Type — changer' },
+          h('span.type-dot', { style: { background: dot } }), h('span', types.length > 1 ? 'Types mêlés' : T.label), R.icon('chevronDown', 18));
         typeChip.addEventListener('click', () => typeMenu(typeChip, ids));
-        box.appendChild(h('div.sty-head', typeChip, h('span.sty-look', 'Apparence ' + S.LOOKS[sty.look])));
+        const lookL = S.LOOKS[sty.look];
+        box.appendChild(h('div.sty-head', typeChip,
+          types.length === 1 && lookL !== T.label ? h('span.sty-look', 'Silhouette « ' + lookL + ' »') : null));
 
         // couleur + portée
         const scopeSeg = h('div.segmented.seg-xs.sty-scope', { role: 'radiogroup', 'aria-label': 'Portée de la couleur' },
@@ -1891,8 +1896,8 @@
       }
       paint();
       // st.styleSheet : redessine la fiche quand le type change depuis son menu (préfixe, apparence)
-      ui.dialog({ title: ids.length > 1 ? `Apparence · ${ids.length} nœuds` : 'Apparence', body: box, cls: 'dialog-style', origin,
-        actions: [{ label: 'OK', value: true, variant: 'filled', primary: true }],
+      ui.dialog({ title: ids.length > 1 ? `Apparence · ${ids.length} nœuds` : 'Apparence', body: box, cls: 'dialog-style', origin, autoFocus: false,
+        actions: [{ label: 'Terminé', value: true, variant: 'filled', primary: true }],
         onOpen: (dlg) => {
           st.styleSheet = paint;
           // la fiche couvre une partie du canevas : on recadre le nœud dans ce qui reste visible (aperçu en direct)
@@ -1984,7 +1989,7 @@
         }
       });
       const box = h('div.sty.es');
-      const sec = (label, ...kids) => h('section.sty-sec', h('p.sty-label', label), ...kids);
+      const sec = (label, ...kids) => h('section.sty-sec', h('h3.sty-label', label), ...kids);
       const seg = (label, opts, value, onPick, cls = '') => {
         const el = h('div.segmented.seg-xs.es-seg', { role: 'radiogroup', 'aria-label': label, class: cls },
           opts.map(([v, l, ic]) => {
@@ -2072,10 +2077,11 @@
       }
       paint();
       box.append(
-        h('div.es-head', h('span.es-node', title(e.from)), h('span.es-arrow', R.icon('chevronRight', 18)), h('span.es-node', title(e.to)),
-          h('span.es-kind', e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi')),
+        h('div.es-head',
+          h('div.es-ends', h('span.es-node', title(e.from)), h('span.es-arrow', R.icon('chevronRight', 18)), h('span.es-node', title(e.to))),
+          h('span.es-kind', R.icon(e.kind === 'tree' ? 'fork' : 'link', 16), e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi')),
         labelSec, look);
-      ui.dialog({ title: 'Lien', body: box, cls: 'dialog-style dialog-edge', origin,
+      ui.dialog({ title: 'Lien', body: box, cls: 'dialog-style dialog-edge', origin, autoFocus: !U.isCompact(),
         actions: [{ label: 'Annuler', value: false }, { label: 'Valider', value: true, variant: 'filled', primary: true }],
         onOpen: () => {
           st.edgeSheet = paint;
@@ -3045,7 +3051,8 @@
       if (focusNote && !ro()) {
         st.noteTab = 'write';
         renderPane(true);
-        setTimeout(() => { const ta = pane.querySelector('.note-input'); if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); } }, m === 'docked' ? 50 : 360);
+        // feuille du bas : pas de clavier d'office (il ferait défiler la feuille jusqu'à la note)
+        if (m !== 'bottom') setTimeout(() => { const ta = pane.querySelector('.note-input'); if (ta) { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); } }, 50);
       }
     }
     /** Ouvrir la note d'un nœud : Aperçu si elle existe (sans clavier), Écrire si elle est vide */
@@ -3055,13 +3062,9 @@
       if (!(st.sel.size === 1 && st.sel.has(id))) select(id);
       const empty = !n.note.trim();
       st.noteTab = empty && !ro() ? 'write' : 'read';
-      openPane(empty && !ro());
-      requestAnimationFrame(() => {
-        const sec = pane.querySelector('.pane-note');
-        if (!sec) return;
-        const top = sec.getBoundingClientRect().top - paneInner.getBoundingClientRect().top - 8;
-        paneInner.scrollTo({ top: paneInner.scrollTop + top, behavior: motion.reduced() ? 'auto' : 'smooth' });
-      });
+      openPane(empty && !ro() && paneMode() !== 'bottom');
+      // la feuille s'ouvre en haut : type, titre, puis la note (jamais calée sur la note)
+      paneInner.scrollTop = 0;
     }
     let closeAnim = null;
     function closePane() {
@@ -3147,7 +3150,7 @@
 
     function paneHeader(titleText, extra) {
       return h('div.pane-head',
-        h('span.pane-overline', titleText),
+        typeof titleText === 'string' ? h('span.pane-overline', titleText) : titleText,
         h('div.pane-head-actions', extra || null, ui.iconBtn('close', { title: 'Fermer le panneau', onClick: closePane })));
     }
 
@@ -3203,7 +3206,12 @@
       ])) : null;
 
       // type & logique
-      const typeChip = h('button.chip.chip-filter', { type: 'button', 'aria-label': 'Type : ' + T.label, disabled: locked }, h('span', T.label), locked ? null : R.icon('chevronDown', 16));
+      // pastille : couleur réelle du nœud (teinte choisie, sinon couleur du type)
+      const hue = S.styleOf(n, map).color;
+      const sw = R.colors.swatch(n.type);
+      const dot = hue && S.HUES[hue] ? hueCss(hue) : sw ? sw.line || sw.bg : 'var(--on-surface-variant)';
+      const typeChip = h('button.chip.type-chip', { type: 'button', 'aria-label': 'Type : ' + T.label + (locked ? '' : ' — changer'), disabled: locked },
+        h('span.type-dot', { style: { background: dot } }), h('span', T.label), locked ? null : R.icon('chevronDown', 18));
       typeChip.addEventListener('click', () => typeMenu(typeChip, [n.id]));
       const logicSeg = h('div.segmented.seg-xs', { role: 'radiogroup', 'aria-label': 'Logique des éléments rattachés' },
         [[null, '—', 'Sans précision'], ['et', 'ET', 'Cumulatifs'], ['ou', 'OU', 'Alternatifs']].map(([v, l, t]) => {
@@ -3312,7 +3320,7 @@
             S.TYPES[c.type].kicker ? h('span.decomp-kicker', S.kickerOf(map, c, nums)) : null,
             h('span.decomp-t', c.title || 'Sans titre'),
             c.note.trim() ? R.icon('note', 14) : null)))) : null,
-        locked ? null : h('label.decomp-add', R.icon('plus', 18), addIn));
+        locked ? null : h('label.decomp-add', { class: kids.length ? 'joined' : null }, R.icon('plus', 20), addIn));
 
       // liens
       const links = map.edges.filter((e) => e.kind === 'link' && (e.from === n.id || e.to === n.id));
@@ -3340,8 +3348,7 @@
             ? exLine + (r.rating ? `${S.RATINGS[r.rating].label} · ${r.due > Date.now() ? 'prochaine révision ' + dueLabel(r.due) : 'à réviser maintenant'}` : (exs ? 'jamais faits' : 'Jamais révisé — sera proposé en révision'))
             : exs ? 'Aucun exercice ne porte sur ce nœud.' : 'Ajoute une note ou des éléments rattachés pour en faire une carte de révision.'));
 
-      const typeRow = h('div.pane-type-row', typeChip,
-        kids.length <= 1 && !struct ? h('span.pane-hint', n.logic ? (n.logic === 'et' ? 'Cumulatifs (ET)' : 'Alternatifs (OU)') : '') : null);
+      const hint = kids.length <= 1 && !struct && n.logic ? h('span.pane-hint', n.logic === 'et' ? 'Cumulatifs (ET)' : 'Alternatifs (OU)') : null;
 
       // structure : bilan de toute la branche + raccourcis (réviser, isoler)
       let branchSec = null;
@@ -3359,15 +3366,14 @@
 
       const ref = refTarget(n);
       return h('div.pane-body',
-        paneHeader(struct ? S.kickerOf(map, n, nums) : T.label, ui.iconBtn('target', { title: 'Centrer sur la carte', onClick: () => centerOn(n.id) })),
-        crumbs,
-        titleIn,
+        paneHeader(h('div.pane-head-lead', typeChip, struct ? h('span.pane-kicker', S.kickerOf(map, n, nums)) : null, hint),
+          ui.iconBtn('target', { title: 'Centrer sur la carte', onClick: () => centerOn(n.id) })),
+        h('div.pane-title-block', crumbs, titleIn),
         ref ? ui.btn(ref.label, { icon: 'chevronRight', variant: 'tonal', cls: 'pane-cta pane-ref', onClick: () => { flushEdit(); R.app.go(ref.href); } }) : null,
-        typeRow,
         branchSec,
         h('section.pane-sec.pane-note',
           h('div.pane-sec-head', h('h3.pane-sec-title', 'Note'), locked ? h('span.pane-ro', R.icon('lock', 14), 'Lecture seule') : noteTabs),
-          noteBody),
+          h('div.note-card', noteBody)),
         srcSlot,
         decomp,
         linksSec,

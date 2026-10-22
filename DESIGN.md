@@ -148,8 +148,8 @@ Une silhouette par type faisait du bruit. Depuis la v4.1, **trois apparences** s
 
 | Apparence | Types | Traitement |
 |---|---|---|
-| **Notion** | chapitre, section, sous-section, paragraphe, leçon, notion, définition, à retenir | aplat sombre (encre ou teinte), coins larges |
-| **Idée** | idée, méthode, étape, conseil, exercice, date, chiffre, formule | inchangée : discrète, sans bordure |
+| **Notion** | chapitre, section, sous-section, paragraphe, leçon, notion | aplat sombre (encre ou teinte), coins larges |
+| **Idée** | idée, définition, à retenir, méthode, étape, conseil, exercice, date, chiffre, formule | inchangée : discrète, sans bordure |
 | **Référence** | citation, texte, jurisprudence, doctrine, étude, personne | serif italique, filet gauche, fond `surface-container-low` |
 
 - **Style par nœud** (`color`, `w` 80–720, `h` 40–600, `r` 0–40, `font`, `fs` 10–64, `bold`, `pre`) ; par carte `typeColors{type}` (« tous les … ») et `calm` 0–1 (stabilisateur). Valeurs hors bornes retirées par `sanitize` : les anciennes cartes s'ouvrent intactes.

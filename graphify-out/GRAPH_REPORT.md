@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 58 files · ~255,267 words
+- 58 files · ~255,432 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 8 file(s) not represented in the graph (top: .css 6, (none) 1, .webmanifest 1)
 
 ## Summary
-- 882 nodes · 2010 edges · 59 communities (48 shown, 11 thin omitted)
+- 882 nodes · 2011 edges · 59 communities (48 shown, 11 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 169 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4fcfa32c`
+- Built from commit: `03600634`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
