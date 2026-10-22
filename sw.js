@@ -1,5 +1,5 @@
 /* Pioneer — service worker : coque applicative hors-ligne + polices en cache */
-const VERSION = 'pioneer-v4.2.14';
+const VERSION = 'pioneer-v4.2.15';
 const SHELL = [
   './',
   'index.html',

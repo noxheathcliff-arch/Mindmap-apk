@@ -631,8 +631,8 @@
 .src-t { font: var(--body-m); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .src-h { font: var(--body-s); color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* tableau de l'aperçu : modifiable au toucher */
-.note-preview .md-table[data-table] { cursor: pointer; transition: border-color var(--dur-xs) var(--ease-out); }
-@media (hover: hover) { .note-preview .md-table[data-table]:hover { border-color: var(--on-surface); } }
+.note-preview .md-table[data-table] { cursor: pointer; transition: box-shadow var(--dur-xs) var(--ease-out); }
+@media (hover: hover) { .note-preview .md-table[data-table]:hover { box-shadow: 0 0 0 1px var(--outline), 0 2px 6px color-mix(in srgb, var(--on-surface) 10%, transparent); } }
 .src-slot { display: contents; }
 
 /* Légende des couleurs (panneau de la carte) */
@@ -981,7 +981,9 @@
 /* ── Aperçu de la note : une page de lecture (DESIGN.md §4.5) ──
    Corps à la police choisie dans Réglages (--note-*), interligne 1.7, titres en police de marque,
    listes numérotées en pastilles, cases à cocher dessinées, citation « texte de loi » en serif. */
-.note-preview { min-height: 120px; padding: var(--sp-4) var(--sp-5) var(--sp-6); cursor: text; }
+.note-preview { min-height: 80px; padding: var(--sp-1) 0 var(--sp-2); cursor: text; }
+/* en lecture, la note n'est plus dans un cadre : elle s'écrit à même le panneau */
+.note-card:has(> .note-preview) { border: 0; border-radius: 0; background: none; overflow: visible; box-shadow: none; }
 .np-meta {
   display: flex; align-items: center; gap: 6px; margin-bottom: var(--sp-4);
   font: var(--label-m); letter-spacing: var(--tracking-label); color: var(--on-surface-variant);
@@ -1092,17 +1094,25 @@
 .np-body.md hr { height: auto; background: none; margin: 1.6em 0; text-align: center; line-height: 1; }
 .np-body.md hr::before { content: "• • •"; letter-spacing: .6em; padding-left: .6em; font-size: 10px; color: var(--outline); }
 
-/* tableau : carte arrondie, en-tête tonal, rangées alternées */
-.np-body.md .md-table { margin: 1.2em 0; border: 1px solid var(--outline-variant); border-radius: var(--shape-l); }
-.np-body.md table { font-size: .93em; line-height: 1.45; }
-.np-body.md th, .np-body.md td { padding: 10px 14px; border-bottom: 1px solid var(--outline-variant); }
+/* tableau : feuille blanche posée sur le panneau, sans grille ; en-tête en libellés primary
+   séparé par un trait tonal, rangées au filet fin, première colonne en gras */
+.np-body.md .md-table {
+  margin: 1.3em 0; border: 0; border-radius: var(--shape-l);
+  background: var(--surface-container-lowest);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 8%, transparent);
+}
+.np-body.md table { width: 100%; font-size: .94em; line-height: 1.45; font-variant-numeric: tabular-nums; }
+.np-body.md th, .np-body.md td { padding: 12px 16px; min-width: 80px; border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent); }
 .np-body.md th + th, .np-body.md td + td { border-left: 0; }
 .np-body.md thead th {
-  background: var(--secondary-container); color: var(--on-secondary-container); border-bottom: 0;
-  font: 650 12px/16px var(--font-brand); letter-spacing: .04em; text-transform: uppercase;
+  background: none; color: var(--primary); padding-top: 14px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary-container);
+  font: 650 12.5px/16px var(--font-brand); letter-spacing: .02em; text-transform: none;
 }
-.np-body.md tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--surface-container) 55%, transparent); }
-.np-body.md tbody td:first-child { font-weight: 600; }
+.np-body.md tbody tr:last-child td { border-bottom: 0; }
+.np-body.md tbody td:first-child { font-weight: 600; color: var(--on-surface); }
+.np-body.md tbody tr { transition: background-color var(--dur-xs) var(--ease-out); }
+@media (hover: hover) { .np-body.md tbody tr:hover td { background: color-mix(in srgb, var(--primary) 5%, transparent); } }
 
 /* état vide : une invitation, pas un message d'erreur */
 .np-empty { display: grid; justify-items: center; gap: 6px; padding: var(--sp-5) var(--sp-4) var(--sp-3); text-align: center; }
