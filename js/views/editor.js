@@ -3436,10 +3436,10 @@
       const s0 = inWrite ? ta.selectionStart : n.note.length, e0 = inWrite ? ta.selectionEnd : n.note.length;
       const picked = n.note.slice(s0, e0).trim();
       const v = await ui.form({
-        title: 'Ajouter une source', icon: 'globe', ok: 'Ajouter',
+        title: 'Ajouter une source', icon: 'globe', ok: 'Ajouter', cls: 'm3-form', outlined: true,
         fields: [
-          { key: 'url', label: 'Adresse', placeholder: 'https://www.legifrance.gouv.fr/…', required: true },
-          { key: 'title', label: 'Titre (facultatif)', value: picked, placeholder: 'Ex. Cass. civ. 1re, 3 mai 2000' },
+          { key: 'url', label: 'Adresse', placeholder: 'https://www.legifrance.gouv.fr/…', icon: 'globe', required: true },
+          { key: 'title', label: 'Titre', value: picked, placeholder: 'Ex. Cass. civ. 1re, 3 mai 2000', icon: 'type', support: 'Facultatif' },
         ],
       });
       if (!v || !S.node(map, n.id)) return;

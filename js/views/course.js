@@ -34,7 +34,10 @@
   /* Actions sur les cartes                                             */
   /* ------------------------------------------------------------------ */
   R.actions.renameMap = async function (m) {
-    const v = await ui.form({ title: 'Renommer la carte', icon: 'edit', ok: 'Enregistrer', fields: [{ key: 'title', label: 'Titre', value: m.title, required: true }] });
+    const v = await ui.form({
+      title: 'Renommer la carte', icon: 'edit', ok: 'Enregistrer', cls: 'm3-form', outlined: true,
+      fields: [{ key: 'title', label: 'Titre de la carte', value: m.title, icon: 'map', required: true }],
+    });
     if (v) S.updateMap(m.id, { title: v.title.trim() });
   };
 

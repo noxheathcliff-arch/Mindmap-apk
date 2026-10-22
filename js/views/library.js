@@ -75,10 +75,10 @@
 
   R.actions.editCourse = async function (c) {
     const v = await ui.form({
-      title: 'Modifier le cours', icon: 'edit', ok: 'Enregistrer',
+      title: 'Modifier le cours', icon: 'edit', ok: 'Enregistrer', cls: 'm3-form', outlined: true,
       fields: [
-        { key: 'title', label: 'Intitulé du cours', value: c.title, required: true },
-        { key: 'description', label: 'Précision (facultatif)', value: c.description },
+        { key: 'title', label: 'Intitulé du cours', value: c.title, icon: 'library', required: true },
+        { key: 'description', label: 'Précision', value: c.description, placeholder: 'Ex. M1 · S1 · Pr. Dupont', icon: 'edit', support: 'Facultatif · niveau, semestre, enseignant' },
       ],
     });
     if (!v) return;
