@@ -346,13 +346,17 @@
         }
         if (state === 'rate') {
           const label = it.ex ? { revoir: 'Pas trouvé', compris: 'Trouvé', maitrise: 'Facile' } : null;
-          const mk = (rating, variant, key) => h('button.rate-btn', { type: 'button', class: 'rate-' + rating + ' btn-' + variant, onclick: () => rate(rating) },
-            ui.mastery(rating, 14),
+          // l'encre part du point d'appui ; un doigt qui glisse hors de la touche la retire
+          const ink = (e) => { const b = e.currentTarget, r = b.getBoundingClientRect();
+            b.style.setProperty('--px', (e.clientX - r.left) + 'px'); b.style.setProperty('--py', (e.clientY - r.top) + 'px'); b.classList.add('is-ink'); };
+          const dry = (e) => e.currentTarget.classList.remove('is-ink');
+          const mk = (rating, key) => h('button.rate-btn', { type: 'button', class: 'rate-' + rating, onclick: () => rate(rating),
+            onpointerdown: ink, onpointerleave: dry, onpointercancel: dry },
+            h('span.rate-ic', ui.mastery(rating, 14)),
             h('span.rate-l', label ? label[rating] : S.RATINGS[rating].label),
             h('span.rate-next', nextLabel(it.review, rating)),
             h('kbd.rate-kbd', key));
-          put(h('p.review-hint.rq-ask', it.ex ? 'Tu avais trouvé ?' : 'Tu la connaissais ?'));
-          put(h('div.rate-row', mk('revoir', 'outlined', '1'), mk('compris', 'tonal', '2'), mk('maitrise', 'filled', '3')));
+          put(h('div.rate-row', { role: 'group', 'aria-label': it.ex ? 'Tu avais trouvé ?' : 'Tu la connaissais ?' }, mk('revoir', '1'), mk('compris', '2'), mk('maitrise', '3')));
           // les notes arrivent après la réponse (overlap), en cascade courte : 30 ms
           R.motion.stagger(Array.from(set.querySelectorAll('.rate-btn')), 0, { step: 30 });
           return;
@@ -529,6 +533,14 @@
         state = 'busy';
         commit(rating);
         updateProgress();
+        // la touche choisie se gonfle, les autres reculent, puis la barre s'en va
+        const btn = actions.querySelector('.act-set:not(.leaving) .rate-' + rating);
+        if (btn && !motion.reduced()) {
+          btn.parentNode.classList.add('picked'); btn.classList.add('is-pick');
+          motion.haptic(rating === 'revoir' ? 14 : 8);
+          await wait(260);
+          if (!alive(g)) return;
+        }
         paintActions();
         if (rating === 'maitrise') {
           const r = nb.book.getBoundingClientRect();

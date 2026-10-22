@@ -368,7 +368,6 @@
   padding: var(--sp-6) var(--margin) 0;
   overflow-y: auto; overflow-x: hidden;
 }
-.rq-ask { font: var(--title-s); color: var(--on-surface); }
 .end-score { display: inline-flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); border-radius: var(--shape-full); background: var(--primary-container); color: var(--on-primary-container); font: var(--label-l); max-width: 100%; text-align: left; }
 
 .decomp-logic { flex: none; font: 700 10px/16px var(--font-plain); padding: 0 6px; border-radius: var(--shape-xs); background: var(--inverse-surface); color: var(--inverse-on-surface); letter-spacing: .04em; }
@@ -399,26 +398,64 @@
 .reveal-btn:active:not(:disabled) { border-radius: var(--shape-l); }
 .hint-btn { height: 56px; flex: none; }
 .review-hint { font: var(--body-s); color: var(--on-surface-variant); text-align: center; }
-/* notes : une barre flottante (floating toolbar M3) qui porte un groupe de boutons */
-.rate-row {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2);
-  width: min(680px, 100%); padding: var(--sp-2);
-  border-radius: var(--shape-xli); background: var(--surface-container); box-shadow: var(--elev-2);
+/* notes : trois touches de verre dépoli sur une barre flottante. Chaque note a son accent
+   (rouge · ambre · bleu) : au repos une teinte à 9 %, au doigt l'encre se répand depuis le point
+   d'appui, la touche choisie se gonfle, les deux autres s'effacent, puis la page se tourne. */
+.review-actions .rate-row {
+  --rr: 30px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  width: min(560px, 100%); padding: 6px;
+  border-radius: var(--rr);
+  background: color-mix(in srgb, var(--surface-container-lowest) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
+  box-shadow: 0 1px 0 rgb(255 255 255 / .55) inset, 0 1px 2px rgb(20 24 40 / .06), 0 8px 24px -6px rgb(20 24 40 / .16), 0 24px 48px -24px rgb(20 24 40 / .22);
 }
+.rate-revoir   { --acc: var(--error);   --on-acc: var(--on-error); }
+.rate-compris  { --acc: #a35f00;        --on-acc: #fff; }
+.rate-maitrise { --acc: var(--primary); --on-acc: var(--on-primary); }
+:root[data-theme="dark"] .rate-compris { --acc: #ffb95c; --on-acc: #2b1700; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rate-compris { --acc: #ffb95c; --on-acc: #2b1700; } }
 .rate-btn {
-  display: grid; justify-items: center; align-content: center; gap: 2px;
-  min-height: 64px; padding: var(--sp-2); border-radius: var(--shape-li);
-  font: var(--label-l); color: var(--on-surface);
-  transition: transform var(--dur-spring-default) var(--spring-default), border-radius var(--dur-spring-fast) var(--spring-fast);
+  --px: 50%; --py: 50%;
+  display: grid; justify-items: center; align-content: center; gap: 3px;
+  min-height: 84px; padding: 10px 6px 9px;
+  border-radius: calc(var(--rr) - 6px);
+  background: color-mix(in srgb, var(--acc) 9%, var(--surface-container-lowest));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 14%, transparent) inset;
+  color: var(--on-surface);
+  transition: transform 420ms var(--spring-default), opacity 220ms var(--ease-out), filter 220ms var(--ease-out), color 160ms var(--ease-out), box-shadow 220ms var(--ease-out);
 }
-.rate-btn:active { transform: scale(.96); border-radius: var(--shape-m); transition-duration: var(--dur-xs), var(--dur-sm); transition-timing-function: var(--ease-out); }
-.rate-btn.btn-outlined { background: var(--error-container); color: var(--on-error-container); box-shadow: none; }
-.rate-btn.btn-tonal { background: var(--secondary-container); color: var(--on-secondary-container); }
-.rate-btn.btn-filled { background: var(--primary); color: var(--on-primary); }
-.rate-btn .mastery { color: inherit; }
-.rate-l { font: var(--title-s); }
-.rate-next { font: var(--label-s); }
-.rate-kbd { position: absolute; top: 6px; right: 8px; font-size: 10px; line-height: 14px; padding: 0 5px; background: color-mix(in srgb, currentColor 14%, transparent); border: 0; color: inherit; }
+.rate-btn::before { background: var(--acc); }
+/* l'encre : un disque à l'accent qui part du point d'appui */
+.rate-btn::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(circle at 50% 0%, rgb(255 255 255 / .22), transparent 60%), var(--acc);
+  clip-path: circle(0 at var(--px) var(--py));
+  transition: clip-path 380ms cubic-bezier(.2, .8, .2, 1);
+}
+.rate-btn.is-ink::after, .rate-btn.is-pick::after { clip-path: circle(150% at var(--px) var(--py)); }
+.rate-btn.is-ink, .rate-btn.is-pick { color: var(--on-acc); }
+.rate-btn:active { transform: scale(.95); transition-duration: 120ms, 220ms, 220ms, 160ms, 220ms; transition-timing-function: var(--ease-out); }
+.rate-ic {
+  display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 3px; border-radius: 50%;
+  background: var(--acc); color: var(--on-acc);
+  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--acc) 70%, transparent);
+  transition: transform 460ms var(--spring-default), background 160ms, color 160ms;
+}
+.rate-btn .mastery { color: inherit; border-width: 1.75px; }
+.rate-btn.is-ink .rate-ic, .rate-btn.is-pick .rate-ic { background: var(--on-acc); color: var(--acc); }
+.rate-btn:hover .rate-ic { transform: translateY(-1px) scale(1.06); }
+.rate-l { font: var(--title-s); font-weight: 600; letter-spacing: -.005em; }
+.rate-next { font: var(--label-s); font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 68%, transparent); }
+.rate-btn.is-ink .rate-next, .rate-btn.is-pick .rate-next { color: inherit; opacity: .85; }
+/* le choix : la touche se gonfle (ressort), l'icône fait un tour, les autres reculent */
+.rate-row.picked .rate-btn { pointer-events: none; }
+.rate-row.picked .rate-btn:not(.is-pick) { opacity: .32; transform: scale(.94); filter: saturate(.4); }
+.rate-btn.is-pick { transform: scale(1.04); box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--acc) 75%, transparent); }
+.rate-btn.is-pick .rate-ic { transform: scale(1.18) rotate(-12deg); }
+.rate-kbd { position: absolute; top: 7px; right: 9px; font-size: 10px; line-height: 15px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, currentColor 10%, transparent); border: 0; color: inherit; opacity: .7; }
+:root[data-motion="reduce"] .rate-btn, :root[data-motion="reduce"] .rate-btn::after, :root[data-motion="reduce"] .rate-ic { transition: none; }
 @media (hover: none) { .rate-kbd, .btn-kbd { display: none; } }
 .review-stage.is-end .review-actions { display: none; }
 :root[data-motion="reduce"] .act-set.enter { animation-name: rm-fade !important; }
