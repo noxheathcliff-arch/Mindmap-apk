@@ -547,3 +547,29 @@
 .ctxbar > .ctx-primary.lux.has-count:only-child { padding-right: var(--sp-4); }
 /* dans la barre : 48 de haut (barre 64 = 8 + 48 + 8), .btn seul en donnerait 40 */
 .ctxbar > .ctx-primary.lux:not(:only-child) { height: 48px; }
+
+/* Curseur M3 Expressive : piste épaisse, poignée en barre verticale, écart autour de la poignée.
+   --p = remplissage (0–100 %) posé par le JS. La poignée s'affine à la prise (anticipation). */
+.slider {
+  --p: 50%; --track: 16px; --thumb-w: 4px;
+  -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 44px; margin: 0;
+  background: transparent; cursor: pointer; touch-action: pan-y;
+}
+.slider:focus-visible { outline: none; }
+.slider::-webkit-slider-runnable-track {
+  height: var(--track); border-radius: 8px;
+  background:
+    linear-gradient(90deg, var(--primary) 0 calc(var(--p) - 6px), transparent calc(var(--p) - 6px) calc(var(--p) + 6px), var(--secondary-container, var(--surface-container-highest)) calc(var(--p) + 6px));
+}
+.slider::-moz-range-track { height: var(--track); border-radius: 8px; background: var(--secondary-container, var(--surface-container-highest)); }
+.slider::-moz-range-progress { height: var(--track); border-radius: 8px 2px 2px 8px; background: var(--primary); }
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: var(--thumb-w); height: 44px; margin-top: calc((var(--track) - 44px) / 2);
+  border-radius: 2px; background: var(--primary); border: 0;
+  transition: width var(--dur-s, 160ms) cubic-bezier(.42, 1.67, .21, .9);
+}
+.slider::-moz-range-thumb { width: var(--thumb-w); height: 44px; border-radius: 2px; background: var(--primary); border: 0; }
+.slider:active::-webkit-slider-thumb { width: 2px; }
+.slider:active::-moz-range-thumb { width: 2px; }
+.slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--primary); }
+@media (prefers-reduced-motion: reduce) { .slider::-webkit-slider-thumb { transition: none; } }

@@ -64,7 +64,7 @@
     symmetric: ['s’oppose à', 'se distingue de', '≠', 'ressemble à', 'contraire de', 'va de pair avec', 'est associé à', 'corrélé à', 'voir aussi'],
     vague:    ['lié à', 'lien', 'rapport', 'relation', 'en lien avec', 'concerne', 'cf', 'cf.', '?', '-', '→'],
   };
-  const STRUCT = new Set(['chapitre', 'lecon', 'section', 'soussection']);
+  const STRUCT = new Set(['chapitre', 'lecon', 'section', 'soussection', 'paragraphe']);
   const LAW_TYPES = new Set(['texte', 'juris', 'doctrine']);
   /* Couples (type source → type cible) pour lesquels les types disent la relation ; tout autre
      couple ne reçoit aucun lien causal (un problème n'est pas « résolu par » sa conséquence). */

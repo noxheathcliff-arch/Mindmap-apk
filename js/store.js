@@ -92,7 +92,7 @@
   };
 
   /** Taxonomie des nœuds — différenciés sans couleur (cf. DESIGN.md §4.4).
-      `rank` : nœuds de structure d'un cours (Chapitre › Section › Sous-section ; Leçon gardée pour les anciennes cartes), numérotés automatiquement. */
+      `rank` : nœuds de structure d'un cours (Chapitre › Section › Sous-section › Paragraphe ; Leçon gardée pour les anciennes cartes), numérotés automatiquement. */
   const TYPES = {
     notion:     { label: 'Notion',             kicker: '',              prompt: 'Décompose cette notion' },
     definition: { label: 'Définition',         kicker: 'Définition',    prompt: 'Donne la définition' },
@@ -102,6 +102,7 @@
     chapitre:   { label: 'Chapitre',           kicker: 'Chapitre',      prompt: 'Retrouve le plan de ce chapitre', rank: 1 },
     section:    { label: 'Section',            kicker: 'Section',       prompt: 'Retrouve le plan de cette section', rank: 2 },
     soussection: { label: 'Sous-section',      kicker: 'Sous-section',  prompt: 'Retrouve le plan de cette sous-section', rank: 3 },
+    paragraphe: { label: 'Paragraphe',         kicker: 'Paragraphe',    prompt: 'Retrouve le plan de ce paragraphe', rank: 4 },
     lecon:      { label: 'Leçon',              kicker: 'Leçon',         prompt: 'Retrouve le plan de cette leçon', rank: 2 },
     doctrine:   { label: 'Doctrine',           kicker: 'Doctrine',      prompt: 'Quelle est cette position doctrinale ?' },
     retenir:    { label: 'À retenir',          kicker: 'À retenir',     prompt: 'Restitue l’essentiel' },
@@ -118,10 +119,10 @@
     exercice:   { label: 'Exercice',           kicker: 'Exercice',      prompt: 'Fais l’exercice : que faut-il faire ?' },
     etude:      { label: 'Étude / Expérience', kicker: 'Étude',         prompt: 'Que montre cette étude ?' },
   };
-  /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–4 */
-  const TYPE_ORDER = ['notion', 'definition', 'idee', 'texte', 'juris', 'doctrine', 'retenir', 'methode', 'etape', 'chapitre', 'section', 'soussection', 'lecon',
+  /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–5 */
+  const TYPE_ORDER = ['notion', 'definition', 'idee', 'texte', 'juris', 'doctrine', 'retenir', 'methode', 'etape', 'chapitre', 'section', 'soussection', 'paragraphe', 'lecon',
     'conseil', 'exercice', 'date', 'chiffre', 'formule', 'etude', 'citation', 'personne'];
-  const STRUCT_ORDER = ['chapitre', 'section', 'soussection', 'lecon'];
+  const STRUCT_ORDER = ['chapitre', 'section', 'soussection', 'paragraphe', 'lecon'];
   /** Regroupement du menu « Type » (divulgation par familles) */
   const TYPE_GROUPS = [
     { label: 'Structure du cours', types: STRUCT_ORDER },
@@ -139,11 +140,112 @@
     objectif: 'idee', question: 'idee', categorie: 'notion', theorie: 'notion',
   };
   const isStruct = (type) => !!(TYPES[type] && TYPES[type].rank);
+
+  /* ---------------- Apparences, palette, polices (refonte des cartes, DESIGN §4.4) ---------------- */
+  /** Trois apparences seulement : le type ne change plus la silhouette, juste un détail (sur-titre, chiffres…) */
+  const LOOK_REF = new Set(['etude', 'citation', 'personne', 'texte', 'juris', 'doctrine']);
+  const LOOK_NOTION = new Set(['chapitre', 'section', 'soussection', 'paragraphe', 'lecon', 'notion', 'definition', 'retenir']);
+  const look = (type) => (LOOK_REF.has(type) ? 'ref' : LOOK_NOTION.has(type) ? 'notion' : 'idee');
+  const LOOKS = { notion: 'Notion', idee: 'Idée', ref: 'Référence' };
+  /** Palette partagée par les nœuds et les liens : teinte OKLCH (h) et chroma (c) ; les aplats sont dérivés par thème */
+  const HUES = {
+    rouge: { label: 'Rouge', h: 25, c: 0.16 }, orange: { label: 'Orange', h: 55, c: 0.15 }, ambre: { label: 'Ambre', h: 85, c: 0.14 },
+    olive: { label: 'Olive', h: 115, c: 0.12 }, vert: { label: 'Vert', h: 150, c: 0.14 }, menthe: { label: 'Menthe', h: 175, c: 0.12 },
+    sarcelle: { label: 'Sarcelle', h: 200, c: 0.11 }, ciel: { label: 'Ciel', h: 230, c: 0.12 }, bleu: { label: 'Bleu', h: 260, c: 0.15 },
+    indigo: { label: 'Indigo', h: 285, c: 0.15 }, violet: { label: 'Violet', h: 310, c: 0.15 }, rose: { label: 'Rose', h: 345, c: 0.15 },
+    ardoise: { label: 'Ardoise', h: 250, c: 0.03 },
+  };
+  /** Polices proposées (chargées à la demande, cf. R.fonts) — cw : chasse moyenne / corps, pour estimer la taille hors DOM.
+      spec null : déjà chargée par index.html. */
+  const FONTS = {
+    jakarta:      { name: 'Plus Jakarta Sans', cat: 'Sans', cw: 0.54, spec: null, fb: 'system-ui, sans-serif' },
+    inter:        { name: 'Inter', cat: 'Sans', cw: 0.53, spec: 'Inter:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },
+    dmsans:       { name: 'DM Sans', cat: 'Sans', cw: 0.52, spec: 'DM+Sans:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },
+    figtree:      { name: 'Figtree', cat: 'Sans', cw: 0.51, spec: 'Figtree:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },
+    manrope:      { name: 'Manrope', cat: 'Sans', cw: 0.55, spec: 'Manrope:wght@400;700', fb: 'system-ui, sans-serif' },
+    outfit:       { name: 'Outfit', cat: 'Sans', cw: 0.5, spec: 'Outfit:wght@400;700', fb: 'system-ui, sans-serif' },
+    atkinson:     { name: 'Atkinson Hyperlegible', cat: 'Sans', cw: 0.55, spec: 'Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },
+    spacegrotesk: { name: 'Space Grotesk', cat: 'Caractère', cw: 0.55, spec: 'Space+Grotesk:wght@400;700', fb: 'system-ui, sans-serif' },
+    bricolage:    { name: 'Bricolage Grotesque', cat: 'Caractère', cw: 0.52, spec: 'Bricolage+Grotesque:wght@400;700', fb: 'system-ui, sans-serif' },
+    sora:         { name: 'Sora', cat: 'Caractère', cw: 0.58, spec: 'Sora:wght@400;700', fb: 'system-ui, sans-serif' },
+    serif4:       { name: 'Source Serif 4', cat: 'Serif', cw: 0.5, spec: null, fb: 'Georgia, serif' },
+    literata:     { name: 'Literata', cat: 'Serif', cw: 0.53, spec: 'Literata:ital,wght@0,400;0,700;1,400', fb: 'Georgia, serif' },
+    lora:         { name: 'Lora', cat: 'Serif', cw: 0.52, spec: 'Lora:ital,wght@0,400;0,700;1,400', fb: 'Georgia, serif' },
+    garamond:     { name: 'EB Garamond', cat: 'Serif', cw: 0.45, spec: 'EB+Garamond:ital,wght@0,400;0,700;1,400', fb: 'Garamond, Georgia, serif' },
+    baskerville:  { name: 'Libre Baskerville', cat: 'Serif', cw: 0.58, spec: 'Libre+Baskerville:ital,wght@0,400;0,700;1,400', fb: 'Baskerville, Georgia, serif' },
+    fraunces:     { name: 'Fraunces', cat: 'Titrage', cw: 0.53, spec: 'Fraunces:ital,wght@0,400;0,700;1,400', fb: 'Georgia, serif' },
+    playfair:     { name: 'Playfair Display', cat: 'Titrage', cw: 0.5, spec: 'Playfair+Display:ital,wght@0,400;0,700;1,400', fb: 'Georgia, serif' },
+    cormorant:    { name: 'Cormorant Garamond', cat: 'Titrage', cw: 0.42, spec: 'Cormorant+Garamond:ital,wght@0,400;0,700;1,400', fb: 'Garamond, Georgia, serif' },
+    dmserif:      { name: 'DM Serif Display', cat: 'Titrage', cw: 0.5, spec: 'DM+Serif+Display:ital@0;1', fb: 'Georgia, serif' },
+    zilla:        { name: 'Zilla Slab', cat: 'Titrage', cw: 0.48, spec: 'Zilla+Slab:ital,wght@0,400;0,700;1,400', fb: 'Rockwell, Georgia, serif' },
+    mono:         { name: 'JetBrains Mono', cat: 'Mono & main', cw: 0.6, spec: null, fb: 'ui-monospace, monospace' },
+    caveat:       { name: 'Caveat', cat: 'Mono & main', cw: 0.4, spec: null, fb: 'cursive' },
+    kalam:        { name: 'Kalam', cat: 'Mono & main', cw: 0.5, spec: null, fb: 'cursive' },
+  };
+  /** Niveaux typographiques réglables (Réglages › Typographie des cartes) et leurs défauts, proches du rendu d'origine */
+  const TYPO_LEVELS = {
+    chapitre:    { label: 'Chapitre',     font: 'jakarta', size: 26, bold: false, prefix: false },
+    section:     { label: 'Section',      font: 'jakarta', size: 21, bold: false, prefix: false },
+    soussection: { label: 'Sous-section', font: 'jakarta', size: 17, bold: true,  prefix: false },
+    paragraphe:  { label: 'Paragraphe',   font: 'jakarta', size: 15, bold: true,  prefix: false },
+    lecon:       { label: 'Leçon',        font: 'jakarta', size: 21, bold: false, prefix: false },
+    notion:      { label: 'Notion',       font: 'jakarta', size: 16, bold: true },
+    idee:        { label: 'Idée',         font: 'jakarta', size: 14, bold: false },
+    ref:         { label: 'Référence',    font: 'serif4',  size: 15, bold: false },
+    note:        { label: 'Notes',        font: 'jakarta', size: 15, bold: false },
+  };
+  /** Niveau typographique d'un nœud : la structure garde le sien, le reste suit son apparence */
+  const levelOf = (type) => (TYPO_LEVELS[type] && TYPES[type] && TYPES[type].rank ? type : look(type));
+  const SIZE = { fs: [10, 64], w: [80, 720], h: [40, 600], r: [0, 40] };
+  const inRange = (v, [a, b]) => Number.isFinite(+v) && v !== null && v !== '' && +v >= a && +v <= b;
+  /** Champs de style d'un nœud, validés (une valeur hors bornes est retirée : le défaut reprend) */
+  function cleanNodeStyle(n) {
+    const o = {};
+    if (n.color && HUES[n.color]) o.color = n.color;
+    for (const k of ['w', 'h', 'r', 'fs']) if (inRange(n[k], SIZE[k])) o[k] = Math.round(+n[k]);
+    if (n.font && FONTS[n.font]) o.font = n.font;
+    if (typeof n.bold === 'boolean') o.bold = n.bold;
+    if (typeof n.pre === 'boolean') o.pre = n.pre;
+    return o;
+  }
+  const EDGE_DASH = ['solid', 'dash', 'dot'], EDGE_SHAPE = ['auto', 'curve', 'straight', 'elbow'], EDGE_ARROW = ['auto', 'none', 'end', 'both'];
+  const SIDES = ['t', 'r', 'b', 'l'];
+  /** Apparence et tracé d'un lien, validés : style, ancres (côté + position 0–1), point de courbure */
+  function cleanEdgeStyle(e) {
+    const o = {};
+    if (e.style && typeof e.style === 'object') {
+      const s = {};
+      if (e.style.c && HUES[e.style.c]) s.c = e.style.c;
+      if (inRange(e.style.w, [1, 8])) s.w = Math.round(+e.style.w * 2) / 2;
+      if (EDGE_DASH.includes(e.style.dash) && e.style.dash !== 'solid') s.dash = e.style.dash;
+      if (EDGE_SHAPE.includes(e.style.shape) && e.style.shape !== 'auto') s.shape = e.style.shape;
+      if (EDGE_ARROW.includes(e.style.arrow) && e.style.arrow !== 'auto') s.arrow = e.style.arrow;
+      if (Object.keys(s).length) o.style = s;
+    }
+    for (const k of ['a1', 'a2']) {
+      const a = e[k];
+      if (a && SIDES.includes(a.s)) o[k] = { s: a.s, t: inRange(a.t, [0, 1]) ? Math.round(+a.t * 1000) / 1000 : 0.5 };
+    }
+    if (e.bend && Number.isFinite(+e.bend.x) && Number.isFinite(+e.bend.y) && e.bend.x !== null && e.bend.y !== null) {
+      o.bend = { x: U.clamp(Math.round(+e.bend.x), -4000, 4000), y: U.clamp(Math.round(+e.bend.y), -4000, 4000) };
+    }
+    return o;
+  }
+  /** Chiffres romains (préfixe « Paragraphe II ») */
+  function roman(n) {
+    let s = '', v = Math.max(1, Math.min(3999, n | 0));
+    for (const [k, r] of [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]) {
+      while (v >= k) { s += r; v -= k; }
+    }
+    return s;
+  }
+  /** Libellé de lien : 80 caractères (double de l'ancienne limite) */
+  const LABEL_MAX = 80;
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
   const LAYOUTS = ['right', 'balanced', 'down', 'organic'];
   /** Dossiers du plan d'un cours : le niveau (pour l'affichage) ; le numéro exact est dans `label` */
-  const FOLDER_KINDS = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'soussection', 'autre'];
-  const FOLDER_LABELS = { partie: 'Partie', titre: 'Titre', soustitre: 'Sous-titre', chapitre: 'Chapitre', section: 'Section', soussection: 'Sous-section', autre: 'Dossier' };
+  const FOLDER_KINDS = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'soussection', 'paragraphe', 'autre'];
+  const FOLDER_LABELS = { partie: 'Partie', titre: 'Titre', soustitre: 'Sous-titre', chapitre: 'Chapitre', section: 'Section', soussection: 'Sous-section', paragraphe: 'Paragraphe', autre: 'Dossier' };
 
   const RATINGS = {
     revoir:   { label: 'À revoir', fill: 1 },
@@ -303,6 +405,8 @@
         ...(n.ref ? { ref: String(n.ref) } : {}),
         // mise en relief : un fragment du titre à retenir (« une ou plusieurs »)
         ...(n.em && String(n.title ?? '').toLowerCase().includes(String(n.em).toLowerCase()) ? { em: String(n.em).slice(0, 60) } : {}),
+        // apparence propre au nœud : couleur, dimensions, arrondi, police, corps, gras, préfixe numéroté
+        ...cleanNodeStyle(n),
         review: cleanReview(n.review),
       }));
       const ids = new Set(nodes.map((n) => n.id));
@@ -311,8 +415,10 @@
         if (!ok) note('droppedEdges');
         return ok;
       }).map((e) => ({
-          id: String(e.id || U.uid('e')), from: String(e.from), to: String(e.to), kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || ''),
+          id: String(e.id || U.uid('e')), from: String(e.from), to: String(e.to), kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || '').slice(0, LABEL_MAX),
           ...(e.group ? { group: String(e.group) } : {}),
+          // apparence et tracé libres (couleur, trait, forme, flèche, ancres, courbure)
+          ...cleanEdgeStyle(e),
         })) : [];
       // une seule arête hiérarchique entrante par nœud, et pas de cycle (l'arête qui le fermerait
       // devient un renvoi : rien n'est perdu, la carte reste rangeable)
@@ -350,6 +456,10 @@
         // disposition : celle en place (layout) et celle choisie par l'utilisateur (layoutPick, sinon automatique)
         ...(LAYOUTS.includes(m.layout) ? { layout: m.layout } : {}),
         ...(LAYOUTS.includes(m.layoutPick) ? { layoutPick: m.layoutPick } : {}),
+        // couleur par type propre à la carte (« tous les <type> ») et stabilisateur des liens (0 libre → 1 orthogonal)
+        ...(m.typeColors && typeof m.typeColors === 'object' && Object.keys(m.typeColors).some((t) => TYPES[t] && HUES[m.typeColors[t]])
+          ? { typeColors: Object.fromEntries(Object.entries(m.typeColors).filter(([t, c]) => TYPES[t] && HUES[c])) } : {}),
+        ...(inRange(m.calm, [0, 1]) && +m.calm > 0 ? { calm: Math.round(+m.calm * 100) / 100 } : {}),
         // rangement : journal des corrections appliquées et corrections refusées (elles ne reviennent pas)
         ...(Array.isArray(m.organizeLog) && m.organizeLog.length ? { organizeLog: m.organizeLog.filter((x) => x && x.key && x.title).slice(-60).map((x) => ({
           at: +x.at || 0, key: String(x.key), kind: String(x.kind || ''), title: String(x.title), detail: String(x.detail || '').slice(0, 240),
@@ -400,13 +510,70 @@
       out.settings.readingAids = d.settings.readingAids !== false;
       // Ranger applique de lui-même les corrections d'organisation établies (vérifiées, annulables)
       out.settings.autoOrganize = d.settings.autoOrganize !== false;
+      // typographie des cartes par niveau (chapitre, section… notes) : seules les valeurs valides sont gardées
+      const ty = d.settings.typo;
+      if (ty && typeof ty === 'object') {
+        const typo = {};
+        for (const lv of Object.keys(TYPO_LEVELS)) {
+          const v = ty[lv];
+          if (!v || typeof v !== 'object') continue;
+          const o = {};
+          if (v.font && FONTS[v.font]) o.font = v.font;
+          if (inRange(v.size, SIZE.fs)) o.size = Math.round(+v.size);
+          if (typeof v.bold === 'boolean') o.bold = v.bold;
+          if (typeof v.prefix === 'boolean' && 'prefix' in TYPO_LEVELS[lv]) o.prefix = v.prefix;
+          if (v.num === '1' || v.num === 'I') o.num = v.num;
+          if (Object.keys(o).length) typo[lv] = o;
+        }
+        if (Object.keys(typo).length) out.settings.typo = typo;
+      }
     }
     return out;
   }
 
   const store = {
     TYPES, TYPE_ORDER, STRUCT_ORDER, TYPE_GROUPS, REMOVED_TYPES, RATINGS, INTERVALS, EXERCISE_KINDS, FOLDER_KINDS, FOLDER_LABELS,
-    isStruct,
+    LOOKS, HUES, FONTS, TYPO_LEVELS, SIZE, LABEL_MAX, EDGE_DASH, EDGE_SHAPE, EDGE_ARROW, SIDES,
+    isStruct, look, levelOf, roman, cleanNodeStyle, cleanEdgeStyle,
+    /** Typographie effective d'un niveau (réglages par-dessus les défauts) */
+    typoOf(level) {
+      const base = TYPO_LEVELS[level] || TYPO_LEVELS.idee;
+      const mine = (this.data.settings.typo || {})[level] || {};
+      return { ...base, ...mine };
+    },
+    /** Style résolu d'un nœud : apparence, police, corps, gras, préfixe, couleur (nœud › type dans la carte › rien) */
+    styleOf(n, map) {
+      const level = levelOf(n.type);
+      const t = this.typoOf(level);
+      const fontKey = n.font || t.font;
+      const color = n.color || (map && map.typeColors && map.typeColors[n.type]) || null;
+      return {
+        look: look(n.type), level, fontKey, font: FONTS[fontKey] || FONTS.jakarta,
+        fs: n.fs || t.size, bold: typeof n.bold === 'boolean' ? n.bold : !!t.bold,
+        prefix: !!TYPES[n.type].rank && (typeof n.pre === 'boolean' ? n.pre : !!t.prefix), num: t.num || 'I',
+        color, w: n.w || 0, h: n.h || 0, r: Number.isFinite(n.r) ? n.r : null,
+      };
+    },
+    /** Préfixe numéroté écrit devant le titre (« Paragraphe II ») — rang parmi les frères du même type, 1 s'il est seul */
+    prefixOf(map, n, idx) {
+      const T = TYPES[n.type];
+      if (!T.rank) return '';
+      const st = this.styleOf(n, map);
+      const i = (idx || this.structIndex(map)).get(n.id) || 1;
+      return `${T.kicker} ${st.num === '1' ? i : roman(i)}`;
+    },
+    /** Rang de chaque nœud de structure parmi ses frères du même type (toujours numéroté, même seul) */
+    structIndex(map) {
+      const out = new Map();
+      const parents = new Set();
+      for (const e of map.edges) if (e.kind === 'tree') parents.add(e.from);
+      const lists = [this.roots(map), ...[...parents].map((id) => this.childrenOf(map, id))];
+      for (const sibs of lists) {
+        const k = new Map();
+        for (const n of sibs) if (isStruct(n.type)) { k.set(n.type, (k.get(n.type) || 0) + 1); out.set(n.id, k.get(n.type)); }
+      }
+      return out;
+    },
     normalizeGroups,
     sanitize, // exposé pour les tests (journal et refus du rangement survivent à l’export)
     /** Branches d'une fourche (liens du même groupe) — [] si le lien n'est pas groupé */

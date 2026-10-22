@@ -21,7 +21,7 @@
 const fs = require('fs'), path = require('path');
 const { S, O, makeMap } = require('./harness.cjs');
 
-const STRUCT = new Set(['chapitre', 'lecon', 'section', 'soussection']);
+const STRUCT = new Set(['chapitre', 'lecon', 'section', 'soussection', 'paragraphe']);
 const heading = (n) => !n || STRUCT.has(n.type) || /\?\s*$/.test(n.title);
 const n0 = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const VERB = /^(entraine|provoque|produit|a pour cause|resulte de|suppose|exige|permet|resolu par|pose|vise|se reconnait a|se caracterise par|comprend|appliqu|fonde sur)/;

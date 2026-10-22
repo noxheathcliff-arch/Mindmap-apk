@@ -66,7 +66,6 @@
     seq: [1, 0],
   };
   const GAP_X = P.depthGap, GAP_Y = 16, GAP_ROOT = P.rootGap; // compatibilité
-  const STACK = { indent: 24, top: 24, gap: 24, spine: 16 }; // pyramide : feuilles en colonne sous le parent
   const SEQ = { gap: 40 }; // séquence : écart entre deux étapes (place pour la flèche)
 
   /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
@@ -76,6 +75,7 @@
     lecon:    { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
     section:  { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
     soussection: { cw: 8.6, pad: 35, lh: 22, base: 25, min: 120, max: 280, bar: 10 },
+    paragraphe: { cw: 8.2, pad: 33, lh: 21, base: 24, min: 110, max: 270, bar: 8 },
     notion:   { cw: 8.4,  pad: 43, lh: 24, base: 27, min: 64,  max: 260, bar: 0 },
     chiffre:  { cw: 9.6,  pad: 33, lh: 26, base: 22, min: 64,  max: 260, bar: 0 },
   };
@@ -125,11 +125,9 @@
   }
   const polyLen = (pts) => { let s = 0; for (let i = 1; i < pts.length; i++) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return s; };
 
-  /** Pyramide : enfant rangé en colonne sous son parent (liste de feuilles) */
-  const stacked = (a, sa, b) => b.y >= a.y + sa.h - 1 && b.x >= a.x + 4 && b.x <= a.x + STACK.indent + 20;
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
   function treeSides(mode, a, sa, b, sb) {
-    if (mode === 'down') return stacked(a, sa, b) ? ['b', 'l'] : b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
+    if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
     const gap = 6;
     if (b.x >= a.x + sa.w + gap) return ['r', 'l'];
     if (b.x + sb.w <= a.x - gap) return ['l', 'r'];
@@ -191,25 +189,113 @@
     }
     return out;
   }
-  /** Dent de peigne : parent → épine (mi-chemin de la colonne des enfants) → enfant */
-  function combTooth(a, kids, b) {
-    const left = b.x < a.x;
-    const col = left ? Math.max(...kids.map((k) => k.x + k.w)) : Math.min(...kids.map((k) => k.x));
-    const p1 = [left ? a.x : a.x + a.w, a.y + a.h / 2];
-    const x = left ? Math.min(p1[0] - 14, col + 30) : Math.max(p1[0] + 14, col - 30);
-    const y = b.y + b.h / 2;
-    const tx = left ? b.x + b.w : b.x;
-    return elbow(Math.abs(y - p1[1]) < 1 ? [p1, [tx, y]] : [p1, [x, p1[1]], [x, y], [tx, y]], 12);
+  /* ---- Stabilisateur et tracé manuel ------------------------------------
+     calm(cv, k) : 0 = courbe telle quelle, 1 = coude orthogonal propre ; entre les deux, les deux
+     tracés sont échantillonnés à abscisse égale, mélangés, puis relissés (Catmull-Rom). */
+  const snapDir = (v) => (Math.abs(v[0]) >= Math.abs(v[1]) ? [Math.sign(v[0]) || 1, 0] : [0, Math.sign(v[1]) || 1]);
+  /** Coude orthogonal entre p1 (sortie d1) et p2 (entrée par d2, tourné vers l'extérieur du nœud) */
+  function orthoOf(p1, d1, p2, d2, r = 14) {
+    const h1 = !!d1[0], h2 = !!d2[0];
+    let pts;
+    if (h1 && h2) { const mx = (p1[0] + p2[0]) / 2; pts = [p1, [mx, p1[1]], [mx, p2[1]], p2]; }
+    else if (!h1 && !h2) { const my = (p1[1] + p2[1]) / 2; pts = [p1, [p1[0], my], [p2[0], my], p2]; }
+    else if (h1) pts = [p1, [p2[0], p1[1]], p2];
+    else pts = [p1, [p1[0], p2[1]], p2];
+    return elbow(pts.filter((q, i) => !i || Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) > 0.5), r);
+  }
+  /** Points échantillonnés à abscisse curviligne régulière */
+  function resample(cv, n) {
+    const raw = sample(cv, n * 3), acc = [0];
+    for (let i = 1; i < raw.length; i++) acc.push(acc[i - 1] + Math.hypot(raw[i][0] - raw[i - 1][0], raw[i][1] - raw[i - 1][1]));
+    const L = acc[acc.length - 1] || 1, out = [];
+    for (let k = 0, j = 1; k <= n; k++) {
+      const want = (k / n) * L;
+      while (j < raw.length - 1 && acc[j] < want) j++;
+      const f = acc[j] - acc[j - 1] ? (want - acc[j - 1]) / (acc[j] - acc[j - 1]) : 0;
+      out.push([raw[j - 1][0] + (raw[j][0] - raw[j - 1][0]) * f, raw[j - 1][1] + (raw[j][1] - raw[j - 1][1]) * f]);
+    }
+    return out;
+  }
+  /** Courbe lisse passant par des points (Catmull-Rom → cubiques) : { d, at } */
+  function through(pts) {
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    const n = pts.length - 1;
+    const at = (t) => { const x = Math.max(0, Math.min(1, t)) * n, i = Math.min(n - 1, Math.floor(x)), f = x - i; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f]; };
+    return { d, at, p1: pts[0], p2: pts[n] };
+  }
+  function calm(cv, k, rects, ends) {
+    if (!(k > 0) || !cv || !cv.at) return cv;
+    const p1 = cv.at(0), p2 = cv.at(1);
+    if (Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) < 4) return cv;
+    const d1 = cv.d1 || snapDir([cv.at(0.03)[0] - p1[0], cv.at(0.03)[1] - p1[1]]);
+    const d2 = cv.d2 || snapDir([cv.at(0.97)[0] - p2[0], cv.at(0.97)[1] - p2[1]]);
+    const o = orthoOf(p1, snapDir(d1), p2, snapDir(d2), 6 + 14 * k);
+    // un coude qui traverserait un nœud (renvois contournants) : on garde le trajet calculé
+    if (rects && sample(o, 24).some((q, i) => i > 1 && i < 23 && rects.some((r) => !(ends && ends.includes(r.id)) && inRect(q, r, -2)))) return cv;
+    if (k >= 0.97) return Object.assign(o, { d1, d2 });
+    const N = 24, A = resample(cv, N), B = resample(o, N);
+    const out = through(A.map((a, i) => [a[0] + (B[i][0] - a[0]) * k, a[1] + (B[i][1] - a[1]) * k]));
+    return Object.assign(out, { d1, d2 });
+  }
+  /** Point d'ancrage choisi à la main : côté s (t|r|b|l) et position t (0–1) le long de ce côté */
+  function anchorPoint(n, s, a) {
+    const t = a.t == null ? 0.5 : a.t;
+    if (a.s === 'l') return [n.x, n.y + s.h * t];
+    if (a.s === 'r') return [n.x + s.w, n.y + s.h * t];
+    if (a.s === 't') return [n.x + s.w * t, n.y];
+    return [n.x + s.w * t, n.y + s.h];
+  }
+  /** Ancre la plus proche d'un point (aimantée au bord du nœud, milieux à ±4 %) */
+  function nearestAnchor(n, s, p) {
+    const c = [
+      ['l', Math.abs(p[0] - n.x), (p[1] - n.y) / s.h], ['r', Math.abs(p[0] - n.x - s.w), (p[1] - n.y) / s.h],
+      ['t', Math.abs(p[1] - n.y), (p[0] - n.x) / s.w], ['b', Math.abs(p[1] - n.y - s.h), (p[0] - n.x) / s.w],
+    ].sort((x, y) => x[1] - y[1])[0];
+    let t = Math.max(0, Math.min(1, c[2]));
+    if (Math.abs(t - 0.5) < 0.04) t = 0.5;
+    return { s: c[0], t: Math.round(t * 100) / 100 };
+  }
+  /**
+   * Tracé d'un lien retouché : ancres a1/a2 (sinon le côté calculé), forme (courbe, droite, coude)
+   * et point de courbure bend (décalage depuis le milieu des ancres). base : tracé automatique.
+   */
+  function manualCurve(e, a, sa, b, sb, base) {
+    const st = e.style || {};
+    const p1 = e.a1 ? anchorPoint(a, sa, e.a1) : (base ? base.at(0) : [a.x + sa.w, a.y + sa.h / 2]);
+    const p2 = e.a2 ? anchorPoint(b, sb, e.a2) : (base ? base.at(1) : [b.x, b.y + sb.h / 2]);
+    const d1 = e.a1 ? DIRS[e.a1.s] : (base && base.d1) || snapDir([p2[0] - p1[0], p2[1] - p1[1]]);
+    const d2 = e.a2 ? DIRS[e.a2.s] : (base && base.d2) || snapDir([p1[0] - p2[0], p1[1] - p2[1]]);
+    const m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+    const shape = st.shape || 'auto';
+    if (shape === 'straight' && !e.bend) return Object.assign(elbow([p1, p2]), { d1, d2 });
+    if (shape === 'elbow') {
+      if (!e.bend) return Object.assign(orthoOf(p1, d1, p2, d2, 14), { d1, d2 });
+      const k = [m[0] + e.bend.x, m[1] + e.bend.y];
+      const pts = d1[0] ? [p1, [k[0], p1[1]], [k[0], p2[1]], p2] : [p1, [p1[0], k[1]], [p2[0], k[1]], p2];
+      return Object.assign(elbow(pts, 14), { d1, d2 });
+    }
+    if (e.bend) {
+      // la courbe passe par le point de courbure (quadratique « par le point » → cubique)
+      const k = [m[0] + e.bend.x, m[1] + e.bend.y];
+      if (shape === 'straight') return Object.assign(elbow([p1, k, p2], 18), { d1, d2 });
+      const q = [2 * k[0] - m[0], 2 * k[1] - m[1]];
+      const c1 = [p1[0] + (q[0] - p1[0]) * 2 / 3, p1[1] + (q[1] - p1[1]) * 2 / 3], c2 = [p2[0] + (q[0] - p2[0]) * 2 / 3, p2[1] + (q[1] - p2[1]) * 2 / 3];
+      const at = (t) => { const u = 1 - t; return [0, 1].map((i) => u * u * u * p1[i] + 3 * u * u * t * c1[i] + 3 * u * t * t * c2[i] + t * t * t * p2[i]); };
+      return { p1, p2, d1, d2, c1, c2, at, d: `M${p1[0]},${p1[1]} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}` };
+    }
+    if (base && !e.a1 && !e.a2 && shape === 'auto') return base;
+    return cubic(p1, d1, p2, d2, handle(p1, p2));
   }
 
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
   function treeCurve(mode, a, sa, b, sb) {
     const [s1, s2] = treeSides(mode, a, sa, b, sb);
     if (mode === 'down') {
-      if (stacked(a, sa, b)) {
-        const x = a.x + STACK.spine, y = b.y + sb.h / 2;
-        return elbow([[x, a.y + sa.h], [x, y], [b.x, y]], 8);
-      }
       const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
       return busDown(p1, p2, p1[1] + (p2[1] - p1[1]) / 2);
     }
@@ -951,21 +1037,6 @@
       const n = T.byId.get(id);
       return { pos, lv: [{ d0: 0, d1: own.dl, lo: 0, hi: own.bl }, { d0: cd0, d1: d - SEQ.gap, lo, hi }], c: mid, leaf: false, struct: !!(n && isStruct(n)), role: role(n) };
     }
-    // pyramide : une liste de feuilles (≥ 3) se range en colonne sous son parent, comme un
-    // sommaire — la pyramide reste étroite et la liste se lit de haut en bas
-    if (cfg.stackLeaves && ch.length >= 3 && ch.every((c) => !(T.kids.get(c) || []).length)) {
-      const pos = new Map([[id, { d: 0, b: 0 }]]);
-      let d = own.dl + STACK.top, maxW = 0;
-      for (const c of ch) {
-        seen.add(c);
-        const s = dim(T.byId.get(c));
-        pos.set(c, { d, b: STACK.indent });
-        d += s.dl + STACK.gap;
-        maxW = Math.max(maxW, s.bl);
-      }
-      const n = T.byId.get(id);
-      return { pos, lv: [{ d0: 0, d1: d, lo: 0, hi: Math.max(own.bl, STACK.indent + maxW) }], c: own.bl / 2, leaf: false, struct: !!(n && isStruct(n)), role: role(n) };
-    }
     const subs = ch.map((c) => subtree(c, T, dim, cfg, seen, level + 1));
     // les enfants commencent après le parent — ou au début de la colonne suivante (colonnes alignées)
     const cd = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap + labelExtra(T, id);
@@ -985,7 +1056,7 @@
     const root = T.byId.get(rootId);
     const rs = size(root);
     if (mode === 'down') {
-      const cfg = { gap: prm.downGap, leafGap: prm.downSibGap, sibGap: prm.downSibGap, structGap: prm.downSibGap + 16, cousinGap: prm.downSibGap, satGap: prm.downSibGap, summaryGap: prm.downSibGap + 12, stackLeaves: true };
+      const cfg = { gap: prm.downGap, leafGap: prm.downSibGap, sibGap: prm.downSibGap, structGap: prm.downSibGap + 16, cousinGap: prm.downSibGap, satGap: prm.downSibGap, summaryGap: prm.downSibGap + 12 };
       const dimD = (n) => { const s = size(n); return { dl: s.h, bl: s.w }; };
       cfg.cols = columns([rootId], T, dimD, prm.downGap);
       const L = subtree(rootId, T, dimD, cfg, new Set(), 0);
@@ -1221,26 +1292,13 @@
     const treeLabels = [];
     const busy = busySides(map, mode, at, (r) => r);
     const seqPrev = sequencePrev(map, at, mode);
-    // peignes (≥ 4 enfants d'un même côté) : même géométrie que l'éditeur
-    const sideKids = new Map();
-    for (const e of map.edges) {
-      if (e.kind !== 'tree' || e.label || mode === 'down' || mode === 'organic') continue;
-      const a = at.get(e.from), b = at.get(e.to);
-      if (!a || !b) continue;
-      if (seqPrev.has(e.to) || [...seqPrev.values()].includes(e.to)) continue;
-      const k = e.from + (b.x < a.x ? 'L' : 'R');
-      if (!sideKids.has(k)) sideKids.set(k, []);
-      sideKids.get(k).push(b);
-    }
     for (const e of map.edges) {
       if (e.kind !== 'tree') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
-      const kids = !e.label && mode !== 'down' ? sideKids.get(e.from + (b.x < a.x ? 'L' : 'R')) : null;
       let cv;
       const prev = seqPrev.get(e.to);
       if (prev) { const q = at.get(prev); cv = elbow([[q.x + q.w, q.y + q.h / 2], [b.x, b.y + b.h / 2]]); }
-      else if (kids && kids.length >= 4) cv = combTooth(a, kids, b);
       else cv = treeCurve(mode, a, a, b, b);
       polys.push({ pts: sample(cv, 8), ends: new Set([e.from, e.to]) });
       if (e.label) treeLabels.push({ cv, label: e.label });
@@ -1434,9 +1492,9 @@
   }
 
   R.layout = {
-    P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT, STACK, stacked,
+    P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow, separate, SAFE,
-    treeSides, treeCurve, combTooth, sequencePrev, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
+    treeSides, treeCurve, sequencePrev, calm, orthoOf, manualCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);

@@ -35,7 +35,7 @@
       const s = sz[n.id];
       const ink = n.type === 'notion' || n.type === 'chapitre';
       const fill = ink ? 'var(--on-surface)' : 'var(--surface-container-lowest)';
-      const stroke = ink ? 'none' : n.type === 'lecon' || n.type === 'section' || n.type === 'soussection' ? 'var(--on-surface)' : 'var(--outline-variant)';
+      const stroke = ink ? 'none' : n.type === 'lecon' || n.type === 'section' || n.type === 'soussection' || n.type === 'paragraphe' ? 'var(--on-surface)' : 'var(--outline-variant)';
       const sw = Math.max(2, bw / 300) * (n.type === 'lecon' || n.type === 'section' ? 2 : 1);
       svg += `<rect x="${n.x}" y="${n.y}" width="${s.w}" height="${s.h}" rx="${n.type === 'notion' ? s.h / 2 : 10}" style="fill:${fill};stroke:${stroke}" stroke-width="${sw}"/>`;
       if (n.review.rating === 'maitrise') svg += `<rect x="${n.x + 10}" y="${n.y + s.h - 12}" width="${s.w - 20}" height="5" rx="2" style="fill:var(--primary)"/>`;

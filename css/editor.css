@@ -636,6 +636,20 @@
 }
 .node-order:empty, .canvas:not(.reading-aids) .node-order { display: none; }
 .layout-sep { margin: var(--sp-4) 0 var(--sp-2); }
+/* Stabilisateur des liens (Disposition) */
+.calm-row { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-l, 16px); background: var(--surface-container-high, var(--surface-container)); }
+.calm-row .layout-ic { color: var(--primary); margin-top: 2px; }
+.calm-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.calm-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); }
+.calm-val { font: 600 12px/1 var(--font-plain); color: var(--primary); padding: 4px 8px; border-radius: 8px; background: var(--primary-container); color: var(--on-primary-container, var(--primary)); }
+
+/* Apparence choisie à la main pour un lien : teinte de la palette partagée, trait pointillé rond */
+:root { --hue-l: .55; }
+:root[data-theme="dark"] { --hue-l: .78; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hue-l: .78; } }
+.edge.hued, .reading-aids .edge.k-tree.tint.hued { stroke: oklch(var(--hue-l) var(--ec, .12) var(--eh, 250)); }
+.edge.hued.sel, .edge.hued.rel { stroke: oklch(calc(var(--hue-l) - .08) calc(var(--ec, .12) + .03) var(--eh, 250)); }
+.edge.dotted { stroke-linecap: round; }
 /* séquence (méthode, chronologie) : « puis » → trait plein fléché d'une étape à la suivante */
 .edge.k-tree.seq { stroke-width: 1.8; }
 

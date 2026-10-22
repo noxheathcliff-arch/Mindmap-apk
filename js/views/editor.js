@@ -64,6 +64,7 @@
     svg.setAttribute('class', 'edges');
     svg.innerHTML = '<defs>' +
       '<marker id="arw" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1.5 L9,5 L1,8.5 z" style="fill:var(--outline)"/></marker>' +
+      '<marker id="arw-c" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M1,1.5 L9,5 L1,8.5 z" style="fill:context-stroke"/></marker>' +
       '<marker id="arw-sel" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1.5 L9,5 L1,8.5 z" style="fill:var(--on-surface)"/></marker>' +
       '</defs><g class="edges-g"></g><path class="temp-edge" d=""/>';
     const edgesG = svg.querySelector('.edges-g');
@@ -170,7 +171,7 @@
     /* ------------------------------------------------------------------ */
     /* Historique                                                         */
     /* ------------------------------------------------------------------ */
-    const snapshot = () => JSON.stringify({ nodes: map.nodes, edges: map.edges, layout: map.layout || null, layoutPick: map.layoutPick || null });
+    const snapshot = () => JSON.stringify({ nodes: map.nodes, edges: map.edges, layout: map.layout || null, layoutPick: map.layoutPick || null, calm: map.calm || 0, typeColors: map.typeColors || null });
     /* view : changement d'affichage (replier, isoler), permis en lecture seule */
     function mutate(fn, { coalesce, pane: refreshPane = true, type = 'edit', view = false } = {}) {
       if (!view && guard()) return undefined;
@@ -197,6 +198,8 @@
       // la disposition fait partie de l'état (elle fixe l'ordre de lecture)
       if ('layout' in d) { if (d.layout) map.layout = d.layout; else delete map.layout; }
       if ('layoutPick' in d) { if (d.layoutPick) map.layoutPick = d.layoutPick; else delete map.layoutPick; }
+      if ('calm' in d) { if (d.calm) map.calm = d.calm; else delete map.calm; }
+      if ('typeColors' in d) { if (d.typeColors) map.typeColors = d.typeColors; else delete map.typeColors; }
       for (const id of [...st.sel]) if (!S.node(map, id)) st.sel.delete(id);
       if (st.primary && !S.node(map, st.primary)) st.primary = [...st.sel][0] || null;
       if (st.selEdge && !map.edges.find((e) => e.id === st.selEdge)) st.selEdge = null;
@@ -612,7 +615,9 @@
        Une fourche = un tronc depuis la source, un point de séparation, puis une
        branche par élément. Deux origines :
         - explicite : liens partageant un `group` (libellé commun, choisi par l'utilisateur) ;
-        - implicite : enfants d'un nœud ET/OU sans libellé propre → « ET » affiché une fois. */
+        - implicite : enfants d'un nœud ET/OU sans libellé propre → « ET » affiché une fois.
+       Un lien retouché à la main (ancres, courbure, forme) sort de sa fourche et se dessine seul. */
+    const shaped = (e) => !!(e.a1 || e.a2 || e.bend || (e.style && e.style.shape));
     /** Séquences en ligne (méthode, chronologie) : enfant → étape précédente */
     function seqMap(visible) {
       const at = new Map();
@@ -627,22 +632,19 @@
         bundles.get(key).edges.push(e);
       };
       for (const e of visible) {
+        if (shaped(e)) continue;
         if (e.group) add('g:' + e.group, e, true);
         else if (e.kind === 'tree' && !e.label && !seqIds.has(e.to)) {
           const p = S.node(map, e.from);
-          if (!p) continue;
+          if (!p || !p.logic) continue;
           // un faisceau par côté (carte centrée : la racine a des enfants des deux côtés)
           const c = S.node(map, e.to);
           const side = map.layout === 'down' ? '' : c && c.x < p.x ? ':L' : ':R';
-          add((p.logic ? 'l:' : 'c:') + e.from + side, e, false);
+          add('l:' + e.from + side, e, false);
         }
       }
-      // ET / OU : dès deux branches ; liste simple : peigne à partir de quatre enfants
-      // (une épine et des dents droites se lisent comme une liste, sans écheveau de courbes)
-      // disposition libre : pas de peigne, chaque enfant a sa propre courbe (rendu fait à la main)
-      const straight = map.layout === 'down' || map.layout === 'organic';
-      for (const [k, b] of bundles) if (b.edges.length < (k.startsWith('c:') ? (straight ? 99 : 4) : 2)) bundles.delete(k);
-      for (const b of bundles.values()) b.comb = b.kind === 'tree' && !straight && b.edges.length >= 4;
+      // ET / OU et fourches libellées : dès deux branches (plus de peigne : chaque enfant garde sa courbe)
+      for (const [k, b] of bundles) if (b.edges.length < 2) bundles.delete(k);
       return bundles;
     }
     function bundleLabel(b) {
@@ -655,23 +657,6 @@
     function bundleGeometry(b, byId, rects, busy = new Map()) {
       const a = byId.get(b.from);
       const sa = size(a);
-      if (b.comb) {
-        // peigne : épine verticale à mi-chemin entre le parent et la colonne de ses enfants
-        const kids = b.edges.map((e) => byId.get(e.to));
-        const left = kids[0].x < a.x;
-        const col = left ? Math.max(...kids.map((k) => k.x + size(k).w)) : Math.min(...kids.map((k) => k.x));
-        const p1 = [left ? a.x : a.x + sa.w, a.y + sa.h / 2];
-        // épine dans le couloir libre juste avant la colonne des enfants (un frère plus large du
-        // parent peut occuper la moitié du couloir : on se cale sur la colonne, pas sur le parent)
-        const x = left ? Math.min(p1[0] - 14, col + 30) : Math.max(p1[0] + 14, col - 30);
-        if (b.explicit) {
-          // branche libellée : plusieurs branches d'un même parent ne partagent pas le même tronc
-          const ys = kids.map((k) => k.y + size(k).h / 2), cy = ys.reduce((s2, y) => s2 + y, 0) / ys.length;
-          p1[1] += U.clamp((cy - p1[1]) * 0.25, -sa.h / 2 + 6, sa.h / 2 - 6);
-          return { p1, d1: [left ? -1 : 1, 0], J: [x, U.clamp(p1[1] + (cy - p1[1]) * 0.5, Math.min(...ys), Math.max(...ys))], comb: true };
-        }
-        return { p1, d1: [left ? -1 : 1, 0], J: [x, p1[1]], comb: true };
-      }
       if (b.kind === 'link' && rects && !st.fastEdges) {
         // fourche de renvois : le côté de sortie dont le tronc et les branches ne traversent aucun nœud
         let best = null;
@@ -707,11 +692,6 @@
       // côté de sortie : direction dominante entre le centre de la source et celui des cibles
       const dx = (x0 + x1) / 2 - (a.x + sa.w / 2), dy = (y0 + y1) / 2 - (a.y + sa.h / 2);
       let p1, d1;
-      if (b.kind === 'tree' && map.layout === 'down' && b.edges.every((e) => R.layout.stacked(a, sa, byId.get(e.to)))) {
-        // pyramide, liste en colonne : la jonction est en haut de l'épine
-        const x = a.x + R.layout.STACK.spine;
-        return { p1: [x, a.y + sa.h], d1: [0, 1], J: [x, a.y + sa.h + 9], stack: true };
-      }
       if (b.kind === 'tree' && map.layout === 'down') {
         // pyramide : la jonction est sur le bus, à mi-chemin entre le parent et ses enfants
         d1 = [0, Math.sign(dy) || 1];
@@ -742,16 +722,27 @@
     }
     function branchCurve(J, d1, t, kind) {
       const pt = { x: J[0], y: J[1] };
-      if (kind === 'tree' && map.layout === 'down' && t.x <= J[0] + R.layout.STACK.indent + 8 && t.x > J[0] - R.layout.STACK.spine) {
-        const st2 = size(t), y = t.y + st2.h / 2;
-        return R.layout.elbow([J, [J[0], y], [t.x, y]], 8);
-      }
       if (kind === 'tree' && map.layout === 'down') {
         const st2 = size(t), below = d1[1] >= 0;
         return R.layout.busDown(J, [t.x + st2.w / 2, below ? t.y : t.y + st2.h], J[1]);
       }
       const { p2, d2 } = anchors(pt, { w: 0, h: 0 }, t, size(t));
-      return curve(J, d1, p2, d2);
+      return R.layout.cubic(J, d1, p2, d2, Math.max(24, Math.min(140, Math.hypot(p2[0] - J[0], p2[1] - J[1]) * 0.45)));
+    }
+    /** Apparence choisie à la main : couleur (palette partagée avec les nœuds), épaisseur, trait, flèches */
+    function paintEdgeStyle(rec, e, sel) {
+      const es = e.style || {}, path = rec.path, hue = es.c && S.HUES[es.c];
+      path.classList.toggle('hued', !!hue);
+      if (hue) { path.style.setProperty('--eh', hue.h); path.style.setProperty('--ec', hue.c); }
+      path.style.strokeWidth = es.w ? es.w + 'px' : '';
+      path.style.strokeDasharray = es.dash === 'dash' ? '7 6' : es.dash === 'dot' ? '0.5 6' : es.dash === 'solid' ? 'none' : '';
+      path.classList.toggle('dotted', es.dash === 'dot');
+      const auto = e.kind === 'link' || rec.seq;
+      const arrow = es.arrow || 'auto';
+      const end = arrow === 'end' || arrow === 'both' || (arrow === 'auto' && auto);
+      const mk = sel && !hue ? 'url(#arw-sel)' : hue || es.w ? 'url(#arw-c)' : 'url(#arw)';
+      if (end) path.setAttribute('marker-end', mk); else path.removeAttribute('marker-end');
+      if (arrow === 'both') path.setAttribute('marker-start', mk); else path.removeAttribute('marker-start');
     }
     function drawBorn(rec, e) {
       if (!rec.born) return;
@@ -814,6 +805,8 @@
       };
       const hueOf = (to) => (branch.get(to) >= 0 ? BH(branch.get(to)) : null);
       canvas.classList.toggle('reading-aids', aids);
+      // stabilisateur : 0 = courbes libres, 1 = coudes orthogonaux
+      const calmK = map.calm || 0;
       const selEdgeObj = st.selEdge ? map.edges.find((x) => x.id === st.selEdge) : null;
       const selGroup = selEdgeObj && selEdgeObj.group;
 
@@ -821,7 +814,7 @@
       for (const n of map.nodes) if (!hidden.has(n.id)) { const s2 = size(n); rects.push({ id: n.id, x: n.x, y: n.y, w: s2.w, h: s2.h }); }
       const rectAt = new Map(rects.map((r) => [r.id, r]));
       // signature de la géométrie : si rien n'a bougé ni changé (sélection, survol…), les renvois gardent leur tracé sans recalcul
-      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '')).join('|') + '#' + map.layout;
+      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '') + (shaped(e) ? JSON.stringify([e.a1, e.a2, e.bend, e.style && e.style.shape]) : '')).join('|') + '#' + map.layout + (map.calm || 0);
       const sameGeo = st.geoSig === geoSig;
       if (!st.fastEdges) st.geoSig = geoSig;
       if (!st.routePrev) st.routePrev = new Map();
@@ -857,13 +850,7 @@
         }
         const gm = geoPre.get(b.key) || bundleGeometry(b, byId, rects, busy);
         geo.set(b.key, gm);
-        let d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
-        if (gm.comb) {
-          // l'épine fait partie du tronc (neutre) ; chaque dent part de l'épine vers son enfant
-          const ys = b.edges.map((e) => { const t = byId.get(e.to); return t.y + size(t).h / 2; });
-          const y0 = Math.min(gm.J[1], ...ys) + 0, y1 = Math.max(gm.J[1], ...ys);
-          d += ` M${gm.J[0]},${y0 + 12} L${gm.J[0]},${y1 - 12}`;
-        }
+        const d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
         br.trunk.setAttribute('d', d);
         br.hit.setAttribute('d', d);
         // tronc d'une fourche explicite : cliquable (sélectionne la fourche) ; implicite : non
@@ -872,7 +859,7 @@
         const sel = b.explicit && selGroup && b.edges[0].group === selGroup;
         const related = st.sel.has(b.from) || b.edges.some((e) => st.sel.has(e.to));
         br.trunk.setAttribute('class', `edge trunk k-${b.kind}${spine(b.from, b.kind)}${deco(b.from, b.edges[0].to, b.kind)}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
-        { const hh = b.kind === 'tree' && !gm.comb && (lvl.get(b.from) || 0) > 0 ? hueOf(b.edges[0].to) : null; if (hh != null) br.trunk.style.setProperty('--bh', hh); else br.trunk.classList.remove('tint'); }
+        { const hh = b.kind === 'tree' && (lvl.get(b.from) || 0) > 0 ? hueOf(b.edges[0].to) : null; if (hh != null) br.trunk.style.setProperty('--bh', hh); else br.trunk.classList.remove('tint'); }
         const lbl = bundleLabel(b);
         setLabel(br.label, lbl, { sel, logic: !b.edges[0].label && !!lbl });
         if (b.explicit) { br.label.dataset.edge = b.edges[0].id; delete br.label.dataset.logicFrom; }
@@ -933,15 +920,7 @@
             const cv = R.layout.route({ id: bundle.from, x: gm.J[0], y: gm.J[1] }, { w: 0, h: 0 }, { id: b.id, x: b.x, y: b.y }, size(b), { rects, polys, busy, fromJ: true, fast: !!st.fastEdges, side });
             c = { d: cv.d, at: cv.at };
             polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
-          } else if (gm.comb) {
-            // dent du peigne : descend l'épine puis rejoint l'enfant à l'horizontale
-            const sb = size(b), y = b.y + sb.h / 2;
-            const tx = gm.d1[0] > 0 ? b.x : b.x + sb.w;
-            const dy = y - gm.J[1];
-            const from = Math.abs(dy) < 1 ? gm.J : [gm.J[0], y - Math.sign(dy) * 12];
-            const el = R.layout.elbow(Math.abs(dy) < 1 ? [gm.J, [tx, y]] : [from, [gm.J[0], y], [tx, y]], 12);
-            c = { d: el.d, at: el.at };
-          } else c = branchCurve(gm.J, gm.d1, b, e.kind);
+          } else c = R.layout.calm(branchCurve(gm.J, gm.d1, b, e.kind), calmK);
           rec.mid = gm.J;
           setLabel(rec.label, '', {});
           if (e.kind === 'tree') polys.push({ pts: R.layout.sample(c.at ? c : { at: (t) => bez(c, t) }, 6), ends: new Set([e.from, e.to]) });
@@ -954,6 +933,7 @@
             cv = R.layout.elbow([[prevStep.x + sp.w, b.y + Math.min(sp.h, sb.h) / 2], [b.x, b.y + Math.min(sp.h, sb.h) / 2]]);
           } else if (e.kind === 'tree') {
             cv = R.layout.treeCurve(map.layout, a, size(a), b, size(b));
+            cv = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), cv) : R.layout.calm(cv, calmK);
           } else {
             const sa = size(a), sb = size(b);
             const lb = edgeLabel(e);
@@ -966,6 +946,7 @@
                 label: lb ? { w: rec.label.offsetWidth || R.layout.labelSize(lb).w, h: rec.label.offsetHeight || 19 } : null });
               if (!st.fastEdges) { if (cv.key) st.routeKey.set(e.id, cv.key); st.routePrev.set(e.id, cv); }
             }
+            cv = shaped(e) ? R.layout.manualCurve(e, a, sa, b, sb, cv) : R.layout.calm(cv, calmK, rects, [e.from, e.to]);
           }
           c = { d: cv.d };
           polys.push({ pts: R.layout.sample(cv, e.kind === 'tree' ? 6 : 14), ends: new Set([e.from, e.to]) });
@@ -986,8 +967,7 @@
         rec.hit.setAttribute('d', c.d);
         rec.path.setAttribute('class', `edge k-${e.kind}${spine(e.from, e.kind)}${deco(e.from, e.to, e.kind)}${bundle ? ' branch' : ''}${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
         if (e.kind === 'tree' && hueOf(e.to) != null) rec.path.style.setProperty('--bh', hueOf(e.to));
-        if (e.kind === 'link' || rec.seq) rec.path.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
-        else rec.path.removeAttribute('marker-end');
+        paintEdgeStyle(rec, e, sel);
         rec.path.classList.toggle('seq', !!rec.seq);
         drawBorn(rec, e);
       }
@@ -1110,7 +1090,7 @@
       if (S.isStruct(p.type)) {
         const ch = S.childrenOf(map, p.id);
         if (ch.length) return ch[ch.length - 1].type;
-        return p.type === 'chapitre' ? 'section' : p.type === 'section' ? 'soussection' : 'notion';
+        return p.type === 'chapitre' ? 'section' : p.type === 'section' ? 'soussection' : p.type === 'soussection' ? 'paragraphe' : 'notion';
       }
       if (p.type === 'notion') return 'idee';
       return 'idee';
@@ -1173,7 +1153,7 @@
       mutate(() => { const n = S.node(map, id); if (n) n.logic = logic; });
     }
     /* Nœuds de structure (Chapitre, Section, Sous-section, Leçon) */
-    const STRUCT_THIS = { chapitre: 'ce chapitre', lecon: 'cette leçon', section: 'cette section', soussection: 'cette sous-section' };
+    const STRUCT_THIS = { chapitre: 'ce chapitre', lecon: 'cette leçon', section: 'cette section', soussection: 'cette sous-section', paragraphe: 'ce paragraphe' };
     function reviewBranch(n) { R.app.go(`#/reviser/carte/${map.id}/${n.id}`); }
     /** Rivaux repliables : les autres nœuds du même type qui ont une descendance */
     function rivals(n) { return map.nodes.filter((o) => o.type === n.type && o.id !== n.id && S.childrenOf(map, o.id).length); }
@@ -1284,7 +1264,21 @@
         autoOrg.setAttribute('aria-checked', String(autoOn()));
         S.save();
       });
-      const body = h('div', list, h('p.overline.layout-sep', 'Affichage'), h('div.choice-list.form-choice.layout-choices', aids, autoOrg));
+      // stabilisateur : redresse les liens vers des coudes propres, sans toucher aux nœuds
+      const calmOut = h('output.calm-val');
+      const calmLbl = (v) => v <= 0 ? 'Libre' : v >= 0.97 ? 'Coudes nets' : v < 0.4 ? 'Léger' : v < 0.75 ? 'Moyen' : 'Fort';
+      const calmIn = h('input.slider', { type: 'range', min: '0', max: '1', step: '0.05', value: String(map.calm || 0), 'aria-label': 'Stabilisateur des liens' });
+      const calmSync = () => { const v = +calmIn.value; calmOut.textContent = calmLbl(v); calmIn.style.setProperty('--p', (v * 100) + '%'); };
+      calmSync();
+      calmIn.addEventListener('input', () => {
+        calmSync();
+        mutate(() => { const v = Math.round(+calmIn.value * 100) / 100; if (v) map.calm = v; else delete map.calm; }, { coalesce: 'calm', pane: false });
+      });
+      const calmRow = h('div.calm-row',
+        h('span.layout-ic', { html: '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18c4 0 4-12 9-12s5 12 9 12" opacity=".35"/><path d="M3 18h6V6h12"/></svg>' }),
+        h('div.calm-body', h('div.calm-head', h('b', 'Stabilisateur des liens'), calmOut),
+          h('span.choice-sub', 'Des courbes libres aux coudes nets. Les liens retouchés à la main gardent leur tracé.'), calmIn));
+      const body = h('div', list, h('p.overline.layout-sep', 'Liens'), calmRow, h('p.overline.layout-sep', 'Affichage'), h('div.choice-list.form-choice.layout-choices', aids, autoOrg));
       ui.dialog({ title: 'Disposition', icon: 'tidy', body, cls: 'dialog-layout', onOpen: (_, close) => { closeFn = close; } });
     }
     R.actions.chooseLayout = chooseLayout;
@@ -1584,7 +1578,7 @@
     function placeholderFor(n) {
       return {
         notion: 'Notion…', definition: 'Définition…', juris: 'Cass. civ. …', texte: 'Art. …', idee: 'Idée…',
-        chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…', soussection: 'Titre de la sous-section…',
+        chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…', soussection: 'Titre de la sous-section…', paragraphe: 'Titre du paragraphe…',
         doctrine: 'Auteur, position…', retenir: 'À retenir…', methode: 'Méthode…',
         citation: '« … »', personne: 'Nom…', date: '1789…', chiffre: '42 %…', formule: 'E = mc²…',
         etape: 'Étape…', conseil: 'Conseil…', exercice: 'Exercice…', etude: 'Auteur, année — objet…',
@@ -1609,7 +1603,7 @@
       }
       const kids = S.childrenOf(map, n.id).length;
       return [
-        { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9, Alt 1–4 : structure)' },
+        { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9, Alt 1–5 : structure)' },
         { icon: 'child', label: 'Enfant', act: () => addChild(n.id), tip: 'Décomposer', kbd: 'Tab' },
         { icon: 'note', label: 'Note', act: () => openPane(true), tip: 'Écrire la note', kbd: 'Espace', on: !!n.note.trim() },
         { icon: 'link', label: 'Relier', act: () => startLinking(n.id), tip: 'Relier à un ou plusieurs nœuds', kbd: 'L' },
@@ -2500,8 +2494,8 @@
       if (mod && k.toLowerCase() === 'z') { e.preventDefault(); if (ro()) return; e.shiftKey ? redo() : undo(); return; }
       if (mod && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if (mod && k.toLowerCase() === 'a' && st.mode === 'map') { e.preventDefault(); st.sel = new Set([...st.els.keys()]); st.primary = [...st.sel][0] || null; render(); renderPane(); return; }
-      if (e.altKey && !mod && /^Digit[1-4]$/.test(e.code) && st.mode === 'map' && !st.masked && primaryNode()) {
-        // Alt 1–4 : Chapitre, Section, Sous-section, Leçon (les chiffres seuls restent aux 9 types historiques)
+      if (e.altKey && !mod && /^Digit[1-5]$/.test(e.code) && st.mode === 'map' && !st.masked && primaryNode()) {
+        // Alt 1–5 : Chapitre, Section, Sous-section, Paragraphe, Leçon (les chiffres seuls restent aux 9 types historiques)
         e.preventDefault();
         setType(st.sel.size ? [...st.sel] : [primaryNode().id], S.STRUCT_ORDER[+e.code.slice(5) - 1]);
         return;
