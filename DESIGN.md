@@ -255,6 +255,15 @@ Dans « Mes cours », un cours est un **dossier fermé qui s'ouvre** ; partout a
 - **Compact** : deux dossiers par ligne (titres 15 px, question sur 2 lignes, « Réviser » réduit à ▶ + nombre).
 - **Page d'un cours** : en-tête de section pleine largeur au conteneur du cours, prolongé par la barre haute de la même couleur (« Cours », titre, description) ; les chiffres viennent dessous sur la surface. **Chaque action à un seul endroit** : la barre vibrante porte les deux actions fréquentes (« ▶ Réviser » en forte emphase, « + Nouvelle carte » — sur grand écran, c'est le FAB du rail) ; le menu ⋮ de la barre haute porte le reste (Modifier, Exporter, Supprimer).
 
+### 4.6 bis Accueil — la boîte de Leitner (v4.1.9)
+Le héros de l'accueil est une **boîte de Leitner en vraie 3D CSS** (`js/leitner.js`, `css/leitner.css`) : six compartiments (0 · 1 j · 3 j · 7 j · 15 j · 30 j), un intercalaire crème à onglet par boîte, les fiches en bristol ligné au filet de la couleur du cours (fanion tertiaire si à réviser), la plaque « N à réviser » sur la face avant. Les faces sont la couleur primary ombrée selon leur orientation (lumière en haut à gauche).
+- **Deux points de vue** : à hauteur des yeux (défaut) et de dessus — bouton cube, glissé vertical à la souris, ↑/↓ au clavier. Le cadrage se calcule sur les 8 coins de la boîte aux deux angles (le basculement ne zoome pas).
+- **Parcourir du doigt** : le doigt (ou la souris) écarte les fiches autour de lui ; chaque fiche franchie reçoit une chiquenaude dans le sens et à la vitesse du geste ; vibration légère à chaque intercalaire. La ligne sous la boîte dit ce qui est désigné.
+- **Sortir une fiche** : toucher → elle s'enfonce (anticipation), monte, vient face à soi devant toute la boîte, le reste s'assombrit ; toucher la fiche lance la révision dessus ; toucher ailleurs ou Échap la range — elle retombe et ses voisines encaissent le choc. Toucher un intercalaire le soulève.
+- **Principes d'animation** (Illusion of Life / Animator's Kit) : ressorts physiques partout (aucune durée fixe), anticipation, suivi et chevauchement (penchés amortis différemment fiches/intercalaires), écrasement-étirement de la boîte à l'arrivée, action secondaire (voisines), arcs (sortie en deux temps : monter puis venir), mise en scène (assombrissement), timing par raideur.
+- Fiches dessinées en 2× puis réduites : texte net une fois sortie. `prefers-reduced-motion` : poses directes, sans ressort.
+- Option écartée pour l'instant : **la pile de feuilles** vue de face qui s'ouvre en changeant d'angle — gardée en réserve.
+
 ### 4.7 Réviser — paquet du jour, session, relevé
 - **Paquet du jour** : héros `primary-container` (coins 48), le nombre de fiches dans un *cookie 12* `primary` ; taille de session en groupe de boutons connecté (choix en `primary`, lisible sur le conteneur). « Commencer » vit dans la barre contextuelle.
 - **Carte de régularité, échéancier, par cours** : cartes tonales ; l'échéancier empile les fiches par couleur de cours ; chaque cours a sa marque dans un anneau de maîtrise.

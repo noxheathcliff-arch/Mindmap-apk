@@ -143,9 +143,8 @@
   };
 
   /* ---------------- Héros « session du jour » ------------------------
-     Un seul point focal (M3 Expressive) : le nombre dû, dans une forme cookie de la bibliothèque
-     M3, et l'action « Réviser » dans le héros même (pas de barre d'actions sur l'onglet Cours). */
-  function sessionHero() {
+     La boîte de Leitner en 2,5D (js/leitner.js) avec le titre, la série et l'action « Réviser ». */
+  function sessionHero(intro) {
     const due = S.dueCount();
     const streak = S.streak();
     const today = S.reviewedToday();
@@ -157,17 +156,11 @@
     const sub = due
       ? `${U.plural(courses, 'cours', 'cours')} · ≈ ${mins} min. Le rappel actif fixe mieux qu’une relecture.`
       : today ? `${U.plural(today, 'carte')} révisée${today > 1 ? 's' : ''} aujourd’hui.` : next.tomorrow ? `Demain : ${U.plural(next.tomorrow, 'carte')}.` : 'Décompose une nouvelle notion pour alimenter tes révisions.';
-    return h('section.today', { 'aria-label': 'Aujourd’hui', dataset: { hero: 'session:all:card' } },
-      h('span.today-shape', { 'aria-hidden': due ? null : 'true' },
-        due ? h('span.today-num', String(due)) : R.icon('check', 40), due ? h('span.today-unit', due > 1 ? 'cartes' : 'carte') : null),
-      h('div.today-body',
-        h('h2.today-title', title),
-        h('p.today-sub', sub),
-        h('div.today-streak', { class: streak ? 'lit' : '' },
-          h('span.flame', R.icon('flame', 20)),
-          h('span', streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Lance ta série aujourd’hui'),
-          R.weekDots()),
-        reviewBtn(due)));
+    const streakEl = h('div.today-streak', { class: streak ? 'lit' : '' },
+      h('span.flame', R.icon('flame', 20)),
+      h('span', streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Lance ta série aujourd’hui'),
+      R.weekDots());
+    return R.leitnerHero({ title, sub, streakEl, cta: reviewBtn(due), intro });
   }
   function reviewBtn(due) {
     const any = S.data.maps.some((m) => S.mapStats(m).reviewable);
@@ -437,7 +430,7 @@
           h('div.hero',
             h('p.hero-date', dateStr[0].toUpperCase() + dateStr.slice(1)),
             h('h1.hero-title', greet)),
-          sessionHero(),
+          sessionHero(intro),
           h('section.lib-sec',
             h('div.sec-head',
               h('h2.sec-title', 'Mes cours'),

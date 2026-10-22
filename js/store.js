@@ -1187,6 +1187,19 @@
       return queue.slice(0, limit);
     },
     dueCount(scope = {}) { return this.reviewQueue(scope, { limit: 1e9 }).length; },
+    /** La boîte de Leitner (accueil) : par boîte 0→5, son intervalle, ses fiches (dues d'abord, puis par échéance) */
+    leitnerBoxes() {
+      const now = Date.now();
+      const boxes = INTERVALS.map((days, box) => ({ box, days, n: 0, due: 0, items: [] }));
+      for (const m of this.data.maps) for (const it of this.reviewItems(m)) {
+        const b = boxes[U.clamp(it.review.box | 0, 0, 5)];
+        const due = this.isDue(it, now);
+        b.n++; if (due) b.due++;
+        b.items.push({ it, due, at: it.review.due || 0 });
+      }
+      for (const b of boxes) b.items.sort((x, y) => (y.due - x.due) || (x.at - y.at));
+      return boxes;
+    },
     /** Annule une note (révision) : remet l'état d'avant et retire la carte du journal du jour */
     unrate(map, target, before, day) {
       target.review = { ...before };
