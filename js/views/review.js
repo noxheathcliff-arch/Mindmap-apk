@@ -65,9 +65,9 @@
     const thumb = h('span.rg-thumb', rateIcon('go'));
     const stops = KEYS.map((r, i) => h('button.rg-stop', { type: 'button', class: 'rate-' + r, tabindex: -1, 'aria-hidden': 'true',
       style: { '--k': i + 1 }, onclick: () => !done && onPick(r) },
-      h('span.rg-l', W[r]), h('span.rg-next', nextLabel(review, r, true)), h('kbd.rate-kbd', String(i + 1))));
+      h('span.rg-l', W[r]), h('span.rg-next', R.icon('clock', 12), nextLabel(review, r, false).replace(/^dans /, '')), h('kbd.rate-kbd', String(i + 1))));
     const track = h('div.rg-track',
-      h('span.rg-hint', 'glisse jusqu’où c’est revenu'),
+      h('span.rg-hint', 'glisse : tu t’en souvenais ?'),
       h('span.rg-ink'),
       KEYS.map((r, i) => h('span.rg-notch', { style: { '--k': i + 1 } })),
       thumb);

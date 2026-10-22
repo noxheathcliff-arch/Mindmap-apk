@@ -424,7 +424,8 @@
 /* le dernier mot ne déborde pas : il s'aligne sur le bord droit */
 .rg-stop.rate-maitrise { translate: calc(-100% + var(--t) / 2 + var(--p)) 0; justify-items: end; }
 .rg-l { font: var(--title-s); font-weight: 650; letter-spacing: -.01em; }
-.rg-next { font: var(--label-s); font-variant-numeric: tabular-nums; opacity: .7; white-space: nowrap; }
+.rg-next { display: inline-flex; align-items: center; gap: 3px; font: var(--label-s); font-variant-numeric: tabular-nums; opacity: .7; white-space: nowrap; }
+.rg-next svg { flex: none; stroke-width: 2.2; }
 .rate-gauge[data-at="revoir"] .rg-stop.rate-revoir,
 .rate-gauge[data-at="compris"] .rg-stop.rate-compris,
 .rate-gauge[data-at="maitrise"] .rg-stop.rate-maitrise { color: var(--ink); transform: translateY(-3px) scale(1.08); }
