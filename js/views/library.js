@@ -188,54 +188,138 @@
     const days = Math.round((U.startOfDay(t) - U.startOfDay()) / U.DAY);
     return days <= 0 ? 'aujourd’hui' : days === 1 ? 'demain' : `dans ${days} jours`;
   }
-  /* Gestes du dossier. Souris et clavier : survol ou focus = entrouvert, appui = ouvert.
-     Tactile : le doigt posé ouvre (après 70 ms, si ce n'est pas le début d'un défilement) ;
-     un appui long le garde ouvert, feuille sortie, jusqu'au prochain toucher ailleurs ou au
-     défilement, et le clic qui le termine n'ouvre rien. demo(t) : s'ouvre puis se referme. */
+  /* Gestes du dossier : on tire les feuilles hors du dossier, ou on les y repousse.
+     Un ressort par couche, image par image (rAF) : --lift (la fiche), --lift2 (la seconde
+     feuille, plus molle : elle traîne et arrive après = chevauchement), --flap (la façade,
+     qui mène), --stretch (étirement selon la vitesse). Le doigt mène 1:1, au-delà des bornes
+     la course s'élastifie ; au lâcher, la position projetée par la vitesse choisit la détente
+     (fermé 0, entrevu .45, ouvert 1) et le ressort y va en dépassant un peu.
+     Souris : survol = entrouvert, appui = ouvert, appui glissé = on tire / on repousse.
+     Tactile : doigt posé = entrevu ; appui long = tenu ouvert, puis glisser tire ou repousse
+     (sans défiler) ; un toucher ailleurs ou un défilement range les feuilles.
+     Clavier : focus = entrouvert, ↑ ↓ passent d'une détente à l'autre. demo(t) : s'ouvre puis se referme. */
+  const DETENTS = [0, .45, 1];
   function foldGestures(card) {
-    let t1 = 0, t2 = 0, pid = null, held = false, swallow = false, touch = false, x0 = 0, y0 = 0;
-    const open = (on) => card.classList.toggle('is-open', on);
-    const stop = () => { clearTimeout(t1); clearTimeout(t2); t1 = t2 = 0; };
-    const release = (e) => {
-      if (e.type === 'pointerdown' && card.contains(e.target)) return;
-      held = false; open(false);
-      document.removeEventListener('pointerdown', release, true);
-      window.removeEventListener('scroll', release, true);
+    const K = 320, C = 29, K2 = 210, C2 = 21, KF = 460, CF = 34;      // ζ ≈ .8 / .72 / .8
+    let x = 0, v = 0, x2 = 0, v2 = 0, f = 0, vf = 0, T = 0, raf = 0, last = 0;
+    let rest = 0, drag = false, held = false, swallow = false, touch = false;
+    let pid = null, x0 = 0, y0 = 0, base = 0, yb = 0, ty = 0, tt = 0, notch = 0, t1 = 0, t2 = 0;
+    const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+    const flapOf = (l) => clamp(l / .6, 0, 1);
+    const rise = () => parseFloat(getComputedStyle(card).getPropertyValue('--rise')) || 60;
+    // au-delà des bornes, la feuille résiste de plus en plus (c = .55, comme un défilement iOS)
+    const band = (l) => l > 1 ? 1 + (1 - 1 / ((l - 1) * .55 / .3 + 1)) * .3
+      : l < 0 ? -(1 - 1 / (-l * .55 / .14 + 1)) * .14 : l;
+    const paint = () => {
+      const st = card.style;
+      st.setProperty('--lift', x.toFixed(4)); st.setProperty('--lift2', x2.toFixed(4));
+      st.setProperty('--flap', f.toFixed(4)); st.setProperty('--stretch', clamp(v * .012, -.05, .07).toFixed(4));
+      card.classList.toggle('is-up', x > .01 || f > .01 || drag);
     };
-    const end = (e) => {
-      if (e.pointerId !== pid) return;
-      stop(); pid = null;
-      if (!held) setTimeout(() => { if (pid === null && !held) open(false); }, e.type === 'pointercancel' ? 0 : 140);
+    const tick = (now) => {
+      const dt = Math.min((now - last) / 1000, 1 / 30); last = now;
+      if (!drag) { v += (-K * (x - T) - C * v) * dt; x += v * dt; }
+      v2 += (-K2 * (x2 - x) - C2 * v2) * dt; x2 += v2 * dt;
+      const ft = flapOf(x);
+      vf += (-KF * (f - ft) - CF * vf) * dt; f += vf * dt;
+      if (!drag && Math.abs(x - T) < .002 && Math.abs(v) < .01 && Math.abs(x2 - T) < .002 && Math.abs(v2) < .01 && Math.abs(f - ft) < .002) {
+        x = x2 = T; v = v2 = vf = 0; f = flapOf(T); raf = 0; paint();
+        if (T === 0) { for (const p of ['--lift', '--lift2', '--flap', '--stretch']) card.style.removeProperty(p); card.classList.remove('is-up'); }
+        return;
+      }
+      paint(); raf = requestAnimationFrame(tick);
+    };
+    const run = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } };
+    // va vers t ; kick : vitesse de départ (négative = anticipation, la feuille s'enfonce d'abord)
+    const to = (t, kick = 0) => {
+      T = t;
+      if (R.motion.reduced()) { cancelAnimationFrame(raf); raf = 0; x = x2 = t; v = v2 = vf = 0; f = flapOf(t); paint(); return; }
+      if (kick && Math.abs(v) < .5) v = kick;
+      run();
+    };
+    const nearest = (l) => DETENTS.reduce((a, d) => Math.abs(d - l) < Math.abs(a - l) ? d : a, 0);
+    const unhold = () => {
+      held = false; card.classList.remove('is-held');
+      document.removeEventListener('pointerdown', outside, true);
+      window.removeEventListener('scroll', outside, true);
+    };
+    const hold = () => {
+      if (held) return;
+      held = true; card.classList.add('is-held');
+      document.addEventListener('pointerdown', outside, true);
+      window.addEventListener('scroll', outside, true);
+    };
+    function outside(e) {
+      if (e.type === 'pointerdown' && card.contains(e.target)) return;
+      unhold(); rest = 0; to(0);
+    }
+    const stop = () => { clearTimeout(t1); clearTimeout(t2); t1 = t2 = 0; };
+    const grab = (e) => {
+      stop(); drag = swallow = true; base = x; yb = e.clientY; ty = e.clientY; tt = e.timeStamp; v = 0;
+      notch = nearest(x); card.classList.add('is-drag');
+      try { card.setPointerCapture(e.pointerId); } catch (_) {}
+      run();
     };
     card.addEventListener('pointerdown', (e) => {
       swallow = false; touch = e.pointerType !== 'mouse';
-      if (held || e.button > 0 || e.target.closest('.fiche-more')) return;
+      if (e.button > 0 || e.target.closest('.fiche-more')) return;
       pid = e.pointerId; x0 = e.clientX; y0 = e.clientY;
-      if (e.pointerType === 'mouse') { open(true); return; }
-      t1 = setTimeout(() => open(true), 70);
-      t2 = setTimeout(() => {
-        held = swallow = true; open(true); R.motion.haptic(12);
-        document.addEventListener('pointerdown', release, true);
-        window.addEventListener('scroll', release, true);
-      }, 380);
+      if (held) { grab(e); return; }                       // déjà tenu : le doigt reprend la feuille où elle est
+      if (!touch) { to(1, -2.2); return; }
+      t1 = setTimeout(() => to(.45, -1.6), 70);
+      t2 = setTimeout(() => { swallow = true; hold(); R.motion.haptic(12); to(1); }, 380);
     });
     card.addEventListener('pointermove', (e) => {
-      if (e.pointerId === pid && e.pointerType !== 'mouse' && !held && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) { stop(); pid = null; open(false); }
+      if (e.pointerId !== pid) return;
+      if (drag) {
+        const nx = band(base + (yb - e.clientY) / rise()), dt = Math.max(e.timeStamp - tt, 1) / 1000;
+        if (e.timeStamp > tt) { v = v * .4 + ((nx - x) / dt) * .6; tt = e.timeStamp; }
+        x = nx;
+        const n = nearest(x); if (n !== notch) { notch = n; R.motion.haptic(6); }  // un cran à chaque détente franchie
+        return;
+      }
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      if (!touch) { if ((e.buttons & 1) && Math.abs(dy) > 4 && Math.abs(dy) > Math.abs(dx)) grab(e); return; }
+      if (held) { if (Math.abs(dy) > 4) grab(e); return; }
+      if (Math.hypot(dx, dy) > 10) { stop(); pid = null; to(rest); }   // c'est un défilement, pas un geste
     });
+    // tactile tenu : bloquer le défilement pour que le doigt tire la feuille
+    card.addEventListener('touchmove', (e) => { if (held || drag) e.preventDefault(); }, { passive: false });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      stop(); pid = null;
+      if (drag) {
+        drag = false; card.classList.remove('is-drag');
+        // projection : où la vitesse aurait mené la feuille (décélération « rapide », d = .99)
+        const t = nearest(clamp(x + v / 1000 * .99 / (1 - .99), -.2, 1.2));
+        rest = t; to(t);
+        if (t === 0) unhold(); else if (touch) hold();
+        return;
+      }
+      if (!held) setTimeout(() => { if (pid === null && !held && !drag) to(rest); }, e.type === 'pointercancel' ? 0 : 140);
+    };
     card.addEventListener('pointerup', end);
     card.addEventListener('pointercancel', end);
+    card.addEventListener('lostpointercapture', (e) => { if (drag && e.target === card) end(e); });
     card.addEventListener('click', (e) => { if (swallow) { swallow = false; e.preventDefault(); e.stopPropagation(); } }, true);
     card.addEventListener('contextmenu', (e) => { if (touch) e.preventDefault(); });
-    card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') card.classList.add('is-peek'); });
-    card.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { card.classList.remove('is-peek'); stop(); pid = null; open(false); } });
-    card.addEventListener('focusin', (e) => { if (e.target.matches(':focus-visible')) card.classList.add('is-peek'); });
-    card.addEventListener('focusout', (e) => { if (!card.contains(e.relatedTarget)) card.classList.remove('is-peek'); });
+    card.addEventListener('dragstart', (e) => e.preventDefault());   // sinon le lien part en glisser-déposer natif
+    card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && !held) { rest = Math.max(rest, .3); if (!drag && pid === null) to(rest); } });
+    card.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !drag) { stop(); pid = null; rest = 0; to(0); } });
+    card.addEventListener('focusin', (e) => { if (e.target.matches(':focus-visible') && rest < .3) { rest = .3; to(.3); } });
+    card.addEventListener('focusout', (e) => { if (!card.contains(e.relatedTarget) && !held) { rest = 0; to(0); } });
+    card.addEventListener('keydown', (e) => {
+      if ((e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || !e.target.matches(':focus-visible')) return;
+      e.preventDefault();
+      const i = DETENTS.indexOf(nearest(T)), j = clamp(i + (e.key === 'ArrowUp' ? 1 : -1), 0, DETENTS.length - 1);
+      rest = DETENTS[j]; to(rest, j > i ? -1.6 : 0);
+    });
     return {
       demo(delay) {
         setTimeout(() => {
-          if (!card.isConnected || held || pid !== null) return;
-          open(true);
-          setTimeout(() => { if (!held && pid === null) open(false); }, 900);
+          if (!card.isConnected || held || drag || pid !== null) return;
+          to(1, -2.4);
+          setTimeout(() => { if (!held && !drag && pid === null) to(rest); }, 900);
         }, delay);
       },
     };
