@@ -68,28 +68,29 @@
   const GAP_X = P.depthGap, GAP_Y = 16, GAP_ROOT = P.rootGap; // compatibilité
   const SEQ = { gap: 40 }; // séquence : écart entre deux étapes (place pour la flèche)
 
-  /** Gabarits typographiques par type (largeur moyenne d'un caractère, marges, interligne) —
-      reflètent editor.css ; les nœuds de structure sont plus grands (hiérarchie visuelle). */
-  const METRICS = {
-    chapitre: { cw: 12.2, pad: 48, lh: 32, base: 36, min: 200, max: 340, bar: 10 },
-    lecon:    { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
-    section:  { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
-    soussection: { cw: 8.6, pad: 35, lh: 22, base: 25, min: 120, max: 280, bar: 10 },
-    paragraphe: { cw: 8.2, pad: 33, lh: 21, base: 24, min: 110, max: 270, bar: 8 },
-    notion:   { cw: 8.4,  pad: 43, lh: 24, base: 27, min: 64,  max: 260, bar: 0 },
-    chiffre:  { cw: 9.6,  pad: 33, lh: 26, base: 22, min: 64,  max: 260, bar: 0 },
+  /** Gabarits par apparence (marges, bornes de largeur) — reflètent editor.css. La typographie (police, corps,
+      gras) vient de R.store.styleOf : chasse moyenne = corps × cw de la police, interligne = corps × 1.3. */
+  const BOX = {
+    notion: { pad: 43, base: 27, min: 64, max: 260 },
+    struct: { pad: 43, base: 27, min: 120, max: 340, bar: 10 },
+    idee:   { pad: 31, base: 22, min: 64, max: 260 },
+    ref:    { pad: 33, base: 22, min: 64, max: 260 },
   };
-  const BASE = { cw: 7.4, pad: 31, lh: 20, base: 22, min: 64, max: 260, bar: 0 };
 
-  /** Estimation de taille hors DOM (seed, import, vignettes) */
+  /** Estimation de taille hors DOM (seed, import, vignettes, avant la première mesure) */
   function estimate(n) {
-    const M = METRICS[n.type] || BASE;
-    const len = (n.title || 'Sans titre').length;
-    const w = Math.min(M.max, Math.max(M.min, len * M.cw + M.pad));
-    const perLine = Math.max(8, Math.floor((w - M.pad) / M.cw));
+    const S = R.store;
+    const T = S.TYPES[n.type] || {};
+    const sty = S.styleOf(n);
+    const B = T.rank ? BOX.struct : BOX[sty.look];
+    const cw = sty.fs * sty.font.cw * (sty.bold ? 1.07 : 1);
+    const pre = sty.prefix ? (T.kicker || '').length + 5 : 0;
+    const len = (n.title || 'Sans titre').length + pre;
+    const w = sty.w || Math.min(B.max, Math.max(B.min, len * cw + B.pad));
+    const perLine = Math.max(4, Math.floor((w - B.pad) / cw));
     const lines = Math.max(1, Math.ceil(len / perLine));
-    const top = (R.store.TYPES[n.type].kicker || n.note || (n.review && n.review.rating)) ? 18 : 0;
-    const h = M.base + top + lines * M.lh + M.bar;
+    const top = ((T.kicker && !sty.prefix) || n.note || (n.review && n.review.rating)) ? 18 : 0;
+    const h = Math.max(sty.h, Math.round(B.base + top + lines * sty.fs * 1.3 + (B.bar || 0)));
     return { w, h };
   }
   const labelSize = (text) => ({ w: Math.round(String(text).length * 5.6 + 18), h: 19 }); // recalibré sur les libellés mesurés (11 px)

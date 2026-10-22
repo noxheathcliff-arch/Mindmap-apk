@@ -144,71 +144,67 @@
 .node.selected.untitled .hl { color: var(--on-primary); }
 .node-has-note svg { width: 14px; height: 14px; }
 
-/* types — différenciés sans couleur */
-.node.t-notion { background: var(--inverse-surface); color: var(--inverse-on-surface); border-color: transparent; border-radius: var(--shape-l); padding: 12px 16px; font: var(--title-m); box-shadow: var(--elev-1); }
-.node.t-notion .node-top { color: color-mix(in srgb, var(--inverse-on-surface) 70%, transparent); }
-.node.t-notion .mastery { color: var(--inverse-on-surface); }
-.node.t-notion.untitled .hl { color: color-mix(in srgb, var(--inverse-on-surface) 60%, transparent); }
-.node.t-definition { border-color: var(--on-surface-variant); }
-.node.t-juris .node-title { font: italic 400 15px/20px var(--font-serif); }
-.node.t-texte .node-title { font: 500 13px/20px var(--font-mono); }
-.node.t-idee { background: var(--surface-container); border-color: transparent; }
-.node.t-doctrine { border-color: var(--outline); border-radius: 4px 12px 4px 12px; }
-.node.t-doctrine .node-title { font: 400 15px/20px var(--font-serif); }
-.node.t-retenir { background: var(--primary-container); color: var(--on-primary-container); border-color: color-mix(in srgb, var(--primary) 60%, var(--on-surface)); }
-.node.t-retenir .node-top { color: color-mix(in srgb, var(--on-primary-container) 75%, transparent); }
-/* types « au-delà du droit » — toujours différenciés par la forme */
-.node.t-methode { border-left: 4px solid var(--on-surface); padding-left: 12px; }
-.node.t-citation .node-title { font: italic 400 15px/20px var(--font-serif); }
-.node.t-citation { border-color: transparent; background: var(--surface-container-low); border-left: 4px solid var(--outline); border-radius: 4px; padding-left: 12px; }
-.node.t-personne { border-radius: 999px; padding-left: 16px; padding-right: 16px; }
-.node.t-date { border-top: 4px solid var(--on-surface); font-variant-numeric: tabular-nums; }
-.node.t-chiffre .node-title { font: 700 18px/24px var(--font-plain); font-variant-numeric: tabular-nums; }
-.node.t-formule .node-title { font: 500 14px/20px var(--font-mono); }
-.node.t-formule { background: var(--surface-container-low); }
-/* vocabulaire universel — chaque type garde une silhouette propre, sans couleur imposée */
-.node.t-etape { border-color: var(--outline); border-radius: 4px; }
-.node.t-etape .node-title { font-weight: 600; }
-.node.t-conseil { background: var(--surface-container-low); border-color: transparent; border-radius: 12px 4px 12px 4px; }
-.node.t-exercice { border: 2px solid var(--outline); border-radius: 8px; background: repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--on-surface) 6%, transparent) 19px 20px), var(--surface-container-lowest); }
-.node.t-etude .node-title { font: italic 400 15px/20px var(--font-serif); }
-.node.t-etude { border-color: var(--outline); border-radius: 4px 4px 12px 4px; }
-
-/* Structure du cours : Chapitre › Leçon › Section. La hiérarchie se lit au premier regard
-   (taille, graisse, encre), toujours sans couleur ; le sur-titre numéroté est surligné. */
-.node.struct .node-kicker { font: 700 11px/16px var(--font-plain); letter-spacing: .1em; }
-.node.t-chapitre {
+/* Trois apparences seulement (DESIGN §4.4) : Notion (aplat sombre), Idée (aplat clair), Référence (filet + serif).
+   Le niveau (chapitre › section › sous-section › paragraphe) se lit par la typographie, réglable :
+   --nf police, --nfs corps, --nfw graisse. Forme (w/h/arrondi) et teinte se règlent nœud par nœud. */
+.node { --nf: var(--font-plain); --nfs: 14px; --nfw: 400; }
+.node-title { font-family: var(--nf); font-size: var(--nfs); font-weight: var(--nfw); line-height: 1.3; }
+.node.look-notion {
   background: var(--inverse-surface); color: var(--inverse-on-surface); border-color: transparent;
-  border-radius: var(--shape-m); padding: 16px 24px; min-width: 200px; max-width: 336px;
-  font: 400 26px/32px var(--font-brand); box-shadow: var(--elev-2);
+  border-radius: var(--shape-l); padding: 12px 16px; box-shadow: var(--elev-1);
 }
-.node.t-chapitre .node-top { min-height: 20px; color: color-mix(in srgb, var(--inverse-on-surface) 70%, transparent); }
+.node.look-notion .node-top { color: color-mix(in srgb, currentColor 70%, transparent); }
+.node.look-notion .mastery { color: inherit; }
+.node.look-notion.untitled .hl { color: color-mix(in srgb, currentColor 60%, transparent); }
+.node.look-notion.struct { min-width: 120px; max-width: 336px; }
+.node.look-idee { background: var(--surface-container); border-color: transparent; }
+.node.look-ref {
+  border-color: transparent; background: var(--surface-container-low);
+  border-left: 4px solid var(--outline); border-radius: 4px; padding-left: 12px;
+}
+.node.look-ref .node-title { font-style: italic; }
+/* particularités gardées : sur-titre de structure, chiffres alignés */
+.node.struct .node-kicker { font: 700 11px/16px var(--font-plain); letter-spacing: .1em; }
 .node.t-chapitre .node-kicker { padding: 0 8px; border-radius: 4px; background: var(--primary); color: var(--on-primary); }
-.node.t-chapitre .mastery { color: var(--inverse-on-surface); }
-.node.t-chapitre.untitled .hl { color: color-mix(in srgb, var(--inverse-on-surface) 60%, transparent); }
-.node.t-lecon, .node.t-section {
-  background: var(--surface-container-lowest); border: 2px solid var(--on-surface);
-  border-radius: var(--shape-l); padding: 12px 20px; min-width: 160px; max-width: 320px;
-  font: 500 21px/28px var(--font-brand);
+.node.t-date .node-title, .node.t-chiffre .node-title { font-variant-numeric: tabular-nums; }
+/* préfixe numéroté (« Paragraphe II ») écrit devant le titre ; il remplace alors le sur-titre */
+.node-pre { font-weight: 700; opacity: .72; margin-right: .3em; white-space: nowrap; }
+.node-pre::after { content: " ·"; }
+.node-pre:empty { display: none; }
+.node.has-pre .node-kicker { display: none; }
+/* forme réglée à la main : la largeur choisie l'emporte sur les bornes du type */
+.node.sized-w { max-width: none; min-width: 0; }
+
+/* Teinte d'un nœud (n.color ou « tous les <type> ») : --nh teinte, --nc chroma (palette R.store.HUES).
+   Aplats dérivés en OKLCH par thème, contraste du texte ≥ 4.5:1. */
+.node.tinted { transition: background-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out); }
+.node.tinted.look-notion { background: oklch(.45 min(var(--nc), .16) var(--nh)); color: #fff; }
+.node.tinted.look-idee { background: oklch(.94 calc(var(--nc) * .4) var(--nh)); color: oklch(.25 calc(var(--nc) * .3) var(--nh)); }
+.node.tinted.look-ref { background: oklch(.965 calc(var(--nc) * .25) var(--nh)); border-left-color: oklch(.55 var(--nc) var(--nh)); }
+.node.tinted.look-idee .node-top, .node.tinted.look-ref .node-top { color: oklch(.42 calc(var(--nc) * .7) var(--nh)); }
+:root[data-theme="dark"] .node.tinted.look-notion { background: oklch(.78 min(var(--nc), .14) var(--nh)); color: oklch(.2 .02 var(--nh)); }
+:root[data-theme="dark"] .node.tinted.look-idee { background: oklch(.32 calc(var(--nc) * .5) var(--nh)); color: oklch(.95 .015 var(--nh)); }
+:root[data-theme="dark"] .node.tinted.look-ref { background: oklch(.27 calc(var(--nc) * .35) var(--nh)); border-left-color: oklch(.75 var(--nc) var(--nh)); }
+:root[data-theme="dark"] .node.tinted.look-idee .node-top, :root[data-theme="dark"] .node.tinted.look-ref .node-top { color: oklch(.82 calc(var(--nc) * .5) var(--nh)); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .node.tinted.look-notion { background: oklch(.78 min(var(--nc), .14) var(--nh)); color: oklch(.2 .02 var(--nh)); }
+  :root:not([data-theme="light"]) .node.tinted.look-idee { background: oklch(.32 calc(var(--nc) * .5) var(--nh)); color: oklch(.95 .015 var(--nh)); }
+  :root:not([data-theme="light"]) .node.tinted.look-ref { background: oklch(.27 calc(var(--nc) * .35) var(--nh)); border-left-color: oklch(.75 var(--nc) var(--nh)); }
+  :root:not([data-theme="light"]) .node.tinted.look-idee .node-top, :root:not([data-theme="light"]) .node.tinted.look-ref .node-top { color: oklch(.82 calc(var(--nc) * .5) var(--nh)); }
 }
-.node.t-lecon .node-kicker, .node.t-section .node-kicker { color: var(--on-surface); }
-.node.t-soussection {
-  border: 2px solid var(--on-surface-variant); padding: 12px 16px; min-width: 120px; max-width: 288px;
-  font: 600 16px/24px var(--font-plain);
-}
+
 /* jauge de maîtrise de la branche (value change : transform, 360 ms) */
 .node-meter { display: none; height: 4px; margin-top: 8px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, currentColor 16%, transparent); }
 .node.has-meter .node-meter { display: block; }
 .node-meter i { display: block; height: 100%; background: currentColor; transform: scaleX(var(--p, 0)); transform-origin: left; transition: transform var(--dur-lg) var(--ease-out); }
-.node.t-chapitre .node-meter i { background: var(--primary); }
+.node.struct .node-meter i { background: var(--primary); }
 .node.masked .node-meter { visibility: hidden; }
 
 /* états */
 .node.selected { border-color: var(--on-surface); z-index: 2; }
 /* focus clavier : anneau 2px + 2px d'écart (WCAG 2.4.13), distinct de la sélection */
 .canvas.kbd .node:focus-visible { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary); }
-.node.t-chapitre.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
-.node.t-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
+.node.look-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface), var(--elev-2); }
 .node:active:not(.editing):not(.dragging) { filter: brightness(.95); }
 /* prise en main : le nœud se soulève (ombre diffuse d'élévation, sans changer de taille) */
 .node.dragging { z-index: 10; cursor: grabbing; }
@@ -262,6 +258,28 @@
 .node.primary:not(.editing):not(.masked) .node-handle { opacity: 1; scale: 1; pointer-events: auto; }
 .node-handle:hover { scale: 1.1 !important; }
 .canvas.is-dragging .node-handle, .canvas.is-linking .node-handle, .canvas.is-masked .node-handle { opacity: 0 !important; pointer-events: none !important; }
+
+/* poignée de redimensionnement (coin bas droit) : visible sur le nœud principal ; écrasée à la prise
+   (anticipation), elle suit le doigt puis le nœud se pose avec un rebond (follow-through) */
+.node-resize {
+  position: absolute; right: -7px; bottom: -7px; width: 18px; height: 18px;
+  border-radius: 6px 6px 9px 6px; background: var(--surface); border: 1.5px solid var(--primary);
+  cursor: nwse-resize; touch-action: none;
+  opacity: 0; scale: .5; pointer-events: none;
+  transition: opacity var(--dur-sm) var(--ease-out), scale var(--dur-sm) cubic-bezier(.42, 1.67, .21, .9), border-radius var(--dur-sm) var(--ease-out);
+}
+.node-resize::before { content: ""; position: absolute; inset: 4px 4px 4px 4px; border-right: 1.5px solid var(--primary); border-bottom: 1.5px solid var(--primary); border-radius: 0 0 3px 0; }
+.node-resize::after { content: ""; position: absolute; inset: -12px; }
+.node.primary:not(.editing):not(.masked) .node-resize { opacity: 1; scale: 1; pointer-events: auto; }
+@media (hover: hover) { .node-resize:hover { scale: 1.15 !important; } }
+.node.resizing .node-resize { scale: 1.3 .8 !important; border-radius: 50%; background: var(--primary); }
+.node.resizing { outline: 2px dashed color-mix(in srgb, var(--primary) 60%, transparent); outline-offset: 4px; transition: none; }
+.node.primary .node-collapse { right: 18px; }
+.canvas.is-dragging .node-resize, .canvas.is-linking .node-resize, .canvas.is-masked .node-resize { opacity: 0 !important; pointer-events: none !important; }
+.canvas.is-resizing, .canvas.is-resizing .node { cursor: nwse-resize; }
+.canvas.is-resizing .node-handle, .canvas.is-resizing .ctx-bar { opacity: 0; pointer-events: none; }
+.is-ro .node-resize { display: none; }
+@media (prefers-reduced-motion: reduce) { .node-resize { transition: opacity var(--dur-xs) linear; } }
 
 .node-collapse {
   position: absolute; bottom: -10px; right: 10px;
@@ -466,13 +484,13 @@
   border: 0; border-radius: var(--shape-xs) var(--shape-xs) 0 0;
   background: var(--surface-container-highest);
   box-shadow: inset 0 -1px 0 var(--on-surface-variant);
-  font: 400 15px/24px var(--font-plain);
+  font: var(--note-fw, 400) var(--note-fs, 15px)/1.6 var(--note-font, var(--font-plain));
   tab-size: 2;
 }
 .note-input:focus, .note-input:focus-visible { outline: none; box-shadow: inset 0 -2px 0 var(--primary); }
 .note-input::placeholder { color: var(--on-surface-variant); opacity: .7; }
 .page-editor[data-pane="bottom"] .note-input { min-height: 34dvh; }
-.note-preview { min-height: 80px; padding: var(--sp-1) 0; cursor: text; }
+.note-preview { min-height: 80px; padding: var(--sp-1) 0; cursor: text; font-family: var(--note-font, inherit); font-size: var(--note-fs, inherit); font-weight: var(--note-fw, 400); }
 
 .decomp-list { list-style: none; display: grid; gap: 2px; }
 .decomp-item { display: flex; align-items: center; gap: var(--sp-2); width: 100%; min-height: 40px; padding: 6px var(--sp-3); border-radius: var(--shape-s); text-align: left; font: var(--body-m); }
@@ -686,4 +704,97 @@
 .node-go::after { content: ""; position: absolute; inset: -10px; }
 .node-go svg { width: 14px; height: 14px; }
 @media (hover: hover) { .node-go:hover { transform: translateX(2px); } }
-.node.t-notion .node-go, .node.t-chapitre .node-go { background: var(--inverse-on-surface); color: var(--inverse-surface); }
+.node.look-notion .node-go { background: var(--inverse-on-surface); color: var(--inverse-surface); }
+
+/* ---- Fiche « Apparence » du nœud --------------------------------------
+   Feuille latérale sur grand écran (la carte reste visible : aperçu en direct),
+   feuille du bas sur téléphone, à mi-hauteur pour garder le nœud en vue. */
+.dialog-wrap:has(> .dialog-style) .scrim { background: color-mix(in srgb, var(--scrim) 22%, transparent); }
+@media (min-width: 600px) {
+  .dialog-wrap:has(> .dialog-style) { place-items: center end; padding: var(--sp-4) var(--sp-4) var(--sp-4) 0; }
+  .dialog.dialog-style { width: 380px; max-height: calc(100dvh - 32px); transform-origin: 100% 50%; }
+}
+@media (max-width: 599.98px) {
+  .dialog-wrap:has(> .dialog-style) { place-items: end stretch; padding: 0; }
+  .dialog.dialog-style { width: 100%; max-height: 62dvh; border-radius: var(--shape-xl) var(--shape-xl) 0 0; padding: var(--sp-5) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom)); }
+  .dialog.dialog-style .dialog-actions { position: sticky; bottom: calc(-1 * var(--sp-4)); margin: var(--sp-4) calc(-1 * var(--sp-4)) 0; padding: var(--sp-3) var(--sp-4); background: var(--surface-container-high); }
+}
+.dialog-style .dialog-title { margin-bottom: var(--sp-3); }
+.sty { display: grid; gap: var(--sp-5); min-width: 0; }
+.sty-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.sty-look { font: var(--body-s); color: var(--on-surface-variant); }
+.sty-sec { display: grid; gap: var(--sp-2); min-width: 0; }
+.sty-label { font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); }
+.sty-help { font: var(--body-s); color: var(--on-surface-variant); }
+.sty-scope { justify-self: start; max-width: 100%; }
+.sty-swatches { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px; }
+.sty-sw {
+  width: 32px; height: 32px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 14%, transparent);
+  transition: transform var(--dur-sm) cubic-bezier(.42, 1.67, .21, .9), box-shadow var(--dur-xs) var(--ease-out), border-radius var(--dur-sm) cubic-bezier(.42, 1.67, .21, .9);
+}
+.sty-sw[aria-checked="true"] { border-radius: 10px; box-shadow: 0 0 0 2px var(--surface-container-high), 0 0 0 4px var(--on-surface); }
+.sty-sw:active { transform: scale(.86); }
+@media (hover: hover) { .sty-sw:hover { transform: scale(1.1); } }
+.sty-sw-none { background: transparent; color: var(--on-surface-variant); box-shadow: inset 0 0 0 1.5px var(--outline); }
+.sty-slide { display: grid; gap: 0; }
+.sty-slide-h { display: flex; justify-content: space-between; align-items: baseline; font: var(--body-m); }
+.sty-val { font: 600 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; padding: 4px 8px; border-radius: 8px; background: var(--primary-container); color: var(--on-primary-container, var(--primary)); }
+.sty-slide .slider { height: 36px; }
+.sty-fonts {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+  max-height: 232px; overflow: auto; overscroll-behavior: contain; padding: 2px; margin: -2px;
+}
+.sty-font {
+  display: grid; gap: 1px; text-align: left; min-width: 0; padding: 8px 12px; border-radius: var(--shape-m);
+  border: 1px solid var(--outline-variant); background: var(--surface-container-low); color: var(--on-surface);
+  transition: background-color var(--dur-xs) var(--ease-out), border-radius var(--dur-sm) cubic-bezier(.42, 1.67, .21, .9);
+}
+.sty-font-n { font-size: 16px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sty-font-c { font: var(--label-s); color: var(--on-surface-variant); font-family: var(--font-plain); }
+.sty-font[aria-checked="true"] { background: var(--secondary-container); border-color: transparent; border-radius: var(--shape-l); color: var(--on-secondary-container); }
+.sty-font[aria-checked="true"] .sty-font-c { color: inherit; opacity: .8; }
+.sty-switch { padding-inline: 0; min-height: 52px; }
+.sty-switch[aria-checked="true"] { background: none; color: inherit; }
+.sty-switch .choice-l { display: grid; gap: 2px; font: var(--body-s); }
+.sty-switch .choice-l b { font: var(--body-l); }
+.sty-switch[aria-checked="true"] .choice-sub { color: var(--on-surface-variant); opacity: 1; }
+/* interrupteur M3 : rail 52×32, pastille qui grossit en glissant (ressort) */
+.m3-switch {
+  flex: none; position: relative; width: 52px; height: 32px; border-radius: 16px;
+  background: var(--surface-container-highest); box-shadow: inset 0 0 0 2px var(--outline);
+  transition: background var(--dur-sm) var(--ease-out), box-shadow var(--dur-sm) var(--ease-out);
+}
+.m3-switch i {
+  position: absolute; left: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--outline); transform: scale(.667);
+  transition: transform 350ms cubic-bezier(.42,1.67,.21,.9), background var(--dur-sm) var(--ease-out);
+}
+.sty-switch[aria-checked="true"] .m3-switch { background: var(--primary); box-shadow: none; }
+.sty-switch[aria-checked="true"] .m3-switch i { --sw-x: 20px; transform: translateX(20px); background: var(--on-primary); }
+.sty-switch:active .m3-switch i { transform: translateX(var(--sw-x, 0)) scale(1.17); }
+@media (prefers-reduced-motion: reduce) { .m3-switch i { transition: background var(--dur-sm) linear; } }
+.sty-foot { display: flex; justify-content: flex-start; margin-top: calc(-1 * var(--sp-2)); }
+
+/* Réglages · Typographie des cartes : niveaux en puces, aperçu vivant */
+.dialog.dialog-typo { width: min(520px, 100%); }
+.typo-levels { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--sp-6)); padding: 2px var(--sp-6); scroll-padding-inline: var(--sp-6); }
+.typo-levels::-webkit-scrollbar { display: none; }
+.typo-levels .chip { flex: none; background: transparent; box-shadow: inset 0 0 0 1px var(--outline-variant); }
+.typo-levels .chip.on { background: var(--secondary-container); color: var(--on-secondary-container); box-shadow: none; }
+.typo-levels .chip.on .ic { color: inherit; }
+.typo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+.typo-preview {
+  min-height: 72px; display: block; padding: 14px 18px; line-height: 1.3; overflow-wrap: anywhere;
+  border-radius: var(--shape-l); transition: font-size var(--dur-sm) var(--ease-out);
+}
+.typo-preview.is-notion { background: var(--inverse-surface); color: var(--inverse-on-surface); box-shadow: var(--elev-1); }
+.typo-preview.is-idee { background: var(--surface-container); border: 1px solid var(--outline-variant); }
+.typo-preview.is-ref { background: var(--surface-container-low); border-left: 4px solid var(--outline); border-radius: 4px; font-style: italic; }
+.typo-preview.is-note { background: var(--surface); border: 1px solid var(--outline-variant); line-height: 1.55; }
+.typo-pre { opacity: .7; font-weight: 700; }
+@media (max-width: 599px) {
+  .typo-levels { margin: 0 calc(-1 * var(--sp-5)); padding: 2px var(--sp-5); }
+}
+@media (prefers-reduced-motion: reduce) { .typo-preview { transition: none; } }
+.note-preview.md p { line-height: 1.65; }

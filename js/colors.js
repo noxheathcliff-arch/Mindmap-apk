@@ -116,8 +116,8 @@
   /** 12 nuances harmonieuses (même luminance et saturation perçues, teintes à 30°) */
   const SWATCHES = Array.from({ length: 12 }, (_, i) => oklchToHex({ L: 0.64, C: 0.15, h: (i * 30 + 20) % 360 }));
 
-  /** Types « forts » (ancres visuelles) : gardent un aplat soutenu même en mode doux */
-  const STRONG = new Set(['notion', 'chapitre']);
+  /** Types « forts » (apparence Notion, ancres visuelles) : gardent un aplat soutenu même en mode doux */
+  const isStrong = (type) => R.store.look(type) === 'notion';
 
   function settings() {
     const s = R.store.data.settings.colors || {};
@@ -168,7 +168,7 @@
     const s2 = ensureContrast(sub, bg, 4.5);
     return { bg, fg: f.hex, line, sub: s2.hex, adjusted: f.adjusted || s2.adjusted };
   }
-  const variantOf = (type, s) => (STRONG.has(type) ? 'fort' : s.intensity);
+  const variantOf = (type, s) => (isStrong(type) ? 'fort' : s.intensity);
 
   /** Paires de types trop proches visuellement (mêmes fonds), pour prévenir l'utilisatrice */
   function closePairs(s = settings(), theme = currentTheme(), types = R.store.TYPE_ORDER) {
@@ -197,11 +197,11 @@
       if (!pal[t]) continue;
       for (const theme of ['light', 'dark']) {
         const d = derive(pal[t], theme, variantOf(t, s));
-        // la forme du type (bordure double, pointillés, italique…) reste intacte : seules les teintes changent
+        // l'apparence (filet, serif…) reste intacte : seules les teintes changent ; une teinte posée sur le nœud prime
         rules[theme].push(
-          `.node.t-${t}{background:${d.bg};color:${d.fg}}`,
-          `.node.t-${t}:not(.selected):not(.drop-target){border-color:${d.line}}`,
-          `.node.t-${t} .node-top,.node.t-${t}.untitled .hl{color:${d.sub}}`,
+          `.node.t-${t}:not(.tinted){background:${d.bg};color:${d.fg}}`,
+          `.node.t-${t}:not(.tinted):not(.selected):not(.drop-target){border-color:${d.line}}`,
+          `.node.t-${t}:not(.tinted) .node-top,.node.t-${t}:not(.tinted).untitled .hl{color:${d.sub}}`,
         );
       }
     }

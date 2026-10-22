@@ -1493,12 +1493,12 @@ a.resume:active { transform: none; }
 .fab, .fab:hover, .rail .fab:hover, .btn-filled:hover:not(:disabled),
 .fiche-body, .fiche-front, .rate-row, .search, .plan-card, .plan-card:hover,
 .map-card:not(.map-add):hover, .part, .part:hover,
-.node::before, .node::after, .node.t-chapitre, .node-handle,
+.node::before, .node::after, .node.look-notion, .node-handle,
 .ctx-bar, .vtoolbar, .ed-banner, .coach,
 .page-editor[data-pane="side"] .pane, .page-editor[data-pane="bottom"] .pane, .bottombar { box-shadow: none; }
 .navbar .fab, .ctxbar .fab, .fab.lux, .fab.lux:hover { box-shadow: var(--lux-lit), var(--lux-drop); }
 .node { box-shadow: none; }
-.node.t-chapitre.selected, .node.t-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface); }
+.node.look-notion.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--on-surface); }
 .node-handle { box-shadow: 0 0 0 2px var(--surface); }
 /* les flottants de l'éditeur gardent un contour pour se détacher sans ombre */
 .ctx-bar, .vtoolbar, .ed-banner, .coach, .search { border: 1px solid var(--outline-variant); }

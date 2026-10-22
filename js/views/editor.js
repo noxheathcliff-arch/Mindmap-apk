@@ -386,10 +386,11 @@
 
     function nodeEl(n) {
       const el = h('div.node', { dataset: { id: n.id }, role: 'treeitem', tabindex: '-1' });
-      el.innerHTML = '<span class="node-top"><span class="node-kicker"></span><span class="node-meta"></span></span><span class="node-title"><span class="hl"></span></span>' +
+      el.innerHTML = '<span class="node-top"><span class="node-kicker"></span><span class="node-meta"></span></span><span class="node-title"><span class="node-pre"></span><span class="hl"></span></span>' +
         '<span class="node-meter" aria-hidden="true"><i></i></span><span class="node-order" aria-hidden="true"></span>' +
         '<button type="button" class="node-collapse" tabindex="-1" aria-label="Replier"></button>' +
-        '<span class="node-handle" data-handle="1" aria-hidden="true" title="Glisser pour relier · cliquer pour ajouter un enfant"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>';
+        '<span class="node-handle" data-handle="1" aria-hidden="true" title="Glisser pour relier · cliquer pour ajouter un enfant"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>' +
+        '<span class="node-resize" data-resize="1" aria-hidden="true" title="Glisser pour redimensionner · double-clic : taille automatique"></span>';
       return el;
     }
 
@@ -402,11 +403,37 @@
       return m ? { href: '#/carte/' + m.id, label: 'Ouvrir ' + (m.label || 'la carte') } : null;
     }
 
+    /** Apparence, typographie, teinte et forme réglées (R.store.styleOf) → classes et variables CSS du nœud */
+    function applyStyle(el, sty, ssig) {
+      el._ssig = ssig;
+      if (el._look !== sty.look) {
+        if (el._look) el.classList.remove('look-' + el._look);
+        el.classList.add('look-' + sty.look);
+        el._look = sty.look;
+      }
+      R.fonts.ensure(sty.fontKey);
+      el.style.setProperty('--nf', R.fonts.family(sty.fontKey));
+      el.style.setProperty('--nfs', sty.fs + 'px');
+      el.style.setProperty('--nfw', sty.bold ? '700' : '400');
+      const hue = sty.color && S.HUES[sty.color];
+      el.classList.toggle('tinted', !!hue);
+      if (hue) { el.style.setProperty('--nh', String(hue.h)); el.style.setProperty('--nc', String(hue.c)); }
+      else { el.style.removeProperty('--nh'); el.style.removeProperty('--nc'); }
+      el.style.width = sty.w ? sty.w + 'px' : '';
+      el.classList.toggle('sized-w', !!sty.w);
+      el.style.minHeight = sty.h ? sty.h + 'px' : '';
+      el.style.borderRadius = sty.r === null ? '' : sty.r + 'px';
+      el.dataset.sized = '';
+    }
+
     function paintNode(el, n, ctx) {
       const T = S.TYPES[n.type];
       const bs = ctx.stats;
+      const sty = ctx.style;
+      const pre = sty.prefix ? ctx.pre : '';
+      const ssig = [sty.look, sty.fontKey, sty.fs, sty.bold, sty.color || '', sty.w, sty.h, sty.r === null ? '' : sty.r].join('|');
       const sig = [n.type, n.title, n.em, !!n.note.trim(), n.review.rating, n.collapsed, ctx.childCount, n.logic, ctx.kicker, n.ref || '',
-        bs ? `${bs.reviewable}/${Math.round(bs.progress * 100)}` : ''].join('|');
+        bs ? `${bs.reviewable}/${Math.round(bs.progress * 100)}` : '', pre].join('|');
       if (el._type !== n.type) {
         if (el._type) el.classList.remove('t-' + el._type, 'rank-' + (S.TYPES[el._type].rank || 0));
         el.classList.add('t-' + n.type);
@@ -414,9 +441,12 @@
         if (T.rank) el.classList.add('rank-' + T.rank);
         el._type = n.type;
       }
+      if (el._ssig !== ssig) applyStyle(el, sty, ssig);
       if (el._sig !== sig) {
         el._sig = sig;
         el.querySelector('.node-kicker').textContent = ctx.kicker;
+        el.querySelector('.node-pre').textContent = pre;
+        el.classList.toggle('has-pre', !!pre);
         // structure : jauge de maîtrise de toute la branche (chapitre, leçon, section)
         const meter = el.querySelector('.node-meter');
         el.classList.toggle('has-meter', !!(bs && bs.reviewable));
@@ -463,6 +493,7 @@
       const alive = new Set();
       const emerging = [];
       const nums = S.structNumbers(map);
+      const idx = S.structIndex(map);
       // ordre de lecture des branches principales : 1, 2, 3… (sauf leçons/sections, déjà numérotées)
       const order = new Map();
       for (const r of S.roots(map)) {
@@ -489,6 +520,8 @@
           descCount: n.collapsed ? S.descendants(map, n.id).length : 0,
           isRoot: !parents.has(n.id),
           kicker: S.kickerOf(map, n, nums),
+          style: S.styleOf(n, map),
+          pre: S.isStruct(n.type) ? S.prefixOf(map, n, idx) : '',
           order: order.get(n.id) || '',
           stats: S.isStruct(n.type) ? S.branchStats(map, n.id) : null,
         });
@@ -1147,6 +1180,7 @@
     function setType(ids, type) {
       if (guard()) return;
       mutate(() => { for (const id of ids) { const n = S.node(map, id); if (n) n.type = type; } });
+      if (st.styleSheet) st.styleSheet();
     }
     function setLogic(id, logic) {
       if (guard()) return;
@@ -1597,6 +1631,7 @@
         return [
           { label: `${st.sel.size} sélectionnés`, text: true },
           { icon: 'type', label: 'Type', act: (b) => typeMenu(b, [...st.sel]) },
+          { icon: 'palette', label: 'Apparence', act: (b) => styleSheet([...st.sel], b), tip: 'Couleur, forme, police' },
           { icon: 'tidy', label: 'Ranger', act: tidy },
           { icon: 'trash', label: 'Supprimer', act: () => deleteNodes(st.sel), danger: true },
         ];
@@ -1611,6 +1646,7 @@
           ? (S.branchStats(map, n.id).reviewable ? { icon: 'cards', label: 'Réviser', act: () => reviewBranch(n), tip: `Réviser ${STRUCT_THIS[n.type]}` } : null)
           : { icon: 'logic', label: n.logic ? (n.logic === 'et' ? 'ET' : 'OU') : 'ET/OU', act: (b) => logicMenu(b, n), tip: 'Conditions cumulatives ou alternatives', on: !!n.logic },
         kids ? { icon: n.collapsed ? 'expand' : 'collapse', label: n.collapsed ? 'Déplier' : 'Replier', act: () => toggleCollapse(n.id), tip: n.collapsed ? 'Déplier la branche' : 'Replier la branche', kbd: '.' } : null,
+        { icon: 'palette', label: 'Apparence', act: (b) => styleSheet([n.id], b), tip: 'Couleur, forme, police', kbd: 'A' },
         { icon: 'more', label: 'Plus', act: (b) => nodeMenu(b, n) },
       ].filter(Boolean);
     }
@@ -1707,6 +1743,137 @@
       ctxBar.classList.add('in');
     }
 
+    /* ------------------------------------------------------------------ */
+    /* Fiche « Apparence » : couleur (ce nœud / tout le type), forme,      */
+    /* police, corps, gras, préfixe — chaque geste se voit sur la carte.   */
+    /* ------------------------------------------------------------------ */
+    const hueCss = (k, l = 0.62) => { const c = S.HUES[k]; return c ? `oklch(${l} ${c.c} ${c.h})` : 'transparent'; };
+    function styleSheet(ids, origin) {
+      if (guard()) return;
+      ids = ids.filter((id) => S.node(map, id));
+      if (!ids.length) return;
+      R.fonts.ensureAll();
+      const nodes = () => ids.map((id) => S.node(map, id)).filter(Boolean);
+      const first = () => nodes()[0];
+      const key = ids.join(',');
+      // un geste continu (curseur) = un seul pas d'annulation
+      const set = (field, fn, live) => mutate(() => { for (const n of nodes()) fn(n); }, { coalesce: live ? `sty:${field}:${key}` : null, pane: false });
+      let scope = 'node';
+      const box = h('div.sty');
+
+      const sec = (label, ...kids) => h('section.sty-sec', h('p.sty-label', label), ...kids);
+      /** Curseur avec « Auto » sous le minimum utile : valeur 0/absente = réglage par défaut */
+      function slider({ label, min, max, step, value, auto, fmt, onInput }) {
+        const out = h('output.sty-val');
+        const inp = h('input.slider', { type: 'range', min: String(auto), max: String(max), step: String(step), value: String(value == null ? auto : value), 'aria-label': label });
+        const sync = () => {
+          const v = +inp.value;
+          out.textContent = v <= auto ? 'Auto' : fmt(v);
+          inp.style.setProperty('--p', ((v - auto) / (max - auto) * 100) + '%');
+        };
+        sync();
+        inp.addEventListener('input', () => { sync(); const v = +inp.value; onInput(v <= auto ? null : Math.max(min, v)); });
+        return h('div.sty-slide', h('div.sty-slide-h', h('span', label), out), inp);
+      }
+      const switchRow = (label, sub, on, onToggle) => {
+        const b = h('button.list-item.choice.sty-switch', { type: 'button', role: 'switch', 'aria-checked': String(on) },
+          h('span.choice-l', h('b', label), sub ? h('span.choice-sub', sub) : null), h('span.m3-switch', { 'aria-hidden': 'true' }, h('i')));
+        b.addEventListener('click', () => { const v = b.getAttribute('aria-checked') !== 'true'; b.setAttribute('aria-checked', String(v)); onToggle(v); });
+        return b;
+      };
+
+      function paint() {
+        const n = first();
+        if (!n) return;
+        const sty = S.styleOf(n, map);
+        const T = S.TYPES[n.type];
+        const types = [...new Set(nodes().map((x) => x.type))];
+        U.clear(box);
+
+        // type : la silhouette suit l'apparence (Notion, Idée, Référence)
+        const typeChip = h('button.chip.chip-filter', { type: 'button' }, h('span', types.length > 1 ? 'Types mêlés' : T.label), R.icon('chevronDown', 16));
+        typeChip.addEventListener('click', () => typeMenu(typeChip, ids));
+        box.appendChild(h('div.sty-head', typeChip, h('span.sty-look', 'Apparence ' + S.LOOKS[sty.look])));
+
+        // couleur + portée
+        const scopeSeg = h('div.segmented.seg-xs.sty-scope', { role: 'radiogroup', 'aria-label': 'Portée de la couleur' },
+          [['node', ids.length > 1 ? 'Ces nœuds' : 'Ce nœud'], ['type', types.length > 1 ? 'Tous ces types' : `Tous les « ${T.label} »`]].map(([v, l]) => {
+            const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(scope === v) }, l);
+            b.addEventListener('click', () => { scope = v; paint(); });
+            return b;
+          }));
+        ui.segIndicator(scopeSeg, 'sty-scope');
+        const cur = scope === 'node' ? (n.color || null) : ((map.typeColors || {})[n.type] || null);
+        const pick = (k) => {
+          if (scope === 'node') set('color', (x) => { if (k) x.color = k; else delete x.color; });
+          else mutate(() => {
+            const tc = { ...(map.typeColors || {}) };
+            for (const t of types) { if (k) tc[t] = k; else delete tc[t]; }
+            if (Object.keys(tc).length) map.typeColors = tc; else delete map.typeColors;
+            // « tous les <type> » : la couleur posée nœud par nœud cède la place
+            for (const x of map.nodes) if (types.includes(x.type)) delete x.color;
+          }, { pane: false });
+          paint();
+        };
+        const sw = h('div.sty-swatches', { role: 'radiogroup', 'aria-label': 'Couleur' },
+          h('button.sty-sw.sty-sw-none', { type: 'button', role: 'radio', 'aria-checked': String(!cur), 'aria-label': 'Couleur par défaut', 'data-tip': 'Par défaut', onclick: () => pick(null) }, R.icon('close', 16)),
+          Object.entries(S.HUES).map(([k, c]) => h('button.sty-sw', { type: 'button', role: 'radio', 'aria-checked': String(cur === k), 'aria-label': c.label, 'data-tip': c.label, style: { background: hueCss(k) }, onclick: () => pick(k) })));
+        box.appendChild(sec('Couleur', scopeSeg, sw,
+          scope === 'type' ? h('p.sty-help', 'S’applique aux nœuds de ce type sur cette carte, et retire leurs couleurs posées une à une.') : null));
+
+        // forme : largeur, hauteur, arrondi (Auto = taille calculée sur le texte)
+        box.appendChild(sec('Forme',
+          slider({ label: 'Largeur', min: S.SIZE.w[0], max: S.SIZE.w[1], step: 10, auto: 70, value: n.w, fmt: (v) => v + ' px',
+            onInput: (v) => set('w', (x) => { if (v) x.w = v; else delete x.w; }, true) }),
+          slider({ label: 'Hauteur', min: S.SIZE.h[0], max: S.SIZE.h[1], step: 10, auto: 30, value: n.h, fmt: (v) => v + ' px',
+            onInput: (v) => set('h', (x) => { if (v) x.h = v; else delete x.h; }, true) }),
+          slider({ label: 'Arrondi', min: S.SIZE.r[0], max: S.SIZE.r[1], step: 1, auto: -1, value: Number.isFinite(n.r) ? n.r : null, fmt: (v) => v + ' px',
+            onInput: (v) => set('r', (x) => { if (v != null) x.r = v; else delete x.r; }, true) })));
+
+        // police : chaque nom écrit dans sa propre graphie
+        const lv = S.typoOf(sty.level);
+        const fontBtn = (k, label, sub) => {
+          const f = S.FONTS[k];
+          const on = k ? n.font === k : !n.font;
+          return h('button.sty-font', { type: 'button', role: 'radio', 'aria-checked': String(on), style: { fontFamily: R.fonts.family(k || lv.font) },
+            onclick: () => { set('font', (x) => { if (k) x.font = k; else delete x.font; }); paint(); } },
+          h('span.sty-font-n', label || f.name), h('span.sty-font-c', sub || f.cat));
+        };
+        const fonts = h('div.sty-fonts', { role: 'radiogroup', 'aria-label': 'Police' },
+          fontBtn(null, 'Par défaut', S.FONTS[lv.font].name),
+          Object.keys(S.FONTS).map((k) => fontBtn(k)));
+        box.appendChild(sec('Texte', fonts,
+          slider({ label: 'Taille', min: S.SIZE.fs[0], max: S.SIZE.fs[1], step: 1, auto: 9, value: n.fs, fmt: (v) => v + ' px',
+            onInput: (v) => set('fs', (x) => { if (v) x.fs = v; else delete x.fs; }, true) }),
+          switchRow('Gras', null, sty.bold, (v) => set('bold', (x) => { x.bold = v; })),
+          nodes().every((x) => S.isStruct(x.type))
+            ? switchRow('Préfixe numéroté', `« ${S.prefixOf(map, n)} » devant le titre`, sty.prefix, (v) => set('pre', (x) => { x.pre = v; }))
+            : null));
+
+        const reset = ui.btn('Tout réinitialiser', { icon: 'undo', variant: 'text', onClick: () => {
+          set('reset', (x) => { for (const f of ['color', 'w', 'h', 'r', 'font', 'fs', 'bold', 'pre']) delete x[f]; });
+          paint();
+        } });
+        box.appendChild(h('div.sty-foot', reset));
+      }
+      paint();
+      // st.styleSheet : redessine la fiche quand le type change depuis son menu (préfixe, apparence)
+      ui.dialog({ title: ids.length > 1 ? `Apparence · ${ids.length} nœuds` : 'Apparence', body: box, cls: 'dialog-style', origin,
+        actions: [{ label: 'OK', value: true, variant: 'filled', primary: true }],
+        onOpen: (dlg) => {
+          st.styleSheet = paint;
+          // la fiche couvre une partie du canevas : on recadre le nœud dans ce qui reste visible (aperçu en direct)
+          setTimeout(() => {
+            const n = first(); if (!n || !dlg.isConnected) return;
+            const cr = canvas.getBoundingClientRect(), br = dlg.getBoundingClientRect(), s = size(n), k = st.view.k;
+            const free = U.isCompact() ? { x: 0, y: 0, w: cr.width, h: Math.max(120, br.top - cr.top) } : { x: 0, y: 0, w: Math.max(200, br.left - cr.left), h: cr.height };
+            const sx = n.x * k + st.view.x, sy = n.y * k + st.view.y, m = 32;
+            if (sx >= free.x + m && sy >= free.y + m && sx + s.w * k <= free.x + free.w - m && sy + s.h * k <= free.y + free.h - m) return;
+            animateView({ k, x: free.x + free.w / 2 - (n.x + s.w / 2) * k, y: free.y + free.h / 2 - (n.y + s.h / 2) * k });
+          }, 120);
+        } }).then(() => { st.styleSheet = null; });
+    }
+
     function typeMenu(anchor, ids) {
       const cur = S.node(map, ids[0])?.type;
       const hint = (t) => {
@@ -1747,6 +1914,7 @@
       ui.menu(anchor, [
         { label: 'Renommer', icon: 'edit', hint: 'F2', onClick: () => startEdit(n.id) },
         { label: 'Ajouter un frère', icon: 'sibling', hint: 'Entrée', onClick: () => addSibling(n.id) },
+        { label: 'Apparence…', icon: 'palette', hint: 'A', onClick: () => styleSheet([n.id]) },
         { label: 'Dupliquer la branche', icon: 'copy', onClick: () => duplicateBranch(n.id) },
         { label: 'Centrer', icon: 'target', onClick: () => centerOn(n.id) },
         ...structMenuItems(n),
@@ -1945,6 +2113,7 @@
       } else if (st.sel.size > 1) {
         items = [
           { icon: 'type', label: 'Type', act: (b) => typeMenu(b, [...st.sel]) },
+          { icon: 'palette', label: 'Style', act: (b) => styleSheet([...st.sel], b) },
           { icon: 'trash', label: 'Supprimer', act: () => deleteNodes(st.sel), danger: true },
           { icon: 'close', label: 'Désélect.', act: () => select(null) },
         ];
@@ -1973,6 +2142,7 @@
       ui.menu(anchor, [
         { label: 'Renommer', icon: 'edit', onClick: () => startEdit(n.id) },
         { label: 'Ajouter un frère', icon: 'sibling', onClick: () => addSibling(n.id) },
+        { label: 'Apparence…', icon: 'palette', onClick: () => setTimeout(() => styleSheet([n.id]), 160) },
         ...structMenuItems(n),
         S.isStruct(n.type) ? null : { label: n.logic === 'et' ? 'Cumulatifs (ET) ✓' : n.logic === 'ou' ? 'Alternatifs (OU) ✓' : 'Cumulatifs / alternatifs…', icon: 'logic', onClick: () => setTimeout(() => logicMenu(anchor, n), 160) },
         kids ? { label: n.collapsed ? 'Déplier' : 'Replier', icon: n.collapsed ? 'expand' : 'collapse', onClick: () => toggleCollapse(n.id) } : null,
@@ -2126,6 +2296,20 @@
       flushEdit();
 
       const nodeId = hitNode(e.target);
+      if (nodeId && e.target.closest('[data-resize]') && !ro() && !st.masked && !st.linking) {
+        const n = S.node(map, nodeId), s = size(n), now = Date.now();
+        // double-clic sur la poignée : retour à la taille automatique
+        if (st.lastResizeTap && st.lastResizeTap.id === nodeId && now - st.lastResizeTap.t < 350) {
+          st.lastResizeTap = null;
+          if (n.w || n.h) mutate(() => { delete n.w; delete n.h; });
+          return;
+        }
+        st.lastResizeTap = { id: nodeId, t: now };
+        gesture = { type: 'resize', nodeId, start: { x: e.clientX, y: e.clientY }, moved: false, id: e.pointerId, w0: s.w, h0: s.h, tw: false, th: false };
+        const el = st.els.get(nodeId);
+        if (el) el.classList.add('resizing'); // anticipation : la poignée s'écrase à la prise
+        return;
+      }
       const handle = e.target.closest('[data-handle]');
       const collapseBtn = e.target.closest('.node-collapse');
       const edgeId = e.target.dataset?.edge || e.target.closest('.edge-label')?.dataset.edge;
@@ -2229,6 +2413,20 @@
         }
         st.fastEdges = true; renderEdges(); st.fastEdges = false;
         autoPan(e);
+      } else if (gesture.type === 'resize') {
+        const n = S.node(map, gesture.nodeId), el = st.els.get(gesture.nodeId);
+        if (!n || !el) return;
+        const k = st.view.k, Z = S.SIZE;
+        // un axe ne bouge que s'il a vraiment été tiré : élargir seul ne fige pas la hauteur
+        if (Math.abs(dx) / k > 4) gesture.tw = true;
+        if (Math.abs(dy) / k > 4) gesture.th = true;
+        if (gesture.tw) n.w = Math.round(U.clamp(gesture.w0 + dx / k, Z.w[0], Z.w[1]));
+        if (gesture.th) n.h = Math.round(U.clamp(gesture.h0 + dy / k, Z.h[0], Z.h[1]));
+        if (n.w) { el.style.width = n.w + 'px'; el.classList.add('sized-w'); }
+        if (n.h) el.style.minHeight = n.h + 'px';
+        st.sizes.set(n.id, { w: el.offsetWidth, h: el.offsetHeight });
+        st.fastEdges = true; renderEdges(); st.fastEdges = false;
+        positionCtx();
       } else if (gesture.type === 'connect') {
         const from = S.node(map, gesture.from);
         const s = size(from);
@@ -2266,6 +2464,11 @@
         // lecture seule : on ne déplace pas le nœud, on fait glisser la carte
         Object.assign(gesture, { type: 'pan', view: { ...st.view } });
         canvas.classList.add('is-panning');
+        return;
+      }
+      if (gesture.type === 'resize') {
+        st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+        canvas.classList.add('is-resizing');
         return;
       }
       if (gesture.type === 'node') {
@@ -2321,8 +2524,24 @@
       }
       if (!g || g.id !== e.pointerId) return;
       gesture = null;
-      canvas.classList.remove('is-dragging', 'is-panning');
+      canvas.classList.remove('is-dragging', 'is-panning', 'is-resizing');
 
+      if (g.type === 'resize') {
+        const el = st.els.get(g.nodeId);
+        if (el) {
+          el.classList.remove('resizing');
+          // follow-through : le nœud se pose avec un léger rebond
+          if (g.moved && !motion.reduced()) el.animate([{ scale: 1.025 }, { scale: 0.995 }, { scale: 1 }], { duration: 350, easing: 'cubic-bezier(.42,1.67,.21,.9)' });
+        }
+        if (g.moved) {
+          st.sizes.delete(g.nodeId);
+          S.touchMap(map, 'edit');
+          updateHistoryBtns();
+          render();
+          if (st.styleSheet) st.styleSheet();
+        }
+        return;
+      }
       if (g.type === 'pan') {
         if (!g.moved) onTapBackground(e);
         else {
@@ -2382,10 +2601,14 @@
         for (const i of gesture.moving) { const el = st.els.get(i); if (el) el.classList.remove('dragging'); }
         S.touchMap(map, 'edit');
       }
+      if (gesture && gesture.type === 'resize') {
+        const el = st.els.get(gesture.nodeId); if (el) el.classList.remove('resizing');
+        if (gesture.moved) { st.sizes.delete(gesture.nodeId); S.touchMap(map, 'edit'); }
+      }
       tempEdge.setAttribute('d', '');
       marquee.hidden = true;
       if (pointers.size === 0) gesture = null;
-      canvas.classList.remove('is-dragging', 'is-panning');
+      canvas.classList.remove('is-dragging', 'is-panning', 'is-resizing');
       render();
     }
 
@@ -2539,6 +2762,7 @@
       if (k === ' ') { e.preventDefault(); openPane(true); return; }
       if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); deleteNodes(st.sel.size ? st.sel : [n.id]); return; }
       if (k === 'l' || k === 'L') { e.preventDefault(); startLinking(n.id); return; }
+      if (k === 'a' || k === 'A') { e.preventDefault(); styleSheet(st.sel.size ? [...st.sel] : [n.id]); return; }
       if (k === '.') { e.preventDefault(); toggleCollapse(n.id); return; }
       if (/^[1-9]$/.test(k)) { e.preventDefault(); setType(st.sel.size ? [...st.sel] : [n.id], S.TYPE_ORDER[+k - 1]); return; }
       if (k.startsWith('Arrow')) { e.preventDefault(); navigate(n, k); return; }
@@ -3222,6 +3446,12 @@
     };
     updateHeader();
 
+    // une police arrive après coup : on remesure les nœuds (les liens suivent leurs bords)
+    const offFonts = R.fonts.onLoad(() => {
+      if (st.destroyed) return;
+      for (const el of st.els.values()) el.dataset.sized = '';
+      render();
+    });
     let pendingTimer = null;
     const offStore = S.on((type) => {
       if (type === 'saved') {
@@ -3232,7 +3462,7 @@
         saveState.classList.remove('pending');
         return;
       }
-      if (type === 'settings') { if (!st.sel.size && !st.selEdge) renderPane(true); return; } // légende des couleurs
+      if (type === 'settings') { render(); if (!st.sel.size && !st.selEdge) renderPane(true); return; } // typographie, légende des couleurs
       if (type === 'readonly') { applyReadOnly(); return; }
       if (type === 'edit') {
         clearTimeout(pendingTimer);
@@ -3339,6 +3569,7 @@
       if (R.actions.chooseLayout === chooseLayout) R.actions.chooseLayout = null;
       if (R.actions.organize === openOrganize) R.actions.organize = null;
       offStore();
+      offFonts();
       saveViewport.flush();
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);

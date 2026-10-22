@@ -158,7 +158,7 @@
   /** Polices proposées (chargées à la demande, cf. R.fonts) — cw : chasse moyenne / corps, pour estimer la taille hors DOM.
       spec null : déjà chargée par index.html. */
   const FONTS = {
-    jakarta:      { name: 'Plus Jakarta Sans', cat: 'Sans', cw: 0.54, spec: null, fb: 'system-ui, sans-serif' },
+    jakarta:      { name: 'Plus Jakarta Sans', cat: 'Sans', cw: 0.5, spec: null, fb: 'system-ui, sans-serif' },
     inter:        { name: 'Inter', cat: 'Sans', cw: 0.53, spec: 'Inter:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },
     dmsans:       { name: 'DM Sans', cat: 'Sans', cw: 0.52, spec: 'DM+Sans:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },
     figtree:      { name: 'Figtree', cat: 'Sans', cw: 0.51, spec: 'Figtree:ital,wght@0,400;0,700;1,400', fb: 'system-ui, sans-serif' },

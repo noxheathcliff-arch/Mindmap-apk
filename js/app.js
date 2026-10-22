@@ -463,6 +463,16 @@
     vt.finished.finally(() => { if (root.dataset.vt === 'theme') delete root.dataset.vt; });
   };
 
+  /* ---- Police des notes (Réglages › Typographie des cartes › Notes) ------- */
+  function applyNoteTypo() {
+    const t = S.typoOf('note');
+    R.fonts.ensure(t.font);
+    const root = document.documentElement.style;
+    root.setProperty('--note-font', R.fonts.family(t.font));
+    root.setProperty('--note-fs', t.size + 'px');
+    root.setProperty('--note-fw', t.bold ? '600' : '400');
+  }
+
   /* ---- Mouvement : réglage de l'app > préférence système ---------------- */
   const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
   function applyMotion() {
@@ -503,6 +513,12 @@
       colorsP.textContent = c.mode === 'off' ? 'Monochrome : les types se distinguent par leur forme.' : `Actives : ${names[c.mode]}, intensité ${c.intensity === 'vif' ? 'vive' : 'douce'}.`;
     };
     paintColorsP();
+    const typoP = h('span.set-d');
+    const paintTypoP = () => {
+      const mine = Object.keys(S.data.settings.typo || {}).length;
+      typoP.textContent = mine ? `Police, taille et gras réglés pour ${U.plural(mine, 'niveau', 'niveaux')}.` : 'Police, taille et gras par niveau (chapitre, section… notes).';
+    };
+    paintTypoP();
 
     /* Données : jauge de stockage + date de la dernière sauvegarde (rappel au-delà de 14 jours) */
     const size = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
@@ -528,7 +544,8 @@
         h('div.set-card',
           row('sun', 'Thème', null, seg, 'stack'),
           row('sparkle', 'Animations', h('span.set-d', '« Réduites » remplace déplacements et zooms par des fondus courts.'), motionSeg, 'stack'),
-          row('palette', 'Couleurs des nœuds', colorsP, ui.btn('Personnaliser', { variant: 'tonal', onClick: () => R.colors.openDialog().then(paintColorsP) })))),
+          row('palette', 'Couleurs des nœuds', colorsP, ui.btn('Personnaliser', { variant: 'tonal', onClick: () => R.colors.openDialog().then(paintColorsP) })),
+          row('type', 'Typographie des cartes', typoP, ui.btn('Personnaliser', { variant: 'tonal', onClick: () => openTypo().then(paintTypoP) })))),
       h('section.set-group', h('h3.settings-h', 'Données'),
         h('div.set-card',
           row('folder', 'Stockage sur cet appareil', h('span.set-dd', usageD, meter)),
@@ -560,6 +577,81 @@
     ui.dialog({ title: 'Réglages', icon: 'settings', body, cls: 'dialog-settings', actions: [{ label: 'Fermer', value: true, variant: 'text' }], onOpen: (_, close) => { closeFn = close; } });
   }
   app.openSettings = openSettings;
+
+  /* Typographie des cartes : un niveau à la fois (chapitre… notes), aperçu en direct.
+     Seuls les écarts au défaut sont gardés dans settings.typo ; une carte ouverte se redessine à chaque choix. */
+  function openTypo() {
+    R.fonts.ensureAll();
+    const LV = S.TYPO_LEVELS;
+    let lv = 'chapitre';
+    const box = h('div.sty.typo');
+    const save = (field, v) => {
+      const all = { ...(S.data.settings.typo || {}) };
+      const o = { ...(all[lv] || {}) };
+      if (v === undefined || v === LV[lv][field]) delete o[field]; else o[field] = v;
+      if (Object.keys(o).length) all[lv] = o; else delete all[lv];
+      if (Object.keys(all).length) S.data.settings.typo = all; else delete S.data.settings.typo;
+      S.changed('settings');
+    };
+    const SAMPLE = { chapitre: 'Les sources du droit', section: 'La loi', soussection: 'L’élaboration de la loi', paragraphe: 'Le vote au Parlement',
+      lecon: 'Introduction au droit', notion: 'Hiérarchie des normes', idee: 'La Constitution prime sur la loi', ref: '« Nul n’est censé ignorer la loi »',
+      note: 'La loi est votée par le Parlement puis promulguée par le président de la République dans les quinze jours.' };
+
+    function paint() {
+      const t = S.typoOf(lv);
+      const keep = box.querySelector('.typo-levels')?.scrollLeft || 0;
+      U.clear(box);
+      const chips = h('div.typo-levels', { role: 'radiogroup', 'aria-label': 'Niveau' },
+        Object.entries(LV).map(([k, d]) => {
+          const tuned = !!(S.data.settings.typo || {})[k];
+          const b = h('button.chip.chip-filter', { type: 'button', role: 'radio', 'aria-checked': String(k === lv), class: k === lv ? 'on' : '' },
+            k === lv ? R.icon('check', 16) : null, h('span', d.label), tuned ? h('i.typo-dot', { 'aria-label': 'personnalisé' }) : null);
+          b.addEventListener('click', () => { lv = k; paint(); });
+          return b;
+        }));
+      R.fonts.ensure(t.font);
+      const pre = 'prefix' in LV[lv] && t.prefix ? `${LV[lv].label} I · ` : '';
+      const sample = h('div.typo-preview', { class: lv === 'note' ? 'is-note' : lv === 'ref' ? 'is-ref' : lv === 'idee' ? 'is-idee' : 'is-notion',
+        style: { fontFamily: R.fonts.family(t.font), fontSize: t.size + 'px', fontWeight: t.bold ? '700' : '400' } },
+      pre ? h('span.typo-pre', pre) : null, SAMPLE[lv]);
+
+      const fontBtn = (k) => {
+        const f = S.FONTS[k];
+        return h('button.sty-font', { type: 'button', role: 'radio', 'aria-checked': String(t.font === k), style: { fontFamily: R.fonts.family(k) },
+          onclick: () => { save('font', k); paint(); } }, h('span.sty-font-n', f.name), h('span.sty-font-c', f.cat));
+      };
+      const out = h('output.sty-val', t.size + ' px');
+      const size = h('input.slider', { type: 'range', min: String(S.SIZE.fs[0]), max: String(S.SIZE.fs[1]), step: '1', value: String(t.size), 'aria-label': 'Taille' });
+      const syncSize = () => { out.textContent = size.value + ' px'; size.style.setProperty('--p', ((size.value - S.SIZE.fs[0]) / (S.SIZE.fs[1] - S.SIZE.fs[0]) * 100) + '%'); sample.style.fontSize = size.value + 'px'; };
+      syncSize();
+      size.addEventListener('input', syncSize);
+      size.addEventListener('change', () => save('size', +size.value));
+      const sw = (label, sub, on, field) => {
+        const b = h('button.list-item.choice.sty-switch', { type: 'button', role: 'switch', 'aria-checked': String(on) },
+          h('span.choice-l', h('b', label), sub ? h('span.choice-sub', sub) : null), h('span.m3-switch', { 'aria-hidden': 'true' }, h('i')));
+        b.addEventListener('click', () => { save(field, b.getAttribute('aria-checked') !== 'true'); paint(); });
+        return b;
+      };
+      const sec = (label, ...kids) => h('section.sty-sec', h('p.sty-label', label), ...kids);
+      requestAnimationFrame(() => { chips.scrollLeft = keep; });
+      box.append(
+        chips,
+        sample,
+        sec('Police', h('div.sty-fonts', { role: 'radiogroup', 'aria-label': 'Police' }, Object.keys(S.FONTS).map(fontBtn))),
+        sec('Texte',
+          h('div.sty-slide', h('div.sty-slide-h', h('span', 'Taille'), out), size),
+          sw('Gras', null, !!t.bold, 'bold'),
+          'prefix' in LV[lv] ? sw('Préfixe numéroté', `« ${LV[lv].label} I », « ${LV[lv].label} II »… devant le titre`, !!t.prefix, 'prefix') : null),
+        h('p.sty-help', lv === 'note' ? 'S’applique au texte des notes, dans l’éditeur et en lecture.' : 'Un nœud peut toujours garder sa propre police ou sa taille (fiche « Apparence »).'),
+        h('div.sty-foot', ui.btn('Réinitialiser ce niveau', { icon: 'undo', variant: 'text', disabled: !(S.data.settings.typo || {})[lv], onClick: () => {
+          const all = { ...(S.data.settings.typo || {}) }; delete all[lv];
+          if (Object.keys(all).length) S.data.settings.typo = all; else delete S.data.settings.typo;
+          S.changed('settings'); paint();
+        } })));
+    }
+    paint();
+    return ui.dialog({ title: 'Typographie des cartes', icon: 'type', body: box, cls: 'dialog-typo', actions: [{ label: 'OK', value: true, variant: 'filled', primary: true }] });
+  }
 
   /* ------------------------------------------------------------------ */
   /* Import : source (déposer · choisir · coller) → aperçu → mode → import (annulable)
@@ -672,9 +764,9 @@
       ['Carte', [
         ['Tab', 'Ajouter un enfant (décomposer)'], ['Entrée', 'Ajouter un frère'], ['F2 · double-clic', 'Renommer'],
         ['Espace · 2e clic', 'Ouvrir la note (ou toucher son icône sur le nœud)'], ['Suppr', 'Supprimer'], ['← ↑ → ↓', 'Naviguer entre les nœuds'],
-        ['L', 'Relier à un ou plusieurs nœuds (Entrée pour terminer)'], ['.', 'Replier / déplier'], [`${m} Z · ${m} ⇧ Z`, 'Annuler · Rétablir'],
+        ['L', 'Relier à un ou plusieurs nœuds (Entrée pour terminer)'], ['A', 'Apparence du nœud (couleur, forme, police)'], ['.', 'Replier / déplier'], [`${m} Z · ${m} ⇧ Z`, 'Annuler · Rétablir'],
         ['R', 'Ranger la carte'], ['F', 'Ajuster à l’écran'], ['+ / −', 'Zoom'], ['H', 'Mode masqué (révision)'],
-        ['1 … 9', 'Changer le type du nœud'], ['Alt 1 · 2 · 3', 'Chapitre · Leçon · Section'], ['P', 'Basculer Carte / Plan'],
+        ['1 … 9', 'Changer le type du nœud'], ['Alt 1 … 5', 'Chapitre · Section · Sous-section · Paragraphe · Leçon'], ['P', 'Basculer Carte / Plan'],
       ]],
       ['Révision', [['Espace', 'Afficher la réponse'], ['1 · 2 · 3', 'À revoir · Compris · Maîtrisé']]],
     ];
@@ -770,12 +862,14 @@
     applyTheme();
     R.colors.apply();
     applyMotion();
+    applyNoteTypo();
     if (S.fresh) R.seed();
     buildNav();
     const navLater = U.debounce(() => updateNav(), 800);
     S.on((type) => {
       if (type === 'change' || type === 'review' || type === 'import') { updateNav(); updateCourses(); }
       if (type === 'edit') navLater();
+      if (type === 'settings' || type === 'import') applyNoteTypo();
       if (type === 'saved' && S.saveError) ui.snack('Stockage plein : exporte une sauvegarde puis libère de la place.', { duration: 8000 });
     });
     render();
