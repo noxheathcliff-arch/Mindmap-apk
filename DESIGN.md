@@ -271,6 +271,23 @@ Le héros de l'accueil est une **boîte de Leitner en vraie 3D CSS** (`js/leitne
 - **Fin** : série dans un *cookie 12*, relevé tonal.
 - Contrastes vérifiés par audit automatisé (WCAG 2.2, 13 écrans × mobile / bureau × clair / sombre) : 0 défaut réel.
 
+### 4.x Marque Pioneer (logo)
+
+- **Idée** : le *p* minuscule est un fanion planté. Le fût est la hampe, enfoncée sous la ligne de base. La panse est un quart de disque R144 centré sur le coin haut-gauche du p, avec un contre-poinçon R110. Ce quart de disque fait écho à la forme M3 Expressive *Fan*.
+- **Unités** :
+  - hauteur d'x 144 ; fût 34 (≈ 144/φ³) ; horizontales 31 ; dépassement 3.
+  - jambage 55 (144 : 55 ≈ φ²).
+  - congés : 8 à l'extérieur, 5 à l'intérieur.
+  - largeur du mot 966.
+- **Fichiers** :
+  - `brand/pioneer-logo.html` : construction, étapes, tests et exports.
+  - `brand/logo*.svg`, `brand/icon-reverse.svg`, `brand/maskable.svg`.
+  - `icons/icon.svg`, `favicon.svg`, les PNG 180/192/512 et la version maskable.
+- **Dans l'app** :
+  - `logo()` affiche la tuile `--primary` avec le p en `--on-primary`.
+  - `wordmark()` affiche le mot-symbole en `currentColor`, haut de 24 px, dans le rail étendu.
+- **Taille minimale** : 20 px pour le mot-symbole. En dessous, l'icône seule.
+
 ---
 
 ## 5. Motion design

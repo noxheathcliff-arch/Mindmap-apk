@@ -180,7 +180,7 @@
     const bar = U.$('#navbar');
     U.clear(rail); U.clear(bar);
 
-    rail.appendChild(h('a.rail-brand', { href: '#/', 'aria-label': 'Ratio — accueil' }, logo(), h('span.rail-brand-name', 'Ratio')));
+    rail.appendChild(h('a.rail-brand', { href: '#/', 'aria-label': 'Pioneer — accueil' }, logo(), wordmark()));
     rail.appendChild(h('div.rail-fab-slot#rail-fab'));
     const railItems = h('div.rail-items');
     for (const d of DESTS) railItems.appendChild(navItem(d, 'rail'));
@@ -421,8 +421,14 @@
 
   function logo() {
     const s = h('span.logo', { 'aria-hidden': 'true' });
-    // l'initiale sur un carré arrondi primary (le dossier reste réservé aux cours de « Mes cours »)
-    s.innerHTML = '<svg viewBox="0 0 32 32" width="32" height="32"><rect x="2" y="2" width="28" height="28" rx="9" style="fill:var(--primary)"/><text x="16" y="22.5" text-anchor="middle" style="fill:var(--on-primary);font:800 17px \'Plus Jakarta Sans\', system-ui, sans-serif">R</text></svg>';
+    // l'icône Pioneer : le p-fanion sur la tuile primary (brand/pioneer-logo.html)
+    s.innerHTML = '<svg viewBox="0 0 512 512" width="32" height="32"><rect width="512" height="512" rx="115" style="fill:var(--primary)"/><path style="fill:var(--on-primary)" d="M0,191v-183c0,-4.42 3.58,-8 8,-8h127.77c4.6,0 8.25,3.87 7.99,8.46c-3.64,62.73 -47.43,114.69 -106.06,130.55c-2.18,0.59 -3.69,2.57 -3.69,4.83v47.16c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM40.86,102.16c28.93,-11.58 51.79,-35.09 62.51,-64.45c1.19,-3.26 -1.22,-6.71 -4.7,-6.71h-59.67c-2.76,0 -5,2.24 -5,5v61.52c0,3.54 3.57,5.96 6.86,4.64z" transform="translate(160.14 123.91) scale(1.50754)"/></svg>';
+    return s;
+  }
+  // le mot-symbole Pioneer, en currentColor
+  function wordmark() {
+    const s = h('span.rail-brand-name', { 'aria-hidden': 'true' });
+    s.innerHTML = '<svg viewBox="0 -51 966 250" height="24"><g fill="currentColor" fill-rule="evenodd"><path d="M0,191v-183c0,-4.42 3.58,-8 8,-8h127.77c4.6,0 8.25,3.87 7.99,8.46c-3.64,62.73 -47.43,114.69 -106.06,130.55c-2.18,0.59 -3.69,2.57 -3.69,4.83v47.16c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM40.86,102.16c28.93,-11.58 51.79,-35.09 62.51,-64.45c1.19,-3.26 -1.22,-6.71 -4.7,-6.71h-59.67c-2.76,0 -5,2.24 -5,5v61.52c0,3.54 3.57,5.96 6.86,4.64z"/><path d="M164,136v-128c0,-4.42 3.58,-8 8,-8h18c4.42,0 8,3.58 8,8v128c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM162,-32c0,-10.49 8.51,-19 19,-19c10.49,0 19,8.51 19,19c0,10.49 -8.51,19 -19,19c-10.49,0 -19,-8.51 -19,-19z"/><path d="M225,72c0,-41.42 33.58,-75 75,-75c41.42,0 75,33.58 75,75c0,41.42 -33.58,75 -75,75c-41.42,0 -75,-33.58 -75,-75zM300,113c22.09,0 40,-18.36 40,-41c0,-22.64 -17.91,-41 -40,-41c-22.09,0 -40,18.36 -40,41c0,22.64 17.91,41 40,41z"/><path d="M463,-2c36.45,0 66,29.55 66,66v72c0,4.42 -3.58,8 -8,8l-18,0c-4.42,0 -8,-3.58 -8,-8v-75c0,-17.67 -14.33,-32 -32,-32c-17.67,0 -32,14.33 -32,32v75c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8v-72c0,-36.45 29.55,-66 66,-66z"/><path d="M551,72c0,-41.42 33.58,-75 75,-75c41.42,0 75,33.58 75,75c0,4.58 -0.41,9.07 -1.2,13.42c-0.69,3.81 -4,6.58 -7.87,6.58h-91.11c-4.38,0 -6.64,5.23 -3.65,8.42c7.28,7.75 17.5,12.58 28.83,12.58h45.7c7.26,0 10.77,8.9 5.46,13.85c-13.4,12.5 -31.38,20.15 -51.15,20.15c-41.42,0 -75,-33.58 -75,-75zM626,31c-16.16,0 -30.08,9.82 -36.39,23.96c-1.48,3.31 0.94,7.04 4.57,7.04l63.66,0c3.62,0 6.04,-3.73 4.57,-7.04c-6.31,-14.14 -20.23,-23.96 -36.39,-23.96z"/><path d="M714,72c0,-41.42 33.58,-75 75,-75c41.42,0 75,33.58 75,75c0,4.58 -0.41,9.07 -1.2,13.42c-0.69,3.81 -4,6.58 -7.87,6.58h-91.11c-4.38,0 -6.64,5.23 -3.65,8.42c7.28,7.75 17.5,12.58 28.83,12.58h45.7c7.26,0 10.77,8.9 5.46,13.85c-13.4,12.5 -31.38,20.15 -51.15,20.15c-41.42,0 -75,-33.58 -75,-75zM789,31c-16.16,0 -30.08,9.82 -36.39,23.96c-1.48,3.31 0.94,7.04 4.57,7.04l63.66,0c3.62,0 6.04,-3.73 4.57,-7.04c-6.31,-14.14 -20.23,-23.96 -36.39,-23.96z"/><path d="M880,136v-72c0,-36.45 29.55,-66 66,-66c4.68,0 9.24,0.49 13.65,1.41c3.7,0.78 6.35,4.04 6.35,7.83v15.59c0,5.4 -5.24,9.25 -10.4,7.63c-3.03,-0.95 -6.26,-1.47 -9.6,-1.47c-17.67,0 -32,14.33 -32,32c0,1.01 0.05,2.01 0.14,3h-0.14v72c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8z"/></g></svg>';
     return s;
   }
   app.logo = logo;
@@ -571,7 +577,7 @@
               app.go('#/', { replace: true });
               ui.snack('Données effacées');
             } })))),
-      h('p.settings-foot', 'Ratio · fonctionne hors ligne · installable sur Android et ordinateur'));
+      h('p.settings-foot', 'Pioneer · fonctionne hors ligne · installable sur Android et ordinateur'));
 
     let closeFn = null;
     ui.dialog({ title: 'Réglages', icon: 'settings', body, cls: 'dialog-settings', actions: [{ label: 'Fermer', value: true, variant: 'text' }], onOpen: (_, close) => { closeFn = close; } });
@@ -791,7 +797,7 @@
     const steps = [
       { icon: 'folder', title: 'Range par cours', text: 'Un cours = un dossier. Tu y ranges toutes les cartes du même enseignement : droit des obligations, droit administratif…' },
       { icon: 'child', title: 'Décompose chaque notion', text: 'Une carte part d’une notion et se décompose : définition, conditions de fond et de forme (cumulatives ET / alternatives OU), exceptions, jurisprudence. Chaque nœud a sa note.' },
-      { icon: 'cards', title: 'Révise en rappel actif', text: 'Ratio transforme tes cartes en questions. Tu notes ta réponse — À revoir, Compris, Maîtrisé — et la répétition espacée te les représente au bon moment.' },
+      { icon: 'cards', title: 'Révise en rappel actif', text: 'Pioneer transforme tes cartes en questions. Tu notes ta réponse — À revoir, Compris, Maîtrisé — et la répétition espacée te les représente au bon moment.' },
     ];
     let i = 0, busy = false;
     const art = h('div.onb-art');
@@ -891,7 +897,7 @@
         if (!hadSW || fresh) return;
         fresh = true;
         if (document.hidden) location.reload();
-        else ui.snack('Nouvelle version de Ratio installée.', { action: 'Recharger', onAction: () => location.reload(), duration: 12000 });
+        else ui.snack('Nouvelle version de Pioneer installée.', { action: 'Recharger', onAction: () => location.reload(), duration: 12000 });
       });
       navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
         document.addEventListener('visibilitychange', () => {

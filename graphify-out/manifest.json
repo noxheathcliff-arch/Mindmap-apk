@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792662384.9385228,
-    "seen": 1792662439.7720773,
-    "ast_hash": "654eec9fb97bbb3c1daf5c011ac620b1",
+    "mtime": 1792701607.2126849,
+    "seen": 1792701644.732411,
+    "ast_hash": "7a980e62b3b4bd62f497475fb39b13bd",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792666828.7106586,
-    "seen": 1792667413.4236124,
-    "ast_hash": "7da0b9e7c53acda071f864194bce0d43",
+    "mtime": 1792701607.2126849,
+    "seen": 1792701644.7324924,
+    "ast_hash": "8c85da142d9455b6148b814ea882c6f9",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792700114.3116682,
-    "seen": 1792700255.7841332,
-    "ast_hash": "34688c3649c703eb17b5be23688eb621",
+    "mtime": 1792701607.2307198,
+    "seen": 1792701644.7325292,
+    "ast_hash": "9377c6351ddeb98c8dc7e81b5a8a46f3",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792700122.41082,
-    "seen": 1792700255.7841797,
-    "ast_hash": "612bbbe61a7286783c6ffd304c8beeae",
+    "mtime": 1792701639.348684,
+    "seen": 1792701644.7326326,
+    "ast_hash": "f925286739a029259f1690f99ad41ee3",
     "semantic_hash": ""
   },
   "README.md": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1792666986.0684087,
-    "seen": 1792667413.4236798,
-    "ast_hash": "0c2952ec587f9e74dac40c64d087d99b",
+    "mtime": 1792701607.2243314,
+    "seen": 1792701644.732652,
+    "ast_hash": "d3387ff334f7af62b69342e7c4854aa0",
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
@@ -270,27 +270,27 @@
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
-    "mtime": 1792662391.145103,
-    "seen": 1792662439.7721763,
-    "ast_hash": "1f50ad70e19a847720b7172a12882707",
+    "mtime": 1792701549.9486861,
+    "seen": 1792701644.7326763,
+    "ast_hash": "efedf6b6682f78894c345d699309cd2e",
     "semantic_hash": ""
   },
   "icons/icon-512.png": {
-    "mtime": 1792662391.7434685,
-    "seen": 1792662439.7721775,
-    "ast_hash": "dd3c1f9371e866914e646f0dc0e2792e",
+    "mtime": 1792701550.0726862,
+    "seen": 1792701644.7326791,
+    "ast_hash": "4af2b94906265d9c87b7eae4fbf9b4c9",
     "semantic_hash": ""
   },
   "icons/icon.svg": {
-    "mtime": 1792662384.9414248,
-    "seen": 1792662439.7721786,
-    "ast_hash": "53721b13c2f4c30224475406d91a4a48",
+    "mtime": 1792701541.9860334,
+    "seen": 1792701644.7326818,
+    "ast_hash": "553519dbeae06a9f19af9d8b80e39d37",
     "semantic_hash": ""
   },
   "icons/maskable-512.png": {
-    "mtime": 1792662392.3834686,
-    "seen": 1792662439.7721803,
-    "ast_hash": "c02bb43cdf63a43fdc4dd66f88e1efe7",
+    "mtime": 1792701550.2046862,
+    "seen": 1792701644.7326844,
+    "ast_hash": "71526c69d4529307e994f497a130d2f9",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -387,6 +387,54 @@
     "mtime": 1792700185.5901618,
     "seen": 1792700255.7841022,
     "ast_hash": "a8f15869c6136158f043bffc48dd004d",
+    "semantic_hash": ""
+  },
+  "brand/pioneer-logo.html": {
+    "mtime": 1792701537.1206863,
+    "seen": 1792701644.7326393,
+    "ast_hash": "8d09b53892c9fc263984f303ca1632e3",
+    "semantic_hash": ""
+  },
+  "brand/icon-reverse.svg": {
+    "mtime": 1792701541.9836988,
+    "seen": 1792701644.7326584,
+    "ast_hash": "efa2849f3d75ed75e5acf139f785229e",
+    "semantic_hash": ""
+  },
+  "brand/logo-mono.svg": {
+    "mtime": 1792701541.9836442,
+    "seen": 1792701644.732661,
+    "ast_hash": "e3e1d01a41e4975580c904888bb7a28a",
+    "semantic_hash": ""
+  },
+  "brand/logo-reverse.svg": {
+    "mtime": 1792701541.9836094,
+    "seen": 1792701644.7326636,
+    "ast_hash": "2e98a3f53d2736845f274f229161cd1c",
+    "semantic_hash": ""
+  },
+  "brand/logo.svg": {
+    "mtime": 1792701541.9835749,
+    "seen": 1792701644.7326658,
+    "ast_hash": "f0b756c9ada39ab8e7cd22cc82747476",
+    "semantic_hash": ""
+  },
+  "brand/maskable.svg": {
+    "mtime": 1792701541.9899542,
+    "seen": 1792701644.7326686,
+    "ast_hash": "e1c6f5701e6889d92634882ca119398c",
+    "semantic_hash": ""
+  },
+  "icons/apple-touch-icon.png": {
+    "mtime": 1792701550.344686,
+    "seen": 1792701644.7326713,
+    "ast_hash": "7d9e9a3d4a8bab873aa621636ac9721b",
+    "semantic_hash": ""
+  },
+  "icons/favicon.svg": {
+    "mtime": 1792701541.988119,
+    "seen": 1792701644.7326736,
+    "ast_hash": "44b3d4b087ad6e440594e481c26ba855",
     "semantic_hash": ""
   }
 }

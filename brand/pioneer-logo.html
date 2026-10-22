@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Logo Pioneer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22115%22%20fill%3D%22%231157ce%22%2F%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M0%2C191v-183c0%2C-4.42%203.58%2C-8%208%2C-8h127.77c4.6%2C0%208.25%2C3.87%207.99%2C8.46c-3.64%2C62.73%20-47.43%2C114.69%20-106.06%2C130.55c-2.18%2C0.59%20-3.69%2C2.57%20-3.69%2C4.83v47.16c0%2C4.42%20-3.58%2C8%20-8%2C8h-18c-4.42%2C0%20-8%2C-3.58%20-8%2C-8zM40.86%2C102.16c28.93%2C-11.58%2051.79%2C-35.09%2062.51%2C-64.45c1.19%2C-3.26%20-1.22%2C-6.71%20-4.7%2C-6.71h-59.67c-2.76%2C0%20-5%2C2.24%20-5%2C5v61.52c0%2C3.54%203.57%2C5.96%206.86%2C4.64z%22%20transform%3D%22translate(147.36%20106.3)%20scale(1.70854)%22%2F%3E%3C%2Fsvg%3E%0A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Planche de construction. La scène en haut, puis les épreuves, la démarche, les specs. */
+:root{
+  --paper:#f4f6fb; --sheet:#ffffff; --ink:#191c22; --ink-2:#4a5160; --rule:#d9dee8;
+  --brand:#1157ce; --brand-soft:#e3ebfb;
+  --c-circle:#0a7fc2; --c-gold:#c8336f; --c-metric:#8a909c; --c-space:#2e8a57;
+  --f-display:"Plus Jakarta Sans",system-ui,sans-serif; --f-body:"Plus Jakarta Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0f1115; --sheet:#181b21; --ink:#e7e9ef; --ink-2:#a3a9b6; --rule:#2c313b;
+  --brand:#a9c9ff; --brand-soft:#1c2a44; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1115; --sheet:#181b21; --ink:#e7e9ef; --ink-2:#a3a9b6; --rule:#2c313b;
+  --brand:#a9c9ff; --brand-soft:#1c2a44; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:56px}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-block:24px 14px;border-bottom:1px solid var(--rule)}
+header.top h1{display:flex;gap:12px;align-items:center;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.08em;margin:0;text-transform:uppercase}
+header.top h1 svg{width:28px;height:28px}
+.meta{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+h2{font-family:var(--f-display);font-weight:800;font-size:clamp(24px,3.2vw,34px);line-height:1.1;letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance}
+.lede{color:var(--ink-2);max-width:66ch;margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin:0 0 8px}
+
+/* Scène */
+.stage-card{display:grid;gap:14px}
+.stage{--sbg:#ffffff;--sfg:#1157ce;--lab:#5a6170;background:var(--sbg);border:1px solid var(--rule);border-radius:20px;position:relative;overflow:hidden}
+.stage[data-bg="ink"]{--sbg:#14171c;--sfg:#ffffff;--lab:#a3a9b6}
+.stage[data-bg="brand"]{--sbg:#1157ce;--sfg:#ffffff;--lab:#cfe0ff}
+.stage svg{display:block;width:100%;height:auto}
+.stage .glyph{fill:var(--sfg)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;padding:3px;background:var(--sheet)}
+.seg button{all:unset;cursor:pointer;font-size:13px;font-weight:700;padding:7px 14px;border-radius:999px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--sheet)}
+.seg button:focus-visible,.btn:focus-visible,.chk input:focus-visible+span{outline:2px solid var(--brand);outline-offset:2px}
+.layers{display:flex;flex-wrap:wrap;gap:6px 14px}
+.chk{display:inline-flex;gap:7px;align-items:center;font-size:13px;cursor:pointer;user-select:none}
+.chk input{accent-color:var(--brand);width:15px;height:15px;margin:0}
+.chk i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.stepper{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:12px 14px}
+@media (max-width:620px){.stepper{grid-template-columns:1fr}.stepper .nav{justify-content:flex-end}}
+.stepper .num{font-family:var(--f-mono);font-size:13px;color:var(--ink-2);white-space:nowrap}
+.stepper .cap{min-width:0}
+.stepper .cap b{display:block;font-family:var(--f-display);font-size:16px}
+.stepper .cap span{color:var(--ink-2);font-size:14px}
+.stepper .nav{display:flex;gap:6px}
+.btn{all:unset;cursor:pointer;border:1px solid var(--rule);background:var(--sheet);border-radius:999px;padding:8px 15px;font-size:13px;font-weight:700;color:var(--ink);display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--brand);color:var(--sheet);border-color:var(--brand)}
+.scale{display:flex;align-items:flex-end;gap:clamp(10px,2.4vw,26px);flex-wrap:wrap;background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:16px}
+.scale figure{margin:0;display:grid;justify-items:center;gap:6px}
+.scale figcaption{font-family:var(--f-mono);font-size:11px;color:var(--ink-2);text-align:center;line-height:1.3}
+.scale svg circle{fill:none;stroke:var(--c-circle);stroke-width:1.2}
+.scale figure.off svg circle{stroke-dasharray:3 3;opacity:.5}
+.scale .phi{font-size:13px;color:var(--ink-2);flex:1 1 260px;margin:0;align-self:center}
+
+/* Épreuves */
+.tests{display:grid;grid-auto-flow:dense;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.tile{background:var(--sheet);border:1px solid var(--rule);border-radius:16px;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;min-width:0}
+.tile .hd{display:flex;justify-content:space-between;gap:8px;padding:12px 14px 0;font-size:13px;font-weight:800}
+.tile .hd em{font-style:normal;font-family:var(--f-mono);font-weight:500;font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap;align-self:start;color:var(--c-space);background:color-mix(in srgb,var(--c-space) 14%,transparent)}
+.tile .hd em.warn{color:#a35b00;background:color-mix(in srgb,#e08a00 16%,transparent)}
+.tile .pv{margin:10px 12px;border-radius:10px;display:grid;place-items:center;min-height:130px;padding:14px;overflow:hidden;position:relative}
+.tile .pv svg{max-width:100%;height:auto;display:block}
+.tile p{margin:0;padding:0 14px 14px;font-size:13px;color:var(--ink-2)}
+.tile.wide{grid-column:span 2}
+@media (max-width:640px){.tile.wide{grid-column:auto}}
+.row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;justify-content:center}
+.row small{display:block;font-family:var(--f-mono);font-size:10.5px;color:#6b7280;text-align:center;margin-top:4px}
+.range{display:flex;gap:10px;align-items:center;padding:0 14px 10px;font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.range input{flex:1;accent-color:var(--brand)}
+canvas.px{image-rendering:pixelated;display:block}
+.blobs{background:
+  radial-gradient(circle at 18% 30%,#f0b44c 0 22%,transparent 23%),
+  radial-gradient(circle at 70% 70%,#7fb7d9 0 26%,transparent 27%),
+  radial-gradient(circle at 88% 18%,#e7826e 0 14%,transparent 15%),
+  radial-gradient(circle at 40% 92%,#9cc59a 0 18%,transparent 19%),#efe9dc}
+.grain{background-color:#1157ce;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.cardstock{background:repeating-linear-gradient(0deg,transparent 0 27px,#c9d6f0 27px 28px),linear-gradient(90deg,transparent 0 38px,#f19aa6 38px 39px,transparent 39px),#fdfcf7}
+
+/* Démarche */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:16px 18px;min-width:0}
+.card h3{font-family:var(--f-display);font-size:17px;margin:0 0 8px}
+.card ul{margin:0;padding-left:18px;display:grid;gap:5px;font-size:14px}
+.card li::marker{color:var(--brand)}
+.idea{background:#1157ce;color:#fff;border-radius:28px;padding:clamp(18px,3vw,30px);display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:28px;align-items:center}
+.idea h3{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3vw,30px);line-height:1.15;letter-spacing:-.01em;margin:0 0 12px;text-wrap:balance}
+.idea p{margin:0 0 10px;opacity:.9}
+@media (max-width:760px){.idea{grid-template-columns:1fr}}
+
+/* Specs */
+.spec{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+@media (max-width:860px){.spec{grid-template-columns:1fr}}
+.tbl{overflow-x:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:16px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
+td.v{font-family:var(--f-mono);font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sw{border-radius:14px;border:1px solid var(--rule);padding:12px;min-height:96px;display:flex;flex-direction:column;justify-content:flex-end;font-family:var(--f-mono);font-size:12px}
+.dl{display:flex;flex-wrap:wrap;gap:8px}
+.note{font-size:12.5px;color:var(--ink-2);margin:8px 0 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><span id="hd-icon"></span>Pioneer — logotype</h1>
+    <span class="meta">Planche de construction · v1.0 · unité u = 1/144 de la hauteur d'x</span>
+  </header>
+
+  <section class="stage-card" aria-label="Logo et construction">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Vue">
+        <button id="v-logo" aria-pressed="true">Logo</button>
+        <button id="v-build" aria-pressed="false">Construction</button>
+        <button id="v-steps" aria-pressed="false">Étapes</button>
+      </div>
+      <div class="seg" role="group" aria-label="Fond">
+        <button id="bg-paper" aria-pressed="true">Papier</button>
+        <button id="bg-ink" aria-pressed="false">Encre</button>
+        <button id="bg-brand" aria-pressed="false">Bleu Pioneer</button>
+      </div>
+    </div>
+    <div class="stage" id="stage" data-bg="paper"></div>
+    <div class="layers" id="layers" hidden>
+      <label class="chk"><input type="checkbox" id="L-grid" checked><span>Grille métrique</span><i style="background:var(--c-metric)"></i></label>
+      <label class="chk"><input type="checkbox" id="L-circles" checked><span>Cercles</span><i style="background:var(--c-circle)"></i></label>
+      <label class="chk"><input type="checkbox" id="L-golden" checked><span>Rapports φ</span><i style="background:var(--c-gold)"></i></label>
+      <label class="chk"><input type="checkbox" id="L-space"><span>Approches mesurées</span><i style="background:var(--c-space)"></i></label>
+      <label class="chk"><input type="checkbox" id="L-dims"><span>Épaisseurs</span><i style="background:var(--c-metric)"></i></label>
+      <label class="chk"><input type="checkbox" id="L-anchors"><span>Points d'ancrage</span><i style="background:var(--c-gold)"></i></label>
+    </div>
+    <div class="stepper" id="stepper" hidden>
+      <span class="num" id="s-num">1 / 8</span>
+      <div class="cap"><b id="s-title"></b><span id="s-text"></span></div>
+      <div class="nav"><button class="btn" id="s-prev" aria-label="Étape précédente">←</button><button class="btn" id="s-play">Lecture</button><button class="btn primary" id="s-next" aria-label="Étape suivante">→</button></div>
+    </div>
+    <div class="scale" id="scale" aria-label="Gamme de Fibonacci"></div>
+  </section>
+
+  <section aria-labelledby="t-tests">
+    <p class="eyebrow">Épreuves</p>
+    <h2 id="t-tests">Treize tests de résistance</h2>
+    <p class="lede">Un logo se juge dans les pires conditions : flou, minuscule, inversé, sur un fond chargé, réduit en pixels. Chaque aperçu est généré à partir des mêmes tracés que les fichiers exportés. Les verdicts ont été écrits après avoir regardé les rendus.</p>
+    <div class="tests" id="tests" style="margin-top:20px"></div>
+  </section>
+
+  <section aria-labelledby="t-idea" style="display:grid;gap:14px">
+    <div>
+      <p class="eyebrow">Démarche</p>
+      <h2 id="t-idea">Savoir, savoir-faire, expérience</h2>
+    </div>
+    <div class="idea">
+      <div id="idea-mark"></div>
+      <div>
+        <h3>Le p est un fanion planté. Le pionnier, c'est celui qui arrive le premier et plante son drapeau.</h3>
+        <p>La hampe du p descend sous la ligne de base comme un mât enfoncé dans le sol. Sa panse n'est pas un rond : c'est un quart de disque qui flotte vers l'avant, vers la droite, dans le sens de la lecture.</p>
+        <p>Ce quart de disque est la forme « éventail » de Material 3 Expressive, la langue de l'app. Le même p sert d'icône et de première lettre du mot : une seule idée, deux usages.</p>
+      </div>
+    </div>
+    <div class="cols">
+      <div class="card"><h3>1 · Ce que disent les livres</h3><ul>
+        <li><b>Rand</b> : un logo identifie, il ne décrit pas. D'où un seul signe, sans boussole ni montagne.</li>
+        <li><b>Airey</b> (<i>Logo Design Love</i>) : simple, pertinent, mémorable, penser petit. Le p tient à 16 px.</li>
+        <li><b>Chermayeff, Geismar &amp; Haviv</b> (<i>Identify</i>) : approprié, distinctif, simple. Le p se redessine de mémoire : un trait, un quart de cercle.</li>
+        <li><b>Wheeler</b> : recherche, stratégie, design, dans cet ordre.</li>
+        <li><b>Mollerup</b> : une lettre porteuse d'image (le p-fanion) est plus défendable qu'un pictogramme seul.</li>
+        <li><b>Elam</b>, <b>Müller-Brockmann</b> : une grille et une gamme, pour que chaque cote ait une raison.</li>
+      </ul></div>
+      <div class="card"><h3>2 · Comprendre « Pioneer »</h3><ul>
+        <li>Pionnier : celui qui ouvre la voie, qui arrive le premier. Le p est aussi la première lettre.</li>
+        <li>L'app : révision du droit, cartes mentales, boîte de Leitner. Ton calme et studieux, pas « startup fusée ».</li>
+        <li>La DA : Material 3 Expressive, bleu #1157CE, Plus Jakarta Sans, papier, fiches, dossiers.</li>
+        <li>Clichés écartés : boussole, fusée, montagne avec drapeau, P bleu générique, globe.</li>
+        <li>Homonymes : Pioneer Corp. (script rouge), Pioneer DJ, Pioneer Hi-Bred. D'où une minuscule bleue, géométrique, sans script ni rouge.</li>
+      </ul></div>
+      <div class="card"><h3>3 · Ce qu'enseignent les grands logos</h3><ul>
+        <li><b>FedEx</b> : l'idée se découvre au second regard, le mot se lit d'abord.</li>
+        <li><b>Airbnb, Pinterest</b> : une seule lettre devient le symbole et l'icône d'app.</li>
+        <li><b>Google, Spotify</b> : minuscules géométriques, ton accueillant.</li>
+        <li><b>Twitter</b> : une forme tirée uniquement d'arcs de cercle.</li>
+        <li><b>Apple</b> : la géométrie ne prouve rien, c'est l'œil qui tranche.</li>
+      </ul></div>
+      <div class="card"><h3>4 · Corrections optiques</h3><ul>
+        <li>Horizontales du p à 31 u pour un fût à 34 (91 %) : une horizontale paraît plus lourde.</li>
+        <li>o et e : Ø150 au lieu de 144, soit 3 u de dépassement en haut et en bas.</li>
+        <li>Contreforme du o en ellipse 80 × 82 : côtés 35 u (rond un peu plus gras qu'une droite), haut 34 u.</li>
+        <li>Arche du n et du r : sommet à −2 u, contre-arche remontée de 3 u (haut à 31 u).</li>
+        <li>Congés : 8 u dehors, 5 u dedans, les blancs restent ouverts en petit.</li>
+        <li>Icône : centrée entre la boîte et le centre de gravité, pas sur la boîte seule.</li>
+      </ul></div>
+      <div class="card"><h3>5 · Journal d'itérations</h3><ul>
+        <li>v1 : n et r avec un éperon : petite encoche sale en petit. Éperon retiré.</li>
+        <li>v2 : la terminaison du e formait un bec, puis une bosse.</li>
+        <li>v3 : coupes radiales à 40°, 30°, 22° et coupes plates à 110, 116, 122 comparées côte à côte. Retenue : coupe plate à y = 113, tangente au bas du contre-poinçon. Plus de bosse.</li>
+        <li>v4 : approches égalisées par aire, mesurées sur les vrais contours (largeur 966 u).</li>
+        <li>Icône : p centré optiquement, vérifié dans la zone sûre des icônes adaptatives.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-spec" style="display:grid;gap:14px">
+    <div>
+      <p class="eyebrow">Spécifications</p>
+      <h2 id="t-spec">Mesures et fichiers</h2>
+      <p class="lede">Les cotes principales viennent de la suite de Fibonacci (144 · 89 · 55 · 34 · 21 · 13 · 8), dont le rapport de deux voisins tend vers φ ≈ 1,618. La suite a généré les tailles, puis l'œil a corrigé. Chaque écart est listé.</p>
+    </div>
+    <div class="spec">
+      <div class="tbl"><table>
+        <tr><th>Élément</th><th>Valeur</th><th>Origine</th></tr>
+        <tr><td>Hauteur d'x</td><td class="v">144 u</td><td>Rayon du fanion, cercle maître</td></tr>
+        <tr><td>Jambage du p</td><td class="v">55 u</td><td>144 ÷ φ² ; le mât planté dans le sol</td></tr>
+        <tr><td>Fût</td><td class="v">34 u</td><td>144 ÷ φ³</td></tr>
+        <tr><td>Horizontales</td><td class="v">31 u</td><td>Correction optique (91 % du fût)</td></tr>
+        <tr><td>Fanion</td><td class="v">R144 · R110</td><td>Quart de disque ; contreforme = R144 − fût</td></tr>
+        <tr><td>o, e</td><td class="v">Ø150</td><td>144 + 2 × 3 de dépassement</td></tr>
+        <tr><td>Barre du e</td><td class="v">y 62 → 92</td><td>Ouverture coupée à y 113, tangente au contre-poinçon</td></tr>
+        <tr><td>n, r</td><td class="v">Ø132 · Ø64</td><td>Arche et contre-arche ; le r reprend l'arche du n</td></tr>
+        <tr><td>Point du i</td><td class="v">Ø38, écart 13</td><td>Rond un peu plus large que le fût (34) ; 13 = Fibonacci</td></tr>
+        <tr><td>Congés</td><td class="v">8 · 5 u</td><td>8 = Fibonacci (coins convexes) ; 5 = Fibonacci (concaves)</td></tr>
+        <tr><td>Approches</td><td class="v">13 → 27 u</td><td>Égalisées par aire : pi 20 · io 27 · on 22 · ne 22 · ee 13 · er 16</td></tr>
+        <tr><td>Zone de protection</td><td class="v">55 u</td><td>Un jambage tout autour</td></tr>
+        <tr><td>Taille minimale</td><td class="v">16 px</td><td>Icône ; logotype dès 20 px de haut</td></tr>
+        <tr><td>Icône</td><td class="v">512 · r 115</td><td>p de 300 u ; point le plus loin à 189 u du centre, zone sûre 205</td></tr>
+      </table></div>
+      <div style="display:grid;gap:14px;align-content:start">
+        <div class="swatches">
+          <div class="sw" style="background:#1157ce;color:#fff">Bleu Pioneer<br>#1157CE<br>5,9:1 sur blanc</div>
+          <div class="sw" style="background:#ffffff;color:#191c22">Papier<br>#FFFFFF</div>
+          <div class="sw" style="background:#a9c9ff;color:#001944">Bleu clair (sombre)<br>#A9C9FF</div>
+        </div>
+        <div class="card">
+          <h3>Fichiers</h3>
+          <div class="dl">
+            <button class="btn primary" data-dl="pos">SVG positif</button>
+            <button class="btn" data-dl="rev">SVG inversé</button>
+            <button class="btn" data-dl="icon">SVG icône</button>
+            <button class="btn" data-dl="icon-rev">SVG icône inversée</button>
+            <button class="btn" data-dl="png">PNG 2400 px</button>
+            <button class="btn" data-copy="pos">Copier le SVG</button>
+          </div>
+          <p class="note">Les téléchargements fonctionnent quand ce fichier HTML est ouvert dans un navigateur. Dans un aperçu intégré, utilisez « Copier le SVG ».</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ===== Pioneer — données générées par geom.js / icon.js (paper.js, booléens + congés numériques) =====
+const DATA = {"U":{"xh":144,"S":34,"Sh":31,"ov":3,"D":55,"rOut":8,"rIn":5,"R":144},"width":966,"gaps":{"pi":20,"io":27,"on":22,"ne":22,"ee":13,"er":16},"fillets":[{"x":8,"y":191,"r":8,"convex":true,"at":[0,199]},{"x":8,"y":7.999999999999986,"r":8,"convex":true,"at":[0,0]},{"x":135.76885014042676,"y":7.999999860956089,"r":8,"convex":true,"at":[144,0]},{"x":39.0000002764919,"y":143.84270087344743,"r":5,"convex":false,"at":[34,139.96278807114132]},{"x":26.0000000834465,"y":191.0000000834466,"r":8,"convex":true,"at":[34,199]},{"x":39.0000005936513,"y":97.51997193119556,"r":5,"convex":false,"at":[34,104.64480070325705]},{"x":98.66755300267094,"y":36.00000080846959,"r":5,"convex":false,"at":[105.57135809486826,30.999999999999996]},{"x":38.999999999999986,"y":36,"r":5,"convex":false,"at":[34,31]},{"x":8,"y":136,"r":8,"convex":true,"at":[0,144]},{"x":8,"y":8,"r":8,"convex":true,"at":[0,0]},{"x":26.000000083446498,"y":7.999999916553497,"r":8,"convex":true,"at":[34,0]},{"x":26.0000000834465,"y":136.00000008344654,"r":8,"convex":true,"at":[34,144]},{"x":124,"y":136,"r":8,"convex":true,"at":[132,144]},{"x":105.99999991655349,"y":136.00000008344654,"r":8,"convex":true,"at":[98,144.00000000000003]},{"x":26,"y":136,"r":8,"convex":true,"at":[34,144]},{"x":7.999999916553499,"y":136.0000000834465,"r":8,"convex":true,"at":[0,144]},{"x":140.92979133155433,"y":83.99999924507523,"r":8,"convex":true,"at":[147.30383638965932,92]},{"x":49.8164131499145,"y":97.00000192739455,"r":5,"convex":false,"at":[40.073662915216744,92.00000000000001]},{"x":120.69505251392798,"y":121.00000210137,"r":8,"convex":true,"at":[137.81155911964743,113]},{"x":43.172484339327355,"y":56.999996250373314,"r":5,"convex":false,"at":[36.19822210279788,62]},{"x":106.82751839361458,"y":57.00000237360251,"r":5,"convex":false,"at":[113.8017778972021,61.99999999999998]},{"x":140.92979133155433,"y":83.99999924507523,"r":8,"convex":true,"at":[147.30383638965932,92]},{"x":49.8164131499145,"y":97.00000192739455,"r":5,"convex":false,"at":[40.073662915216744,92.00000000000001]},{"x":120.69505251392798,"y":121.00000210137,"r":8,"convex":true,"at":[137.81155911964743,113]},{"x":43.172484339327355,"y":56.999996250373314,"r":5,"convex":false,"at":[36.19822210279788,62]},{"x":106.82751839361458,"y":57.00000237360251,"r":5,"convex":false,"at":[113.8017778972021,61.99999999999998]},{"x":8,"y":136,"r":8,"convex":true,"at":[0,144]},{"x":78.00000088547745,"y":7.241221902143973,"r":8,"convex":true,"at":[86,1.0846635477294373]},{"x":77.99999924957068,"y":22.83345425226428,"r":8,"convex":true,"at":[86,36.01851618399414]},{"x":26.0000000834465,"y":136.0000000834465,"r":8,"convex":true,"at":[34,144]}],"glyphs":[{"name":"p","x":0,"w":144,"d":"M0,191v-183c0,-4.42 3.58,-8 8,-8h127.77c4.6,0 8.25,3.87 7.99,8.46c-3.64,62.73 -47.43,114.69 -106.06,130.55c-2.18,0.59 -3.69,2.57 -3.69,4.83v47.16c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM40.86,102.16c28.93,-11.58 51.79,-35.09 62.51,-64.45c1.19,-3.26 -1.22,-6.71 -4.7,-6.71h-59.67c-2.76,0 -5,2.24 -5,5v61.52c0,3.54 3.57,5.96 6.86,4.64z","circles":[{"cx":0,"cy":0,"r":144,"n":"fanion Ø288 (R144)"},{"cx":0,"cy":0,"r":110,"n":"contreforme R110"}]},{"name":"i","x":164,"w":34,"d":"M164,136v-128c0,-4.42 3.58,-8 8,-8h18c4.42,0 8,3.58 8,8v128c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM162,-32c0,-10.49 8.51,-19 19,-19c10.49,0 19,8.51 19,19c0,10.49 -8.51,19 -19,19c-10.49,0 -19,-8.51 -19,-19z","circles":[],"dot":{"cx":181,"cy":-32,"r":19}},{"name":"o","x":225,"w":150,"d":"M225,72c0,-41.42 33.58,-75 75,-75c41.42,0 75,33.58 75,75c0,41.42 -33.58,75 -75,75c-41.42,0 -75,-33.58 -75,-75zM300,113c22.09,0 40,-18.36 40,-41c0,-22.64 -17.91,-41 -40,-41c-22.09,0 -40,18.36 -40,41c0,22.64 17.91,41 40,41z","circles":[{"cx":300,"cy":72,"r":75,"n":"o Ø150"}]},{"name":"n","x":397,"w":132,"d":"M463,-2c36.45,0 66,29.55 66,66v72c0,4.42 -3.58,8 -8,8l-18,0c-4.42,0 -8,-3.58 -8,-8v-75c0,-17.67 -14.33,-32 -32,-32c-17.67,0 -32,14.33 -32,32v75c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8v-72c0,-36.45 29.55,-66 66,-66z","circles":[{"cx":463,"cy":64,"r":66,"n":"arche Ø132"},{"cx":463,"cy":61,"r":32,"n":"contre-arche Ø64"}]},{"name":"e","x":551,"w":150,"d":"M551,72c0,-41.42 33.58,-75 75,-75c41.42,0 75,33.58 75,75c0,4.58 -0.41,9.07 -1.2,13.42c-0.69,3.81 -4,6.58 -7.87,6.58h-91.11c-4.38,0 -6.64,5.23 -3.65,8.42c7.28,7.75 17.5,12.58 28.83,12.58h45.7c7.26,0 10.77,8.9 5.46,13.85c-13.4,12.5 -31.38,20.15 -51.15,20.15c-41.42,0 -75,-33.58 -75,-75zM626,31c-16.16,0 -30.08,9.82 -36.39,23.96c-1.48,3.31 0.94,7.04 4.57,7.04l63.66,0c3.62,0 6.04,-3.73 4.57,-7.04c-6.31,-14.14 -20.23,-23.96 -36.39,-23.96z","circles":[{"cx":626,"cy":72,"r":75,"n":"e Ø150"}],"bar":[62,92]},{"name":"e","x":714,"w":150,"d":"M714,72c0,-41.42 33.58,-75 75,-75c41.42,0 75,33.58 75,75c0,4.58 -0.41,9.07 -1.2,13.42c-0.69,3.81 -4,6.58 -7.87,6.58h-91.11c-4.38,0 -6.64,5.23 -3.65,8.42c7.28,7.75 17.5,12.58 28.83,12.58h45.7c7.26,0 10.77,8.9 5.46,13.85c-13.4,12.5 -31.38,20.15 -51.15,20.15c-41.42,0 -75,-33.58 -75,-75zM789,31c-16.16,0 -30.08,9.82 -36.39,23.96c-1.48,3.31 0.94,7.04 4.57,7.04l63.66,0c3.62,0 6.04,-3.73 4.57,-7.04c-6.31,-14.14 -20.23,-23.96 -36.39,-23.96z","circles":[{"cx":789,"cy":72,"r":75,"n":"e Ø150"}],"bar":[62,92]},{"name":"r","x":880,"w":86,"d":"M880,136v-72c0,-36.45 29.55,-66 66,-66c4.68,0 9.24,0.49 13.65,1.41c3.7,0.78 6.35,4.04 6.35,7.83v15.59c0,5.4 -5.24,9.25 -10.4,7.63c-3.03,-0.95 -6.26,-1.47 -9.6,-1.47c-17.67,0 -32,14.33 -32,32c0,1.01 0.05,2.01 0.14,3h-0.14v72c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8z","circles":[{"cx":946,"cy":64,"r":66,"n":"arche Ø132 (reprise du n)"}]}],"anchors":[[[0,191],[0,8],[8,0],[135.8,0],[143.8,8.5],[37.7,139],[34,143.8],[34,191],[26,199],[8,199],[0,191],[40.9,102.2],[103.4,37.7],[98.7,31],[39,31],[34,36],[34,97.5]],[[164,136],[164,8],[172,0],[190,0],[198,8],[198,136],[190,144],[172,144],[162,-32],[181,-51],[200,-32],[181,-13]],[[225,72],[300,-3],[375,72],[300,147],[300,113],[340,72],[300,31],[260,72]],[[463,-2],[529,64],[529,136],[521,144],[503,144],[495,136],[495,61],[463,29],[431,61],[431,136],[423,144],[405,144],[397,136],[397,64]],[[551,72],[626,-3],[701,72],[699.8,85.4],[691.9,92],[600.8,92],[597.2,100.4],[626,113],[671.7,113],[677.2,126.8],[626,147],[551,72],[626,31],[589.6,55],[594.2,62],[657.8,62],[662.4,55],[626,31]],[[714,72],[789,-3],[864,72],[862.8,85.4],[854.9,92],[763.8,92],[760.2,100.4],[789,113],[834.7,113],[840.2,126.8],[789,147],[714,72],[789,31],[752.6,55],[757.2,62],[820.8,62],[825.4,55],[789,31]],[[880,136],[880,64],[946,-2],[959.6,-0.6],[966,7.2],[966,22.8],[955.6,30.5],[946,29],[914,61],[914.1,64],[914,64],[914,136],[906,144],[888,144],[880,136]]],"icon":{"pD":"M0,191v-183c0,-4.42 3.58,-8 8,-8h127.77c4.6,0 8.25,3.87 7.99,8.46c-3.64,62.73 -47.43,114.69 -106.06,130.55c-2.18,0.59 -3.69,2.57 -3.69,4.83v47.16c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM40.86,102.16c28.93,-11.58 51.79,-35.09 62.51,-64.45c1.19,-3.26 -1.22,-6.71 -4.7,-6.71h-59.67c-2.76,0 -5,2.24 -5,5v61.52c0,3.54 3.57,5.96 6.86,4.64z","b":{"x":0,"y":0,"w":143.77307764949632,"h":199.00000000000003},"cen":{"x":55.28545628024262,"y":75.73349008382743},"bc":{"x":71.88653882474816,"y":99.50000000000001},"oc":{"x":63.585997552495385,"y":87.61674504191373}}};
+const PHI = (1 + Math.sqrt(5)) / 2;
+const BLUE = '#1157ce', WHITE = '#ffffff', INK = '#14171c';
+const GL = DATA.glyphs, WW = DATA.width, U = DATA.U, IC = DATA.icon;
+const VB_WORD = [-30, -81, WW + 60, 310];     // tracé + 30 u de marge
+
+// silhouette : on garde les sous-tracés qui ne sont contenus dans aucun autre (point du i compris)
+function outerOnly(d) {
+  const parts = d.split(/(?=M)/).filter(s => s.trim());
+  const t = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); t.style.cssText = 'position:absolute;width:0;height:0'; document.body.appendChild(t);
+  const bb = parts.map(p => { const e = document.createElementNS('http://www.w3.org/2000/svg', 'path'); e.setAttribute('d', p); t.appendChild(e); return e.getBBox(); });
+  t.remove();
+  const inside = (a, b) => a !== b && a.x >= b.x && a.y >= b.y && a.x + a.width <= b.x + b.width && a.y + a.height <= b.y + b.height;
+  return parts.filter((p, i) => !bb.some(b => inside(bb[i], b))).join('');
+}
+function wordSVG({ fg = BLUE, bg = null, pad = 0, w, h, silhouette = false } = {}) {
+  const vb = VB_WORD.slice(); if (pad) { vb[0] -= pad; vb[1] -= pad; vb[2] += 2 * pad; vb[3] += 2 * pad; }
+  const size = (w ? ` width="${w}"` : '') + (h ? ` height="${h}"` : '');
+  const ds = GL.map(g => silhouette ? outerOnly(g.d) : g.d);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.join(' ')}"${size} role="img" aria-label="Pioneer">` +
+    (bg ? `<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="${bg}"/>` : '') +
+    `<g fill="${fg}" fill-rule="evenodd">${ds.map(d => `<path d="${d}"/>`).join('')}</g></svg>`;
+}
+function iconSVG({ size = 512, glyphH = 300, rx = 115, bg = BLUE, fg = WHITE, tile = true, w, h } = {}) {
+  const k = glyphH / IC.b.h, c = size / 2, tx = c - IC.oc.x * k, ty = c - IC.oc.y * k;
+  const back = tile ? (rx >= c ? `<circle cx="${c}" cy="${c}" r="${c}" fill="${bg}"/>` : `<rect width="${size}" height="${size}" rx="${rx}" fill="${bg}"/>`) : '';
+  const sz = (w ? ` width="${w}"` : '') + (h ? ` height="${h}"` : '');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"${sz} role="img" aria-label="Pioneer">${back}<path fill="${fg}" d="${IC.pD}" transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${k.toFixed(5)})"/></svg>`;
+}
+
+// ================= scène =================
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s);
+const stage = $('#stage');
+const svg = document.createElementNS(NS, 'svg');
+svg.setAttribute('viewBox', `-110 -112 ${WW + 190} 352`);
+svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Logotype Pioneer et sa construction');
+stage.appendChild(svg);
+function el(tag, attrs, parent = svg) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+const gLogo = el('g', {}), gCons = el('g', {}), gTop = el('g', {});
+function drawLogo() {
+  gLogo.innerHTML = '';
+  GL.forEach(g => el('path', { d: g.d, 'fill-rule': 'evenodd', class: 'glyph', 'data-g': g.name }, gLogo));
+  applyView();
+}
+
+const CS = { circle: 'var(--c-circle)', gold: 'var(--c-gold)', metric: 'var(--c-metric)', space: 'var(--c-space)' };
+const cons = [];
+function C(layer, step, tag, attrs, parent = gCons) {
+  const e = el(tag, Object.assign({ fill: 'none', 'vector-effect': 'non-scaling-stroke' }, attrs), parent);
+  e.dataset.layer = layer; e.dataset.step = step; cons.push(e); return e;
+}
+function T(layer, step, x, y, txt, color, anchor = 'start', size = 10, parent) {
+  const t = C(layer, step, 'text', { x, y, fill: color, 'font-size': size, 'font-family': 'IBM Plex Mono, ui-monospace, monospace', 'text-anchor': anchor }, parent);
+  t.textContent = txt; return t;
+}
+const circle = (layer, step, cx, cy, r, col, dash, label, lx, ly) => {
+  C(layer, step, 'circle', { cx, cy, r, stroke: col, 'stroke-width': 1, 'stroke-dasharray': dash || 'none' });
+  C(layer, step, 'path', { d: `M${cx - 3},${cy}h6M${cx},${cy - 3}v6`, stroke: col, 'stroke-width': .9 });
+  if (label) T(layer, step, lx ?? cx, ly ?? cy - r - 4, label, col, 'middle');
+};
+const line = (layer, step, x1, y1, x2, y2, col, dash, wdt = .9) => C(layer, step, 'line', { x1, y1, x2, y2, stroke: col, 'stroke-width': wdt, 'stroke-dasharray': dash || 'none' });
+const G_ = n => GL.find(g => g.name === n);
+const gx = (n, k = 0) => GL.filter(g => g.name === n)[k];
+
+function buildConstruction() {
+  const xr = WW;
+  // 1 · métrique
+  [[-51, 'point −51'], [0, 'x 0'], [144, 'base 144'], [199, 'jamb. 199']].forEach(([y, lab]) => {
+    const solid = y === 0 || y === 144;
+    line('grid', 1, -100, y, xr + 70, y, CS.metric, solid ? 'none' : '4 4', solid ? 1 : .8);
+    T('grid', 1, -104, y - 4, lab, 'var(--lab)', 'start', 9);
+  });
+  line('grid', 1, -100, -3, xr + 70, -3, CS.metric, '1 3', .6); line('grid', 1, -100, 147, xr + 70, 147, CS.metric, '1 3', .6);
+  T('grid', 1, xr + 70, 160, 'dépassement ±3', 'var(--lab)', 'end', 9);
+  GL.forEach(g => { line('grid', 1, g.x, -100, g.x, 220, CS.metric, '1 4', .5); line('grid', 1, g.x + g.w, -100, g.x + g.w, 220, CS.metric, '1 4', .5); });
+  T('grid', 1, xr + 70, 232, 'x = 144 u · largeur ' + Math.round(xr) + ' u', 'var(--lab)', 'end', 9);
+
+  // 2 · rapports φ (sur le p)
+  C('golden', 2, 'rect', { x: 0, y: 0, width: 144, height: 144, stroke: CS.gold, 'stroke-width': 1 });
+  C('golden', 2, 'rect', { x: 0, y: 144, width: 144, height: 55, stroke: CS.gold, 'stroke-width': 1, 'stroke-dasharray': '3 2' });
+  T('golden', 2, 72, 216, '144 : 55 = φ²', CS.gold, 'middle', 9.5);
+  [[89, '89'], [55, '55']].forEach(([y, l]) => { line('golden', 2, 0, y, 144, y, CS.gold, '2 3', .6); T('golden', 2, -6, y + 3, l, CS.gold, 'end', 8.5); });
+
+  // 3 · le p : fût + fanion
+  circle('circles', 3, 0, 0, 144, CS.circle, null, 'R144', -92, -96);
+  circle('circles', 3, 0, 0, 110, CS.circle, '4 3', 'R110', -66, -72);
+  // 4 · le i
+  const i = G_('i'); circle('circles', 4, i.dot.cx, i.dot.cy, i.dot.r, CS.circle, null, 'Ø38', i.dot.cx, i.dot.cy - 24);
+  line('circles', 4, i.x - 6, -13, i.x + 40, -13, CS.circle, '2 2', .7); T('circles', 4, i.x + 44, -10, '13', CS.circle, 'start', 8.5);
+  // 5 · o et e
+  ['o', 'e'].forEach(n => GL.filter(g => g.name === n).forEach(g => {
+    const c = g.circles[0]; circle('circles', 5, c.cx, c.cy, c.r, CS.circle, null, 'Ø150', c.cx, -10);
+    C('circles', 5, 'ellipse', { cx: c.cx, cy: c.cy, rx: 40, ry: 41, stroke: CS.circle, 'stroke-width': .9, 'stroke-dasharray': '3 2' });
+  }));
+  GL.filter(g => g.name === 'e').forEach(g => {
+    line('golden', 5, g.x - 6, 113, g.x + g.w + 6, 113, CS.gold, '3 2', .8);
+    T('golden', 5, g.x + g.w + 8, 116, '113', CS.gold, 'start', 8.5);
+  });
+  // 6 · n et r
+  ['n', 'r'].forEach(n => { const g = G_(n); g.circles.forEach((c, k) => circle('circles', 6, c.cx, c.cy, c.r, CS.circle, k ? '3 2' : null, k ? null : 'Ø132', c.cx, -16)); });
+  const r = G_('r'); C('circles', 6, 'circle', { cx: r.x + 66, cy: 61, r: 32, stroke: CS.circle, 'stroke-width': .9, 'stroke-dasharray': '3 2' });
+  line('golden', 6, r.x + 86, -20, r.x + 86, 80, CS.gold, '3 2', .8); T('golden', 6, r.x + 90, -22, 'coupe', CS.gold, 'start', 8.5);
+
+  // épaisseurs
+  const dim = (step, x1, y1, x2, y2, txt, tx, ty) => {
+    line('dims', step, x1, y1, x2, y2, CS.metric, null, .9);
+    const a = Math.atan2(y2 - y1, x2 - x1), nx = -Math.sin(a) * 4, ny = Math.cos(a) * 4;
+    line('dims', step, x1 - nx, y1 - ny, x1 + nx, y1 + ny, CS.metric); line('dims', step, x2 - nx, y2 - ny, x2 + nx, y2 + ny, CS.metric);
+    T('dims', step, tx, ty, txt, 'var(--lab)', 'middle', 9);
+  };
+  dim(3, 0, 170, 34, 170, '34', 17, 164);
+  dim(3, 60, 0, 60, 31, '31', 72, 19);
+  dim(4, i.x, 110, i.x + 34, 110, '34', i.x + 17, 104);
+  const o = G_('o'); dim(5, o.x, 72, o.x + 35, 72, '35', o.x + 17.5, 66); dim(5, o.x + 75, -3, o.x + 75, 31, '34', o.x + 88, 18);
+  const n = G_('n'); dim(6, n.x, 110, n.x + 34, 110, '34', n.x + 17, 104); dim(6, n.x + 66, -2, n.x + 66, 29, '31', n.x + 78, 16);
+  const e = G_('e'); dim(5, e.x + 75, 62, e.x + 75, 92, '30', e.x + 86, 81);
+}
+
+// approches : mesurées sur les contours réels
+function buildSpacing() {
+  const pts = GL.map(() => []);
+  gLogo.querySelectorAll('path').forEach((p, k) => {
+    const L = p.getTotalLength();
+    for (let s = 0; s < L; s += 1) { const q = p.getPointAtLength(s); if (q.y >= -2 && q.y <= 146) pts[k].push([q.x, q.y]); }
+  });
+  for (let k = 0; k < GL.length - 1; k++) {
+    let best = [1e9];
+    for (const u of pts[k]) { if (u[0] < GL[k + 1].x - 60) continue; for (const v of pts[k + 1]) { if (v[0] > GL[k + 1].x + 60) continue; const d = Math.hypot(u[0] - v[0], u[1] - v[1]); if (d < best[0]) best = [d, u, v]; } }
+    const [d, u, v] = best, mx = (u[0] + v[0]) / 2, my = (u[1] + v[1]) / 2;
+    C('space', 7, 'circle', { cx: mx, cy: my, r: d / 2, stroke: CS.space, 'stroke-width': 1.1, fill: 'rgba(46,138,87,.14)' }, gTop);
+    line('space', 7, mx, my + d / 2 + 1, mx, 176, CS.space, '1 2', .6, gTop);
+    T('space', 7, mx, 188, (Math.round(d * 2) / 2).toString().replace('.', ','), CS.space, 'middle', 9.5, gTop);
+  }
+}
+function buildAnchors() {
+  DATA.anchors.forEach(list => list.forEach(([x, y]) =>
+    C('anchors', 9, 'rect', { x: x - 2, y: y - 2, width: 4, height: 4, stroke: CS.gold, 'stroke-width': .9, fill: 'var(--sbg)' }, gTop)));
+}
+
+const STEPS = [
+  ['Grille métrique', 'Hauteur d\'x 144 u, ligne de base, jambage 55 u (144 ÷ φ²), point du i à −51. Les rondes dépassent de 3 u en haut et en bas.'],
+  ['Les rapports', 'Le p tient dans un carré de 144 posé sur un rectangle de 144 × 55 : hauteur d\'x et jambage sont en rapport φ². Le fût vaut 34 = 144 ÷ φ³.'],
+  ['Le p-fanion', 'Un fût de 34 u planté sous la ligne de base, et un quart de disque R144 centré sur le coin haut gauche. La contreforme est le même quart de disque, R110 = 144 − 34.'],
+  ['Le i', 'Le même fût de 34 u. Point Ø38, un peu plus large que le fût pour paraître égal, séparé par 13 u.'],
+  ['o et e', 'Cercles Ø150 (144 + 2 × 3 de dépassement). Contreforme en ellipse 80 × 82 : côtés 35 u, haut 34 u. L\'œil du e est coupé à plat à y 113, tangent au contre-poinçon : pas de bec, pas de bosse.'],
+  ['n et r', 'Une arche Ø132 posée sur deux fûts, sans éperon. La contre-arche Ø64 remonte de 3 u pour amincir le haut (31 u). Le r reprend l\'arche du n, coupée à 86 u.'],
+  ['Approches', 'Mesurées sur les vrais contours, puis égalisées par aire et non par boîte : de 13 u (e|e, deux rondes) à 27 u (i|o, une droite et une ronde).'],
+  ['Résultat', 'Congés de 8 u dehors et 5 u dedans sur toutes les lettres. Le mot se lit d\'abord. Le fanion se voit au second regard.']];
+const REVEAL = { p: 3, i: 4, o: 5, e: 5, n: 6, r: 6 };
+let view = 'logo', step = 1, timer = null;
+
+function applyView() {
+  const on = id => $('#L-' + id).checked;
+  cons.forEach(e => {
+    const L = e.dataset.layer, s = +e.dataset.step;
+    let vis = 0;
+    if (view === 'build') vis = on(L) ? 1 : 0;
+    else if (view === 'steps') vis = (L === 'anchors' || L === 'dims' && s > step) ? 0 : s === step ? 1 : s < step && step < 8 ? .22 : 0;
+    e.style.opacity = vis; e.style.display = vis ? '' : 'none';
+  });
+  gLogo.querySelectorAll('path').forEach(p => {
+    let fo = 100, so = 0;
+    if (view === 'build') { fo = 14; so = 1; }
+    if (view === 'steps') { const r = REVEAL[p.dataset.g]; fo = step >= 8 ? 100 : step >= r ? 18 : 5; so = step >= 8 ? 0 : step >= r ? 1 : 0; }
+    p.style.fillOpacity = fo / 100; p.style.stroke = 'var(--sfg)'; p.style.strokeOpacity = so; p.style.strokeWidth = 1.2;
+  });
+  $('#layers').hidden = view !== 'build'; $('#stepper').hidden = view !== 'steps';
+  $('#s-num').textContent = step + ' / 8'; $('#s-title').textContent = STEPS[step - 1][0]; $('#s-text').textContent = STEPS[step - 1][1];
+}
+function setView(v) { view = v; ['logo', 'build', 'steps'].forEach(k => $('#v-' + k).setAttribute('aria-pressed', k === v)); stopPlay(); applyView(); }
+function setBg(b) { stage.dataset.bg = b; ['paper', 'ink', 'brand'].forEach(k => $('#bg-' + k).setAttribute('aria-pressed', k === b)); applyView(); }
+function go(n) { step = Math.max(1, Math.min(8, n)); applyView(); }
+function stopPlay() { clearInterval(timer); timer = null; $('#s-play').textContent = 'Lecture'; }
+$('#v-logo').onclick = () => setView('logo'); $('#v-build').onclick = () => setView('build'); $('#v-steps').onclick = () => setView('steps');
+$('#bg-paper').onclick = () => setBg('paper'); $('#bg-ink').onclick = () => setBg('ink'); $('#bg-brand').onclick = () => setBg('brand');
+$('#s-prev').onclick = () => { stopPlay(); go(step - 1); }; $('#s-next').onclick = () => { stopPlay(); go(step + 1); };
+$('#s-play').onclick = () => { if (timer) return stopPlay(); if (step === 8) go(1); $('#s-play').textContent = 'Pause'; timer = setInterval(() => { if (step >= 8) return stopPlay(); go(step + 1); }, 2600); };
+document.querySelectorAll('#layers input').forEach(i => i.onchange = applyView);
+
+// gamme de Fibonacci : ce que chaque diamètre règle
+(() => {
+  const fib = [[144, 'hauteur d\'x · fanion'], [89, 'non utilisé'], [55, 'jambage · protection'], [34, 'fût'], [21, 'approche p|i (20)'], [13, 'écart du i · e|e'], [8, 'congé extérieur']], k = .5;
+  $('#scale').innerHTML = fib.map(([d, use]) => `<figure class="${d === 89 ? 'off' : ''}"><svg width="${d * k + 4}" height="${d * k + 4}" viewBox="${-d / 2 - 2} ${-d / 2 - 2} ${d + 4} ${d + 4}" aria-hidden="true"><circle r="${d / 2}" vector-effect="non-scaling-stroke"/></svg><figcaption>${d}<br>${use}</figcaption></figure>`).join('') +
+    `<p class="phi">144 → 89 → 55 → 34 → 21 → 13 → 8. Chaque nombre est la somme des deux suivants, le rapport de deux voisins vaut 1,618 à 0,1 % près. 89 n'est pas utilisé : la géométrie ne le demandait pas, on ne l'a pas forcé.</p>`;
+})();
+
+buildConstruction();
+drawLogo();
+buildSpacing();
+buildAnchors();
+applyView();
+$('#hd-icon').innerHTML = iconSVG({ w: 28, h: 28 });
+
+// ================= épreuves =================
+const tests = [
+  { t: 'Positif', tag: 'référence', bg: WHITE, html: () => wordSVG({ w: 260 }), p: 'Bleu Pioneer sur blanc (contraste 5,9:1). Le mot se lit en premier, le fanion au second regard.' },
+  { t: 'Négatif, inversion brute', tag: 'réussi', bg: INK, html: () => wordSVG({ fg: WHITE, w: 260 }), p: 'Blanc sur encre. Rien ne repose sur le fond, donc l\'inversion ne change pas le sens.' },
+  { t: 'Négatif, version dessinée', tag: 'non requis', bg: BLUE, html: () => wordSVG({ fg: WHITE, w: 260 }), p: 'Testé : pas de visage ni de contreforme porteuse de sens. La version inversée est donc la même forme, en blanc. Aucune variante dédiée n\'est nécessaire.' },
+  { t: 'Flou', tag: 'réussi', bg: WHITE, blur: true, html: () => wordSVG({ w: 260 }), p: 'Le mât sous la ligne et la masse du fanion restent visibles longtemps après la disparition des lettres.' },
+  { t: 'Test de la tache', tag: 'réussi', bg: WHITE, css: 'filter:blur(5px) contrast(30)', html: () => wordSVG({ w: 260, bg: WHITE, fg: '#000' }), p: 'Flou puis seuil, en noir : les e et le r fondent en une masse, mais le drapeau sur son mât et l\'anneau du o restent. Le p seul porte l\'idée, il survit.' },
+  { t: 'Tailles', tag: '20 px min.', warn: true, bg: WHITE, wide: true, html: () => `<div class="row">${[16, 20, 24, 32, 48, 72].map(h => `<div>${wordSVG({ h })}<small>${h} px</small></div>`).join('')}</div>`, p: 'Hauteur totale du logotype, jambage compris. À 16 px, la hauteur d\'x tombe à 7 px et le point du i se colle : en dessous de 20 px, utiliser l\'icône seule.' },
+  { t: 'Icône et tuiles', tag: 'réussi', bg: WHITE, wide: true, html: () => `<div class="row">${[16, 24, 32, 48, 64].map(h => `<div>${iconSVG({ w: h, h })}<small>${h}</small></div>`).join('')}<div>${iconSVG({ w: 72, h: 72, rx: 256 })}<small>rond</small></div><div>${iconSVG({ w: 72, h: 72, rx: 0 })}<small>carré</small></div><div>${iconSVG({ w: 72, h: 72, bg: WHITE, fg: BLUE })}<small>inversée</small></div></div>`, p: 'Le p-fanion seul, centré optiquement. Il tient dans la zone sûre des icônes adaptatives Android (cercle de 80 %).' },
+  { t: 'Une couleur sur couleur', tag: 'réussi', bg: '#d8e2ff', html: () => wordSVG({ fg: BLUE, w: 260 }), p: 'Bleu sur sa teinte claire (primary-container de l\'app) : tampon, marquage, broderie. Une teinte, sans effet.' },
+  { t: 'Fonds chargés', tag: 'lisible', cls: 'blobs', html: () => wordSVG({ w: 260 }), p: 'Sur des taches de couleur, le bleu tient sauf sur le bleu clair. Sur photo, prévoir un cartouche blanc.' },
+  { t: 'Sur texture', tag: 'réussi', cls: 'grain', html: () => wordSVG({ fg: WHITE, w: 260 }), p: 'Grain d\'impression sur fond bleu : les contreformes restent ouvertes grâce aux congés intérieurs.' },
+  { t: 'Pixellisé', tag: 'réussi', bg: WHITE, px: true, wide: true, p: 'Rendu réel puis agrandi sans lissage : logotype à 24 px de haut, icône à 16 et 32 px. À 16 px, la contreforme du fanion ne fait plus que 2 px, mais la forme se lit encore.' },
+  { t: 'Silhouette', tag: 'réussi', cls: 'cardstock', html: () => wordSVG({ silhouette: true, w: 260 }), p: 'Contours seuls, sans aucun blanc intérieur, sur une fiche bristol. Le p reste un drapeau planté.' },
+  { t: 'Miroir', tag: 'contrôle', bg: WHITE, css: 'transform:scaleX(-1)', html: () => wordSVG({ w: 260 }), p: 'Retourné, le fanion flotte vers l\'arrière : il ne se lit plus comme un départ. C\'est bien le sens de lecture qui porte l\'idée. Aucune lecture parasite.' }];
+$('#tests').innerHTML = tests.map((t, i) => `<div class="tile${t.wide ? ' wide' : ''}"><div class="hd"><span>${t.t}</span><em${t.warn ? ' class="warn"' : ''}>${t.tag}</em></div>
+  <div class="pv ${t.cls || ''}" style="${t.bg ? 'background:' + t.bg + ';' : ''}"><div id="pv${i}" style="${t.css || ''}">${t.html ? t.html() : ''}</div></div>
+  ${t.blur ? '<label class="range" for="blur">Flou <input type="range" id="blur" min="0" max="14" step="0.5" value="5"><output id="blur-v">5 px</output></label>' : ''}
+  <p>${t.p}</p></div>`).join('');
+const blurEl = $('#pv' + tests.findIndex(t => t.blur));
+const setBlur = v => { blurEl.style.filter = `blur(${v}px)`; $('#blur-v').textContent = v + ' px'; };
+$('#blur').oninput = e => setBlur(e.target.value); setBlur(5);
+
+(() => {
+  const host = $('#pv' + tests.findIndex(t => t.px));
+  host.innerHTML = '<div class="row"><div><canvas class="px" id="pxw"></canvas><small>logotype 24 px</small></div><div><canvas class="px" id="pxi"></canvas><small>icône 16 px</small></div><div><canvas class="px" id="pxj"></canvas><small>icône 32 px</small></div></div>';
+  const draw = (id, markup, w, h, scale) => {
+    const img = new Image(), cv = $('#' + id); cv.width = w; cv.height = h; cv.style.width = w * scale + 'px'; cv.style.height = h * scale + 'px';
+    img.onload = () => { const c = cv.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, w, h); c.drawImage(img, 0, 0, w, h); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup);
+  };
+  const ww = Math.round(24 * VB_WORD[2] / VB_WORD[3]);
+  draw('pxw', wordSVG({ w: ww, h: 24 }), ww, 24, 3);
+  draw('pxi', iconSVG({ w: 16, h: 16 }), 16, 16, 5);
+  draw('pxj', iconSVG({ w: 32, h: 32 }), 32, 32, 3);
+})();
+
+$('#idea-mark').innerHTML = iconSVG({ bg: WHITE, fg: BLUE, w: 240, h: 240 }).replace('<svg ', '<svg style="display:block;margin:auto;max-width:100%;height:auto" ');
+
+// ================= export =================
+const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1800); };
+const fileSVG = k => ({
+  pos: () => wordSVG({ pad: 25 }), rev: () => wordSVG({ fg: WHITE, pad: 25 }),
+  icon: () => iconSVG(), 'icon-rev': () => iconSVG({ bg: WHITE, fg: BLUE })
+})[k]();
+function save(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+document.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => {
+  const k = b.dataset.dl;
+  if (k === 'png') {
+    const w = 2400, h = Math.round(w * (VB_WORD[3] + 50) / (VB_WORD[2] + 50)), img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); c.toBlob(bl => save('pioneer-logo.png', bl)); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(wordSVG({ pad: 25, w, h }));
+    return toast('PNG en préparation…');
+  }
+  save(`pioneer-${k}.svg`, new Blob([fileSVG(k)], { type: 'image/svg+xml' })); toast('Téléchargement lancé');
+});
+document.querySelector('[data-copy]').onclick = async () => {
+  const s = fileSVG('pos');
+  try { await navigator.clipboard.writeText(s); toast('SVG copié'); }
+  catch { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('SVG copié'); } catch { toast('Copie impossible : sélectionnez le texte'); } ta.remove(); }
+};
+</script>
+</body>
+</html>

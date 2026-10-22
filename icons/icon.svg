@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#1157ce"/>
-  <text x="256" y="362" text-anchor="middle" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="300" font-weight="800" fill="#ffffff">R</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="115" fill="#1157ce"/><path fill="#fff" d="M0,191v-183c0,-4.42 3.58,-8 8,-8h127.77c4.6,0 8.25,3.87 7.99,8.46c-3.64,62.73 -47.43,114.69 -106.06,130.55c-2.18,0.59 -3.69,2.57 -3.69,4.83v47.16c0,4.42 -3.58,8 -8,8h-18c-4.42,0 -8,-3.58 -8,-8zM40.86,102.16c28.93,-11.58 51.79,-35.09 62.51,-64.45c1.19,-3.26 -1.22,-6.71 -4.7,-6.71h-59.67c-2.76,0 -5,2.24 -5,5v61.52c0,3.54 3.57,5.96 6.86,4.64z" transform="translate(160.14 123.91) scale(1.50754)"/></svg>

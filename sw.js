@@ -1,5 +1,5 @@
 /* Ratio — service worker : coque applicative hors-ligne + polices en cache */
-const VERSION = 'ratio-v4.2.0';
+const VERSION = 'ratio-v4.2.1';
 const SHELL = [
   './',
   'index.html',
@@ -8,7 +8,7 @@ const SHELL = [
   'js/util.js', 'js/icons.js', 'js/store.js', 'js/colors.js', 'js/fonts.js', 'js/mark.js', 'js/markdown.js', 'js/ui.js', 'js/layout.js', 'js/organize.js', 'js/seed.js', 'js/leitner.js',
   'js/views/library.js', 'js/views/course.js', 'js/views/editor.js', 'js/views/outline.js', 'js/carnet.js', 'js/views/review.js', 'js/views/revhub.js',
   'js/search.js', 'js/app.js',
-  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
+  'icons/icon.svg', 'icons/favicon.svg', 'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
 ];
 
 self.addEventListener('install', (e) => {

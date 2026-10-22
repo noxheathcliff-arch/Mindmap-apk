@@ -1355,7 +1355,7 @@
         kind = 'map';
         const c = { id: U.uid('c'), title: 'Importé', description: '', createdAt: Date.now(), updatedAt: Date.now() };
         raw = { courses: [c], maps: [{ ...parsed, id: parsed.id || U.uid('m'), courseId: c.id }] };
-      } else throw new Error('Ce JSON ne ressemble pas à des données Ratio : il faut des cours et des cartes (« courses », « maps ») ou une carte (« nodes »).');
+      } else throw new Error('Ce JSON ne ressemble pas à des données Pioneer : il faut des cours et des cartes (« courses », « maps ») ou une carte (« nodes »).');
       const rep = {};
       const data = sanitize(raw, rep);
       if (parsed.settings) data.settings = { ...data.settings, ...sanitize({ settings: parsed.settings }).settings };

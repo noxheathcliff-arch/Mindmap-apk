@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 59 files · ~262,894 words
+- 59 files · ~268,929 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 9 file(s) not represented in the graph (top: .css 7, (none) 1, .webmanifest 1)
 
 ## Summary
-- 914 nodes · 2081 edges · 52 communities (41 shown, 11 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 173 edges (avg confidence: 0.87)
+- 916 nodes · 2086 edges · 55 communities (44 shown, 11 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 175 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9b113683`
+- Built from commit: `f2a08c66`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -43,6 +43,9 @@
 - checkvis.cjs
 - mark.js
 - syncCoverage
+- Refonte des cartes — plan (v4.1)
+- prefixOf
+- planSequence
 - render
 - course.js
 - exercises.test.cjs
@@ -81,27 +84,27 @@
   DESIGN.md → js/carnet.js
 - `3. Style par nœud (données)` --references--> `h()`  [INFERRED]
   docs/plan-refonte-cartes.md → js/carnet.js
+- `3. Style par nœud (données)` --references--> `calm()`  [INFERRED]
+  docs/plan-refonte-cartes.md → js/layout.js
 - `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
-  docs/audit-organisation-3.md → js/organize.js
-- `Moteur (`js/organize.js`)` --references--> `mergeNodes()`  [INFERRED]
   docs/audit-organisation-3.md → js/organize.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (52 total, 11 thin omitted)
+## Communities (55 total, 11 thin omitted)
 
 ### Community 0 - "render"
 Cohesion: 0.12
 Nodes (37): addFree(), applyReadOnly(), auditNow(), autoOrganize(), chooseLayout(), customLabels(), declineKeys(), deleteSilently() (+29 more)
 
 ### Community 1 - "changed"
-Cohesion: 0.12
-Nodes (26): addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder(), deleteMap() (+18 more)
+Cohesion: 0.15
+Nodes (22): addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder(), deleteMap() (+14 more)
 
 ### Community 2 - "layout.js"
-Cohesion: 0.06
-Nodes (68): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur (+60 more)
+Cohesion: 0.09
+Nodes (56): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), anchorPoint(), arrange(), bbox(), buildTree() (+48 more)
 
 ### Community 3 - "organize.js"
 Cohesion: 0.11
@@ -112,8 +115,8 @@ Cohesion: 0.09
 Nodes (19): add(), centerOn(), close(), dismiss(), filter(), get(), hideTip(), motion (+11 more)
 
 ### Community 5 - "app.js"
-Cohesion: 0.14
-Nodes (27): applyMotion(), applyNoteTypo(), applyTheme(), buildNav(), centerAction(), app, logo(), luxCount() (+19 more)
+Cohesion: 0.13
+Nodes (29): 4.x Marque Pioneer (logo), applyMotion(), applyNoteTypo(), applyTheme(), buildNav(), centerAction(), app, logo() (+21 more)
 
 ### Community 7 - "colors.js"
 Cohesion: 0.25
@@ -136,12 +139,12 @@ Cohesion: 0.14
 Nodes (25): bounds(), center(), frame(), kick(), measure(), openReview(), orbitEnd(), orbitMove() (+17 more)
 
 ### Community 12 - "metrics.cjs"
-Cohesion: 0.19
+Cohesion: 0.17
 Nodes (14): applySure(), fall, files, fs, heading(), indicators(), measure(), n0() (+6 more)
 
 ### Community 13 - "organize.test.cjs"
-Cohesion: 0.18
-Nodes (8): fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath, sure(), test()
+Cohesion: 0.11
+Nodes (12): applyAll(), edge(), fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath (+4 more)
 
 ### Community 14 - "Inventaire"
 Cohesion: 0.17
@@ -164,12 +167,12 @@ Cohesion: 0.36
 Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), write()
 
 ### Community 19 - "harness.cjs"
-Cohesion: 0.12
-Nodes (10): applyAll(), ctx, edge(), files, fs, path, root, vm (+2 more)
+Cohesion: 0.25
+Nodes (6): ctx, files, fs, path, root, vm
 
 ### Community 20 - "gen.cjs"
-Cohesion: 0.31
-Nodes (6): dense(), fs, L(), N(), path, T()
+Cohesion: 0.27
+Nodes (7): Dans une carte, dense(), fs, L(), N(), path, T()
 
 ### Community 21 - "revhub.js"
 Cohesion: 0.44
@@ -177,10 +180,10 @@ Nodes (8): courseRow(), dayDeck(), forecastCard(), loyaltyCard(), masteryRing(),
 
 ### Community 22 - "Utilisation"
 Cohesion: 0.05
-Nodes (41): 1. Le besoin (Lean UX), 2. Inventaire de contenu, 3.1 Systèmes d'organisation, 3.2 Système d'étiquetage, 3.3 bis Vue Plan — lire un plan long sans perdre le fil, 3.3 Systèmes de navigation, 3.4 Système de recherche, 3.5 Plan du site (routes) (+33 more)
+Nodes (40): 1. Le besoin (Lean UX), 2. Inventaire de contenu, 3.1 Systèmes d'organisation, 3.2 Système d'étiquetage, 3.3 bis Vue Plan — lire un plan long sans perdre le fil, 3.3 Systèmes de navigation, 3.4 Système de recherche, 3.5 Plan du site (routes) (+32 more)
 
 ### Community 23 - "folders.test.cjs"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (4): course(), node(), { S, win }, win
 
 ### Community 24 - "checkvis.cjs"
@@ -195,6 +198,18 @@ Nodes (6): dot(), hueFor(), mark(), paper(), tint(), vars()
 Cohesion: 0.50
 Nodes (4): exercisesFor(), rate(), syncCoverage(), unrate()
 
+### Community 27 - "Refonte des cartes — plan (v4.1)"
+Cohesion: 0.17
+Nodes (11): 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 4. Couleur, 5. Typographie, 6. Liens, 7. Peigne → stabilisateur, 8. Feuilles (+3 more)
+
+### Community 28 - "prefixOf"
+Cohesion: 0.25
+Nodes (8): kickerOf(), prefixOf(), roman(), roots(), structIndex(), structNumbers(), styleOf(), typoOf()
+
+### Community 29 - "planSequence"
+Cohesion: 0.40
+Nodes (5): hasFolders(), planOf(), planSequence(), shiftUnit(), unitsIn()
+
 ### Community 30 - "render"
 Cohesion: 0.80
 Nodes (5): logicText(), markdown(), relations(), render(), tree()
@@ -204,7 +219,7 @@ Cohesion: 0.22
 Nodes (17): contentsText(), countUp(), folderBlock(), levelBlocks(), mapCard(), mount(), notFound(), numeral() (+9 more)
 
 ### Community 33 - "exercises.test.cjs"
-Cohesion: 0.25
+Cohesion: 0.29
 Nodes (4): course(), EX, node(), { S }
 
 ### Community 39 - "Mindmap-apk"
@@ -224,12 +239,12 @@ Cohesion: 0.10
 Nodes (38): Editor(), anchorOf(), anchors(), applyStyle(), bez(), branchCurve(), bundleGeometry(), bundleLabel() (+30 more)
 
 ### Community 47 - "store.js"
-Cohesion: 0.09
-Nodes (21): blank(), cleanEdgeStyle(), cleanNodeStyle(), courseActivity(), coursesSorted(), emit(), folderPath(), load() (+13 more)
+Cohesion: 0.10
+Nodes (18): 3. Style par nœud (données), blank(), cleanEdgeStyle(), cleanNodeStyle(), courseActivity(), coursesSorted(), emit(), folderPath() (+10 more)
 
 ### Community 48 - "mapsOf"
-Cohesion: 0.13
-Nodes (24): branchStats(), canTree(), courseStats(), deleteCourse(), descendants(), dueCount(), folderStats(), foldersUnder() (+16 more)
+Cohesion: 0.16
+Nodes (20): branchStats(), courseStats(), deleteCourse(), dueCount(), exportCourse(), folderStats(), foldersUnder(), forecast() (+12 more)
 
 ### Community 49 - "renderBottomBar"
 Cohesion: 0.24
@@ -249,7 +264,7 @@ Nodes (14): addSource(), continueList(), dueLabel(), editTable(), fireInput(), f
 
 ### Community 54 - "childrenOf"
 Cohesion: 0.21
-Nodes (13): ancestors(), childrenOf(), isComponent(), isReviewable(), kickerOf(), node(), parentEdge(), parentOf() (+5 more)
+Nodes (12): ancestors(), canTree(), childrenOf(), descendants(), hiddenSet(), isComponent(), isReviewable(), node() (+4 more)
 
 ### Community 56 - "fit"
 Cohesion: 0.27
@@ -262,16 +277,16 @@ Nodes (13): animateView(), applyView(), autoPan(), bbox(), buildBar(), fit(), in
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `key()` connect `ui` to `checkvis.cjs`?**
-  _High betweenness centrality (0.262) - this node is a cross-community bridge._
+  _High betweenness centrality (0.278) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `render` be split into smaller, more focused modules?**
   _Cohesion score 0.11740890688259109 - nodes in this community are weakly interconnected._
-- **Why does `onDown()` connect `render` to `ui`, `Editor`, `renderBottomBar`, `mutate`, `fit`?**
-  _High betweenness centrality (0.235) - this node is a cross-community bridge._
+- **Why does `sample()` connect `layout.js` to `ui`?**
+  _High betweenness centrality (0.259) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `changed` be split into smaller, more focused modules?**
-  _Cohesion score 0.12 - nodes in this community are weakly interconnected._
-- **Why does `sample()` connect `layout.js` to `ui`?**
-  _High betweenness centrality (0.224) - this node is a cross-community bridge._
+  _Cohesion score 0.1471861471861472 - nodes in this community are weakly interconnected._
+- **Why does `onDown()` connect `render` to `ui`, `Editor`, `renderBottomBar`, `mutate`, `fit`?**
+  _High betweenness centrality (0.248) - this node is a cross-community bridge._
