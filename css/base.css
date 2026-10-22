@@ -428,7 +428,7 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 :root[data-motion="reduce"] .vtoolbar, :root[data-motion="reduce"] .bottombar.swap .ctx-btn,
 :root[data-motion="reduce"] .pane-inner.swap .pane-body > *, :root[data-motion="reduce"] .review-end > *,
 :root[data-motion="reduce"] .today-shape, :root[data-motion="reduce"] .daydeck .dd-top, :root[data-motion="reduce"] .end-flame,
-:root[data-motion="reduce"] .nav-cta, :root[data-motion="reduce"] .fiche.emerge .fiche-body,
+:root[data-motion="reduce"] .nav-cta, 
 :root[data-motion="reduce"] .navbar, :root[data-motion="reduce"] .ctxbar {
   animation-name: rm-fade !important;
 }

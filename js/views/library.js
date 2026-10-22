@@ -177,15 +177,68 @@
       : ui.btn('Réviser quand même', { icon: 'cards', variant: 'filled', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') });
   }
 
-  /* ---------------- Carte de cours : un dossier entrouvert ----------------
-     Le dos du dossier (avec son onglet), la prochaine fiche qui en dépasse comme une feuille
-     qu'on va tirer, puis le rabat : titre du cours, avancement, « Réviser ». Lien étiré : le
-     titre est le lien principal et couvre le dossier ; « Réviser » et « Options » restent des
+  /* ---------------- Carte de cours : un dossier fermé qui s'ouvre ----------------
+     Le dos du dossier (avec son onglet), les feuilles rangées dedans (la première : la
+     prochaine fiche à réviser), puis la façade : titre du cours, avancement, « Réviser ».
+     Fermé au repos ; survol, appui ou appui long l'ouvrent et la feuille dépasse. Lien étiré :
+     le titre est le lien principal et couvre la façade ; « Réviser » et « Options » restent des
      contrôles distincts ; toucher la feuille lance la révision sur cette fiche-là. */
   function untilLabel(t) {
     if (!t || !Number.isFinite(t)) return '';
     const days = Math.round((U.startOfDay(t) - U.startOfDay()) / U.DAY);
     return days <= 0 ? 'aujourd’hui' : days === 1 ? 'demain' : `dans ${days} jours`;
+  }
+  /* Gestes du dossier. Souris et clavier : survol ou focus = entrouvert, appui = ouvert.
+     Tactile : le doigt posé ouvre (après 70 ms, si ce n'est pas le début d'un défilement) ;
+     un appui long le garde ouvert, feuille sortie, jusqu'au prochain toucher ailleurs ou au
+     défilement, et le clic qui le termine n'ouvre rien. demo(t) : s'ouvre puis se referme. */
+  function foldGestures(card) {
+    let t1 = 0, t2 = 0, pid = null, held = false, swallow = false, touch = false, x0 = 0, y0 = 0;
+    const open = (on) => card.classList.toggle('is-open', on);
+    const stop = () => { clearTimeout(t1); clearTimeout(t2); t1 = t2 = 0; };
+    const release = (e) => {
+      if (e.type === 'pointerdown' && card.contains(e.target)) return;
+      held = false; open(false);
+      document.removeEventListener('pointerdown', release, true);
+      window.removeEventListener('scroll', release, true);
+    };
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      stop(); pid = null;
+      if (!held) setTimeout(() => { if (pid === null && !held) open(false); }, e.type === 'pointercancel' ? 0 : 140);
+    };
+    card.addEventListener('pointerdown', (e) => {
+      swallow = false; touch = e.pointerType !== 'mouse';
+      if (held || e.button > 0 || e.target.closest('.fiche-more')) return;
+      pid = e.pointerId; x0 = e.clientX; y0 = e.clientY;
+      if (e.pointerType === 'mouse') { open(true); return; }
+      t1 = setTimeout(() => open(true), 70);
+      t2 = setTimeout(() => {
+        held = swallow = true; open(true); R.motion.haptic(12);
+        document.addEventListener('pointerdown', release, true);
+        window.addEventListener('scroll', release, true);
+      }, 380);
+    });
+    card.addEventListener('pointermove', (e) => {
+      if (e.pointerId === pid && e.pointerType !== 'mouse' && !held && Math.hypot(e.clientX - x0, e.clientY - y0) > 10) { stop(); pid = null; open(false); }
+    });
+    card.addEventListener('pointerup', end);
+    card.addEventListener('pointercancel', end);
+    card.addEventListener('click', (e) => { if (swallow) { swallow = false; e.preventDefault(); e.stopPropagation(); } }, true);
+    card.addEventListener('contextmenu', (e) => { if (touch) e.preventDefault(); });
+    card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') card.classList.add('is-peek'); });
+    card.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { card.classList.remove('is-peek'); stop(); pid = null; open(false); } });
+    card.addEventListener('focusin', (e) => { if (e.target.matches(':focus-visible')) card.classList.add('is-peek'); });
+    card.addEventListener('focusout', (e) => { if (!card.contains(e.relatedTarget)) card.classList.remove('is-peek'); });
+    return {
+      demo(delay) {
+        setTimeout(() => {
+          if (!card.isConnected || held || pid !== null) return;
+          open(true);
+          setTimeout(() => { if (!held && pid === null) open(false); }, 900);
+        }, delay);
+      },
+    };
   }
   function courseCard(c, rerender) {
     const st = S.courseStats(c.id);
@@ -246,12 +299,13 @@
           h('i', { style: { transform: `scaleX(${st.progress})` } })) : null),
       action);
 
-    // ordre du DOM : le rabat (titre) d'abord pour la lecture ; la grille place la feuille au-dessus
-    card.append(
+    // ordre du DOM : la façade (titre) d'abord pour la lecture ; les feuilles, en absolu, passent dessous
+    card.append(...[
       h('span.fiche-back', { 'aria-hidden': 'true' }),
-      h('span.fiche-lid', { 'aria-hidden': 'true' }),
+      st.nodes > 1 ? h('span.fiche-sheet', { 'aria-hidden': 'true' }) : null,
       h('div.fiche-front', { dataset: { hero: 'course:' + c.id + ':band' } }, band, foot),
-      paper);
+      paper].filter(Boolean));
+    card.fold = foldGestures(card);
     return card;
   }
 
@@ -291,13 +345,8 @@
           h('span.add-ic', R.icon('plus', 24)), h('span.add-txt', h('span.add-l', 'Nouveau cours'), h('span.add-s', 'Un dossier par matière')));
         grid.appendChild(add);
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
-        if (intro && !R.motion.reduced()) for (const f of grid.querySelectorAll('.fiche')) {
-          // fermé, puis le volet bascule et la feuille sort ; la classe part quand le rabat s'est
-          // posé, en dernier (sinon « both » figerait la feuille et couperait le survol)
-          f.classList.add('emerge');
-          const front = f.querySelector('.fiche-front');
-          front.addEventListener('animationend', function done(e) { if (e.target !== front) return; f.classList.remove('emerge'); front.removeEventListener('animationend', done); });
-        }
+        // les premiers dossiers s'ouvrent l'un après l'autre, le temps de montrer ce qu'ils rangent
+        if (intro && !R.motion.reduced()) Array.from(grid.querySelectorAll('.fiche')).slice(0, 6).forEach((f, i) => f.fold.demo(420 + i * 120));
 
         const recents = S.recentMaps(5);
         const main = h('div.lib-main',

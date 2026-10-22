@@ -79,104 +79,132 @@
 .tip-text mark { background: var(--hl-mark); color: var(--on-hl-mark); padding: 0 3px; border-radius: 2px; }
 
 /* ==========================================================================
-   Carte de cours : un dossier entrouvert (DESIGN.md §4.6)
-   Le dos (avec l'onglet), la prochaine fiche qui dépasse comme une feuille qu'on va tirer,
-   puis le rabat (titre, avancement, Réviser). Ni contour ni icône : la forme suffit.
+   Carte de cours : un dossier fermé qui s'ouvre (DESIGN.md §4.6)
+   Calques, du fond vers l'avant : le dos et son onglet, les feuilles rangées dedans, la façade
+   (titre, avancement, Réviser). Au repos le dossier est fermé : des feuilles, on ne voit qu'un
+   liseré au-dessus de la façade et un bout par l'encoche du pouce. Deux paliers : survol ou
+   focus = entrouvert (la feuille pointe), appui ou appui long = ouvert (la façade bascule vers
+   soi autour de son pli, la feuille sort et dépasse, la deuxième suit en éventail).
+   Toute la chorégraphie tient dans deux nombres animés par ressort : --flap (la façade, 0 → 1)
+   et --lift (les feuilles, 0 → 1, dépassement compris). Chaque calque en dérive sa pose.
    ========================================================================== */
-.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: var(--sp-6) var(--sp-4); }
+@property --flap { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --lift { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: var(--sp-10) var(--sp-4); padding-top: var(--sp-10); }
 
 .fiche {
   --tab-h: 18px;
   /* l'onglet finit en S : un arrondi convexe en haut, un congé concave en bas, de même rayon */
   --tab-r: 9px;
-  /* dos du dossier : le conteneur du cours, assombri (l'intérieur du dossier est dans l'ombre) */
-  --fold-back: color-mix(in oklab, var(--c-pc) 78%, #000);
+  --tab-w: min(42%, 148px);
+  --lip: 12px;      /* bande du dos visible au-dessus de la façade fermée */
+  --rise: 60px;     /* course de la feuille quand le dossier est ouvert */
+  --tilt: 16deg;    /* bascule de la façade ouverte */
+  --notch-w: 22px; --notch-h: 8px;
+  /* le dos : le conteneur du cours assombri ; l'intérieur, plus sombre encore */
+  --fold-back: color-mix(in oklab, var(--c-pc) 76%, #000);
+  --fold-in: color-mix(in oklab, var(--c-pc) 58%, #000);
+  --sheet: var(--surface-container-lowest); --sheet-ink: var(--on-surface); --sheet-sub: var(--on-surface-variant);
+  --sheet-2: color-mix(in oklab, var(--c-pc) 22%, var(--sheet));
   position: relative; isolation: isolate; min-width: 0;
-  display: grid; grid-template-areas: "paper" "front"; grid-template-rows: auto 1fr;
-  padding-top: var(--tab-h);
+  display: grid; padding-top: calc(var(--tab-h) + var(--lip));
+  translate: 0 calc(var(--flap) * -2px);
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* fermeture : la feuille rentre d'abord, sans rebond, puis la façade se rabat */
+  transition: --lift var(--dur-spring-std) var(--spring-std), --flap var(--dur-spring-default) var(--spring-default) 70ms;
 }
+/* ouverture : la façade part, la feuille suit 50 ms plus tard et dépasse un peu (ressort vif) */
+.fiche:is(.is-peek, .is-open) {
+  z-index: 2;
+  transition: --flap var(--dur-spring-default) var(--spring-default), --lift 560ms var(--spring-fast) 50ms;
+}
+.fiche.is-peek { --flap: .28; --lift: .34; }
+.fiche.is-open { --flap: 1; --lift: 1; }
+/* la feuille du dark est du papier clair, pas une surface sombre */
+:root[data-theme="dark"] .fiche { --sheet: color-mix(in oklab, var(--inverse-surface) 72%, #fff); --sheet-ink: var(--inverse-on-surface); --sheet-sub: color-mix(in oklab, var(--inverse-on-surface) 72%, var(--sheet)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche { --sheet: color-mix(in oklab, var(--inverse-surface) 72%, #fff); --sheet-ink: var(--inverse-on-surface); --sheet-sub: color-mix(in oklab, var(--inverse-on-surface) 72%, var(--sheet)); } }
+
+/* --- le dos et son onglet --- */
 .fiche-back {
   position: absolute; inset: var(--tab-h) 0 0 0; z-index: 0;
-  background: var(--fold-back);
+  background: linear-gradient(var(--fold-in), var(--fold-back) calc(var(--lip) + 14px));
   border-radius: 0 var(--shape-xl) var(--shape-xl) var(--shape-xl);
 }
-/* l'onglet, posé sur le dos, raccordé par un congé concave */
 .fiche-back::before {
   content: ""; position: absolute; left: 0; bottom: 100%;
-  width: min(44%, 150px); height: var(--tab-h);
-  background: var(--fold-back); border-radius: 12px var(--tab-r) 0 0;
+  width: var(--tab-w); height: var(--tab-h);
+  background: var(--fold-in); border-radius: 12px var(--tab-r) 0 0;
 }
 .fiche-back::after {
   /* 1 px de recouvrement avec l'onglet : pas de liseré entre les deux */
-  content: ""; position: absolute; left: calc(min(44%, 150px) - 1px); bottom: 100%;
+  content: ""; position: absolute; left: calc(var(--tab-w) - 1px); bottom: 100%;
   width: calc(var(--tab-r) + 1px); height: var(--tab-r);
-  background: radial-gradient(circle at 100% 0, transparent calc(var(--tab-r) - .5px), var(--fold-back) var(--tab-r));
+  background: radial-gradient(circle at 100% 0, transparent calc(var(--tab-r) - .5px), var(--fold-in) var(--tab-r));
 }
-/* la feuille : surface claire, légèrement de biais, son bas glissé sous le rabat */
-.fiche-body {
-  grid-area: paper; position: relative; z-index: 1; min-width: 0;
-  display: grid; align-content: start; gap: 2px;
-  margin: var(--sp-3) var(--sp-4) -36px var(--sp-5);
-  padding: var(--sp-3) var(--sp-4) 44px;
+.fiche:has(.fiche-link:focus-visible) .fiche-back { outline: 3px solid var(--on-surface); outline-offset: 3px; }
+
+/* --- les feuilles : une fiche bristol (filet d'en-tête à la couleur du cours, lignes pâles) ---
+   Rangées, leur bord dépasse de 4 px au-dessus de la façade. Ouvertes, elles montent de --rise,
+   pivotent en éventail autour de leur pied ; l'ombre de la façade suit le pli sur la feuille. */
+.fiche-sheet, .fiche-body {
+  position: absolute; z-index: 1;
+  top: calc(var(--tab-h) + var(--lip) - 4px); bottom: var(--sp-4);
   border-radius: var(--shape-s) var(--shape-s) 0 0;
-  background: var(--surface-container-lowest); color: var(--on-surface);
-  box-shadow: 0 1px 2px rgb(0 0 0 / .18);
-  transform: rotate(-1.5deg); transform-origin: 0 100%;
-  cursor: pointer;
-  transition: transform var(--dur-spring-default) var(--spring-default);
+  transform-origin: 50% 100%;
 }
-/* première visite : le dossier arrive fermé (un volet du rabat couvre la feuille), puis le volet
-   bascule vers soi autour de sa charnière (anticipation : il se soulève d'abord, puis tombe en
-   accélérant), le rabat encaisse le choc (dépassement, retour) et la feuille sort, son bas restant
-   glissé sous le rabat. Décalage de 90 ms entre dossiers. */
-.fiche-lid { display: none; }
-.fiche.emerge { --t0: calc(var(--i, 0) * 90ms + 260ms); }
-.fiche.emerge .fiche-lid {
-  display: block; grid-area: paper; z-index: 3; pointer-events: none;
-  margin-bottom: calc(-1 * var(--shape-l));
-  background: var(--c-pc); border-radius: var(--shape-l) var(--shape-l) 0 0;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .14);
-  transform-origin: 50% 100%; backface-visibility: hidden;
-  animation: lid-open 360ms cubic-bezier(.55, 0, .9, .45) var(--t0) both;
+.fiche-sheet {
+  left: var(--sp-5); right: var(--sp-3);
+  background: var(--sheet-2);
+  transform: translateY(calc(var(--lift) * var(--rise) * -.6 + 2px)) rotate(calc(var(--lift) * 2.5deg));
 }
-.fiche.emerge .fiche-front { transform-origin: 50% 100%; animation: flap-land 460ms var(--ease-out) calc(var(--t0) + 340ms) both; }
-.fiche.emerge .fiche-body { animation: paper-out var(--dur-spring-default) var(--spring-default) calc(var(--t0) + 250ms) both; }
-@keyframes lid-open {
-  0% { transform: perspective(800px) rotateX(0deg); }
-  22% { transform: perspective(800px) rotateX(-6deg); }
-  100% { transform: perspective(800px) rotateX(90deg); }
+.fiche-body {
+  left: var(--sp-3); right: var(--sp-5); min-width: 0;
+  display: grid; align-content: start; gap: 6px;
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--sheet-ink); cursor: pointer;
+  --rule: calc(var(--sp-2) + 18px);
+  background:
+    linear-gradient(to bottom, transparent calc(var(--lift) * var(--rise) - 6px), rgb(0 0 0 / calc(var(--flap) * .16)) calc(var(--lift) * var(--rise) + 10px)),
+    linear-gradient(color-mix(in oklab, var(--c-pri) 55%, transparent) 0 0) 0 var(--rule) / 100% 1.5px no-repeat,
+    repeating-linear-gradient(transparent 0 15px, color-mix(in oklab, var(--sheet-ink) 7%, transparent) 15px 16px) 0 calc(var(--rule) + 3px) / 100% 100% no-repeat,
+    var(--sheet);
+  transform: translateY(calc(var(--lift) * var(--rise) * -1)) rotate(calc(var(--lift) * -1.2deg));
 }
-@keyframes flap-land {
-  0% { transform: perspective(800px) rotateX(0deg); }
-  28% { transform: perspective(800px) rotateX(10deg); }
-  62% { transform: perspective(800px) rotateX(-3deg); }
-  84% { transform: perspective(800px) rotateX(.8deg); }
-  100% { transform: none; }
-}
-@keyframes paper-out { from { transform: translateY(34px) rotate(0deg); } }
-:root[data-theme="dark"] .fiche-body { background: var(--surface-container-highest); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fiche-body { background: var(--surface-container-highest); } }
-.fiche-k { font: var(--label-s); font-weight: 600; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fiche-q { font: var(--title-s); color: var(--on-surface); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-/* le rabat : l'ombre portée sur la feuille dit que le dossier est entrouvert */
+.fiche-k { font: var(--label-s); font-weight: 600; line-height: 18px; color: var(--sheet-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fiche-q { font: var(--title-s); line-height: 20px; color: var(--sheet-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+/* --- la façade : pivote vers soi autour de son pli (le bas), encoche du pouce en haut --- */
 .fiche-front {
-  grid-area: front; position: relative; z-index: 2; min-width: 0;
+  position: relative; z-index: 2; min-width: 0;
   display: grid; grid-template-rows: 1fr auto;
-  min-height: 148px;
-  background: var(--c-pc); color: var(--c-onpc);
-  border-radius: var(--shape-l) var(--shape-l) var(--shape-xl) var(--shape-xl);
-  box-shadow: 0 -3px 8px -3px rgb(0 0 0 / .28);
-  transition: transform var(--dur-sm) var(--ease-out);
+  min-height: 156px;
+  background: linear-gradient(color-mix(in oklab, var(--c-pc) 90%, #fff), var(--c-pc) 40px);
+  color: var(--c-onpc);
+  border-radius: var(--shape-m) var(--shape-m) var(--shape-xl) var(--shape-xl);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .2);
+  transform-origin: 50% 100%;
+  transform: perspective(720px) rotateX(calc(var(--flap) * var(--tilt) * -1));
+  -webkit-mask: radial-gradient(var(--notch-w) var(--notch-h) at 50% 0, #0000 calc(100% - .75px), #000 100%);
+  mask: radial-gradient(var(--notch-w) var(--notch-h) at 50% 0, #0000 calc(100% - .75px), #000 100%);
+}
+/* reflet qui balaie la façade pendant qu'elle bascule, et le haut qui s'assombrit en s'inclinant ;
+   sous le texte (la façade transformée est son propre contexte d'empilement) */
+.fiche-front::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background:
+    linear-gradient(112deg, transparent 38%, rgb(255 255 255 / .2) 50%, transparent 62%) calc((1 - var(--flap)) * 100%) 0 / 240% 100% no-repeat,
+    linear-gradient(rgb(0 0 0 / calc(var(--flap) * .12)), transparent 55%);
 }
 .fiche-band { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2); align-items: start; padding: var(--sp-4) var(--sp-1) 0 var(--sp-5); }
 .fiche-id { display: grid; gap: 2px; min-width: 0; }
 .fiche-title { font: var(--title-l); letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .fiche-sub { font: var(--body-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fiche-link { color: inherit; text-decoration: none; outline: none; }
-/* lien étiré : le titre couvre le rabat ; Réviser / Options passent au-dessus */
+/* lien étiré : le titre couvre la façade ; Réviser / Options passent au-dessus */
 .fiche-link::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
 .fiche-more { position: relative; z-index: 3; margin-top: -6px; color: var(--c-onpc); }
-.fiche:has(.fiche-link:focus-visible) .fiche-front { outline: 3px solid var(--on-surface); outline-offset: 2px; }
 .fiche-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-5); }
 .fiche-stats { display: grid; gap: 6px; min-width: 0; }
 .fiche-meta { font: var(--label-m); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -186,24 +214,20 @@
 .fiche-cta .ic svg { width: 18px; height: 18px; }
 .fiche-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--shape-full); background: color-mix(in srgb, var(--on-primary) 18%, transparent); font: 700 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; }
 .btn-tonal.fiche-cta { padding: 0 14px 0 10px; }
-/* au survol, on tire la feuille hors du dossier */
-@media (hover: hover) {
-  .fiche:hover .fiche-body { transform: translateY(-8px) rotate(-2.5deg); }
-}
-.fiche-body:active { transform: translateY(-4px) rotate(-2deg); transition-duration: var(--dur-xs); }
-.fiche:has(.fiche-link:active) .fiche-front { transform: scale(.985); transition-duration: var(--dur-xs); }
-:root[data-motion="reduce"] .fiche-body { transition: none; }
+/* mouvement réduit : les états restent, sans trajet */
+:root[data-motion="reduce"] .fiche { transition: none; translate: none; }
 
 /* compact : deux dossiers par ligne (titres et commandes resserrés) */
 @media (max-width: 599.98px) {
-  .course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5) var(--sp-3); }
-  .fiche { --tab-h: 14px; --tab-r: 7px; }
+  .course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-8) var(--sp-3); padding-top: var(--sp-8); }
+  .fiche { --tab-h: 14px; --tab-r: 7px; --lip: 10px; --rise: 52px; --tilt: 18deg; --notch-w: 18px; --notch-h: 7px; }
   .fiche-back { border-radius: 0 var(--shape-l) var(--shape-l) var(--shape-l); }
   .fiche-back::before { border-radius: 10px var(--tab-r) 0 0; }
-  .fiche-body { margin: var(--sp-2) var(--sp-2) -30px var(--sp-3); padding: var(--sp-2) var(--sp-3) 36px; }
+  .fiche-sheet { left: var(--sp-3); right: var(--sp-2); }
+  .fiche-body { left: var(--sp-2); right: var(--sp-3); gap: 4px; padding: 6px var(--sp-2); --rule: 22px; }
   .fiche-k { font-size: 10px; line-height: 14px; }
-  .fiche-q { font: 600 12px/16px var(--font-plain); -webkit-line-clamp: 3; }
-  .fiche-front { min-height: 124px; border-radius: var(--shape-m) var(--shape-m) var(--shape-l) var(--shape-l); }
+  .fiche-q { font: 600 12px/16px var(--font-plain); }
+  .fiche-front { min-height: 128px; border-radius: var(--shape-s) var(--shape-s) var(--shape-l) var(--shape-l); }
   .fiche-band { padding: var(--sp-3) 0 0 var(--sp-3); gap: 0; }
   .fiche-title { font: var(--title-s); font-size: 15px; line-height: 20px; }
   .fiche-sub { font-size: 11px; line-height: 16px; }
@@ -224,7 +248,7 @@
 .course-card, .map-card { text-align: left; }
 .course-card.course-add, .map-card.map-add {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
-  min-height: 220px; margin-top: 18px; padding: var(--sp-5);
+  min-height: 220px; margin-top: 30px; padding: var(--sp-5);
   border-radius: var(--shape-xl);
   background: var(--surface-container-low); color: var(--on-surface); text-align: center;
   transition: background-color var(--dur-effects) var(--effects), transform var(--dur-sm) var(--ease-out), border-radius var(--dur-spring-fast) var(--spring-fast);
@@ -1491,7 +1515,7 @@ a.resume:active { transform: none; }
    Plus de filets de couleur sur le bord gauche.
    ========================================================================== */
 .fab, .fab:hover, .rail .fab:hover, .btn-filled:hover:not(:disabled),
-.fiche-body, .fiche-front, .rate-row, .search, .plan-card, .plan-card:hover,
+.rate-row, .search, .plan-card, .plan-card:hover,
 .map-card:not(.map-add):hover, .part, .part:hover,
 .node::before, .node::after, .node.look-notion, .node-handle,
 .ctx-bar, .vtoolbar, .ed-banner, .coach,
