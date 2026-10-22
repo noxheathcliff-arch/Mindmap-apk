@@ -129,7 +129,7 @@
     ].filter(Boolean));
   };
 
-  /** Les 7 derniers jours : une pastille pleine par jour de révision (partagé avec Réviser) */
+  /** Les 7 derniers jours : une coche par jour de révision, un cercle pointillé sinon (partagé avec Réviser) */
   R.weekDots = function () {
     const log = S.data.settings.reviewLog;
     const days = [];
@@ -137,7 +137,9 @@
       const d = new Date(); d.setDate(d.getDate() - i);
       const n = log[U.dayKey(d)] || 0;
       days.push(h('span.week-day', { class: n ? 'on' : '', title: d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' }) + ` · ${n} carte${n > 1 ? 's' : ''}` },
-        h('span.week-dot'), h('span.week-l', d.toLocaleDateString('fr-FR', { weekday: 'narrow' }))));
+        h('span.week-dot', { html: n
+          ? `<svg viewBox="0 0 16 16" width="16" height="16"><mask id="wk${i}"><rect width="16" height="16" fill="#fff"/><path d="M4.8 8.3l2.1 2.1 4.3-4.5" fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></mask><circle cx="8" cy="8" r="8" fill="currentColor" mask="url(#wk${i})"/></svg>`
+          : '<svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.4 2.4" opacity=".55"/></svg>' }), h('span.week-l', d.toLocaleDateString('fr-FR', { weekday: 'narrow' }))));
     }
     return h('span.week', days);
   };

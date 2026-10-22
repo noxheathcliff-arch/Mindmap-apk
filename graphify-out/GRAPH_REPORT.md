@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 60 files · ~274,781 words
+- 60 files · ~275,266 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 936 nodes · 2132 edges · 53 communities (42 shown, 11 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 185 edges (avg confidence: 0.87)
+- 936 nodes · 2133 edges · 53 communities (42 shown, 11 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 186 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bb7e037f`
+- Built from commit: `0cfb66b6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -273,7 +273,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `render` be split into smaller, more focused modules?**
   _Cohesion score 0.11740890688259109 - nodes in this community are weakly interconnected._
 - **Why does `4. Système de design (Material Design 3)` connect `4. Système de design (Material Design 3)` to `layout.js`, `app.js`, `Utilisation`?**
-  _High betweenness centrality (0.230) - this node is a cross-community bridge._
+  _High betweenness centrality (0.229) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `changed` be split into smaller, more focused modules?**

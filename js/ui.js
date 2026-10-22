@@ -298,18 +298,27 @@
 
   /** Formulaire : fields = [{key,label,value,placeholder,multiline,required}] */
   /** Champ M3 « outlined » : label flottant posé sur le contour, icône de tête, texte d'aide */
-  ui.fieldOutlined = function ({ label, value = '', placeholder = '', icon, support, maxlength = 200, required }) {
+  ui.fieldOutlined = function ({ label, value = '', placeholder = '', icon, support, maxlength = 200, required, multiline, counter }) {
     const id = U.uid('f');
-    const input = h('input.fo-input', { id, type: 'text', placeholder, maxlength, autocomplete: 'off', spellcheck: 'true', 'aria-describedby': support ? id + '-s' : null });
+    const input = multiline
+      // zone de texte qui grandit avec son contenu (3 à 8 lignes)
+      ? h('textarea.fo-input.fo-area', { id, rows: 3, placeholder, maxlength, spellcheck: 'true', 'aria-describedby': id + '-s' })
+      : h('input.fo-input', { id, type: 'text', placeholder, maxlength, autocomplete: 'off', spellcheck: 'true', 'aria-describedby': support ? id + '-s' : null });
     input.value = value;
-    const wrap = h('div.field.fo', { class: icon ? 'fo-lead' : '' },
+    const count = counter ? h('span.fo-count', { 'aria-hidden': 'true' }) : null;
+    const wrap = h('div.field.fo', { class: [icon ? 'fo-lead' : '', multiline ? 'fo-multi' : ''].join(' ').trim() },
       h('label.fo-box', { for: id },
         icon ? h('span.fo-ic', R.icon(icon, 24)) : null,
         input,
         h('span.fo-label', label, required ? h('span.fo-req', { 'aria-hidden': 'true' }, ' *') : null),
         h('span.fo-outline', { 'aria-hidden': 'true' })),
-      support ? h('span.fo-support', { id: id + '-s' }, support) : null);
-    const sync = () => wrap.classList.toggle('filled', !!input.value);
+      support || count ? h('span.fo-support', h('span', { id: id + '-s' }, support || ''), count) : null);
+    const grow = () => { if (!input.isConnected) return requestAnimationFrame(() => input.isConnected && grow()); input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 224) + 'px'; };
+    const sync = () => {
+      wrap.classList.toggle('filled', !!input.value);
+      if (count) count.textContent = `${input.value.length}/${maxlength}`;
+      if (multiline) grow();
+    };
     input.addEventListener('input', sync); sync();
     return { wrap, input };
   };
@@ -325,7 +334,11 @@
         const state = { value: f.value ?? f.choices[0].value };
         const list = h('div.choice-list.form-choice', { role: 'radiogroup', 'aria-label': f.label },
           f.choices.map((c) => {
-            const b = outlined
+            const b = f.chips
+              // chip de filtre M3 : contour, puis tonale + coche quand choisie
+              ? h('button.fchip.ripple', { type: 'button', role: 'radio', 'aria-checked': String(c.value === state.value), tabindex: c.value === state.value ? '0' : '-1' },
+                h('span.fchip-check', { 'aria-hidden': 'true' }, R.icon('check', 18)), h('span', c.label))
+              : outlined
               // carte radio M3 : icône tonale, libellé + aide, bouton radio en bout
               ? h('button.rc.ripple', { type: 'button', role: 'radio', 'aria-checked': String(c.value === state.value), tabindex: c.value === state.value ? '0' : '-1' },
                 c.icon ? h('span.rc-ic', R.icon(c.icon, 24)) : null,
@@ -335,12 +348,13 @@
                 h('span.choice-l', h('b', c.label), c.text ? h('span.choice-sub', c.text) : null), h('span.choice-check', R.icon('check', 20)));
             b.addEventListener('click', () => {
               state.value = c.value;
-              U.$$('[role="radio"]', list).forEach((x) => { x.setAttribute('aria-checked', String(x === b)); if (outlined) x.tabIndex = x === b ? 0 : -1; });
+              U.$$('[role="radio"]', list).forEach((x) => { x.setAttribute('aria-checked', String(x === b)); if (outlined || f.chips) x.tabIndex = x === b ? 0 : -1; });
               if (f.onChange) f.onChange(c.value, inputs);
             });
             return b;
           }));
         if (outlined) list.className = 'rc-group';
+        if (f.chips) list.className = 'fchip-set';
         // flèches : radio group au clavier
         list.addEventListener('keydown', (e) => {
           const all = U.$$('[role="radio"]', list), i0 = all.indexOf(document.activeElement);
@@ -628,10 +642,19 @@
     return el;
   };
 
-  /** Pastille de maîtrise (○ ◔ ◑ ●) — monochrome */
+  /** Icône de maîtrise : pointillé (pas vu) · flèche qui revient (à revoir) · coche (compris) · étincelle (maîtrisé) */
+  const MASTERY_SVG = {
+    none: '<circle cx="12" cy="12" r="8" stroke-dasharray="3.1 3.2"/>',
+    revoir: '<path d="M5.2 9.2A7.6 7.6 0 1 1 4.6 14"/><path d="M4.6 4.6v4.8h4.8"/>',
+    compris: '<circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.3l2.6 2.6 5-5.2"/>',
+    maitrise: '<path fill="currentColor" d="M12 2.8c.8 5.2 2.4 7.4 7.4 8.2-5 .8-6.6 3-7.4 8.2-.8-5.2-2.4-7.4-7.4-8.2 5-.8 6.6-3 7.4-8.2Z"/>',
+  };
   ui.mastery = (rating, size = 12) => {
-    const fill = rating ? R.store.RATINGS[rating].fill : 0;
-    const el = h('span.mastery', { class: 'f' + fill, style: { '--s': size + 'px' }, title: rating ? R.store.RATINGS[rating].label : 'Pas encore révisé' });
+    const k = rating || 'none';
+    const sz = Math.max(size, 13), sw = sz <= 14 ? 2.6 : sz <= 18 ? 2.2 : 1.9;
+    const el = h('span.mastery', { class: 'k-' + k + ' f' + (rating ? R.store.RATINGS[rating].fill : 0), style: { '--s': sz + 'px' }, role: 'img',
+      title: rating ? R.store.RATINGS[rating].label : 'Pas encore révisé', 'aria-label': rating ? R.store.RATINGS[rating].label : 'Pas encore révisé' });
+    el.innerHTML = `<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${MASTERY_SVG[k]}</svg>`;
     return el;
   };
 

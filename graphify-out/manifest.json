@@ -12,9 +12,9 @@
     "semantic_hash": ""
   },
   "js/icons.js": {
-    "mtime": 1792701863.2727997,
-    "seen": 1792701884.55775,
-    "ast_hash": "868b55f0ad93cf853ed5a699f53c4915",
+    "mtime": 1792709081.2243764,
+    "seen": 1792709497.3367636,
+    "ast_hash": "ea7f82b27654a88c1b61dbd6ff4a7574",
     "semantic_hash": ""
   },
   "js/layout.js": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "js/ui.js": {
-    "mtime": 1792701863.2764037,
-    "seen": 1792701884.557776,
-    "ast_hash": "e0f7926dff2c34ac09acc46d5919db89",
+    "mtime": 1792709074.3162103,
+    "seen": 1792709497.3367808,
+    "ast_hash": "525f6600f1fbe07d4f332ac3cf6fd209",
     "semantic_hash": ""
   },
   "js/util.js": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792705637.859247,
-    "seen": 1792705975.4373279,
-    "ast_hash": "8b5404584b88ad9a61f2e32fe8b6fb6a",
+    "mtime": 1792709081.2250433,
+    "seen": 1792709497.3367844,
+    "ast_hash": "c350cbebfd039ed0467005dbae994eb3",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1792705431.8173661,
-    "seen": 1792705975.4373314,
-    "ast_hash": "5b3ed0497ec3b4cd20639f8129a9175a",
+    "mtime": 1792709117.108879,
+    "seen": 1792709497.3367882,
+    "ast_hash": "3a5e546b07b3b2b3a4f6a5ce8b100930",
     "semantic_hash": ""
   },
   "js/views/outline.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792708763.560002,
-    "seen": 1792708780.157424,
-    "ast_hash": "2fd6005e7e0fdbf41061b9f36210fec5",
+    "mtime": 1792709487.4369907,
+    "seen": 1792709497.3367994,
+    "ast_hash": "93aebbd42048d54f6a9d26a51e48939a",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792708773.3353798,
-    "seen": 1792708780.157471,
-    "ast_hash": "67dfde68e8c04d19372e5eec601b8211",
+    "mtime": 1792709487.4314854,
+    "seen": 1792709497.336844,
+    "ast_hash": "bd82c20c6e119c23340bd8460ee31c82",
     "semantic_hash": ""
   },
   "README.md": {

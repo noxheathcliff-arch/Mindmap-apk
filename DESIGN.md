@@ -64,7 +64,7 @@ Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Défin
 ### 3.3 bis Vue Plan — lire un plan long sans perdre le fil
 - **Où suis-je ?** Un fil d'Ariane collant (40 px, ≈ 1/20 de l'écran) apparaît une fois le premier titre passé : « II. Conditions de fond › A. Consentement… › 2. Intégrité… › b) Dol » ; chaque niveau ramène à son titre ; le plus profond reste visible (le début, coupé, s'efface en fondu).
 - **Comment les éléments s'articulent ?** Un « ET » / « OU » à chaque jointure entre éléments cumulatifs / alternatifs, posé sur le filet de leur niveau (la phrase d'annonce reste).
-- **Que veut dire ce point ?** Le point de maîtrise suit le dernier mot du titre (proximité), avec son libellé en infobulle et une légende sous l'en-tête (une icône d'état sans légende est ambiguë).
+- **Que veut dire cette icône ?** L'icône de maîtrise (SVG, plus de point plein : anneau pointillé *pas vu*, flèche de retour `error` *À revoir*, cercle coché ambre *Compris*, éclat `primary` *Maîtrisé* ; 13 px mini, trait épaissi aux petites tailles) suit le dernier mot du titre (proximité), avec son libellé en infobulle et une légende sous l'en-tête (une icône d'état sans légende est ambiguë).
 - **Vue d'ensemble** : sommaire repliable dès 3 grandes parties. Rythme : plus d'air entre les grandes parties ; sur petit écran, retrait réduit (12 px par niveau) pour garder la largeur du texte.
 
 ### 3.4 Système de recherche
@@ -94,7 +94,7 @@ Toute notion est à **≤ 3 interactions** de l'accueil.
 ### 4.0 Règle permanente — pas de surlignage de contour
 - **Aucun contour décoratif** (outline, bordure, liseré) autour des cartes, des sections, des groupes de réglages ni des composants « carte blanche ». Un contour n'embellit pas l'interface : il la charge.
 - **Il n'est pas nécessaire pour rendre un élément visible** : le contraste tonal entre l'élément et son fond (paliers `surface-container-*`) suffit, et au besoin l'élévation (ombre douce en clair, palier plus clair en sombre).
-- Les contours restent réservés à ce qui est fonctionnel : anneau de focus clavier, nœud de carte dont la forme encode le type, guides de niveau du Plan, grilles des tableaux. Les champs sont **remplis** (M3 *filled text field* : `surface-container-highest` + indicateur bas), les chips et filtres sont tonals.
+- Les contours restent réservés à ce qui est fonctionnel : anneau de focus clavier, nœud de carte dont la forme encode le type, guides de niveau du Plan, grilles des tableaux. Les champs sont **remplis** (M3 *filled text field* : `surface-container-highest` + indicateur bas), les chips et filtres sont tonals. Exception : les fiches de dialogue de structure (**Nouvelle partie / Modifier la partie**, `.m3-form`) utilisent les champs M3 *outlined* (icône en tête, libellé flottant, texte d'aide, champ multiligne qui grandit jusqu'à 224 px avec compteur `n/600`) et le niveau dans le plan en **filter chips** M3 (32 px, la coche apparaît à gauche de la chip choisie, fond `secondary-container`). Les états « à réviser » / « à jour » / jours de la semaine / avertissements portent des icônes SVG (horloge, cercle coché, triangle), jamais un point noir.
 
 ### 4.1 Couleur — Material 3 Expressive, rôles tonals
 Direction retenue : **« Contexte »** (n° 8 des dix pistes) — l'Expressif M3 avec la barre d'outils flottante, la bibliothèque rangée en dossiers.

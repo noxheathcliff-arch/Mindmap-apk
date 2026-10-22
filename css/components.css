@@ -284,15 +284,17 @@
 @keyframes grow { from { transform: scaleX(0); } }
 
 .mastery {
-  --s: 12px;
-  display: inline-block; flex: none;
-  width: var(--s); height: var(--s); border-radius: 50%;
-  border: 1.5px solid currentColor;
-  color: var(--on-surface-variant);
+  --s: 13px;
+  display: inline-grid; place-items: center; flex: none;
+  width: var(--s); height: var(--s);
+  color: var(--outline);
 }
-.mastery.f1 { background: conic-gradient(currentColor 0 25%, transparent 25% 100%); color: var(--on-surface); }
-.mastery.f2 { background: conic-gradient(currentColor 0 50%, transparent 50% 100%); color: var(--on-surface); }
-.mastery.f3 { background: currentColor; color: var(--on-surface); }
+.mastery svg { display: block; overflow: visible; }
+.mastery.k-revoir { color: var(--error); }
+.mastery.k-compris { color: #b36800; }
+.mastery.k-maitrise { color: var(--primary); }
+:root[data-theme="dark"] .mastery.k-compris { color: #ffb95c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mastery.k-compris { color: #ffb95c; } }
 
 /* ---- État vide ------------------------------------------------------- */
 .empty { display: grid; justify-items: center; text-align: center; gap: var(--sp-3); padding: var(--sp-12) var(--sp-6); max-width: 440px; margin: 0 auto; animation: rise var(--dur-md) var(--ease-out) both; }

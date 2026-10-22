@@ -137,12 +137,13 @@
     let auto = autoLabel(courseId, parentId, kind);
     const v = await ui.form({
       title: parentId ? 'Nouveau sous-dossier' : 'Nouvelle partie', icon: 'folder', ok: 'Créer', origin: from,
+      cls: 'm3-form', outlined: true,
       fields: [
-        { key: 'title', label: 'Intitulé', placeholder: 'Ex. Les relations individuelles de travail', required: true },
-        { key: 'label', label: 'Numéro', value: auto, placeholder: 'Ex. Partie I, Chapitre 2' },
-        { key: 'kind', label: 'Niveau dans le plan', value: kind, choices: KIND_CHOICES,
-          onChange: (k, inputs) => { if (inputs.label.value === auto) { auto = autoLabel(courseId, parentId, k); inputs.label.value = auto; } } },
-        { key: 'note', label: 'Pourquoi ici ? (facultatif)', multiline: true, maxlength: 600, placeholder: 'Ce que ce dossier apporte au cours, et pourquoi il vient à ce moment.' },
+        { key: 'title', label: 'Intitulé', icon: 'type', placeholder: 'Ex. Les relations individuelles de travail', required: true },
+        { key: 'label', label: 'Numéro', icon: 'list', value: auto, placeholder: 'Ex. Partie I, Chapitre 2', support: 'Se remplit selon le niveau choisi' },
+        { key: 'kind', label: 'Niveau dans le plan', value: kind, choices: KIND_CHOICES, chips: true,
+          onChange: (k, inputs) => { if (inputs.label.value === auto) { auto = autoLabel(courseId, parentId, k); inputs.label.value = auto; inputs.label.dispatchEvent(new Event('input')); } } },
+        { key: 'note', label: 'Pourquoi ici ?', icon: 'note', multiline: true, maxlength: 600, counter: true, support: 'Facultatif', placeholder: 'Ce que ce dossier apporte au cours, et pourquoi il vient à ce moment.' },
       ],
     });
     if (!v) return null;
@@ -153,12 +154,12 @@
 
   R.actions.editFolder = async function (f) {
     const v = await ui.form({
-      title: 'Modifier le dossier', icon: 'edit', ok: 'Enregistrer',
+      title: 'Modifier le dossier', icon: 'edit', ok: 'Enregistrer', cls: 'm3-form', outlined: true,
       fields: [
-        { key: 'title', label: 'Intitulé', value: f.title, required: true },
-        { key: 'label', label: 'Numéro', value: f.label, placeholder: 'Ex. Partie I, Chapitre 2' },
-        { key: 'kind', label: 'Niveau dans le plan', value: f.kind, choices: KIND_CHOICES },
-        { key: 'note', label: 'Pourquoi ici ?', value: f.note || '', multiline: true, maxlength: 600 },
+        { key: 'title', label: 'Intitulé', icon: 'type', value: f.title, required: true },
+        { key: 'label', label: 'Numéro', icon: 'list', value: f.label, placeholder: 'Ex. Partie I, Chapitre 2' },
+        { key: 'kind', label: 'Niveau dans le plan', value: f.kind, choices: KIND_CHOICES, chips: true },
+        { key: 'note', label: 'Pourquoi ici ?', icon: 'note', value: f.note || '', multiline: true, maxlength: 600, counter: true, support: 'Facultatif' },
       ],
     });
     if (v) S.updateFolder(f.id, { title: v.title.trim(), label: v.label.trim(), kind: v.kind, note: v.note.trim() });
@@ -310,7 +311,7 @@
         h('span.unit-body',
           h('span.unit-label', kindLabel(f)),
           h('span.unit-title', f.title),
-          h('span.unit-meta', contentsText(f.courseId, f.id), st.due ? h('span.due-dot', `${st.due} à réviser`) : null)),
+          h('span.unit-meta', contentsText(f.courseId, f.id), st.due ? h('span.due-dot', R.icon('clock', 16), `${st.due} à réviser`) : null)),
         ui.ring(st.progress, { size: 32, stroke: 3.5, label: 'Maîtrise · ' + f.title }),
         h('span.unit-go', R.icon('chevronRight', 20))));
     }
@@ -322,7 +323,7 @@
       h('span.unit-body',
         h('span.unit-label', m.label ? m.label : h('span.unit-kind', 'Carte'), m.readOnly ? R.icon('lock', 12) : null),
         h('span.unit-title', h('span', { dataset: { hero: 'map:' + m.id + ':title' } }, m.title)),
-        h('span.unit-meta', U.plural(st.nodes, 'nœud'), st.due && st.reviewable ? h('span.due-dot', `${st.due} à réviser`) : st.reviewable ? h('span.ok-dot', 'À jour') : null)),
+        h('span.unit-meta', U.plural(st.nodes, 'nœud'), st.due && st.reviewable ? h('span.due-dot', R.icon('clock', 16), `${st.due} à réviser`) : st.reviewable ? h('span.ok-dot', R.icon('checkCircle', 16), 'À jour') : null)),
       ui.ring(st.progress, { size: 32, stroke: 3.5, label: 'Maîtrise · ' + m.title }),
       more));
   }
