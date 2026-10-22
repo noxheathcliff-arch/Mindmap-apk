@@ -8,8 +8,8 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 
-const dir = path.join(__dirname, '../skills/ratio-livre-vers-cours');
-const skillFile = () => path.join(dir, fs.readdirSync(dir).filter((f) => /^ratio_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
+const dir = path.join(__dirname, '../skills/pioneer-livre-vers-cours');
+const skillFile = () => path.join(dir, fs.readdirSync(dir).filter((f) => /^pioneer_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
 
 /** Ce que le skill doit contenir, calculé depuis le moteur */
 function expected(O) {

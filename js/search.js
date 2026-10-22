@@ -1,4 +1,4 @@
-/* Ratio — Recherche plein texte (Ctrl/⌘ K) : cours, cartes, notions et notes
+/* Pioneer — Recherche plein texte (Ctrl/⌘ K) : cours, cartes, notions et notes
    Insensible aux accents et à la casse (loi de Postel).
 
    Présentation « index » : les notions sont rangées sous leur carte (le contexte n'est

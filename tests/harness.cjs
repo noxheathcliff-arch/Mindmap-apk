@@ -1,6 +1,6 @@
 /* Harnais commun des tests et de la mesure : charge le vrai code de l'app (util, store,
  * organize) dans un contexte Node isolé, sans navigateur ni dépendance.
- * Variables d'environnement (mesure avant/après) : RATIO_ORGANIZE, RATIO_STORE = autre fichier.
+ * Variables d'environnement (mesure avant/après) : PIONEER_ORGANIZE, PIONEER_STORE = autre fichier.
  */
 'use strict';
 const vm = require('vm'), fs = require('fs'), path = require('path');
@@ -15,8 +15,8 @@ win.window = win; win.self = win;
 const ctx = vm.createContext(win);
 const files = {
   'js/util.js': path.join(root, 'js/util.js'),
-  'js/store.js': process.env.RATIO_STORE || path.join(root, 'js/store.js'),
-  'js/organize.js': process.env.RATIO_ORGANIZE || path.join(root, 'js/organize.js'),
+  'js/store.js': process.env.PIONEER_STORE || path.join(root, 'js/store.js'),
+  'js/organize.js': process.env.PIONEER_ORGANIZE || path.join(root, 'js/organize.js'),
 };
 for (const [name, f] of Object.entries(files)) vm.runInContext(fs.readFileSync(f, 'utf8'), ctx, { filename: name });
 const { store: S, organize: O } = win.R;

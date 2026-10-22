@@ -1,5 +1,5 @@
-/* Ratio — service worker : coque applicative hors-ligne + polices en cache */
-const VERSION = 'ratio-v4.2.1';
+/* Pioneer — service worker : coque applicative hors-ligne + polices en cache */
+const VERSION = 'pioneer-v4.2.2';
 const SHELL = [
   './',
   'index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== 'ratio-fonts').map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== 'pioneer-fonts').map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -30,7 +30,7 @@ self.addEventListener('fetch', (e) => {
 
   // Polices Google : cache d'abord (stale-while-revalidate)
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    e.respondWith(caches.open('ratio-fonts').then(async (c) => {
+    e.respondWith(caches.open('pioneer-fonts').then(async (c) => {
       const hit = await c.match(req);
       const net = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; }).catch(() => hit);
       return hit || net;

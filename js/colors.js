@@ -1,4 +1,4 @@
-/* Ratio — couleurs des nœuds par type (option de personnalisation)
+/* Pioneer — couleurs des nœuds par type (option de personnalisation)
  *
  * Principes (cf. DESIGN.md §4.6) :
  * - Par défaut, rien ne change : la carte reste monochrome (différenciation par la forme).

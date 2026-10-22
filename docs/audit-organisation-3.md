@@ -81,12 +81,12 @@ Gain / coût / risque : faible · moyen · fort. Statut : **fait** (implémenté
 - Ranger applique les corrections établies (réglage *Corriger l'organisation en rangeant*, actif par défaut), une étape d'annulation avec le rangement, snackbar « Rangé · N corrections » → *Voir* ; dialogue : section « Déjà appliqué au rangement ».
 - `map.organizeLog` (≤ 60) et `map.organizeDeclined` (≤ 200) conservés par `sanitize` (import / export).
 
-### Skill v3.0 (`skills/ratio-livre-vers-cours`)
+### Skill v3.0 (`skills/pioneer-livre-vers-cours`)
 Voir le rapport de l'agent H résumé dans le README : carte de compréhension obligatoire (U / R / A / X), passe transversale, ordre fixe, gabarits, notes lisibles par le moteur, audit interne compté, validateur (relation aplatie, taux de relations, 0 libellé = erreur), 108,7 Ko (contre 173).
 
-*v3.1 : fichier renommé `ratio_book_to_course_compiler_v3.1.json` ; 20 types de nœuds, les 23 types supprimés deviennent idee/notion + libellé (`node_types.relations_as_labels`), arête relationnelle sans libellé signalée.*
+*v3.1 : fichier renommé `pioneer_book_to_course_compiler_v3.1.json` ; 20 types de nœuds, les 23 types supprimés deviennent idee/notion + libellé (`node_types.relations_as_labels`), arête relationnelle sans libellé signalée.*
 
-*v4.0 : fichier renommé `ratio_book_to_course_compiler_v4.0.json` ; le cours suit son plan réel (dossiers partie/titre/sous-titre/chapitre, une carte par section) et chaque niveau a sa carte du plan (`role: "plan"`, liens hiérarchiques et de renvoi libellés, nœuds `ref` vers dossiers et cartes). Exemple : `exemple-cours-en-dossiers.json`.*
+*v4.0 : fichier renommé `pioneer_book_to_course_compiler_v4.0.json` ; le cours suit son plan réel (dossiers partie/titre/sous-titre/chapitre, une carte par section) et chaque niveau a sa carte du plan (`role: "plan"`, liens hiérarchiques et de renvoi libellés, nœuds `ref` vers dossiers et cartes). Exemple : `exemple-cours-en-dossiers.json`.*
 
 ### Routage et libellés (`js/layout.js`, `js/views/editor.js`)
 - `route()` : candidats courbes / déviées / contournement / orthogonal ; élagage (note grossière de tous, note exacte des 10 meilleurs + précédent + orthogonal) ; A* seulement si un nœud est traversé ou deux croisements subsistent.

@@ -1,4 +1,4 @@
-/* Ratio — identité visuelle d'un cours : sa couleur (un schéma Material par teinte) et ses repères
+/* Pioneer — identité visuelle d'un cours : sa couleur (un schéma Material par teinte) et ses repères
  *
  * Hors de « Mes cours » (où le cours est un dossier, js/views/library.js), un cours se reconnaît
  * à sa couleur seule : une pastille (rail, bande de révision) ou un carré tonal à son conteneur

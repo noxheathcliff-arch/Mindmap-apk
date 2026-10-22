@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Ratio — éditeur de carte
+   Pioneer — éditeur de carte
    ========================================================================== */
 
 .page-editor { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); height: 100%; }

@@ -1,4 +1,4 @@
-/* Ratio — polices des cartes : chargement à la demande (Google Fonts) et pile CSS d'une clé de R.store.FONTS */
+/* Pioneer — polices des cartes : chargement à la demande (Google Fonts) et pile CSS d'une clé de R.store.FONTS */
 (function (R) {
   'use strict';
   const asked = new Set();

@@ -1,4 +1,4 @@
-/* Ratio — Vue Plan : la carte devient un plan juridique (I. A. 1. a.) imprimable */
+/* Pioneer — Vue Plan : la carte devient un plan juridique (I. A. 1. a.) imprimable */
 (function (R) {
   'use strict';
   const { U, ui, store: S } = R;

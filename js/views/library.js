@@ -1,4 +1,4 @@
-/* Ratio — Bibliothèque : Aujourd'hui (déclencheur) · Mes cours · Récemment modifiées */
+/* Pioneer — Bibliothèque : Aujourd'hui (déclencheur) · Mes cours · Récemment modifiées */
 (function (R) {
   'use strict';
   const { U, ui, store: S } = R;
@@ -121,7 +121,7 @@
       { label: 'Modifier', icon: 'edit', onClick: () => R.actions.editCourse(c) },
       inCourse ? null : { label: 'Réviser ce cours', icon: 'cards', onClick: () => R.app.go('#/reviser/cours/' + c.id) },
       { label: 'Exporter le cours (JSON)', icon: 'export', onClick: () => {
-        U.download(`ratio-${U.slug(c.title)}.json`, S.exportCourse(c.id));
+        U.download(`pioneer-${U.slug(c.title)}.json`, S.exportCourse(c.id));
         ui.snack('Cours exporté · à importer avec Réglages › Importer');
       } },
       { divider: true },
@@ -411,7 +411,7 @@
         const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
         const topbar = h('header.topbar.topbar-lib',
-          h('a.topbar-brand', { href: '#/' }, R.app.logo(), h('span.brand-name', 'Ratio')),
+          h('a.topbar-brand', { href: '#/' }, R.app.logo(), h('span.brand-name', 'Pioneer')),
           h('div.topbar-actions',
             ui.iconBtn('search', { title: 'Rechercher', onClick: (e) => R.search.open('', { from: e.currentTarget }) }),
             ui.iconBtn('settings', { title: 'Réglages', onClick: () => R.app.openSettings() })));

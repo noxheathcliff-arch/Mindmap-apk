@@ -1,4 +1,4 @@
-/* Ratio — noyau : routeur, navigation globale, thème, réglages, onboarding */
+/* Pioneer — noyau : routeur, navigation globale, thème, réglages, onboarding */
 (function (R) {
   'use strict';
   const { U, ui, store: S } = R;
@@ -556,7 +556,7 @@
         h('div.set-card',
           row('folder', 'Stockage sur cet appareil', h('span.set-dd', usageD, meter)),
           row('export', 'Sauvegarde', lastD, ui.btn('Exporter tout', { icon: 'export', variant: 'tonal', onClick: () => {
-            U.download(`ratio-sauvegarde-${U.dayKey()}.json`, S.exportAll());
+            U.download(`pioneer-sauvegarde-${U.dayKey()}.json`, S.exportAll());
             lastD.textContent = 'Dernière sauvegarde à l’instant'; lastD.classList.remove('warn');
             ui.snack('Sauvegarde téléchargée');
           } })),

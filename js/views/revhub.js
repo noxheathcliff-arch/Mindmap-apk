@@ -1,4 +1,4 @@
-/* Ratio — Réviser : le tableau de bord de la révision (onglet de navigation)
+/* Pioneer — Réviser : le tableau de bord de la révision (onglet de navigation)
    Répond, dans l'ordre, aux trois questions qu'on se pose avant de réviser :
    1. combien, et combien de temps ?  → le nombre dû, une estimation, la durée de session au choix
    2. quoi ?                          → chaque cours avec ce qu'il a de dû (sa teinte, son empreinte)

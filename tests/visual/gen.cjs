@@ -1,5 +1,5 @@
 /* Génère les cartes du jeu visuel (routage des renvois, placement des libellés) : node gen.cjs
- * Chaque fichier est une carte au format JSON Ratio ({ title, layout, nodes, edges }) importable telle quelle,
+ * Chaque fichier est une carte au format JSON Pioneer ({ title, layout, nodes, edges }) importable telle quelle,
  * avec un champ « _verifier » : ce qu'il faut regarder (et que checkvis.cjs mesure). */
 'use strict';
 const fs = require('fs'), path = require('path');

@@ -1,4 +1,4 @@
-/* Ratio — audit d'organisation d'une carte (seconde ligne de contrôle après le skill d'import)
+/* Pioneer — audit d'organisation d'une carte (seconde ligne de contrôle après le skill d'import)
  *
  * Le rangement relit la carte comme un graphe de connaissances et cherche ce qui oblige encore
  * l'étudiant à reconstruire lui-même la logique du cours. Principe (DESIGN.md §4.4 ter) : un lien

@@ -2,7 +2,7 @@
  * moteur mesuré (on ne se note pas soi-même).
  *
  *   node tests/metrics.cjs [cours.json …]
- *   RATIO_ORGANIZE=ancien/organize.js RATIO_STORE=ancien/store.js node tests/metrics.cjs cours.json
+ *   PIONEER_ORGANIZE=ancien/organize.js PIONEER_STORE=ancien/store.js node tests/metrics.cjs cours.json
  *
  * Sans fichier : seulement les pièges (cartes adversariales) et l'exemple du skill.
  * Indicateurs (cours entier, après application des corrections « sûres », celles qu'un clic

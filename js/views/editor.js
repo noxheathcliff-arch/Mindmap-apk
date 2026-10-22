@@ -1,4 +1,4 @@
-/* Ratio — Éditeur de carte
+/* Pioneer — Éditeur de carte
    Canvas infini (pan / zoom / pincement), nœuds typés, liens hiérarchiques et renvois,
    panneau de note (docké / latéral / bottom sheet), annuler/rétablir, mode masqué. */
 (function (R) {
@@ -1293,7 +1293,7 @@
 
     /** Disposition : automatique (le moteur compare et garde la plus lisible) ou imposée */
     const LAYOUT_CHOICES = [
-      ['auto', 'Automatique (conseillé)', 'Ratio compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
+      ['auto', 'Automatique (conseillé)', 'Pioneer compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
         '<rect x="2.5" y="9.5" width="7" height="5" rx="1.2"/><path d="M9.5 12h3"/><path d="M17 3.5l1.1 2.6 2.6 1.1-2.6 1.1L17 10.9l-1.1-2.6-2.6-1.1 2.6-1.1z"/><path d="M17.5 14.5v5M15 17h5"/>'],
       ['right', 'Vers la droite', 'La lecture la plus familière : de gauche à droite, de haut en bas.',
         '<rect x="2" y="9.5" width="6" height="5" rx="1.2"/><rect x="15" y="3.5" width="7" height="4" rx="1.2"/><rect x="15" y="10" width="7" height="4" rx="1.2"/><rect x="15" y="16.5" width="7" height="4" rx="1.2"/><path d="M8 12h3.5M11.5 5.5v13M11.5 5.5H15M11.5 12H15M11.5 18.5H15"/>'],

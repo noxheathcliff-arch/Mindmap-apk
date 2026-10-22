@@ -1,4 +1,4 @@
-/* Ratio — la boîte de Leitner de l'accueil (js/leitner.js, DESIGN.md §4.6 bis)
+/* Pioneer — la boîte de Leitner de l'accueil (js/leitner.js, DESIGN.md §4.6 bis)
    Le héros garde son conteneur primary ; la scène est une vraie scène CSS 3D (perspective,
    preserve-3d). Les faces de la boîte sont la couleur primary ombrée vers le noir selon leur
    orientation (lumière en haut à gauche) ; les fiches sont du bristol à filet de la couleur du cours. */

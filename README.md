@@ -1,4 +1,4 @@
-# Ratio — cartes mentales pour le droit
+# Pioneer — cartes mentales pour le droit
 
 Décompose tes cours de droit en cartes mentales **typées** (définition, conditions de fond et de forme, effets, exceptions, jurisprudence, textes), écris une note dans chaque nœud, range tout par **cours**, puis **révise** en rappel actif avec répétition espacée.
 
@@ -135,7 +135,7 @@ Un import s'annule depuis la barre qui suit (*Annuler*).
 
 ### Transformer un livre en cours (skill pour IA)
 
-Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : relations du texte relevées d'abord (carte de compréhension : chaque connecteur encodé ou abstention justifiée), cours rangé en dossiers selon son vrai plan (Partie › Titre › Chapitre, une carte par section), cartes du plan pyramidales qui expliquent pourquoi le cours est découpé ainsi (liens libellés « prépare », « complète »…), nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), liens libellés qui se lisent comme des phrases (« entraîne », « illustré par », « de qui ? »), branches libellées, définitions décomposées en composantes, renvois entre sections, et pour chaque carte des **exercices de révision** (questions-réponses, QCM, vrai ou faux) qui couvrent tous ses nœuds et que Ratio propose en révision, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v4.4.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+Le dossier [`skills/pioneer-livre-vers-cours`](skills/pioneer-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Pioneer complet** : relations du texte relevées d'abord (carte de compréhension : chaque connecteur encodé ou abstention justifiée), cours rangé en dossiers selon son vrai plan (Partie › Titre › Chapitre, une carte par section), cartes du plan pyramidales qui expliquent pourquoi le cours est découpé ainsi (liens libellés « prépare », « complète »…), nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), liens libellés qui se lisent comme des phrases (« entraîne », « illustré par », « de qui ? »), branches libellées, définitions décomposées en composantes, renvois entre sections, et pour chaque carte des **exercices de révision** (questions-réponses, QCM, vrai ou faux) qui couvrent tous ses nœuds et que Pioneer propose en révision, validé avant livraison. Joins le fichier `pioneer_book_to_course_compiler_v4.4.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
 
 Si l'IA a mal organisé une carte, **Ranger** la relit et applique de lui-même les corrections **établies** (relations dites par les notes — « car », « sauf si », « ce qui entretient… » —, exception rangée sous sa règle, exemple sous ce qu'il illustre, doublon fusionné…), chacune vérifiée puis tracée dans le journal de la carte ; *Annuler* juste après les refuse pour de bon. Carte ⋮ › *Améliorer l'organisation…* montre ce journal, les relations probables (à cocher soi-même) et ce qui reste à trancher à la main. (Désactivable : ⋮ › *Disposition…* › *Corriger l'organisation en rangeant*.) Tests du moteur : `node tests/organize.test.cjs` et `node tests/organize-v4.test.cjs` ; jeu de référence et jeu de contrôle indépendant : `node tests/gold/eval.cjs [--set heldout]` ; routage et libellés : `node tests/visual/checkvis.cjs` ; mesure avant/après : `node tests/metrics.cjs [cours.json]` ; accord skill ↔ moteur : `node tests/skill-rules.cjs` ; banc du skill (pipeline, contradictions, taille, exemple contrôlé par le moteur et le validateur) : `node tests/skill-bench.cjs`.
 
@@ -158,6 +158,6 @@ js/markdown.js          rendu des notes
 js/ui.js                composants et moteur de motion
 js/views/*.js           bibliothèque, cours, éditeur, plan, révision
 js/search.js            recherche (Ctrl/⌘ K)
-skills/                 skill « livre → cours Ratio » pour IA (JSON portable + SKILL.md)
+skills/                 skill « livre → cours Pioneer » pour IA (JSON portable + SKILL.md)
 js/app.js               routeur, navigation, thème, réglages, onboarding
 ```

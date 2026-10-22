@@ -381,8 +381,8 @@ test('Révision — les nouvelles fiches arrivent dans l’ordre du plan', () =>
 
 /* ======================= Skill ↔ moteur ======================= */
 
-const skillPath = fs.readdirSync(path.join(__dirname, '../skills/ratio-livre-vers-cours')).filter((f) => /^ratio_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop();
-const skill = JSON.parse(fs.readFileSync(path.join(__dirname, '../skills/ratio-livre-vers-cours', skillPath), 'utf8'));
+const skillPath = fs.readdirSync(path.join(__dirname, '../skills/pioneer-livre-vers-cours')).filter((f) => /^pioneer_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop();
+const skill = JSON.parse(fs.readFileSync(path.join(__dirname, '../skills/pioneer-livre-vers-cours', skillPath), 'utf8'));
 function fromSkill(nodes, edges) {
   const map = { id: 'k', title: 'Exemple du skill', layout: 'right', nodes: [], edges: [] };
   nodes.forEach((n, i) => { const x = S.newNode({ type: n.type, title: n.title, note: n.note || '', em: n.em, y: i * 60 }); x.id = n.id; if (n.logic) x.logic = n.logic; map.nodes.push(x); });

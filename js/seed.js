@@ -1,4 +1,4 @@
-/* Ratio — contenu d'exemple (premier lancement) : apprendre en voyant un cas réel */
+/* Pioneer — contenu d'exemple (premier lancement) : apprendre en voyant un cas réel */
 (function (R) {
   'use strict';
   const { U } = R;

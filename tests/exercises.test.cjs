@@ -15,7 +15,7 @@ function ok(cond, msg) { if (!cond) throw new Error(msg); }
 const node = (id, type, title, extra = {}) => ({ id, type, title, note: 'note', x: 0, y: 0, ...extra });
 function course(exercises) {
   return {
-    format: 'ratio', version: 2, kind: 'course',
+    format: 'pioneer', version: 2, kind: 'course',
     courses: [{ id: 'c1', title: 'Droit des obligations' }],
     maps: [
       { id: 'm1', courseId: 'c1', title: 'Le contrat', order: 1,
@@ -127,7 +127,7 @@ test('copie de carte : exercices aux nouveaux identifiants', () => {
 });
 
 test('le plan d’un dossier ne se révise pas : la file commence par les exercices', () => {
-  const ex = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../skills/ratio-livre-vers-cours/exemple-cours-en-dossiers.json'), 'utf8'));
+  const ex = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../skills/pioneer-livre-vers-cours/exemple-cours-en-dossiers.json'), 'utf8'));
   load(ex);
   const plans = S.data.maps.filter((m) => m.role === 'plan');
   ok(plans.length && plans.every((m) => S.reviewItems(m).length === 0 && S.mapStats(m).reviewable === 0), 'plan révisable');

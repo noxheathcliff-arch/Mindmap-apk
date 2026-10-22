@@ -1,4 +1,4 @@
-/* Ratio — Cours et dossiers : le plan du cours devient une arborescence qu'on parcourt.
+/* Pioneer — Cours et dossiers : le plan du cours devient une arborescence qu'on parcourt.
    Un cours rangé en dossiers (parties, titres, chapitres, sections) s'ouvre sur sa carte du plan
    et son sommaire ; chaque dossier a sa page, son plan, sa révision. Un cours à plat garde sa grille. */
 (function (R) {

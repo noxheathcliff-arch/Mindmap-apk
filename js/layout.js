@@ -1,4 +1,4 @@
-/* Ratio — moteur de rangement (v2)
+/* Pioneer — moteur de rangement (v2)
    Loi de Tesler : c'est l'application qui absorbe la complexité de la disposition.
 
    Ce que l'on optimise, dans l'ordre (études de lisibilité des diagrammes) :

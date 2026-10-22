@@ -1,5 +1,5 @@
 /* Mesure du routage des renvois et du placement des libellés sur le jeu visuel, avec le vrai js/layout.js.
- *   node tests/visual/checkvis.cjs            (RATIO_LAYOUT=autre/layout.js pour comparer)
+ *   node tests/visual/checkvis.cjs            (PIONEER_LAYOUT=autre/layout.js pour comparer)
  * Reproduit l'ordre de l'éditeur (renvois tracés un par un, libellés placés au fur et à mesure),
  * sans navigateur : tailles par R.layout.estimate. Indicateurs par carte :
  *  hits  : nœuds (hors extrémités) traversés par un renvoi      cross : croisements entre renvois
@@ -16,7 +16,7 @@ const win = { R: {}, localStorage: { getItem: () => null, setItem() {}, removeIt
   document: { addEventListener() {}, documentElement: { dataset: {}, style: {} }, createElement: () => ({ style: {} }) }, innerWidth: 1280, innerHeight: 800 };
 win.window = win; win.self = win;
 const ctx = vm.createContext(win);
-for (const f of ['js/util.js', 'js/store.js', process.env.RATIO_LAYOUT || 'js/layout.js']) vm.runInContext(fs.readFileSync(path.isAbsolute(f) ? f : path.join(root, f), 'utf8'), ctx, { filename: f });
+for (const f of ['js/util.js', 'js/store.js', process.env.PIONEER_LAYOUT || 'js/layout.js']) vm.runInContext(fs.readFileSync(path.isAbsolute(f) ? f : path.join(root, f), 'utf8'), ctx, { filename: f });
 const Ly = win.R.layout;
 
 function inRect(p, r, pad = 0) { return p[0] > r.x - pad && p[0] < r.x + r.w + pad && p[1] > r.y - pad && p[1] < r.y + r.h + pad; }

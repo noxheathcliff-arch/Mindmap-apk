@@ -75,5 +75,5 @@ Poignées : anticipation (écrasement à la prise), follow-through (rebond au l�
 
 ## 10. Autour
 
-Skill + compilateur JSON (paragraphe, 80 car.), validateur, tests (peigne retiré), README/DESIGN, cache `ratio-v4.1.0`,
+Skill + compilateur JSON (paragraphe, 80 car.), validateur, tests (peigne retiré), README/DESIGN, cache `pioneer-v4.1.0`,
 graphify, déploiement sur la branche de travail.

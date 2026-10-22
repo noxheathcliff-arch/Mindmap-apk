@@ -1,4 +1,4 @@
-/* Ratio — composants d'interface (M3) et motion */
+/* Pioneer — composants d'interface (M3) et motion */
 (function (R) {
   'use strict';
   const { U } = R;

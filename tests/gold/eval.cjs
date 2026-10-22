@@ -3,7 +3,7 @@
  *   node tests/gold/eval.cjs            → modes « sure » et « all », tableau par carte + synthèse
  *   node tests/gold/eval.cjs --json     → synthèse JSON (pour comparer deux versions)
  *   node tests/gold/eval.cjs --set heldout → jeu held-out (tests/gold/heldout.cjs) au lieu de cards.cjs
- *   RATIO_ORGANIZE=… node tests/gold/eval.cjs   → mesurer une autre version du moteur (variable du harnais)
+ *   PIONEER_ORGANIZE=… node tests/gold/eval.cjs   → mesurer une autre version du moteur (variable du harnais)
  *
  * Indicateurs (par mode, après UNE passe d'application) :
  *  - rappel      : mustHave / mustParent / mustMerge / mustType satisfaits ÷ attendus (tier pris en compte :

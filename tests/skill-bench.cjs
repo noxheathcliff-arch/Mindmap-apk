@@ -1,4 +1,4 @@
-/* Banc du skill d'import (skills/ratio-livre-vers-cours) : structure du pipeline, contradictions
+/* Banc du skill d'import (skills/pioneer-livre-vers-cours) : structure du pipeline, contradictions
  * connues, taille, exemple travaillé contrôlé par le vrai moteur (O.check, audit) et par le
  * validateur Python du skill (sur l'exemple, puis sur une version aplatie qui doit être signalée).
  *
@@ -9,8 +9,8 @@ const fs = require('fs'), path = require('path'), os = require('os');
 const { execFileSync } = require('child_process');
 const { S, O } = require('./harness.cjs');
 
-const dir = path.join(__dirname, '../skills/ratio-livre-vers-cours');
-const file = path.join(dir, fs.readdirSync(dir).filter((f) => /^ratio_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
+const dir = path.join(__dirname, '../skills/pioneer-livre-vers-cours');
+const file = path.join(dir, fs.readdirSync(dir).filter((f) => /^pioneer_book_to_course_compiler_v[\d.]+\.json$/.test(f)).sort().pop());
 const raw = fs.readFileSync(file, 'utf8');
 const skill = JSON.parse(raw);
 const MAX_BYTES = 175 * 1000;
@@ -22,7 +22,7 @@ function check(name, fn) {
 }
 function ok(cond, msg) { if (!cond) throw new Error(msg); }
 
-/** carte Ratio (comme à l'import) depuis une carte du skill */
+/** carte Pioneer (comme à l'import) depuis une carte du skill */
 function toMap(m) {
   const map = { id: m.id, title: m.title, layout: 'right', nodes: [], edges: [] };
   m.nodes.forEach((n, i) => { const x = S.newNode({ type: n.type, title: n.title, note: n.note || '', em: n.em, y: i * 60 }); x.id = n.id; if (n.logic) x.logic = n.logic; map.nodes.push(x); });
@@ -31,7 +31,7 @@ function toMap(m) {
 }
 
 /** exécute le validateur Python du skill sur un cours ; rend { code, out } */
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ratio-skill-'));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pioneer-skill-'));
 const validator = path.join(tmp, 'validateur.py');
 fs.writeFileSync(validator, skill.self_check.validator_python);
 function validate(course, name, args = []) {
@@ -46,7 +46,7 @@ console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')
 
 check('version 4 et fichier choisi par le tri', () => {
   ok(/^4\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.4.json', path.basename(file));
+  ok(path.basename(file) === 'pioneer_book_to_course_compiler_v4.4.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {
@@ -176,7 +176,7 @@ check('cours en dossiers : validateur sans erreur ni avertissement (droit)', () 
   return r.out.trim().split('\n').pop();
 });
 
-check('cours en dossiers : import Ratio sans remarque, renvois gardés', () => {
+check('cours en dossiers : import Pioneer sans remarque, renvois gardés', () => {
   const p = S.parseImport(folderText);
   ok(!p.issues.length, JSON.stringify(p.issues));
   ok(p.stats.folders === 3 && p.stats.maps === 9 && p.stats.exercises > 0, JSON.stringify(p.stats));
@@ -210,7 +210,7 @@ check('exercices : spec (section exercises, P5b, G13, target_format.exercise)', 
   ok(/nodeIds/.test(skill.target_format.exercise), 'target_format.exercise');
 });
 
-check('exercices : exemples couverts et lisibles par Ratio (S.sanitize)', () => {
+check('exercices : exemples couverts et lisibles par Pioneer (S.sanitize)', () => {
   const info = [];
   for (const d of [skill.example.json, folderEx()]) {
     const clean = S.sanitize(JSON.parse(JSON.stringify(d)));
@@ -267,9 +267,9 @@ check('validateur Python : plan absent, peigne, renvoi cassé et lien hors vocab
   ok(warnings(r.out).some((l) => /hors vocabulaire/.test(l)), 'lien hors vocabulaire : ' + r.out.trim());
 });
 
-check('v4.4 : type paragraphe et libellés jusqu’à 80 caractères (spec, validateur, Ratio)', () => {
+check('v4.4 : type paragraphe et libellés jusqu’à 80 caractères (spec, validateur, Pioneer)', () => {
   ok(skill.node_types.types.some((t) => t.startsWith('paragraphe ·')), 'type paragraphe absent de node_types');
-  ok(S.TYPES.paragraphe && S.FOLDER_KINDS.includes('paragraphe'), 'paragraphe inconnu de Ratio');
+  ok(S.TYPES.paragraphe && S.FOLDER_KINDS.includes('paragraphe'), 'paragraphe inconnu de Pioneer');
   const base = () => JSON.parse(JSON.stringify(skill.example.json));
   const longE = (d) => d.maps[0].edges.find((e) => e.kind === 'tree' && e.label);
   let d = base(); longE(d).label = 'x'.repeat(60);

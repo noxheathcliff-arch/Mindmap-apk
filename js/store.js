@@ -1,4 +1,4 @@
-/* Ratio — modèle de données & persistance locale */
+/* Pioneer — modèle de données & persistance locale */
 (function (R) {
   'use strict';
   const { U } = R;
@@ -1298,18 +1298,18 @@
     },
 
     /* ---------------- Import / export ---------------- */
-    /* Format de fichier : { format: 'ratio', version: 2, kind: 'backup' | 'course', courses, maps[, settings] }.
+    /* Format de fichier : { format: 'pioneer', version: 2, kind: 'backup' | 'course', courses, maps[, settings] }.
        À l'import, on accepte aussi une carte seule ({ nodes, edges }) et { course, maps } (un cours). */
     exportAll() {
       this.data.settings.lastExport = Date.now();
       this.save();
-      return JSON.stringify({ format: 'ratio', version: 2, kind: 'backup', exportedAt: new Date().toISOString(), ...this.data }, null, 2);
+      return JSON.stringify({ format: 'pioneer', version: 2, kind: 'backup', exportedAt: new Date().toISOString(), ...this.data }, null, 2);
     },
     /** Un cours et ses cartes, sans les réglages ni l'historique de révision des autres cours */
     exportCourse(id) {
       const c = this.course(id);
       if (!c) return null;
-      return JSON.stringify({ format: 'ratio', version: 2, kind: 'course', exportedAt: new Date().toISOString(), courses: [c], folders: this.data.folders.filter((f) => f.courseId === id), maps: this.mapsOf(id) }, null, 2);
+      return JSON.stringify({ format: 'pioneer', version: 2, kind: 'course', exportedAt: new Date().toISOString(), courses: [c], folders: this.data.folders.filter((f) => f.courseId === id), maps: this.mapsOf(id) }, null, 2);
     },
 
     /**

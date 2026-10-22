@@ -1,4 +1,4 @@
-/* Ratio — Révision : rappel actif + répétition espacée (Leitner)
+/* Pioneer — Révision : rappel actif + répétition espacée (Leitner)
    Hooked : déclencheur (Aujourd'hui / Réviser) → action (1 tap) → récompense variable → investissement.
 
    La session est un carnet d'exercices (js/carnet.js) : il s'ouvre, chaque question s'écrit

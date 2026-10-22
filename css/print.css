@@ -1,4 +1,4 @@
-/* Ratio — impression de la fiche (vue Plan) */
+/* Pioneer — impression de la fiche (vue Plan) */
 @page { margin: 18mm 16mm; }
 html, body { height: auto !important; overflow: visible !important; background: #fff !important; color: #111 !important; }
 .app { display: block !important; height: auto !important; opacity: 1 !important; }

@@ -1,4 +1,4 @@
-/* Ratio — la boîte de Leitner de l'accueil (DESIGN.md §4.7)
+/* Pioneer — la boîte de Leitner de l'accueil (DESIGN.md §4.7)
    Une boîte à fiches en 2,5D (CSS 3D) : six compartiments, un par boîte de Leitner (0 → 5,
    aujourd'hui → 30 jours), séparés par des intercalaires à onglet ; les fiches sont les vraies
    fiches de l'utilisateur. La caméra tourne librement autour de la boîte, comme un vrai objet :

@@ -16,7 +16,7 @@ const node = (id, type, title, extra = {}) => ({ id, type, title, note: 'note', 
 /** Cours de droit du travail : plan du cours, deux parties, chapitres, sections */
 function course() {
   return {
-    format: 'ratio', version: 2, kind: 'course',
+    format: 'pioneer', version: 2, kind: 'course',
     courses: [{ id: 'c1', title: 'Droit du travail' }],
     folders: [
       { id: 'p1', courseId: 'c1', parentId: null, kind: 'partie', label: 'Partie I', title: 'Les relations individuelles', note: 'Le contrat d’abord', order: 1 },

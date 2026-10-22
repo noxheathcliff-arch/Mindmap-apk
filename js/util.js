@@ -1,4 +1,4 @@
-/* Ratio — utilitaires partagés (namespace global R) */
+/* Pioneer — utilitaires partagés (namespace global R) */
 window.R = window.R || {};
 
 (function (R) {
@@ -106,7 +106,7 @@ window.R = window.R || {};
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  U.slug = (s) => U.norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'ratio';
+  U.slug = (s) => U.norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'pioneer';
 
   U.initials = (s) => {
     const words = String(s || '?').replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/)

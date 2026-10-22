@@ -1,4 +1,4 @@
-/* Ratio — jeu d'icônes SVG (trait 1.75, grille 24) */
+/* Pioneer — jeu d'icônes SVG (trait 1.75, grille 24) */
 (function (R) {
   'use strict';
 

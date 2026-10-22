@@ -1,4 +1,4 @@
-/* Ratio — mini moteur Markdown pour les notes
+/* Pioneer — mini moteur Markdown pour les notes
    Prend en charge : titres, gras, italique, ==surligné==, ~~barré~~, `code`,
    listes (imbriquées, cases à cocher), citations, séparateurs, blocs de code,
    liens, tableaux (| a | b |), [[Lien vers un nœud]] et repérage automatique des articles
