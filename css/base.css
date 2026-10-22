@@ -501,3 +501,29 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 }
 :root[data-motion="reduce"] .splash-wm, :root[data-motion="reduce"] .sp-l { animation: none; }
 :root[data-motion="reduce"] .sp-l { fill-opacity: 1; stroke: none; }
+
+/* ---- Tirer pour recharger (js/ptr.js) -------------------------------------- */
+.ptr {
+  position: fixed; left: 50%; top: env(safe-area-inset-top, 0px); z-index: 900;
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface-container-high); color: var(--primary);
+  box-shadow: 0 1px 3px rgb(0 0 0 / .18), 0 4px 10px rgb(0 0 0 / .1);
+  transform: translate(-50%, -48px) scale(.6); opacity: 0; pointer-events: none;
+  transition: background-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
+}
+.ptr svg { width: 26px; height: 26px; overflow: visible; }
+.ptr-arc { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; transform-origin: 12px 12px; stroke-dasharray: 4 100; }
+/* seuil franchi : le disque passe en primary, petit pop */
+.ptr.armed { background: var(--primary); color: var(--on-primary); }
+.ptr.armed svg { animation: ptr-pop var(--dur-spring-fast) var(--spring-fast); }
+@keyframes ptr-pop { 0% { transform: scale(.82); } 100% { transform: none; } }
+/* chargement : rotation + arc qui respire (indicateur indéterminé M3) */
+.ptr.spin svg { animation: ptr-rot 1s linear infinite; }
+.ptr.spin .ptr-arc { animation: ptr-dash 1.3s cubic-bezier(.4, 0, .2, 1) infinite; }
+@keyframes ptr-rot { to { transform: rotate(360deg); } }
+@keyframes ptr-dash {
+  0% { stroke-dasharray: 6 100; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 70 100; stroke-dashoffset: -12; }
+  100% { stroke-dasharray: 6 100; stroke-dashoffset: -94; }
+}
+:root[data-motion="reduce"] .ptr svg, :root[data-motion="reduce"] .ptr-arc { animation: none !important; }

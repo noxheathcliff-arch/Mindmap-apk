@@ -422,6 +422,21 @@ Garde-fous :
 - l'onboarding attend `R.splash.done` ;
 - en mouvement réduit, le mot apparaît plein puis disparaît en fondu (200 ms).
 
+**Tirer pour recharger (v4.2.13, `js/ptr.js`).**
+
+Le geste natif n'existe pas ici, pour deux raisons :
+- on défile dans `.page-scroll`, pas dans la page ;
+- l'app tourne en standalone.
+
+Le geste est donc refait.
+
+- **Quand il démarre.** Seulement si `.page-scroll` est tout en haut et que le doigt tire vers le bas (plus vers le bas que sur le côté, et au-delà de 10 px).
+- **Pendant la traction.** Le disque *surface-container-high* descend avec une résistance élastique, au plus 128 px. Il grossit de 0,6 à 1. L'arc se remplit et tourne avec la traction.
+- **Au seuil (80 px).** Le disque passe en *primary* avec un petit pop, et le téléphone vibre 8 ms.
+- **Relâché après le seuil.** Le disque revient sur un ressort et l'indicateur indéterminé M3 tourne. Pendant ce temps, le service worker cherche une nouvelle version. Puis `location.reload()`, et l'écran d'ouverture prend le relais.
+- **Relâché avant le seuil.** Le disque remonte et disparaît en fondu.
+- **Désactivé** quand un dialogue est ouvert, quand on touche un champ de saisie ou un élément `.no-ptr`, et pendant le splash.
+
 ### 5.4 Performance
 On n'anime que `transform` et `opacity`. Ombres portées par des pseudo-éléments dont seule l'opacité change ; grille de points sur son propre calque (translation modulo un pas) ; `will-change` posé seulement pendant le mouvement (le texte reste net après un zoom) ; panneau docké animé en `transform`, jamais en largeur ; barres de progression en `scaleX`.
 
