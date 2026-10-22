@@ -27,7 +27,7 @@
     downGap: 64,      // pyramide : entre deux niveaux
     leafGap: 32,      // entre deux feuilles sœurs (au-dessus de la distance de sécurité)
     sibGap: 32,       // entre deux sœurs qui ont des enfants
-    structGap: 40,    // entre deux branches de structure (leçons, sections)
+    structGap: 40,    // entre deux branches de structure (sections, sous-sections)
     cousinGap: 32,    // entre deux groupes voisins, aux niveaux plus profonds
     downSibGap: 24,   // pyramide : entre deux sœurs
     rootGap: 96,      // entre deux arbres indépendants
@@ -74,7 +74,8 @@
   const METRICS = {
     chapitre: { cw: 12.2, pad: 48, lh: 32, base: 36, min: 200, max: 340, bar: 10 },
     lecon:    { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
-    section:  { cw: 8.6,  pad: 35, lh: 22, base: 25, min: 120, max: 280, bar: 10 },
+    section:  { cw: 10.6, pad: 41, lh: 28, base: 31, min: 160, max: 320, bar: 10 },
+    soussection: { cw: 8.6, pad: 35, lh: 22, base: 25, min: 120, max: 280, bar: 10 },
     notion:   { cw: 8.4,  pad: 43, lh: 24, base: 27, min: 64,  max: 260, bar: 0 },
     chiffre:  { cw: 9.6,  pad: 33, lh: 26, base: 22, min: 64,  max: 260, bar: 0 },
   };

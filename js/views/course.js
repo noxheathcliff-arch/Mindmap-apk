@@ -7,9 +7,9 @@
   const { h } = U;
   R.views = R.views || {};
 
-  const KIND_ORDER = ['partie', 'titre', 'soustitre', 'chapitre', 'section'];
-  const KIND_PLURAL = { partie: 'parties', titre: 'titres', soustitre: 'sous-titres', chapitre: 'chapitres', section: 'sections', autre: 'dossiers' };
-  const KIND_OF = { partie: 'de la partie', titre: 'du titre', soustitre: 'du sous-titre', chapitre: 'du chapitre', section: 'de la section', autre: 'du dossier' };
+  const KIND_ORDER = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'soussection'];
+  const KIND_PLURAL = { partie: 'parties', titre: 'titres', soustitre: 'sous-titres', chapitre: 'chapitres', section: 'sections', soussection: 'sous-sections', autre: 'dossiers' };
+  const KIND_OF = { partie: 'de la partie', titre: 'du titre', soustitre: 'du sous-titre', chapitre: 'du chapitre', section: 'de la section', soussection: 'de la sous-section', autre: 'du dossier' };
 
   /** Numéro d'affichage : le dernier mot du numéro s'il en est un (« Partie II » → II), sinon le rang */
   function numeral(label, i) {

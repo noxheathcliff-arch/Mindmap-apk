@@ -51,7 +51,7 @@ Tout ce qui sert ces 5 hypothèses, rien d'autre : pas de compte, pas de cloud, 
 - **Structure** : hiérarchie peu profonde (Bibliothèque → Cours → Carte → Nœud → Note) + **hypertexte** (liens de renvoi entre nœuds).
 
 ### 3.2 Système d'étiquetage
-Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée* — et, au-delà du droit, *Question, Méthode, Comparaison, Piège, Citation, Personne, Date, Chiffre clé, Formule* ; structure : *Chapitre, Leçon, Section*. Logique : *cumulatives (ET)* / *alternatives (OU)*. Révision : *À revoir, Compris, Maîtrisé*. Les libellés d'action sont des verbes (« Nouvelle carte », « Réviser », « Relier »).
+Vocabulaire du droit français, constant partout : *Cours, Carte, Notion, Définition, Condition de fond, Condition de forme, Effet / Régime, Exception, Jurisprudence, Texte, Doctrine, Exemple, À retenir, Idée* — et, au-delà du droit, *Question, Méthode, Comparaison, Piège, Citation, Personne, Date, Chiffre clé, Formule* ; structure : *Chapitre, Section, Sous-section* (et *Leçon*). Logique : *cumulatives (ET)* / *alternatives (OU)*. Révision : *À revoir, Compris, Maîtrisé*. Les libellés d'action sont des verbes (« Nouvelle carte », « Réviser », « Relier »).
 
 ### 3.3 Systèmes de navigation
 | Type | Implémentation |
@@ -185,8 +185,8 @@ Le menu *Type* range les 43 types en familles : **Structure**, **Notion**, **Cau
 | Type | Sur-titre | Traitement |
 |---|---|---|
 | Chapitre | Chapitre *n* (pastille `secondary-container`) | plein inversé, serif 26 px, angles 10 px, élévation 2 |
-| Leçon | LEÇON *n* | bordure encre 2,5 px, serif 21 px |
-| Section | SECTION *n* | bordure 2 px, sans-serif 16 px semi-gras |
+| Section (et Leçon) | SECTION *n* | bordure encre 2,5 px, serif 21 px |
+| Sous-section | SOUS-SECTION *n* | bordure 2 px, sans-serif 16 px semi-gras |
 
 - **Numérotation automatique** : rang parmi les frères du même type (dans l'ordre vertical du plan) ; pas de numéro quand le type est seul à son niveau.
 - **Jauge de branche** : maîtrise de tout ce qui descend du nœud (barre de 4 px, `scaleX`, 360 ms).

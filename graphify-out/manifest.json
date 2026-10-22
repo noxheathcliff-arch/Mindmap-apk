@@ -6,9 +6,9 @@
     "semantic_hash": ""
   },
   "js/colors.js": {
-    "mtime": 1792459113.1276672,
-    "seen": 1792459242.2342312,
-    "ast_hash": "d07c7bb721e99087d92492c1e00fa2ee",
+    "mtime": 1792640127.344427,
+    "seen": 1792640190.2832065,
+    "ast_hash": "42d29734ab5ef6882f69f4b33d8a37cc",
     "semantic_hash": ""
   },
   "js/icons.js": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1792494083.3638875,
-    "seen": 1792494692.543253,
-    "ast_hash": "bba4e61cc0450293385aaeee5133c656",
+    "mtime": 1792640136.775749,
+    "seen": 1792640190.28321,
+    "ast_hash": "63c8c90c9cd27a27c4c8ed51a6491a41",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "js/organize.js": {
-    "mtime": 1792568140.884844,
-    "seen": 1792572441.8527617,
-    "ast_hash": "7758a4ef16b774f759d8ac73932975ac",
+    "mtime": 1792640127.343949,
+    "seen": 1792640190.283214,
+    "ast_hash": "5d11c1517f2a61469388af433e11f05c",
     "semantic_hash": ""
   },
   "js/search.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792568140.8853698,
-    "seen": 1792572441.8527677,
-    "ast_hash": "14ebc5b23f51bd18857f2749a36f4973",
+    "mtime": 1792640127.3342962,
+    "seen": 1792640190.283218,
+    "ast_hash": "5d70184647470a0b8eaed4abd9fc9716",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -72,27 +72,27 @@
     "semantic_hash": ""
   },
   "js/views/course.js": {
-    "mtime": 1792568140.8853698,
-    "seen": 1792572441.8527732,
-    "ast_hash": "cb5b15843e3f0a5c7ca2a61ebdb4eef1",
+    "mtime": 1792640127.3358989,
+    "seen": 1792640190.2832212,
+    "ast_hash": "404a0b91431ac443ef830df2b50422d8",
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1792568140.886189,
-    "seen": 1792572441.852775,
-    "ast_hash": "1f48190cd438b0a50d72e57dac023e51",
+    "mtime": 1792640144.7898262,
+    "seen": 1792640190.2832227,
+    "ast_hash": "7b9bedbfe5111e2a28074ae6f6732587",
     "semantic_hash": ""
   },
   "js/views/library.js": {
-    "mtime": 1792582948.1988492,
-    "seen": 1792583061.1437926,
-    "ast_hash": "76f77e9f3930d75e1fff23cabc756e9d",
+    "mtime": 1792640144.7906368,
+    "seen": 1792640190.283224,
+    "ast_hash": "c8fa3f9bb8db85e15e4b36c383e4eed4",
     "semantic_hash": ""
   },
   "js/views/outline.js": {
-    "mtime": 1792565167.5981705,
-    "seen": 1792565835.6649368,
-    "ast_hash": "8693be089465ec2d0ef38b43ad36f056",
+    "mtime": 1792640144.791106,
+    "seen": 1792640190.283225,
+    "ast_hash": "261859937ec3981cf5431ceb37c33f6c",
     "semantic_hash": ""
   },
   "js/views/revhub.js": {
@@ -102,15 +102,15 @@
     "semantic_hash": ""
   },
   "js/views/review.js": {
-    "mtime": 1792582528.4621458,
-    "seen": 1792583061.1437964,
+    "mtime": 1792583550.4943511,
+    "seen": 1792640190.2832272,
     "ast_hash": "33571157c10e8e22443875919780decf",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792572449.1463819,
-    "seen": 1792572852.4409902,
-    "ast_hash": "1ae8d592dab7b52ca388decc2e116424",
+    "mtime": 1792583550.4943511,
+    "seen": 1792640190.2832313,
+    "ast_hash": "01bdaff7b28fcc5679b0e0ca78df4387",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "tests/metrics.cjs": {
-    "mtime": 1792459113.1329517,
-    "seen": 1792459242.2342622,
-    "ast_hash": "c871205756242081d106f080190a02d7",
+    "mtime": 1792640148.3613334,
+    "seen": 1792640190.2832398,
+    "ast_hash": "979ad146907aa84e00034da8548a1241",
     "semantic_hash": ""
   },
   "tests/organize-v4.test.cjs": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792583056.655988,
-    "seen": 1792583061.1438367,
-    "ast_hash": "4d0f235b544b7170a8604a4bcc571ab5",
+    "mtime": 1792640148.3606277,
+    "seen": 1792640190.2832663,
+    "ast_hash": "f765800660e4c6ee9eda11802d69dd99",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1792568140.8774853,
-    "seen": 1792572441.8528326,
-    "ast_hash": "ee7cfbf14e77df073f311816e06e49d1",
+    "mtime": 1792640144.7923858,
+    "seen": 1792640190.283267,
+    "ast_hash": "a3573b8c3728f0ec9b3a820827bd5424",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -264,9 +264,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
-    "mtime": 1792568140.888314,
-    "seen": 1792572441.852839,
-    "ast_hash": "0fa37435c7c095f3fe8f7505473d3b77",
+    "mtime": 1792640177.736032,
+    "seen": 1792640190.2832723,
+    "ast_hash": "f58eedf6d203b668aaea5b4e5357f133",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -294,8 +294,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792578340.7128134,
-    "seen": 1792583061.1438355,
+    "mtime": 1792583550.49191,
+    "seen": 1792640190.2832654,
     "ast_hash": "27fbce9df129e26ab37743c2c3652b65",
     "semantic_hash": ""
   },
@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/ratio_book_to_course_compiler_v4.2.json": {
-    "mtime": 1792568140.8888083,
-    "seen": 1792572441.8527875,
-    "ast_hash": "1270df5c27929d6abc37eda640681b48",
+    "mtime": 1792640177.7293518,
+    "seen": 1792640190.2832303,
+    "ast_hash": "16f648079a7ea3db75e0c7f03bb7a474",
     "semantic_hash": ""
   },
   "tests/exercises.test.cjs": {
@@ -324,45 +324,51 @@
     "semantic_hash": ""
   },
   "js/carnet.js": {
-    "mtime": 1792582848.4319365,
-    "seen": 1792583061.1437693,
+    "mtime": 1792583550.4943511,
+    "seen": 1792640190.2832048,
     "ast_hash": "2c7cddf5264e32b13fec38bf8b063935",
     "semantic_hash": ""
   },
   ".claude/hooks/quota-router.sh": {
-    "mtime": 1792578336.0715744,
-    "seen": 1792583061.1437511,
+    "mtime": 1792583550.4910367,
+    "seen": 1792640190.2831886,
     "ast_hash": "543fa918555ab5ac5c9c9cb4cee36565",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
-    "mtime": 1792578336.0768132,
-    "seen": 1792583061.14376,
+    "mtime": 1792583550.4910367,
+    "seen": 1792640190.283196,
     "ast_hash": "101226b9803903bbbbbcd9a5a9297148",
     "semantic_hash": ""
   },
   ".claude/agents/haiku-worker.md": {
-    "mtime": 1792578336.0685005,
-    "seen": 1792583061.14383,
+    "mtime": 1792583550.4907858,
+    "seen": 1792640190.2832596,
     "ast_hash": "bab48d5c08bcbad21ace609fbe8758ae",
     "semantic_hash": ""
   },
   ".claude/agents/quota-triage.md": {
-    "mtime": 1792578336.0668068,
-    "seen": 1792583061.1438313,
+    "mtime": 1792583550.4910367,
+    "seen": 1792640190.2832606,
     "ast_hash": "3068c0f8e21dbf4e17fa61956fcc01ed",
     "semantic_hash": ""
   },
   ".claude/agents/sonnet-worker.md": {
-    "mtime": 1792578336.068813,
-    "seen": 1792583061.143832,
+    "mtime": 1792583550.4910367,
+    "seen": 1792640190.283262,
     "ast_hash": "7f1246ae2b88e239696784b546afbf8f",
     "semantic_hash": ""
   },
   ".claude/skills/quota-router/SKILL.md": {
-    "mtime": 1792579242.8113482,
-    "seen": 1792583061.1438332,
+    "mtime": 1792583550.49191,
+    "seen": 1792640190.283263,
     "ast_hash": "403111d2bbec571838ac52b2b3838bea",
+    "semantic_hash": ""
+  },
+  "cours/cours-droit-successions-liberalites.json": {
+    "mtime": 1792584611.220632,
+    "seen": 1792640190.283199,
+    "ast_hash": "df1db3e872631e4ae36b22b60d320171",
     "semantic_hash": ""
   }
 }

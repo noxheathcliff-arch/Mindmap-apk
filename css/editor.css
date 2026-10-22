@@ -186,13 +186,13 @@
 .node.t-chapitre .node-kicker { padding: 0 8px; border-radius: 4px; background: var(--primary); color: var(--on-primary); }
 .node.t-chapitre .mastery { color: var(--inverse-on-surface); }
 .node.t-chapitre.untitled .hl { color: color-mix(in srgb, var(--inverse-on-surface) 60%, transparent); }
-.node.t-lecon {
+.node.t-lecon, .node.t-section {
   background: var(--surface-container-lowest); border: 2px solid var(--on-surface);
   border-radius: var(--shape-l); padding: 12px 20px; min-width: 160px; max-width: 320px;
   font: 500 21px/28px var(--font-brand);
 }
-.node.t-lecon .node-kicker { color: var(--on-surface); }
-.node.t-section {
+.node.t-lecon .node-kicker, .node.t-section .node-kicker { color: var(--on-surface); }
+.node.t-soussection {
   border: 2px solid var(--on-surface-variant); padding: 12px 16px; min-width: 120px; max-width: 288px;
   font: 600 16px/24px var(--font-plain);
 }
@@ -627,7 +627,7 @@
 .edge.k-tree.lv-3 { stroke-width: 1.5; }
 .reading-aids .edge.k-tree.tint { stroke: oklch(var(--branch-l, .58) var(--branch-c, .11) var(--bh, 0)); }
 .reading-aids .edge.k-tree.tint.rel, .reading-aids .edge.k-tree.tint.sel { stroke: oklch(calc(var(--branch-l, .58) - .1) calc(var(--branch-c, .11) + .03) var(--bh, 0)); stroke-width: 2.8; }
-/* ordre de lecture des branches principales (hors leçons/sections, déjà numérotées) */
+/* ordre de lecture des branches principales (hors leçons/sections/sous-sections, déjà numérotées) */
 .node-order {
   position: absolute; top: -10px; left: -10px; z-index: 3;
   display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;

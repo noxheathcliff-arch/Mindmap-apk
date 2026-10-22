@@ -446,7 +446,7 @@
 .cp-juris .cp-t, .cp-doctrine .cp-t { font-family: var(--font-serif); }
 .cp-juris .cp-t { font-style: italic; }
 .cp-texte .cp-t { font-family: var(--font-mono); font-size: 13px; }
-.cp-lecon { border-width: 2.5px; }
+.cp-lecon, .cp-section { border-width: 2.5px; }
 .cp-methode { border-left-width: 5px; }
 .cp-citation .cp-t { font-family: var(--font-serif); font-style: italic; }
 .cp-personne { border-radius: 999px; }

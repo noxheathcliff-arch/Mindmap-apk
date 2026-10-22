@@ -35,8 +35,8 @@
       const s = sz[n.id];
       const ink = n.type === 'notion' || n.type === 'chapitre';
       const fill = ink ? 'var(--on-surface)' : 'var(--surface-container-lowest)';
-      const stroke = ink ? 'none' : n.type === 'lecon' || n.type === 'section' ? 'var(--on-surface)' : 'var(--outline-variant)';
-      const sw = Math.max(2, bw / 300) * (n.type === 'lecon' ? 2 : 1);
+      const stroke = ink ? 'none' : n.type === 'lecon' || n.type === 'section' || n.type === 'soussection' ? 'var(--on-surface)' : 'var(--outline-variant)';
+      const sw = Math.max(2, bw / 300) * (n.type === 'lecon' || n.type === 'section' ? 2 : 1);
       svg += `<rect x="${n.x}" y="${n.y}" width="${s.w}" height="${s.h}" rx="${n.type === 'notion' ? s.h / 2 : 10}" style="fill:${fill};stroke:${stroke}" stroke-width="${sw}"/>`;
       if (n.review.rating === 'maitrise') svg += `<rect x="${n.x + 10}" y="${n.y + s.h - 12}" width="${s.w - 20}" height="5" rx="2" style="fill:var(--primary)"/>`;
     }
@@ -104,7 +104,7 @@
         { key: 'title', label: 'Notion ou chapitre', placeholder: 'Ex. La formation du contrat', icon: 'map', required: true },
         { key: 'root', label: 'Point de départ', choices: [
           { value: 'notion', icon: 'target', label: 'Une notion', text: 'Un concept à décomposer\u00a0: définition, conditions, effets…' },
-          { value: 'chapitre', icon: 'outline', label: 'Un chapitre de cours', text: 'Leçons, sections, puis les notions de chacune.' },
+          { value: 'chapitre', icon: 'outline', label: 'Un chapitre de cours', text: 'Sections, sous-sections, puis les notions de chacune.' },
         ], onChange: (val, inputs) => { inputs.title.placeholder = val === 'chapitre' ? 'Ex. Les sources du droit' : 'Ex. La formation du contrat'; } },
       ],
     });

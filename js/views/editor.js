@@ -1106,11 +1106,11 @@
       return n;
     }
     function defaultChildType(p) {
-      // structure : on poursuit le plan (Chapitre → Leçon), ou on imite les frères déjà posés
+      // structure : on poursuit le plan (Chapitre → Section → Sous-section), ou on imite les frères déjà posés
       if (S.isStruct(p.type)) {
         const ch = S.childrenOf(map, p.id);
         if (ch.length) return ch[ch.length - 1].type;
-        return p.type === 'chapitre' ? 'lecon' : 'notion';
+        return p.type === 'chapitre' ? 'section' : p.type === 'section' ? 'soussection' : 'notion';
       }
       if (p.type === 'notion') return 'idee';
       return 'idee';
@@ -1172,8 +1172,8 @@
       if (guard()) return;
       mutate(() => { const n = S.node(map, id); if (n) n.logic = logic; });
     }
-    /* Nœuds de structure (Chapitre, Leçon, Section) */
-    const STRUCT_THIS = { chapitre: 'ce chapitre', lecon: 'cette leçon', section: 'cette section' };
+    /* Nœuds de structure (Chapitre, Section, Sous-section, Leçon) */
+    const STRUCT_THIS = { chapitre: 'ce chapitre', lecon: 'cette leçon', section: 'cette section', soussection: 'cette sous-section' };
     function reviewBranch(n) { R.app.go(`#/reviser/carte/${map.id}/${n.id}`); }
     /** Rivaux repliables : les autres nœuds du même type qui ont une descendance */
     function rivals(n) { return map.nodes.filter((o) => o.type === n.type && o.id !== n.id && S.childrenOf(map, o.id).length); }
@@ -1584,7 +1584,7 @@
     function placeholderFor(n) {
       return {
         notion: 'Notion…', definition: 'Définition…', juris: 'Cass. civ. …', texte: 'Art. …', idee: 'Idée…',
-        chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…',
+        chapitre: 'Titre du chapitre…', lecon: 'Titre de la leçon…', section: 'Titre de la section…', soussection: 'Titre de la sous-section…',
         doctrine: 'Auteur, position…', retenir: 'À retenir…', methode: 'Méthode…',
         citation: '« … »', personne: 'Nom…', date: '1789…', chiffre: '42 %…', formule: 'E = mc²…',
         etape: 'Étape…', conseil: 'Conseil…', exercice: 'Exercice…', etude: 'Auteur, année — objet…',
@@ -1609,7 +1609,7 @@
       }
       const kids = S.childrenOf(map, n.id).length;
       return [
-        { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9, Alt 1–3 : structure)' },
+        { chip: true, label: S.TYPES[n.type].label, act: (b) => typeMenu(b, [n.id]), tip: 'Type du nœud (1–9, Alt 1–4 : structure)' },
         { icon: 'child', label: 'Enfant', act: () => addChild(n.id), tip: 'Décomposer', kbd: 'Tab' },
         { icon: 'note', label: 'Note', act: () => openPane(true), tip: 'Écrire la note', kbd: 'Espace', on: !!n.note.trim() },
         { icon: 'link', label: 'Relier', act: () => startLinking(n.id), tip: 'Relier à un ou plusieurs nœuds', kbd: 'L' },
@@ -2500,8 +2500,8 @@
       if (mod && k.toLowerCase() === 'z') { e.preventDefault(); if (ro()) return; e.shiftKey ? redo() : undo(); return; }
       if (mod && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if (mod && k.toLowerCase() === 'a' && st.mode === 'map') { e.preventDefault(); st.sel = new Set([...st.els.keys()]); st.primary = [...st.sel][0] || null; render(); renderPane(); return; }
-      if (e.altKey && !mod && /^Digit[1-3]$/.test(e.code) && st.mode === 'map' && !st.masked && primaryNode()) {
-        // Alt 1–3 : Chapitre, Leçon, Section (les chiffres seuls restent aux 9 types historiques)
+      if (e.altKey && !mod && /^Digit[1-4]$/.test(e.code) && st.mode === 'map' && !st.masked && primaryNode()) {
+        // Alt 1–4 : Chapitre, Section, Sous-section, Leçon (les chiffres seuls restent aux 9 types historiques)
         e.preventDefault();
         setType(st.sel.size ? [...st.sel] : [primaryNode().id], S.STRUCT_ORDER[+e.code.slice(5) - 1]);
         return;

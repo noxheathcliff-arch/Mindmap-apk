@@ -92,7 +92,7 @@
   // Familles : la teinte dit la famille (Structure bleue, Notion chaude, Sources vertes,
   // Compléments violets) ; à l'intérieur, de petites variations + la forme distinguent le type.
   const FAMILY_HUES = {
-    chapitre: 265, lecon: 248, section: 230,
+    chapitre: 265, lecon: 248, section: 230, soussection: 215,
     notion: 28, definition: 52,
     texte: 152, juris: 178, doctrine: 202,
     retenir: 92, idee: 312,

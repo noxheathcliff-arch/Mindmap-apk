@@ -33,7 +33,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | **Cours** | Le dossier d'un enseignement (ex. *Droit des obligations*). Sur l'accueil, chaque cours est une **fiche** à sa teinte, marquée d'une **empreinte** générée depuis ses cartes, qui montre la prochaine question à réviser. |
 | **Carte** | Une notion à décomposer, ou un chapitre entier (choix à la création). |
 | **Nœud** | Un élément typé, parmi 43 types rangés en familles : **Notion** (Notion, Définition, Caractéristique, Catégorie, Signe), **Cause et effet** (Cause, Conséquence, Condition, Problème, Solution), **Raisonner** (Question, Théorie, Argument, Critique, Nuance, Comparaison, Avantage, Inconvénient), **Agir** (Méthode, Étape, Conseil, Exercice, Objectif), **Repères** (Date, Chiffre clé, Formule), **Sources** (Étude, Citation, Personne, Texte, Jurisprudence, Doctrine), **Droit** (Condition de fond, Condition de forme, Effet / Régime, Exception), **Compléments** (Exemple, Piège, À retenir, Idée). Chaque type a sa silhouette et sa question de révision. |
-| **Structure** | **Chapitre › Leçon › Section** : des nœuds plus grands et numérotés automatiquement (« Leçon 2 »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
+| **Structure** | **Chapitre › Section › Sous-section** (Leçon reste disponible) : des nœuds plus grands et numérotés automatiquement (« Section 2 »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
 | **Note** | Le bloc-notes de chaque nœud (Markdown), avec aperçu. |
 | **Lien** | Hiérarchique (décomposition, trait plein) ou renvoi (« voir », « sauf », « implique »… en pointillé fléché). |
 | **Fourche** | Un seul lien, avec un seul libellé, qui se sépare vers plusieurs éléments. Changer le libellé le change pour toutes les branches. |
@@ -54,7 +54,7 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | `Maj` + glisser dans le vide | Sélection multiple |
 | Double-clic dans le vide | Nœud libre |
 | `1` … `9` | Changer le type |
-| `Alt 1` · `Alt 2` · `Alt 3` | Chapitre · Leçon · Section |
+| `Alt 1` · `Alt 2` · `Alt 3` · `Alt 4` | Chapitre · Section · Sous-section · Leçon |
 | `.` | Replier / déplier la branche |
 | `R` · `F` | Ranger · Ajuster à l'écran |
 | `H` | Mode masqué : tout est flouté, touche pour révéler (rappel actif) |
@@ -67,7 +67,7 @@ Sur mobile : toucher pour sélectionner, la barre du bas devient contextuelle (E
 
 ### Apprendre un chapitre entier
 
-Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapitre, `Tab` y ajoute des **Leçons**, puis les notions de chacune (une Section se pose avec `Alt 3`). Les leçons et sections sont numérotées toutes seules dans l'ordre du plan ; chacune affiche une jauge de maîtrise de sa branche. Sans rien sélectionner, le panneau affiche le **sommaire** du chapitre. Sur une leçon : **Réviser cette leçon** (seulement ses cartes) et **Isoler** (replie les autres leçons). En vue **Plan**, la structure devient des intertitres (*Leçon 1 — …*) et la numérotation I. A. 1. repart sous chacun ; « À retenir » devient un encadré. Au zoom éloigné, le détail s'estompe et la structure reste lisible.
+Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapitre, `Tab` y ajoute des **Sections**, puis sous chacune des **Sous-sections** (`Alt 3`), puis les notions. Les sections et sous-sections sont numérotées toutes seules dans l'ordre du plan ; chacune affiche une jauge de maîtrise de sa branche. Sans rien sélectionner, le panneau affiche le **sommaire** du chapitre. Sur une section : **Réviser cette section** (seulement ses cartes) et **Isoler** (replie les autres sections). En vue **Plan**, la structure devient des intertitres (*Section 1 — …*) et la numérotation I. A. 1. repart sous chacun ; « À retenir » devient un encadré. Au zoom éloigné, le détail s'estompe et la structure reste lisible.
 
 ### Ranger une carte (disposition)
 

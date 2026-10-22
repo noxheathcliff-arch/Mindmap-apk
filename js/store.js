@@ -92,7 +92,7 @@
   };
 
   /** Taxonomie des nœuds — différenciés sans couleur (cf. DESIGN.md §4.4).
-      `rank` : nœuds de structure d'un cours (Chapitre › Leçon › Section), numérotés automatiquement. */
+      `rank` : nœuds de structure d'un cours (Chapitre › Section › Sous-section ; Leçon gardée pour les anciennes cartes), numérotés automatiquement. */
   const TYPES = {
     notion:     { label: 'Notion',             kicker: '',              prompt: 'Décompose cette notion' },
     definition: { label: 'Définition',         kicker: 'Définition',    prompt: 'Donne la définition' },
@@ -100,8 +100,9 @@
     texte:      { label: 'Texte',              kicker: 'Texte',         prompt: 'Que prévoit ce texte ?' },
     idee:       { label: 'Idée',               kicker: '',              prompt: 'Développe cette idée' },
     chapitre:   { label: 'Chapitre',           kicker: 'Chapitre',      prompt: 'Retrouve le plan de ce chapitre', rank: 1 },
+    section:    { label: 'Section',            kicker: 'Section',       prompt: 'Retrouve le plan de cette section', rank: 2 },
+    soussection: { label: 'Sous-section',      kicker: 'Sous-section',  prompt: 'Retrouve le plan de cette sous-section', rank: 3 },
     lecon:      { label: 'Leçon',              kicker: 'Leçon',         prompt: 'Retrouve le plan de cette leçon', rank: 2 },
-    section:    { label: 'Section',            kicker: 'Section',       prompt: 'Retrouve le plan de cette section', rank: 3 },
     doctrine:   { label: 'Doctrine',           kicker: 'Doctrine',      prompt: 'Quelle est cette position doctrinale ?' },
     retenir:    { label: 'À retenir',          kicker: 'À retenir',     prompt: 'Restitue l’essentiel' },
     // au-delà du droit : raisonner, se repérer, citer (cours d'histoire, de sciences, essais…)
@@ -117,10 +118,10 @@
     exercice:   { label: 'Exercice',           kicker: 'Exercice',      prompt: 'Fais l’exercice : que faut-il faire ?' },
     etude:      { label: 'Étude / Expérience', kicker: 'Étude',         prompt: 'Que montre cette étude ?' },
   };
-  /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–3 */
-  const TYPE_ORDER = ['notion', 'definition', 'idee', 'texte', 'juris', 'doctrine', 'retenir', 'methode', 'etape', 'chapitre', 'lecon', 'section',
+  /** Les 9 premiers gardent leurs raccourcis 1–9 ; la structure se pose avec Alt 1–4 */
+  const TYPE_ORDER = ['notion', 'definition', 'idee', 'texte', 'juris', 'doctrine', 'retenir', 'methode', 'etape', 'chapitre', 'section', 'soussection', 'lecon',
     'conseil', 'exercice', 'date', 'chiffre', 'formule', 'etude', 'citation', 'personne'];
-  const STRUCT_ORDER = ['chapitre', 'lecon', 'section'];
+  const STRUCT_ORDER = ['chapitre', 'section', 'soussection', 'lecon'];
   /** Regroupement du menu « Type » (divulgation par familles) */
   const TYPE_GROUPS = [
     { label: 'Structure du cours', types: STRUCT_ORDER },
@@ -141,8 +142,8 @@
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
   const LAYOUTS = ['right', 'balanced', 'down', 'organic'];
   /** Dossiers du plan d'un cours : le niveau (pour l'affichage) ; le numéro exact est dans `label` */
-  const FOLDER_KINDS = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'autre'];
-  const FOLDER_LABELS = { partie: 'Partie', titre: 'Titre', soustitre: 'Sous-titre', chapitre: 'Chapitre', section: 'Section', autre: 'Dossier' };
+  const FOLDER_KINDS = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'soussection', 'autre'];
+  const FOLDER_LABELS = { partie: 'Partie', titre: 'Titre', soustitre: 'Sous-titre', chapitre: 'Chapitre', section: 'Section', soussection: 'Sous-section', autre: 'Dossier' };
 
   const RATINGS = {
     revoir:   { label: 'À revoir', fill: 1 },

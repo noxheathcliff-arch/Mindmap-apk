@@ -97,7 +97,7 @@
         for (const f of forksEl(n.id)) sec.appendChild(f);
       }
     };
-    /* Les enfants : la structure (Chapitre, Leçon, Section) devient des intertitres ;
+    /* Les enfants : la structure (Chapitre, Section, Sous-section) devient des intertitres ;
        sous chacun, la numérotation du contenu (I. A. 1. a.) repart de zéro. */
     const kids = (host, item, level, hb, trail = []) => {
       let i = 0, prev = false;
