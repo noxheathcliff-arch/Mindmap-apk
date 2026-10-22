@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1792651282.3901613,
-    "seen": 1792651311.9725358,
-    "ast_hash": "701bf3fd822f6507842580c247399ae7",
+    "mtime": 1792662384.9385228,
+    "seen": 1792662439.7720773,
+    "ast_hash": "654eec9fb97bbb3c1daf5c011ac620b1",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792653290.7427483,
-    "seen": 1792653294.8468177,
-    "ast_hash": "3ae43b88edbb78d95baf45e580e10c40",
+    "mtime": 1792662395.7954366,
+    "seen": 1792662439.7721264,
+    "ast_hash": "17af651c95a6bbbbc527611c4ab3ca1f",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792652649.4599063,
-    "seen": 1792653134.394183,
-    "ast_hash": "f5bdc527b4442ef09b62f0619b2e1752",
+    "mtime": 1792662402.587561,
+    "seen": 1792662439.7721667,
+    "ast_hash": "f0d5345655175112ed29762547085f8e",
     "semantic_hash": ""
   },
   "README.md": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1792649511.8046064,
-    "seen": 1792650770.5784068,
-    "ast_hash": "912f89cb57631be748f9d6df535d4960",
+    "mtime": 1792662384.9368045,
+    "seen": 1792662439.772174,
+    "ast_hash": "6cbf41185dbe6a2e563153fcfbe0d32f",
     "semantic_hash": ""
   },
   "skills/ratio-livre-vers-cours/SKILL.md": {
@@ -270,27 +270,27 @@
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
-    "mtime": 1791807600.4817588,
-    "seen": 1792459242.2342944,
-    "ast_hash": "4a2a94bab1120913504a4f53348a94b4",
+    "mtime": 1792662391.145103,
+    "seen": 1792662439.7721763,
+    "ast_hash": "1f50ad70e19a847720b7172a12882707",
     "semantic_hash": ""
   },
   "icons/icon-512.png": {
-    "mtime": 1791807600.482423,
-    "seen": 1792459242.2342956,
-    "ast_hash": "91aa38da98837d614b96b45b3e3bf8d7",
+    "mtime": 1792662391.7434685,
+    "seen": 1792662439.7721775,
+    "ast_hash": "dd3c1f9371e866914e646f0dc0e2792e",
     "semantic_hash": ""
   },
   "icons/icon.svg": {
-    "mtime": 1791807600.482423,
-    "seen": 1792459242.2342968,
-    "ast_hash": "d559c0668635195df61886daf9fd3b68",
+    "mtime": 1792662384.9414248,
+    "seen": 1792662439.7721786,
+    "ast_hash": "53721b13c2f4c30224475406d91a4a48",
     "semantic_hash": ""
   },
   "icons/maskable-512.png": {
-    "mtime": 1791807600.482423,
-    "seen": 1792459242.2342978,
-    "ast_hash": "ec014f39839cd84c04ebed934988c94f",
+    "mtime": 1792662392.3834686,
+    "seen": 1792662439.7721803,
+    "ast_hash": "c02bb43cdf63a43fdc4dd66f88e1efe7",
     "semantic_hash": ""
   },
   "CLAUDE.md": {

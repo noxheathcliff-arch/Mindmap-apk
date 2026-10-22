@@ -99,18 +99,18 @@ Toute notion est à **≤ 3 interactions** de l'accueil.
 ### 4.1 Couleur — Material 3 Expressive, rôles tonals
 Direction retenue : **« Contexte »** (n° 8 des dix pistes) — l'Expressif M3 avec la barre d'outils flottante, la bibliothèque rangée en dossiers.
 
-**Schéma de l'application** : *tonal spot* généré par `material-color-utilities` depuis la graine `#4A5BD9` (indigo d'encre), puis chaque rôle ajusté en tonalité HCT jusqu'à **WCAG AA et APCA Lc ≥ 75** pour tout texte courant (le schéma M3 standard en sombre plafonnait à Lc 72 pour `on-surface-variant`).
+**Schéma de l'application** : palettes *baseline* statiques Material : **Static Blue** (primaire T40 `#1157CE`, conteneur T90 `#D0E4FF`), **Static Blue variant** pour le tertiaire (`#006788`), secondaire bleu-gris (teinte HCT 262, chroma 14), neutres bleutés très peu saturés (chroma 7) et **fond blanc pur** `#ffffff` (l'ancien `#fdfaff` tirait sur le gris-violet). Les rôles « on-container » sont descendus de quelques tons HCT (teinte conservée) pour tenir **WCAG AA et APCA Lc ≥ 75**.
 
 | Rôle | Clair | Sombre | Usage |
 |---|---|---|---|
-| `primary` / `on-primary` | `#424980` / `#fff` | `#caceff` / `#192056` | action principale, valeur active |
-| `primary-container` | `#dfe0ff` | `#3b4279` | héros (session du jour, paquet), FAB, barre vibrante |
-| `secondary-container` | `#e0e0f9` | `#444559` | état sélectionné (rail, groupes de boutons, menus) |
-| `surface` → `surface-container-highest` | `#fbf8ff` → `#e4e1e9` | `#131318` → `#34343a` | fonds ; une surface posée est un palier plus haut |
+| `primary` / `on-primary` | `#1157ce` / `#fff` | `#a9c9ff` / `#001944` | action principale, valeur active |
+| `primary-container` | `#d0e4ff` | `#04409f` | héros (session du jour, paquet), FAB, barre vibrante |
+| `secondary-container` | `#dbe2f5` | `#3f4756` | état sélectionné (rail, groupes de boutons, menus) |
+| `surface` → `surface-container-highest` | `#ffffff` → `#e1e2ea` | `#111319` → `#32353b` | fonds ; une surface posée est un palier plus haut |
 | `error-container` | `#ffdad6` | `#93000a` | « À revoir », suppression |
 
 - **Séparer par la tonalité, jamais par un filet** (§4.0) : rail `surface-container-low`, page `surface`, cartes `surface-container-lowest` (clair) ou `-high` (sombre), lignes de liste segmentée séparées par 2 dp de vide.
-- **Couleur du cours, limitée aux zones du cours** : 8 teintes (`HUES` 28 · 58 · 150 · 186 · 214 · 248 · 284 · 332). Clair : *SchemeContent* ; sombre : tonalités HCT dédiées (conteneur T30 chroma ≤ 44, texte T92) — le *content* officiel éclaircissait les dossiers en pastel, le *vibrant* devenait fluo. Six rôles par teinte (`--c-pc/onpc/pri/onpri/sc/onsc`, `js/mark.js`) ; la classe `.course-scope` remappe `primary`, `primary-container` et `secondary-container` sur ceux du cours. Hors d'un cours, l'interface reste indigo.
+- **Couleur du cours, limitée aux zones du cours** : 8 teintes (`HUES` 28 · 58 · 150 · 186 · 214 · 248 · 284 · 332). Clair : *SchemeContent* ; sombre : tonalités HCT dédiées (conteneur T30 chroma ≤ 44, texte T92) — le *content* officiel éclaircissait les dossiers en pastel, le *vibrant* devenait fluo. Six rôles par teinte (`--c-pc/onpc/pri/onpri/sc/onsc`, `js/mark.js`) ; la classe `.course-scope` remappe `primary`, `primary-container` et `secondary-container` sur ceux du cours. Hors d'un cours, l'interface reste bleue.
 - **Le surligneur devient un contenu** : `--hl-mark` (`#ffe171` / `#554600` en sombre) sert uniquement à `==texte==` dans les notes et aux passages trouvés par la recherche. Il ne décore plus aucun titre ni bouton.
 - **États de révision et types de nœuds** restent lisibles sans couleur (forme, pastilles ○ ◔ ◑ ●).
 

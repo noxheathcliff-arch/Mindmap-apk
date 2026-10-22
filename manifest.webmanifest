@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
-  "background_color": "#fdfaff",
-  "theme_color": "#fdfaff",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "categories": ["education", "productivity"],
   "icons": [
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },

@@ -1,6 +1,6 @@
 /* ==========================================================================
    Ratio — Design tokens (Material Design 3 Expressive · direction « Barre contextuelle »)
-   Schéma généré par material-color-utilities (graine #4A5BD9, variante tonal spot), puis
+   Schéma généré par material-color-utilities (bleu « Static Blue » baseline Material : primaire #1157CE, tertiaire Blue variant #006788, neutres bleutés très clairs, fond blanc pur), puis
    chaque rôle de contenu est ajusté en ton HCT (teinte et chroma conservées) jusqu'à
    WCAG 2.2 AA et APCA Lc 75 sur toutes les surfaces où il apparaît.
    Les couleurs des cours sont des schémas Material par cours (js/mark.js).
@@ -108,41 +108,41 @@
 /* ---- Light scheme (default) -------------------------------------------- */
 :root,
 :root[data-theme="light"] {
-  --primary: #424980;
+  --primary: #1157ce;
   --on-primary: #ffffff;
-  --primary-container: #dfe0ff;
-  --on-primary-container: #394077;
+  --primary-container: #d0e4ff;
+  --on-primary-container: #003a93;
   --primary-ink: var(--primary);
-  --secondary: #5b5d72;
+  --secondary: #575f6e;
   --on-secondary: #ffffff;
-  --secondary-container: #e0e0f9;
-  --on-secondary-container: #424357;
-  --tertiary: #77536c;
+  --secondary-container: #dbe2f5;
+  --on-secondary-container: #38404e;
+  --tertiary: #006788;
   --on-tertiary: #ffffff;
-  --tertiary-container: #ffd7f0;
-  --on-tertiary-container: #5b3a52;
+  --tertiary-container: #bde9ff;
+  --on-tertiary-container: #00455d;
   --error: #ba1a1a;
   --on-error: #ffffff;
   --error-container: #ffdad6;
   --on-error-container: #820008;
 
-  --surface: #fdfaff;
-  --surface-dim: #dbd9e0;
-  --surface-bright: #fdfaff;
+  --surface: #ffffff;
+  --surface-dim: #d8dae2;
+  --surface-bright: #ffffff;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f5f2fa;
-  --surface-container: #efedf4;
-  --surface-container-high: #e9e7ef;
-  --surface-container-highest: #e4e1e9;
-  --on-surface: #1b1b21;
-  --on-surface-variant: #44444d;
-  --outline: #777680;
-  --outline-variant: #c7c5d0;
-  --inverse-surface: #303036;
-  --inverse-on-surface: #f2eff7;
-  --inverse-primary: #bcc2ff;
+  --surface-container-low: #f2f3fb;
+  --surface-container: #ecedf6;
+  --surface-container-high: #e7e8f0;
+  --surface-container-highest: #e1e2ea;
+  --on-surface: #191c21;
+  --on-surface-variant: #44474d;
+  --outline: #75777e;
+  --outline-variant: #c5c6ce;
+  --inverse-surface: #2e3037;
+  --inverse-on-surface: #eff0f8;
+  --inverse-primary: #a9c9ff;
   --scrim: rgba(0, 0, 0, 0.32);
-  --canvas-dot: rgba(27, 27, 33, 0.14);
+  --canvas-dot: rgba(25, 28, 33, 0.14);
 
   /* surligneur : couleur statique (palette Material « Yellow »), réservée au contenu
      surligné par l'étudiant ; jamais pour l'interface */
@@ -150,7 +150,7 @@
   --hl-size: 34%;
   --hl-pos: 92%;
   --hl-mark: #ffe171;
-  --on-hl-mark: #1b1b21;
+  --on-hl-mark: #191c21;
 
   --shadow-color: 0, 0, 0; /* virgules : rgba(var(--shadow-color), a) */
   --elev-1: 0 1px 2px rgba(var(--shadow-color), 0.3), 0 1px 3px 1px rgba(var(--shadow-color), 0.15);
@@ -167,41 +167,41 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --branch-l: .78; --branch-c: .09;
-    --primary: #caceff;
-    --on-primary: #192056;
-    --primary-container: #3b4279;
-    --on-primary-container: #dfe0ff;
+    --primary: #a9c9ff;
+    --on-primary: #001944;
+    --primary-container: #04409f;
+    --on-primary-container: #d0e4ff;
     --primary-ink: var(--primary);
-    --secondary: #c4c5dd;
-    --on-secondary: #020311;
-    --secondary-container: #444559;
-    --on-secondary-container: #e0e0f9;
-    --tertiary: #e6bad6;
-    --on-tertiary: #0d000a;
-    --tertiary-container: #5e3c54;
-    --on-tertiary-container: #ffd7f0;
+    --secondary: #bfc6d9;
+    --on-secondary: #101824;
+    --secondary-container: #3f4756;
+    --on-secondary-container: #dbe2f5;
+    --tertiary: #67d4ff;
+    --on-tertiary: #001f2d;
+    --tertiary-container: #004d68;
+    --on-tertiary-container: #bde9ff;
     --error: #ffb4ab;
     --on-error: #690005;
     --error-container: #93000a;
     --on-error-container: #ffdad6;
 
-    --surface: #131318;
-    --surface-dim: #131318;
-    --surface-bright: #39393f;
-    --surface-container-lowest: #0d0e13;
-    --surface-container-low: #1b1b21;
-    --surface-container: #1f1f25;
-    --surface-container-high: #29292f;
-    --surface-container-highest: #34343a;
-    --on-surface: #e4e1e9;
-    --on-surface-variant: #d8d6e1;
-    --outline: #9d9da7;
-    --outline-variant: #46464f;
-    --inverse-surface: #e4e1e9;
-    --inverse-on-surface: #303036;
-    --inverse-primary: #535a92;
+    --surface: #111319;
+    --surface-dim: #111319;
+    --surface-bright: #36393f;
+    --surface-container-lowest: #0b0e14;
+    --surface-container-low: #191c21;
+    --surface-container: #1d2025;
+    --surface-container-high: #272a30;
+    --surface-container-highest: #32353b;
+    --on-surface: #e1e2ea;
+    --on-surface-variant: #d8dae2;
+    --outline: #9a9ca4;
+    --outline-variant: #44474d;
+    --inverse-surface: #e1e2ea;
+    --inverse-on-surface: #2e3037;
+    --inverse-primary: #1157ce;
     --scrim: rgba(0, 0, 0, 0.6);
-    --canvas-dot: rgba(228, 225, 233, 0.1);
+    --canvas-dot: rgba(225, 226, 234, 0.1);
     --hl-band: #e9c400;
     --hl-size: 9%;
     --hl-pos: 100%;
@@ -213,41 +213,41 @@
 
 :root[data-theme="dark"] {
   --branch-l: .78; --branch-c: .09;
-  --primary: #caceff;
-  --on-primary: #192056;
-  --primary-container: #3b4279;
-  --on-primary-container: #dfe0ff;
+  --primary: #a9c9ff;
+  --on-primary: #001944;
+  --primary-container: #04409f;
+  --on-primary-container: #d0e4ff;
   --primary-ink: var(--primary);
-  --secondary: #c4c5dd;
-  --on-secondary: #020311;
-  --secondary-container: #444559;
-  --on-secondary-container: #e0e0f9;
-  --tertiary: #e6bad6;
-  --on-tertiary: #0d000a;
-  --tertiary-container: #5e3c54;
-  --on-tertiary-container: #ffd7f0;
+  --secondary: #bfc6d9;
+  --on-secondary: #101824;
+  --secondary-container: #3f4756;
+  --on-secondary-container: #dbe2f5;
+  --tertiary: #67d4ff;
+  --on-tertiary: #001f2d;
+  --tertiary-container: #004d68;
+  --on-tertiary-container: #bde9ff;
   --error: #ffb4ab;
   --on-error: #690005;
   --error-container: #93000a;
   --on-error-container: #ffdad6;
 
-  --surface: #131318;
-  --surface-dim: #131318;
-  --surface-bright: #39393f;
-  --surface-container-lowest: #0d0e13;
-  --surface-container-low: #1b1b21;
-  --surface-container: #1f1f25;
-  --surface-container-high: #29292f;
-  --surface-container-highest: #34343a;
-  --on-surface: #e4e1e9;
-  --on-surface-variant: #d8d6e1;
-  --outline: #9d9da7;
-  --outline-variant: #46464f;
-  --inverse-surface: #e4e1e9;
-  --inverse-on-surface: #303036;
-  --inverse-primary: #535a92;
+  --surface: #111319;
+  --surface-dim: #111319;
+  --surface-bright: #36393f;
+  --surface-container-lowest: #0b0e14;
+  --surface-container-low: #191c21;
+  --surface-container: #1d2025;
+  --surface-container-high: #272a30;
+  --surface-container-highest: #32353b;
+  --on-surface: #e1e2ea;
+  --on-surface-variant: #d8dae2;
+  --outline: #9a9ca4;
+  --outline-variant: #44474d;
+  --inverse-surface: #e1e2ea;
+  --inverse-on-surface: #2e3037;
+  --inverse-primary: #1157ce;
   --scrim: rgba(0, 0, 0, 0.6);
-  --canvas-dot: rgba(228, 225, 233, 0.1);
+  --canvas-dot: rgba(225, 226, 234, 0.1);
   --hl-band: #e9c400;
   --hl-size: 9%;
   --hl-pos: 100%;
