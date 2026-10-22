@@ -581,7 +581,6 @@
   /* Typographie des cartes : un niveau à la fois (chapitre… notes), aperçu en direct.
      Seuls les écarts au défaut sont gardés dans settings.typo ; une carte ouverte se redessine à chaque choix. */
   function openTypo() {
-    R.fonts.ensureAll();
     const LV = S.TYPO_LEVELS;
     let lv = 'chapitre';
     const box = h('div.sty.typo');
@@ -615,11 +614,23 @@
         style: { fontFamily: R.fonts.family(t.font), fontSize: t.size + 'px', fontWeight: t.bold ? '700' : '400' } },
       pre ? h('span.typo-pre', pre) : null, SAMPLE[lv]);
 
-      const fontBtn = (k) => {
-        const f = S.FONTS[k];
-        return h('button.sty-font', { type: 'button', role: 'radio', 'aria-checked': String(t.font === k), style: { fontFamily: R.fonts.family(k) },
-          onclick: () => { save('font', k); paint(); } }, h('span.sty-font-n', f.name), h('span.sty-font-c', f.cat));
-      };
+      const reset = ui.btn('Réinitialiser ce niveau', { icon: 'undo', variant: 'text', disabled: !(S.data.settings.typo || {})[lv], onClick: () => {
+        const all = { ...(S.data.settings.typo || {}) }; delete all[lv];
+        if (Object.keys(all).length) S.data.settings.typo = all; else delete S.data.settings.typo;
+        S.changed('settings'); paint();
+      } });
+      // police : pas de nouveau rendu à chaque choix, la liste garde sa place ; l'aperçu et « personnalisé » suivent
+      const fonts = ui.fontPicker({ value: t.font, key: 'typo-font', label: 'Police', sample: SAMPLE[lv].slice(0, 60),
+        onPick: (k) => {
+          save('font', k);
+          sample.style.fontFamily = R.fonts.family(k);
+          const tuned = !!(S.data.settings.typo || {})[lv];
+          reset.disabled = !tuned;
+          const chip = chips.querySelector('[aria-checked="true"]');
+          const dot = chip && chip.querySelector('.typo-dot');
+          if (chip && tuned && !dot) chip.appendChild(h('i.typo-dot', { 'aria-label': 'personnalisé' }));
+          else if (dot && !tuned) dot.remove();
+        } });
       const out = h('output.sty-val', t.size + ' px');
       const size = h('input.slider', { type: 'range', min: String(S.SIZE.fs[0]), max: String(S.SIZE.fs[1]), step: '1', value: String(t.size), 'aria-label': 'Taille' });
       const syncSize = () => { out.textContent = size.value + ' px'; size.style.setProperty('--p', ((size.value - S.SIZE.fs[0]) / (S.SIZE.fs[1] - S.SIZE.fs[0]) * 100) + '%'); sample.style.fontSize = size.value + 'px'; };
@@ -637,17 +648,13 @@
       box.append(
         chips,
         sample,
-        sec('Police', h('div.sty-fonts', { role: 'radiogroup', 'aria-label': 'Police' }, Object.keys(S.FONTS).map(fontBtn))),
+        sec('Police', fonts),
         sec('Texte',
           h('div.sty-slide', h('div.sty-slide-h', h('span', 'Taille'), out), size),
           sw('Gras', null, !!t.bold, 'bold'),
           'prefix' in LV[lv] ? sw('Préfixe numéroté', `« ${LV[lv].label} I », « ${LV[lv].label} II »… devant le titre`, !!t.prefix, 'prefix') : null),
         h('p.sty-help', lv === 'note' ? 'S’applique au texte des notes, dans l’éditeur et en lecture.' : 'Un nœud peut toujours garder sa propre police ou sa taille (fiche « Apparence »).'),
-        h('div.sty-foot', ui.btn('Réinitialiser ce niveau', { icon: 'undo', variant: 'text', disabled: !(S.data.settings.typo || {})[lv], onClick: () => {
-          const all = { ...(S.data.settings.typo || {}) }; delete all[lv];
-          if (Object.keys(all).length) S.data.settings.typo = all; else delete S.data.settings.typo;
-          S.changed('settings'); paint();
-        } })));
+        h('div.sty-foot', reset));
     }
     paint();
     return ui.dialog({ title: 'Typographie des cartes', icon: 'type', body: box, cls: 'dialog-typo', actions: [{ label: 'OK', value: true, variant: 'filled', primary: true }] });

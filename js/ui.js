@@ -149,7 +149,7 @@
       const wrap = h('div.dialog-wrap', scrim, box);
       if (dismissible) scrim.addEventListener('click', () => close(undefined));
       const onKey = (e) => {
-        if (e.key === 'Escape' && dismissible) { e.stopPropagation(); e.preventDefault(); close(undefined); }
+        if (e.key === 'Escape' && dismissible && !e.target.closest('.fp.open')) { e.stopPropagation(); e.preventDefault(); close(undefined); }
         if (e.key === 'Enter' && !e.shiftKey && e.target.tagName === 'INPUT') {
           const primary = actions.find((a) => a.primary);
           if (primary) { e.preventDefault(); if (!primary.validate || primary.validate()) close(typeof primary.value === 'function' ? primary.value() : primary.value); }
@@ -566,6 +566,170 @@
     // premier placement après mise en page
     requestAnimationFrame(() => place(true));
     return place;
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Sélecteur de police : un champ qui montre la police en cours dans   */
+  /* sa propre graphie, et qui se déplie en liste (familles, recherche   */
+  /* au clavier, pastille de sélection qui glisse, aperçu du texte).     */
+  /* ------------------------------------------------------------------ */
+  const fpMemory = new Map();
+  /**
+   * value : clé de R.store.FONTS ou null (« Par défaut ») · def : clé de la police par défaut (null = pas d'option « Par défaut »)
+   * sample : texte d'aperçu écrit dans chaque police · onPick(key|null) · key : mémoire (déplié, famille, défilement) entre deux rendus
+   */
+  ui.fontPicker = function ({ value = null, def = null, sample = 'Le droit, la loi', onPick, key, label = 'Police' }) {
+    const S = R.store;
+    const mem = (key && fpMemory.get(key)) || { open: false, cat: '' };
+    if (key) fpMemory.set(key, mem);
+    const uid = 'fp' + Math.random().toString(36).slice(2, 8);
+    const keys = Object.keys(S.FONTS);
+    const cats = [...new Set(keys.map((k) => S.FONTS[k].cat))];
+    let cur = value;
+    const fontOf = (k) => k || def || 'jakarta';
+    R.fonts.ensure(fontOf(cur));
+
+    const root = h('div.fp', { class: mem.open ? 'open' : '' });
+    const aa = h('span.fp-aa', { 'aria-hidden': 'true' }, 'Aa');
+    const name = h('span.fp-name');
+    const sub = h('span.fp-sub');
+    const field = h('button.fp-field', { type: 'button', 'aria-expanded': String(mem.open), 'aria-controls': uid, 'aria-label': label },
+      aa, h('span.fp-meta', name, sub), h('span.fp-chev', R.icon('chevronDown', 20)));
+
+    // familles : puces avec pastille qui glisse
+    const chip = (c, txt) => h('button.fp-cat', { type: 'button', role: 'radio', 'aria-checked': String(mem.cat === c), dataset: { cat: c } }, txt);
+    const catRow = h('div.fp-cats', { role: 'radiogroup', 'aria-label': 'Famille' },
+      h('span.fp-cat-ind', { 'aria-hidden': 'true' }), chip('', 'Toutes'), cats.map((c) => chip(c, c)));
+
+    const opt = (k) => {
+      const f = k ? S.FONTS[k] : S.FONTS[fontOf(null)];
+      return h('div.fp-opt', { role: 'option', id: `${uid}-${k || 'def'}`, 'aria-selected': String(cur === k), dataset: { k: k || '', cat: k ? f.cat : '' },
+        style: { fontFamily: R.fonts.family(fontOf(k)) } },
+      h('span.fp-opt-t', h('span.fp-opt-n', k ? f.name : 'Par défaut'), h('span.fp-opt-c', k ? f.cat : f.name)),
+      h('span.fp-opt-s', sample),
+      h('span.fp-check', { 'aria-hidden': 'true' }, R.icon('check', 18)));
+    };
+    const ind = h('span.fp-ind', { 'aria-hidden': 'true' });
+    const opts = [...(def ? [opt(null)] : []), ...keys.map(opt)];
+    const list = h('div.fp-list', { id: uid, role: 'listbox', tabindex: '0', 'aria-label': label }, ind, opts);
+    const panel = h('div.fp-panel', h('div.fp-inner', catRow, list));
+    root.append(field, panel);
+
+    const optOf = (k) => opts.find((o) => (o.dataset.k || null) === k);
+    const visible = () => opts.filter((o) => !o.hidden);
+
+    function label_() {
+      const f = S.FONTS[fontOf(cur)];
+      const fam = R.fonts.family(fontOf(cur));
+      aa.style.fontFamily = fam;
+      name.style.fontFamily = fam;
+      name.textContent = cur ? f.name : 'Par défaut';
+      sub.textContent = cur ? f.cat : `${f.name} · police du niveau`;
+    }
+    /** Pastille de sélection : suit l'option choisie par un ressort ; disparaît si elle est filtrée */
+    function place(animate) {
+      const o = optOf(cur);
+      if (!o || o.hidden || !list.isConnected) { ind.style.opacity = '0'; return; }
+      ind.classList.toggle('still', !animate || motion.reduced());
+      ind.style.opacity = '1';
+      ind.style.transform = `translateY(${o.offsetTop}px)`;
+      ind.style.height = o.offsetHeight + 'px';
+      if (!animate) void ind.offsetWidth;
+      ind.classList.remove('still');
+    }
+    function placeCat(animate) {
+      const c = catRow.querySelector('.fp-cat[aria-checked="true"]');
+      const ci = catRow.querySelector('.fp-cat-ind');
+      if (!c) return;
+      ci.classList.toggle('still', !animate || motion.reduced());
+      ci.style.transform = `translateX(${c.offsetLeft}px)`;
+      ci.style.width = c.offsetWidth + 'px';
+      if (!animate) void ci.offsetWidth;
+      ci.classList.remove('still');
+    }
+    function filter(c, animate) {
+      mem.cat = c;
+      for (const b of catRow.querySelectorAll('.fp-cat')) b.setAttribute('aria-checked', String(b.dataset.cat === c));
+      for (const o of opts) o.hidden = !!c && !!o.dataset.k && o.dataset.cat !== c;
+      placeCat(animate);
+      if (animate) {
+        list.scrollTop = 0;
+        if (!motion.reduced()) visible().forEach((o, i) => o.animate(
+          [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+          { duration: 260, delay: Math.min(i, 8) * 24, easing: motion.css ? motion.css.out : 'ease-out', fill: 'backwards' }));
+      }
+      place(false);
+    }
+    function pick(k, { scroll } = {}) {
+      if (k === cur) return;
+      cur = k;
+      for (const o of opts) o.setAttribute('aria-selected', String((o.dataset.k || null) === k));
+      const o = optOf(k);
+      if (o) list.setAttribute('aria-activedescendant', o.id);
+      label_();
+      place(true);
+      if (o && scroll) o.scrollIntoView({ block: 'nearest', behavior: motion.reduced() ? 'auto' : 'smooth' });
+      R.fonts.ensure(fontOf(k));
+      onPick && onPick(k);
+    }
+    function centerOn(k, smooth) {
+      const o = optOf(k);
+      if (!o || o.hidden) return;
+      const top = o.offsetTop - (list.clientHeight - o.offsetHeight) / 2;
+      list.scrollTo({ top: Math.max(0, top), behavior: smooth && !motion.reduced() ? 'smooth' : 'auto' });
+    }
+    function setOpen(v) {
+      mem.open = v;
+      root.classList.toggle('open', v);
+      field.setAttribute('aria-expanded', String(v));
+      if (v) requestAnimationFrame(() => { placeCat(false); place(false); centerOn(cur, false); });
+    }
+
+    field.addEventListener('click', () => { setOpen(!mem.open); if (mem.open) list.focus({ preventScroll: true }); });
+    field.addEventListener('keydown', (e) => { if (e.key === 'ArrowDown' && !mem.open) { e.preventDefault(); setOpen(true); list.focus({ preventScroll: true }); } });
+    // Échap replie la liste d'abord (le dialogue le laisse passer tant qu'elle est ouverte)
+    root.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mem.open) { e.preventDefault(); setOpen(false); field.focus(); } });
+    catRow.addEventListener('click', (e) => { const b = e.target.closest('.fp-cat'); if (b) filter(b.dataset.cat, true); });
+    list.addEventListener('click', (e) => { const o = e.target.closest('.fp-opt'); if (o) pick(o.dataset.k || null); });
+    let typed = '', typedAt = 0;
+    list.addEventListener('keydown', (e) => {
+      const vis = visible();
+      const i = vis.findIndex((o) => (o.dataset.k || null) === cur);
+      let j = null;
+      if (e.key === 'ArrowDown') j = Math.min(vis.length - 1, i + 1);
+      else if (e.key === 'ArrowUp') j = Math.max(0, i - 1);
+      else if (e.key === 'Home') j = 0;
+      else if (e.key === 'End') j = vis.length - 1;
+      else if (e.key === 'Enter') { e.preventDefault(); setOpen(false); field.focus(); return; }
+      else if (e.key.length === 1 && /\S/.test(e.key)) {
+        // recherche au clavier : les lettres tapées à la suite cherchent un nom
+        const now = Date.now();
+        typed = (now - typedAt < 700 ? typed : '') + e.key.toLowerCase();
+        typedAt = now;
+        const hit = vis.findIndex((o) => o.dataset.k && S.FONTS[o.dataset.k].name.toLowerCase().startsWith(typed));
+        if (hit >= 0) j = hit;
+      }
+      if (j == null || j < 0) return;
+      e.preventDefault();
+      pick(vis[j].dataset.k || null, { scroll: true });
+    });
+
+    // polices chargées quand elles approchent de l'écran
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => {
+        for (const x of es) if (x.isIntersecting) { R.fonts.ensure(fontOf(x.target.dataset.k || null)); io.unobserve(x.target); }
+      }, { root: list, rootMargin: '160px 0px' });
+      opts.forEach((o) => io.observe(o));
+    } else R.fonts.ensureAll();
+    // une police qui arrive peut changer la hauteur d'une ligne : la pastille se recale
+    const off = R.fonts.onLoad(() => { if (!root.isConnected) { off(); return; } place(false); });
+
+    label_();
+    filter(mem.cat, false);
+    const o0 = optOf(cur);
+    if (o0) list.setAttribute('aria-activedescendant', o0.id);
+    if (mem.open) requestAnimationFrame(() => { placeCat(false); place(false); centerOn(cur, false); });
+    return root;
   };
 
   ui.emptyState = ({ icon, title, text, action }) => h('div.empty',

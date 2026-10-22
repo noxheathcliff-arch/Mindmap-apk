@@ -1793,7 +1793,6 @@
       if (guard()) return;
       ids = ids.filter((id) => S.node(map, id));
       if (!ids.length) return;
-      R.fonts.ensureAll();
       const nodes = () => ids.map((id) => S.node(map, id)).filter(Boolean);
       const first = () => nodes()[0];
       const key = ids.join(',');
@@ -1871,18 +1870,11 @@
           slider({ label: 'Arrondi', min: S.SIZE.r[0], max: S.SIZE.r[1], step: 1, auto: -1, value: Number.isFinite(n.r) ? n.r : null, fmt: (v) => v + ' px',
             onInput: (v) => set('r', (x) => { if (v != null) x.r = v; else delete x.r; }, true) })));
 
-        // police : chaque nom écrit dans sa propre graphie
+        // police : champ qui se déplie, chaque police écrite dans sa graphie avec le titre du nœud en aperçu
         const lv = S.typoOf(sty.level);
-        const fontBtn = (k, label, sub) => {
-          const f = S.FONTS[k];
-          const on = k ? n.font === k : !n.font;
-          return h('button.sty-font', { type: 'button', role: 'radio', 'aria-checked': String(on), style: { fontFamily: R.fonts.family(k || lv.font) },
-            onclick: () => { set('font', (x) => { if (k) x.font = k; else delete x.font; }); paint(); } },
-          h('span.sty-font-n', label || f.name), h('span.sty-font-c', sub || f.cat));
-        };
-        const fonts = h('div.sty-fonts', { role: 'radiogroup', 'aria-label': 'Police' },
-          fontBtn(null, 'Par défaut', S.FONTS[lv.font].name),
-          Object.keys(S.FONTS).map((k) => fontBtn(k)));
+        const fonts = ui.fontPicker({ value: n.font || null, def: lv.font, key: 'node-font',
+          sample: (n.title || '').trim().slice(0, 60) || S.TYPES[n.type].label,
+          onPick: (k) => set('font', (x) => { if (k) x.font = k; else delete x.font; }) });
         box.appendChild(sec('Texte', fonts,
           slider({ label: 'Taille', min: S.SIZE.fs[0], max: S.SIZE.fs[1], step: 1, auto: 9, value: n.fs, fmt: (v) => v + ' px',
             onInput: (v) => set('fs', (x) => { if (v) x.fs = v; else delete x.fs; }, true) }),
