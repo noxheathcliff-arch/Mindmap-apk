@@ -2,7 +2,7 @@ name: Déployer sur GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [claude/mindmap-law-revision-site-lqt1vo]
   workflow_dispatch:
 
 permissions:
