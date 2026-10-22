@@ -32,10 +32,10 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 |---|---|
 | **Cours** | Le dossier d'un enseignement (ex. *Droit des obligations*). Sur l'accueil, chaque cours est une **fiche** à sa teinte, marquée d'une **empreinte** générée depuis ses cartes, qui montre la prochaine question à réviser. |
 | **Carte** | Une notion à décomposer, ou un chapitre entier (choix à la création). |
-| **Nœud** | Un élément typé, parmi 43 types rangés en familles : **Notion** (Notion, Définition, Caractéristique, Catégorie, Signe), **Cause et effet** (Cause, Conséquence, Condition, Problème, Solution), **Raisonner** (Question, Théorie, Argument, Critique, Nuance, Comparaison, Avantage, Inconvénient), **Agir** (Méthode, Étape, Conseil, Exercice, Objectif), **Repères** (Date, Chiffre clé, Formule), **Sources** (Étude, Citation, Personne, Texte, Jurisprudence, Doctrine), **Droit** (Condition de fond, Condition de forme, Effet / Régime, Exception), **Compléments** (Exemple, Piège, À retenir, Idée). Chaque type a sa silhouette et sa question de révision. |
-| **Structure** | **Chapitre › Section › Sous-section** (Leçon reste disponible) : des nœuds plus grands et numérotés automatiquement (« Section 2 »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
+| **Nœud** | Un élément typé, parmi 43 types rangés en familles : **Notion** (Notion, Définition, Caractéristique, Catégorie, Signe), **Cause et effet** (Cause, Conséquence, Condition, Problème, Solution), **Raisonner** (Question, Théorie, Argument, Critique, Nuance, Comparaison, Avantage, Inconvénient), **Agir** (Méthode, Étape, Conseil, Exercice, Objectif), **Repères** (Date, Chiffre clé, Formule), **Sources** (Étude, Citation, Personne, Texte, Jurisprudence, Doctrine), **Droit** (Condition de fond, Condition de forme, Effet / Régime, Exception), **Compléments** (Exemple, Piège, À retenir, Idée). Chaque type a sa question de révision ; l'affichage se limite à **trois apparences** : **Notion** (structure, notion, définition, à retenir), **Idée** (le reste) et **Référence** (citation, texte, jurisprudence, doctrine, étude, personne). |
+| **Structure** | **Chapitre › Section › Sous-section › Paragraphe** (Leçon reste disponible) : le niveau se lit par la **typographie** (police, taille, gras réglables), avec un préfixe numéroté facultatif (« Paragraphe I »), avec la jauge de maîtrise de leur branche, un sommaire, « Réviser ce chapitre » et « Isoler ». |
 | **Note** | Le bloc-notes de chaque nœud (Markdown), avec aperçu. |
-| **Lien** | Hiérarchique (décomposition, trait plein) ou renvoi (« voir », « sauf », « implique »… en pointillé fléché). |
+| **Lien** | Hiérarchique (décomposition, trait plein) ou renvoi (« voir », « sauf », « implique »… en pointillé fléché). Tout lien se sélectionne : couleur, épaisseur, trait, forme, flèche, points d'ancrage et courbure se règlent à la main ; libellé jusqu'à 80 caractères. |
 | **Fourche** | Un seul lien, avec un seul libellé, qui se sépare vers plusieurs éléments. Changer le libellé le change pour toutes les branches. |
 | **ET / OU** | Indique si les éléments rattachés sont cumulatifs ou alternatifs. Affiché sur les liens, dans le plan et en révision. |
 
@@ -54,7 +54,8 @@ Ouvrir le site dans Chrome → menu ⋮ → **Installer l'application** (ou « A
 | `Maj` + glisser dans le vide | Sélection multiple |
 | Double-clic dans le vide | Nœud libre |
 | `1` … `9` | Changer le type |
-| `Alt 1` · `Alt 2` · `Alt 3` · `Alt 4` | Chapitre · Section · Sous-section · Leçon |
+| `Alt 1` … `Alt 5` | Chapitre · Section · Sous-section · Paragraphe · Leçon |
+| `A` | Apparence du nœud (couleur, forme, police) |
 | `.` | Replier / déplier la branche |
 | `R` · `F` | Ranger · Ajuster à l'écran |
 | `H` | Mode masqué : tout est flouté, touche pour révéler (rappel actif) |
@@ -67,7 +68,7 @@ Sur mobile : toucher pour sélectionner, la barre du bas devient contextuelle (E
 
 ### Apprendre un chapitre entier
 
-Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapitre, `Tab` y ajoute des **Sections**, puis sous chacune des **Sous-sections** (`Alt 3`), puis les notions. Les sections et sous-sections sont numérotées toutes seules dans l'ordre du plan ; chacune affiche une jauge de maîtrise de sa branche. Sans rien sélectionner, le panneau affiche le **sommaire** du chapitre. Sur une section : **Réviser cette section** (seulement ses cartes) et **Isoler** (replie les autres sections). En vue **Plan**, la structure devient des intertitres (*Section 1 — …*) et la numérotation I. A. 1. repart sous chacun ; « À retenir » devient un encadré. Au zoom éloigné, le détail s'estompe et la structure reste lisible.
+Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapitre, `Tab` y ajoute des **Sections**, puis sous chacune des **Sous-sections** (`Alt 3`) et des **Paragraphes** (`Alt 4`), puis les notions. Les sections, sous-sections et paragraphes sont numérotés toutes seules dans l'ordre du plan ; chacune affiche une jauge de maîtrise de sa branche. Sans rien sélectionner, le panneau affiche le **sommaire** du chapitre. Sur une section : **Réviser cette section** (seulement ses cartes) et **Isoler** (replie les autres sections). En vue **Plan**, la structure devient des intertitres (*Section 1 — …*) et la numérotation I. A. 1. repart sous chacun ; « À retenir » devient un encadré. Au zoom éloigné, le détail s'estompe et la structure reste lisible.
 
 ### Ranger une carte (disposition)
 
@@ -81,13 +82,20 @@ Crée la carte en choisissant **Un chapitre de cours** : la racine est un Chapit
 
 Le moteur ne se contente pas de ranger : il **construit** la carte pour qu'elle se lise d'un coup d'œil.
 
-- les listes de 4 éléments ou plus deviennent des **peignes** (une épine, des dents droites) ;
 - les étapes d'une **Méthode** et les **Dates** sœurs (3 à 6) deviennent une **frise fléchée** de gauche à droite ;
 - exemples, arrêts, citations, personnes… se placent en **annotation**, en retrait sous l'idée qu'ils illustrent ;
 - « À retenir » se détache ; les traits s'affinent avec la profondeur ;
 - **aides à la lecture** (⋮ → Disposition, activées par défaut) : une teinte douce par branche principale et des pastilles d'ordre 1, 2, 3.
 
 Pour chaque disposition, un optimiseur règle ensuite les écarts (colonnes, groupes, retraits, frises) en gardant ce qui améliore une note de lisibilité : liens qui traversent un nœud, libellés masqués, croisements, longueur des renvois, groupes ambigus, longs arcs, forme par rapport à l'écran.
+
+### Personnaliser une carte (v4.1)
+
+- **Apparence d'un nœud** (`A`, ou *Apparence* dans la barre d'actions) : type et niveau, **couleur** parmi 12 teintes avec la portée *Ce nœud* ou *Tous les « Notion »* (la couleur d'un nœud prime sur celle de son type), **forme** (largeur, hauteur, arrondi — ou la poignée de coin sur la carte), **police** (23 polices : sans, serif, display, mono, manuscrites), **taille**, **gras** et **préfixe numéroté**.
+- **Typographie des cartes** (Réglages › Apparence) : une police, une taille et un gras par niveau (chapitre, section, sous-section, paragraphe, leçon, notion, idée, référence) et une police pour les notes.
+- **Liens libres** : touche un lien (hiérarchique ou renvoi) pour le sélectionner ; trois poignées apparaissent — départ et arrivée (aimantées au bord le plus proche) et courbure. *Apparence* ouvre la fiche du lien : libellé (80 caractères, mes libellés et suggestions), couleur, épaisseur, trait, forme (auto, courbe, droit, coudé), flèche, portée (ce lien ou toute la fourche), *Réinitialiser le tracé*. Un lien retouché se dessine seul, hors de son faisceau.
+- **Stabilisateur des liens** (⋮ → *Disposition…*) : un curseur de *Libre* (courbes) à *Coudes nets* (tracé orthogonal propre), sans déplacer aucun nœud. Il remplace les peignes, supprimés.
+- La **note** s'ouvre en feuille pleine hauteur sur mobile.
 
 Une carte importée sans positions est rangée dès l'import (vignettes justes avant même la première ouverture), puis affinée avec les tailles réelles à l'ouverture.
 
@@ -127,7 +135,7 @@ Un import s'annule depuis la barre qui suit (*Annuler*).
 
 ### Transformer un livre en cours (skill pour IA)
 
-Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : relations du texte relevées d'abord (carte de compréhension : chaque connecteur encodé ou abstention justifiée), cours rangé en dossiers selon son vrai plan (Partie › Titre › Chapitre, une carte par section), cartes du plan pyramidales qui expliquent pourquoi le cours est découpé ainsi (liens libellés « prépare », « complète »…), nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), liens libellés qui se lisent comme des phrases (« entraîne », « illustré par », « de qui ? »), branches libellées, définitions décomposées en composantes, renvois entre sections, et pour chaque carte des **exercices de révision** (questions-réponses, QCM, vrai ou faux) qui couvrent tous ses nœuds et que Ratio propose en révision, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v4.2.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
+Le dossier [`skills/ratio-livre-vers-cours`](skills/ratio-livre-vers-cours) contient un skill portable qui apprend à n'importe quelle IA (Claude, ChatGPT, Gemini…) à transformer un livre ou un PDF de cours en **cours Ratio complet** : relations du texte relevées d'abord (carte de compréhension : chaque connecteur encodé ou abstention justifiée), cours rangé en dossiers selon son vrai plan (Partie › Titre › Chapitre, une carte par section), cartes du plan pyramidales qui expliquent pourquoi le cours est découpé ainsi (liens libellés « prépare », « complète »…), nœuds typés, logique ET/OU, notes Markdown (surligné, tableaux, citations, exercices), liens libellés qui se lisent comme des phrases (« entraîne », « illustré par », « de qui ? »), branches libellées, définitions décomposées en composantes, renvois entre sections, et pour chaque carte des **exercices de révision** (questions-réponses, QCM, vrai ou faux) qui couvrent tous ses nœuds et que Ratio propose en révision, validé avant livraison. Joins le fichier `ratio_book_to_course_compiler_v4.4.json` et ton document, demande « Applique ce skill à ce livre », puis colle la réponse dans **Importer…**. Pour Claude, `SKILL.md` sert de point d'entrée.
 
 Si l'IA a mal organisé une carte, **Ranger** la relit et applique de lui-même les corrections **établies** (relations dites par les notes — « car », « sauf si », « ce qui entretient… » —, exception rangée sous sa règle, exemple sous ce qu'il illustre, doublon fusionné…), chacune vérifiée puis tracée dans le journal de la carte ; *Annuler* juste après les refuse pour de bon. Carte ⋮ › *Améliorer l'organisation…* montre ce journal, les relations probables (à cocher soi-même) et ce qui reste à trancher à la main. (Désactivable : ⋮ › *Disposition…* › *Corriger l'organisation en rangeant*.) Tests du moteur : `node tests/organize.test.cjs` et `node tests/organize-v4.test.cjs` ; jeu de référence et jeu de contrôle indépendant : `node tests/gold/eval.cjs [--set heldout]` ; routage et libellés : `node tests/visual/checkvis.cjs` ; mesure avant/après : `node tests/metrics.cjs [cours.json]` ; accord skill ↔ moteur : `node tests/skill-rules.cjs` ; banc du skill (pipeline, contradictions, taille, exemple contrôlé par le moteur et le validateur) : `node tests/skill-bench.cjs`.
 

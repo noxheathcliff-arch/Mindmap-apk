@@ -46,7 +46,7 @@ console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')
 
 check('version 4 et fichier choisi par le tri', () => {
   ok(/^4\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.2.json', path.basename(file));
+  ok(path.basename(file) === 'ratio_book_to_course_compiler_v4.4.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {
@@ -265,6 +265,24 @@ check('validateur Python : plan absent, peigne, renvoi cassé et lien hors vocab
   r = validate(bad, 'renvoi');
   ok(r.code === 1 && /ref vers une unité absente/.test(r.out), 'renvoi cassé : ' + r.out.trim());
   ok(warnings(r.out).some((l) => /hors vocabulaire/.test(l)), 'lien hors vocabulaire : ' + r.out.trim());
+});
+
+check('v4.4 : type paragraphe et libellés jusqu’à 80 caractères (spec, validateur, Ratio)', () => {
+  ok(skill.node_types.types.some((t) => t.startsWith('paragraphe ·')), 'type paragraphe absent de node_types');
+  ok(S.TYPES.paragraphe && S.FOLDER_KINDS.includes('paragraphe'), 'paragraphe inconnu de Ratio');
+  const base = () => JSON.parse(JSON.stringify(skill.example.json));
+  const longE = (d) => d.maps[0].edges.find((e) => e.kind === 'tree' && e.label);
+  let d = base(); longE(d).label = 'x'.repeat(60);
+  let r = validate(d, 'lib60', ['--hors-droit']);
+  ok(r.code === 0 && warnings(r.out).some((l) => /libellé long/.test(l)), '60 car. : ' + r.out.trim());
+  d = base(); longE(d).label = 'x'.repeat(81);
+  r = validate(d, 'lib81', ['--hors-droit']);
+  ok(r.code === 1 && /plus de 80 caractères/.test(r.out), '81 car. : ' + r.out.trim());
+  d = base(); const ch = d.maps[0].nodes.find((n) => n.type === 'idee');
+  ch.type = 'paragraphe';
+  r = validate(d, 'para', ['--hors-droit']);
+  ok(!/type .*paragraphe|paragraphe.*inconnu|supprimé/.test(r.out), 'paragraphe refusé : ' + r.out.trim());
+  return 'paragraphe accepté, 60 car. averti, 81 car. refusé';
 });
 
 fs.rmSync(tmp, { recursive: true, force: true });

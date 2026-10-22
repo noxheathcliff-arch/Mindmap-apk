@@ -1,23 +1,23 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 56 files · ~245,353 words
+- 58 files · ~254,052 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 8 file(s) not represented in the graph (top: .css 6, (none) 1, .webmanifest 1)
 
 ## Summary
-- 830 nodes · 1880 edges · 46 communities (36 shown, 10 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 147 edges (avg confidence: 0.86)
+- 874 nodes · 1985 edges · 59 communities (48 shown, 11 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 167 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4839a905`
+- Built from commit: `348777d4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Editor
-- store.js
+- render
+- changed
 - layout.js
 - organize.js
 - ui
@@ -55,47 +55,60 @@
 - carnet.js
 - quota-router
 - quota-router.sh
+- Editor
+- store.js
+- mapsOf
+- renderBottomBar
+- onKey
+- mutate
+- paneNode
+- Refonte des cartes — plan (v4.1)
+- childrenOf
+- sanitize
+- fit
+- fonts.js
+- planSequence
 
 ## God Nodes (most connected - your core abstractions)
-1. `Editor()` - 154 edges
-2. `render()` - 37 edges
-3. `onKey()` - 28 edges
-4. `paneNode()` - 27 edges
-5. `mutate()` - 25 edges
+1. `Editor()` - 159 edges
+2. `render()` - 38 edges
+3. `mutate()` - 29 edges
+4. `onKey()` - 29 edges
+5. `paneNode()` - 27 edges
 6. `select()` - 25 edges
-7. `U` - 24 edges
-8. `renderBottomBar()` - 24 edges
+7. `renderBottomBar()` - 25 edges
+8. `U` - 24 edges
 9. `mount()` - 24 edges
 10. `audit()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Éditeur, store` --references--> `sanitize()`  [INFERRED]
   docs/audit-organisation-3.md → js/store.js
+- `4.4 Types de nœuds — trois apparences (v4.1)` --references--> `h()`  [INFERRED]
+  DESIGN.md → js/carnet.js
+- `3. Style par nœud (données)` --references--> `h()`  [INFERRED]
+  docs/plan-refonte-cartes.md → js/carnet.js
+- `3. Style par nœud (données)` --references--> `calm()`  [INFERRED]
+  docs/plan-refonte-cartes.md → js/layout.js
 - `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
   docs/audit-organisation-3.md → js/organize.js
-- `Moteur (`js/organize.js`)` --references--> `mergeNodes()`  [INFERRED]
-  docs/audit-organisation-3.md → js/organize.js
-- `L'essentiel` --references--> `note()`  [INFERRED]
-  skills/ratio-livre-vers-cours/SKILL.md → js/organize.js
-- `4.4 ter Relations d'abord, définitions modulaires` --references--> `applyVerified()`  [INFERRED]
-  DESIGN.md → js/organize.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (46 total, 10 thin omitted)
+## Communities (59 total, 11 thin omitted)
 
-### Community 0 - "Editor"
-Cohesion: 0.05
-Nodes (151): Editor(), addBranches(), addChild(), addFree(), addFreeCenter(), addSibling(), addSource(), anchorOf() (+143 more)
+### Community 0 - "render"
+Cohesion: 0.12
+Nodes (37): addFree(), applyReadOnly(), auditNow(), autoOrganize(), chooseLayout(), customLabels(), declineKeys(), deleteSilently() (+29 more)
 
-### Community 1 - "store.js"
-Cohesion: 0.05
-Nodes (80): addCourse(), addFolder(), addMap(), ancestors(), applyImport(), blank(), branchStats(), canTree() (+72 more)
+### Community 1 - "changed"
+Cohesion: 0.15
+Nodes (22): addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder(), deleteMap() (+14 more)
 
 ### Community 2 - "layout.js"
-Cohesion: 0.10
-Nodes (50): 4.4 Types de nœuds (différenciation monochrome), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), arrange(), bbox(), buildTree(), busDown(), busySides() (+42 more)
+Cohesion: 0.09
+Nodes (56): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), anchorPoint(), arrange(), bbox(), buildTree() (+48 more)
 
 ### Community 3 - "organize.js"
 Cohesion: 0.11
@@ -106,8 +119,8 @@ Cohesion: 0.10
 Nodes (10): add(), close(), dismiss(), get(), hideTip(), motion, ui, showTip() (+2 more)
 
 ### Community 5 - "app.js"
-Cohesion: 0.15
-Nodes (24): applyMotion(), applyTheme(), buildNav(), centerAction(), app, logo(), luxCount(), luxMark() (+16 more)
+Cohesion: 0.14
+Nodes (27): applyMotion(), applyNoteTypo(), applyTheme(), buildNav(), centerAction(), app, logo(), luxCount() (+19 more)
 
 ### Community 7 - "colors.js"
 Cohesion: 0.25
@@ -170,8 +183,8 @@ Cohesion: 0.44
 Nodes (8): courseRow(), dayDeck(), forecastCard(), loyaltyCard(), masteryRing(), mount(), sessionHref(), weakList()
 
 ### Community 22 - "Utilisation"
-Cohesion: 0.20
-Nodes (10): Apprendre un chapitre entier, Couleurs des nœuds (option), Dans une carte, Lecture seule, Notes (Markdown), Ranger une carte (disposition), Révision, Sauvegarder, importer, partager (+2 more)
+Cohesion: 0.18
+Nodes (11): Apprendre un chapitre entier, Couleurs des nœuds (option), Dans une carte, Lecture seule, Notes (Markdown), Personnaliser une carte (v4.1), Ranger une carte (disposition), Révision (+3 more)
 
 ### Community 23 - "folders.test.cjs"
 Cohesion: 0.29
@@ -229,23 +242,71 @@ Nodes (34): Carnet(), carve(), close(), cutAt(), draw(), fit(), flag(), _flipCov
 Cohesion: 0.22
 Nodes (8): 1. Caveman (toujours), 2. Graphify avant toute lecture de code, 3. Routage du modèle (tri à chaque requête), 4. Effort et réflexion, 5. Hygiène du contexte, 6. Garde-fous coûteux, 7. Suivi hebdomadaire (rappels à l'utilisateur, une ligne max, rarement), quota-router
 
+### Community 46 - "Editor"
+Cohesion: 0.10
+Nodes (38): Editor(), anchorOf(), anchors(), applyStyle(), bez(), branchCurve(), bundleGeometry(), bundleLabel() (+30 more)
+
+### Community 47 - "store.js"
+Cohesion: 0.11
+Nodes (12): courseActivity(), coursesSorted(), exercisesFor(), folderPath(), locate(), prefixOf(), rate(), roman() (+4 more)
+
+### Community 48 - "mapsOf"
+Cohesion: 0.14
+Nodes (22): branchStats(), canTree(), courseStats(), deleteCourse(), descendants(), dueCount(), exportCourse(), folderStats() (+14 more)
+
+### Community 49 - "renderBottomBar"
+Cohesion: 0.24
+Nodes (22): addChild(), addSibling(), ctxItems(), deleteNodes(), duplicateBranch(), paint(), guard(), logicMenu() (+14 more)
+
+### Community 50 - "onKey"
+Cohesion: 0.25
+Nodes (18): addFreeCenter(), applyPaneState(), buildVToolbar(), centerOn(), closePane(), closePaneIfOverlay(), ensureVisible(), isPaneShown() (+10 more)
+
+### Community 51 - "mutate"
+Cohesion: 0.25
+Nodes (17): addBranches(), connect(), createFork(), deleteEdge(), deleteFork(), detachBranch(), edgeItems(), edgeMenuItems() (+9 more)
+
+### Community 52 - "paneNode"
+Cohesion: 0.20
+Nodes (14): addSource(), continueList(), dueLabel(), editTable(), fireInput(), fmtBtn(), indentLine(), paneNode() (+6 more)
+
+### Community 53 - "Refonte des cartes — plan (v4.1)"
+Cohesion: 0.15
+Nodes (12): 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur, 5. Typographie, 6. Liens, 7. Peigne → stabilisateur (+4 more)
+
+### Community 54 - "childrenOf"
+Cohesion: 0.21
+Nodes (13): ancestors(), childrenOf(), isComponent(), isReviewable(), kickerOf(), node(), parentEdge(), parentOf() (+5 more)
+
+### Community 55 - "sanitize"
+Cohesion: 0.17
+Nodes (13): blank(), cleanEdgeStyle(), cleanNodeStyle(), emit(), load(), normalizeGroups(), readAll(), reset() (+5 more)
+
+### Community 56 - "fit"
+Cohesion: 0.27
+Nodes (13): animateView(), applyView(), autoPan(), bbox(), buildBar(), fit(), initialView(), onDragStart() (+5 more)
+
+### Community 58 - "planSequence"
+Cohesion: 0.40
+Nodes (5): hasFolders(), planOf(), planSequence(), shiftUnit(), unitsIn()
+
 ## Knowledge Gaps
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `rate()` connect `store.js` to `ui`?**
-  _High betweenness centrality (0.264) - this node is a cross-community bridge._
+- **Why does `rate()` connect `store.js` to `changed`, `ui`?**
+  _High betweenness centrality (0.290) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
-- **Should `Editor` be split into smaller, more focused modules?**
-  _Cohesion score 0.05119933829611249 - nodes in this community are weakly interconnected._
-- **Why does `4. Changements` connect `organize.js` to `layout.js`?**
-  _High betweenness centrality (0.236) - this node is a cross-community bridge._
+- **Should `render` be split into smaller, more focused modules?**
+  _Cohesion score 0.11740890688259109 - nodes in this community are weakly interconnected._
+- **Why does `sanitize()` connect `sanitize` to `changed`, `layout.js`, `organize.js`, `store.js`, `Refonte des cartes — plan (v4.1)`?**
+  _High betweenness centrality (0.258) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **Should `store.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.05136168179646441 - nodes in this community are weakly interconnected._
-- **Why does `onDown()` connect `Editor` to `ui`?**
-  _High betweenness centrality (0.236) - this node is a cross-community bridge._
+- **Should `changed` be split into smaller, more focused modules?**
+  _Cohesion score 0.1471861471861472 - nodes in this community are weakly interconnected._
+- **Should `layout.js` be split into smaller, more focused modules?**
+  _Cohesion score 0.08650937689050212 - nodes in this community are weakly interconnected._

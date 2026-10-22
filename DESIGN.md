@@ -143,7 +143,22 @@ Direction retenue : **« Contexte »** (n° 8 des dix pistes) — l'Expressif M3
 - **Barre contextuelle** (`app.setActions`) : les pages qui en ont besoin (cours, Réviser, éditeur) déclarent leurs actions ; l'onglet Cours n'en a pas (« Réviser » est dans le héros, « Nouveau cours » est le FAB) ; l'action principale est un bouton plein. Seule, elle flotte comme un FAB étendu (56 dp, coins 16). Sur un cours, la barre est **vibrante** et prend les couleurs du cours ; sur mobile elle remplace la navigation (`replaceNav`). À côté de la navigation, l'action garde un libellé court (« Commencer »).
 - **Éditeur** : barre verticale flottante (grand écran) et barre vibrante flottante (mobile) ; panneau de note en *side sheet* tonal sans filet.
 
-### 4.4 Types de nœuds (différenciation monochrome)
+### 4.4 Types de nœuds — trois apparences (v4.1)
+Une silhouette par type faisait du bruit. Depuis la v4.1, **trois apparences** seulement ; le type reste (sur-titre, question de révision, rangement), le niveau se lit par la **typographie**.
+
+| Apparence | Types | Traitement |
+|---|---|---|
+| **Notion** | chapitre, section, sous-section, paragraphe, leçon, notion, définition, à retenir | aplat sombre (encre ou teinte), coins larges |
+| **Idée** | idée, méthode, étape, conseil, exercice, date, chiffre, formule | inchangée : discrète, sans bordure |
+| **Référence** | citation, texte, jurisprudence, doctrine, étude, personne | serif italique, filet gauche, fond `surface-container-low` |
+
+- **Style par nœud** (`color`, `w` 80–720, `h` 40–600, `r` 0–40, `font`, `fs` 10–64, `bold`, `pre`) ; par carte `typeColors{type}` (« tous les … ») et `calm` 0–1 (stabilisateur). Valeurs hors bornes retirées par `sanitize` : les anciennes cartes s'ouvrent intactes.
+- **Couleur** : 12 teintes nommées + ardoise, partagées nœuds et liens ; chaque apparence dérive ses aplats en OKLCH (clair/sombre, contraste ≥ 4,5:1). Ordre de priorité : nœud › type › réglage global « Couleurs ».
+- **Typographie** : 23 polices Google Fonts chargées à la demande (`R.fonts.ensure`), défauts par niveau dans `S.TYPO_LEVELS` ; le sélecteur montre chaque police dans sa graphie ; `--nf`, `--nfs`, `--nfw` sur le nœud ; le gabarit de rangement tient compte de la taille et des dimensions manuelles.
+- **Liens** : `style{c, w 1–8, dash, shape, arrow}`, ancres `a1/a2 {s: t|r|b|l, t: 0–1}`, courbure `bend{x,y}` ; libellé ≤ 80 caractères. Poignées : anticipation à la prise, rebond au lâcher (Illusion of Life), `prefers-reduced-motion` respecté.
+- **Peigne supprimé** (faisceaux implicites, dents, empilement) ; fourches explicites et ET/OU gardées. **Stabilisateur** : 0 = courbes libres, 1 = coudes orthogonaux ; entre les deux, interpolation par abscisse curviligne puis lissage Catmull-Rom.
+
+#### Historique : différenciation monochrome par type (jusqu'à v4.0)
 | Type | Sur-titre | Traitement |
 |---|---|---|
 | Notion | — | plein inversé (encre), forme XL |
@@ -187,13 +202,14 @@ Le menu *Type* range les 43 types en familles : **Structure**, **Notion**, **Cau
 | Chapitre | Chapitre *n* (pastille `secondary-container`) | plein inversé, serif 26 px, angles 10 px, élévation 2 |
 | Section (et Leçon) | SECTION *n* | bordure encre 2,5 px, serif 21 px |
 | Sous-section | SOUS-SECTION *n* | bordure 2 px, sans-serif 16 px semi-gras |
+| Paragraphe (v4.1) | PARAGRAPHE *n* | apparence Notion, typographie du niveau |
 
 - **Numérotation automatique** : rang parmi les frères du même type (dans l'ordre vertical du plan) ; pas de numéro quand le type est seul à son niveau.
 - **Jauge de branche** : maîtrise de tout ce qui descend du nœud (barre de 4 px, `scaleX`, 360 ms).
 - **Liens « colonne vertébrale »** : les liens hiérarchiques issus d'un chapitre ou d'une leçon sont plus appuyés (2,4 px) ; l'épaisseur décroît avec la profondeur (2,6 → 2 → 1,5 px).
 - **Disposition « Libre » (préférée par défaut)** : rendu fait à la main, inspiré des cartes XMind. Base centrée **sans colonnes alignées ni peignes**, puis un léger désordre déterministe par nœud (±34 px en profondeur, ±14 px en hauteur, transmis à toute la sous-branche) et un **éventail** (les frères des extrémités se rapprochent du parent). Les liens partent étalés sur le flanc du parent et déjà orientés vers leur enfant (bouquet), chacun sa courbe. Garde-fous : écart parent → enfant ≥ 64 px (+7 px par enfant au-delà de 4, plafond 120), chevauchements écartés, et **l'amplitude baisse (100 → 55 → 25 → 0 %) tant qu'un lien traverse un nœud ou qu'un libellé masque un texte** — le désordre est permis, pas le fouillis. Banc d'essai (16 cartes réelles) : 0 nœud traversé, 0 croisement, 0 libellé masqué. Les dispositions droites (vers la droite, centrée, pyramide) restent au choix dans *Disposition*.
 - **Distance de sécurité (toutes dispositions)** : deux nœuds gardent toujours ≥ 16 px entre eux (écarts : appuis 16, feuilles 20, groupes 26–28). Une passe finale `separate()` pousse le nœud trop proche avec toute sa sous-branche, le long de l'axe des frères. Un nœud a **la même taille sur tous les écrans** (plus de largeur réduite sur mobile), et à l'ouverture d'une carte les nœuds collés (ancienne version, autre police) sont écartés sans tout re-ranger. Banc d'essai : 16 cartes × 5 dispositions, écart minimal 16 px (avant : 6 px, 49 cas sous 16 px).
-- **Constructions de lecture** (dispositions droites) : *peigne* (épine + dents droites) dès 4 enfants ; *frise* fléchée pour 3–6 étapes d'une méthode ou 3–6 dates ; *annotations* en retrait pour les appuis (exemple, arrêt, doctrine, texte, citation, personne) ; « À retenir » détaché par un espace.
+- **Constructions de lecture** (dispositions droites) : *frise* fléchée pour 3–6 étapes d'une méthode ou 3–6 dates ; *annotations* en retrait pour les appuis (exemple, arrêt, doctrine, texte, citation, personne) ; « À retenir » détaché par un espace.
 - **Aides à la lecture** (activées par défaut, ⋮ → Disposition) : une teinte douce par branche principale sur les traits seulement (OKLCH, angle d'or entre branches, nœuds toujours monochromes) et des pastilles d'ordre 1, 2, 3… sur les branches principales qui ne sont pas déjà numérotées.
 - **Zoom sémantique** : sous 45 %, le contenu s'estompe (opacité 0,5) et seuls les sur-titres de structure restent affichés.
 - **Mini-fonctions** : « Réviser ce chapitre / cette leçon » (révision limitée à la branche, route `#/reviser/carte/:id/:nœud`), « Isoler » (replie les autres nœuds du même type, cadre la branche), sommaire dans le panneau, enfant par défaut qui suit le plan (Chapitre → Leçon), raccourcis `Alt 1–3`.

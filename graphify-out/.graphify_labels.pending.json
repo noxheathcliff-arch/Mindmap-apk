@@ -1,6 +1,6 @@
 {
-  "0": "Editor",
-  "1": "store.js",
+  "0": "render",
+  "1": "changed",
   "2": "layout.js",
   "3": "organize.js",
   "4": "ui",
@@ -44,5 +44,18 @@
   "42": "quota-router.sh",
   "43": "haiku-worker.md",
   "44": "quota-triage.md",
-  "45": "sonnet-worker.md"
+  "45": "sonnet-worker.md",
+  "46": "Editor",
+  "47": "store.js",
+  "48": "mapsOf",
+  "49": "renderBottomBar",
+  "50": "onKey",
+  "51": "mutate",
+  "52": "paneNode",
+  "53": "Refonte des cartes — plan (v4.1)",
+  "54": "childrenOf",
+  "55": "sanitize",
+  "56": "fit",
+  "57": "fonts.js",
+  "58": "planSequence"
 }
