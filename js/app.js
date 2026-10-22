@@ -784,7 +784,7 @@
         ['R', 'Ranger la carte'], ['F', 'Ajuster à l’écran'], ['+ / −', 'Zoom'], ['H', 'Mode masqué (révision)'],
         ['1 … 9', 'Changer le type du nœud'], ['Alt 1 … 5', 'Chapitre · Section · Sous-section · Paragraphe · Leçon'], ['P', 'Basculer Carte / Plan'],
       ]],
-      ['Révision', [['Espace', 'Afficher la réponse'], ['1 · 2 · 3', 'À revoir · Compris · Maîtrisé']]],
+      ['Révision', [['Espace', 'Afficher la réponse'], ['1 · 2 · 3', 'Oublié · Retrouvé · Évident']]],
     ];
     const body = h('div.shortcuts', groups.map(([g, rows]) => h('section',
       h('h3.settings-h', g),
@@ -800,7 +800,7 @@
     const steps = [
       { icon: 'folder', title: 'Range par cours', text: 'Un cours = un dossier. Tu y ranges toutes les cartes du même enseignement : droit des obligations, droit administratif…' },
       { icon: 'child', title: 'Décompose chaque notion', text: 'Une carte part d’une notion et se décompose : définition, conditions de fond et de forme (cumulatives ET / alternatives OU), exceptions, jurisprudence. Chaque nœud a sa note.' },
-      { icon: 'cards', title: 'Révise en rappel actif', text: 'Pioneer transforme tes cartes en questions. Tu notes ta réponse — À revoir, Compris, Maîtrisé — et la répétition espacée te les représente au bon moment.' },
+      { icon: 'cards', title: 'Révise en rappel actif', text: 'Pioneer transforme tes cartes en questions. Tu dis comment elle t’est revenue — Oublié, Retrouvé, Évident — et la répétition espacée te les représente au bon moment.' },
     ];
     let i = 0, busy = false;
     const art = h('div.onb-art');

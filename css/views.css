@@ -398,64 +398,90 @@
 .reveal-btn:active:not(:disabled) { border-radius: var(--shape-l); }
 .hint-btn { height: 56px; flex: none; }
 .review-hint { font: var(--body-s); color: var(--on-surface-variant); text-align: center; }
-/* notes : trois touches de verre dépoli sur une barre flottante. Chaque note a son accent
-   (rouge · ambre · bleu) : au repos une teinte à 9 %, au doigt l'encre se répand depuis le point
-   d'appui, la touche choisie se gonfle, les deux autres s'effacent, puis la page se tourne. */
+/* notes : trois touches mécaniques. Un capuchon clair posé sur une jupe à l'accent
+   (rouge · ambre · bleu) : le doigt l'enfonce, la touche choisie reste en bas et s'allume,
+   son icône s'anime (la boucle repart, la clé tourne, l'éclat jaillit), les deux autres
+   s'affaissent, puis la page se tourne. Icônes au trait, dessinées à l'arrivée. */
 .review-actions .rate-row {
-  --rr: 30px;
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-  width: min(560px, 100%); padding: 6px;
-  border-radius: var(--rr);
-  background: color-mix(in srgb, var(--surface-container-lowest) 78%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6);
-  border: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
-  box-shadow: 0 1px 0 rgb(255 255 255 / .55) inset, 0 1px 2px rgb(20 24 40 / .06), 0 8px 24px -6px rgb(20 24 40 / .16), 0 24px 48px -24px rgb(20 24 40 / .22);
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  width: min(540px, 100%); padding: 0 0 2px;
 }
-.rate-revoir   { --acc: var(--error);   --on-acc: var(--on-error); }
-.rate-compris  { --acc: #a35f00;        --on-acc: #fff; }
-.rate-maitrise { --acc: var(--primary); --on-acc: var(--on-primary); }
-:root[data-theme="dark"] .rate-compris { --acc: #ffb95c; --on-acc: #2b1700; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rate-compris { --acc: #ffb95c; --on-acc: #2b1700; } }
-.rate-btn {
-  --px: 50%; --py: 50%;
-  display: grid; justify-items: center; align-content: center; gap: 3px;
-  min-height: 84px; padding: 10px 6px 9px;
-  border-radius: calc(var(--rr) - 6px);
-  background: color-mix(in srgb, var(--acc) 9%, var(--surface-container-lowest));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 14%, transparent) inset;
-  color: var(--on-surface);
-  transition: transform 420ms var(--spring-default), opacity 220ms var(--ease-out), filter 220ms var(--ease-out), color 160ms var(--ease-out), box-shadow 220ms var(--ease-out);
+.rate-revoir   { --acc: var(--error); }
+.rate-compris  { --acc: #b36800; }
+.rate-maitrise { --acc: var(--primary); }
+.rate-key {
+  --key-h: 6px;
+  --skirt: color-mix(in srgb, var(--acc) 72%, #000);
+  --face: var(--surface-container-lowest);
+  position: relative; display: block; padding: 0 0 var(--key-h); border: 0; background: none;
+  color: var(--on-surface); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none; border-radius: 20px;
+  transition: opacity 260ms var(--ease-out), filter 260ms var(--ease-out), transform 420ms var(--spring-default);
 }
-.rate-btn::before { background: var(--acc); }
-/* l'encre : un disque à l'accent qui part du point d'appui */
-.rate-btn::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(circle at 50% 0%, rgb(255 255 255 / .22), transparent 60%), var(--acc);
-  clip-path: circle(0 at var(--px) var(--py));
-  transition: clip-path 380ms cubic-bezier(.2, .8, .2, 1);
+.rate-key:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.rate-cap {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 2px;
+  min-height: 80px; padding: 11px 6px 9px; border-radius: 18px; overflow: hidden; isolation: isolate;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 4%, var(--face)), color-mix(in srgb, var(--acc) 11%, var(--face)));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent) inset,
+    0 1.5px 0 rgb(255 255 255 / .7) inset,
+    0 var(--key-h) 0 var(--skirt),
+    0 calc(var(--key-h) + 3px) 14px -4px color-mix(in srgb, var(--acc) 55%, rgb(0 0 0 / .4));
+  transition: transform 300ms var(--spring-default), box-shadow 300ms var(--spring-default), color 160ms var(--ease-out);
 }
-.rate-btn.is-ink::after, .rate-btn.is-pick::after { clip-path: circle(150% at var(--px) var(--py)); }
-.rate-btn.is-ink, .rate-btn.is-pick { color: var(--on-acc); }
-.rate-btn:active { transform: scale(.95); transition-duration: 120ms, 220ms, 220ms, 160ms, 220ms; transition-timing-function: var(--ease-out); }
+/* l'allumage : l'accent monte du bas du capuchon */
+.rate-cap::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 0%, rgb(255 255 255 / .28), transparent 62%), var(--acc);
+  clip-path: inset(100% 0 0 0 round 18px);
+  transition: clip-path 260ms cubic-bezier(.2, .8, .2, 1);
+}
+@media (hover: hover) { .rate-key:hover .rate-cap { transform: translateY(-1px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent) inset, 0 1.5px 0 rgb(255 255 255 / .7) inset, 0 calc(var(--key-h) + 1px) 0 var(--skirt), 0 calc(var(--key-h) + 6px) 18px -4px color-mix(in srgb, var(--acc) 55%, rgb(0 0 0 / .4)); } }
+.rate-key.is-down .rate-cap, .rate-key.is-pick .rate-cap {
+  transform: translateY(calc(var(--key-h) - 1px));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent) inset, 0 1px 0 var(--skirt), 0 2px 4px -1px rgb(0 0 0 / .25);
+  transition-duration: 90ms; transition-timing-function: var(--ease-out);
+}
+.rate-key.is-pick .rate-cap { color: #fff; }
+.rate-key.is-pick .rate-cap::before { clip-path: inset(0 0 0 0 round 18px); }
 .rate-ic {
-  display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 3px; border-radius: 50%;
-  background: var(--acc); color: var(--on-acc);
-  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--acc) 70%, transparent);
-  transition: transform 460ms var(--spring-default), background 160ms, color 160ms;
+  width: 26px; height: 26px; margin-bottom: 4px; overflow: visible;
+  fill: none; stroke: var(--acc); stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round;
+  transition: stroke 160ms var(--ease-out);
 }
-.rate-btn .mastery { color: inherit; border-width: 1.75px; }
-.rate-btn.is-ink .rate-ic, .rate-btn.is-pick .rate-ic { background: var(--on-acc); color: var(--acc); }
-.rate-btn:hover .rate-ic { transform: translateY(-1px) scale(1.06); }
-.rate-l { font: var(--title-s); font-weight: 600; letter-spacing: -.005em; }
-.rate-next { font: var(--label-s); font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 68%, transparent); }
-.rate-btn.is-ink .rate-next, .rate-btn.is-pick .rate-next { color: inherit; opacity: .85; }
-/* le choix : la touche se gonfle (ressort), l'icône fait un tour, les autres reculent */
-.rate-row.picked .rate-btn { pointer-events: none; }
-.rate-row.picked .rate-btn:not(.is-pick) { opacity: .32; transform: scale(.94); filter: saturate(.4); }
-.rate-btn.is-pick { transform: scale(1.04); box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--acc) 75%, transparent); }
-.rate-btn.is-pick .rate-ic { transform: scale(1.18) rotate(-12deg); }
-.rate-kbd { position: absolute; top: 7px; right: 9px; font-size: 10px; line-height: 15px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, currentColor 10%, transparent); border: 0; color: inherit; opacity: .7; }
-:root[data-motion="reduce"] .rate-btn, :root[data-motion="reduce"] .rate-btn::after, :root[data-motion="reduce"] .rate-ic { transition: none; }
+.rate-ic path { stroke-dasharray: 1; stroke-dashoffset: 0; animation: rate-draw 520ms calc(140ms + var(--i) * 110ms) cubic-bezier(.65, 0, .35, 1) backwards; }
+@keyframes rate-draw { from { stroke-dashoffset: 1; } }
+.rate-maitrise .rate-ic path:first-child { fill: color-mix(in srgb, var(--acc) 16%, transparent); }
+.rate-key.is-pick .rate-ic { stroke: currentColor; }
+.rate-key.is-pick .rate-ic path:first-child { fill: none; }
+.rate-revoir.is-pick .rate-ic   { animation: rate-loop 560ms var(--ease-out); }
+.rate-compris.is-pick .rate-ic  { animation: rate-turn 460ms var(--spring-default); }
+.rate-maitrise.is-pick .rate-ic { animation: rate-pop 520ms var(--spring-default); }
+@keyframes rate-loop { to { transform: rotate(-360deg); } }
+@keyframes rate-turn { 40% { transform: rotate(-28deg); } to { transform: rotate(0); } }
+@keyframes rate-pop { 0% { transform: scale(1); } 35% { transform: scale(1.35) rotate(18deg); } to { transform: scale(1.12) rotate(0); } }
+.rate-l { font: var(--title-m); font-weight: 650; letter-spacing: -.01em; line-height: 1.15; }
+.rate-next { font: var(--label-s); font-variant-numeric: tabular-nums; color: color-mix(in srgb, currentColor 62%, transparent); white-space: nowrap; }
+.rate-key.is-pick .rate-next { color: rgb(255 255 255 / .82); }
+/* le choix fait : les autres touches s'affaissent et pâlissent */
+.rate-row.picked .rate-key { pointer-events: none; }
+.rate-row.picked .rate-key:not(.is-pick) { opacity: .35; filter: saturate(.3); transform: translateY(3px) scale(.96); }
+.rate-kbd { position: absolute; top: 7px; right: 8px; font-size: 10px; line-height: 15px; padding: 0 5px; border-radius: 5px; background: color-mix(in srgb, currentColor 8%, transparent); border: 0; color: inherit; opacity: .6; }
+:root[data-theme="dark"] .rate-key { --face: var(--surface-container-high); --skirt: color-mix(in srgb, var(--acc) 50%, #000); }
+:root[data-theme="dark"] .rate-compris { --acc: #ffb95c; }
+:root[data-theme="dark"] .rate-cap { box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent) inset, 0 1px 0 rgb(255 255 255 / .08) inset, 0 var(--key-h) 0 var(--skirt), 0 calc(var(--key-h) + 3px) 14px -4px rgb(0 0 0 / .6); }
+:root[data-theme="dark"] .rate-key.is-pick .rate-cap { color: #10131a; }
+:root[data-theme="dark"] .rate-key.is-pick .rate-next { color: rgb(16 19 26 / .75); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rate-key { --face: var(--surface-container-high); --skirt: color-mix(in srgb, var(--acc) 50%, #000); }
+  :root:not([data-theme="light"]) .rate-compris { --acc: #ffb95c; }
+  :root:not([data-theme="light"]) .rate-cap { box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent) inset, 0 1px 0 rgb(255 255 255 / .08) inset, 0 var(--key-h) 0 var(--skirt), 0 calc(var(--key-h) + 3px) 14px -4px rgb(0 0 0 / .6); }
+  :root:not([data-theme="light"]) .rate-key.is-pick .rate-cap { color: #10131a; }
+  :root:not([data-theme="light"]) .rate-key.is-pick .rate-next { color: rgb(16 19 26 / .75); }
+}
+:root[data-motion="reduce"] .rate-key, :root[data-motion="reduce"] .rate-cap, :root[data-motion="reduce"] .rate-cap::before { transition: none; }
+:root[data-motion="reduce"] .rate-ic, :root[data-motion="reduce"] .rate-ic path { animation: none; }
 @media (hover: none) { .rate-kbd, .btn-kbd { display: none; } }
 .review-stage.is-end .review-actions { display: none; }
 :root[data-motion="reduce"] .act-set.enter { animation-name: rm-fade !important; }

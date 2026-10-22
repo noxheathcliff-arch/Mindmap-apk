@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-22)
 
 ## Corpus Check
-- 60 files · ~274,026 words
+- 60 files · ~274,293 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 933 nodes · 2122 edges · 58 communities (47 shown, 11 thin omitted)
+- 934 nodes · 2124 edges · 58 communities (47 shown, 11 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 183 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8e74f975`
+- Built from commit: `3af45163`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -126,8 +126,8 @@ Cohesion: 0.25
 Nodes (19): apply(), closePairs(), contrast(), css(), currentTheme(), derive(), distance(), ensureContrast() (+11 more)
 
 ### Community 8 - "mount"
-Cohesion: 0.20
-Nodes (26): hintFor(), mount(), advance(), build(), choose(), commit(), correct(), current() (+18 more)
+Cohesion: 0.19
+Nodes (27): hintFor(), mount(), advance(), build(), choose(), commit(), correct(), current() (+19 more)
 
 ### Community 9 - "eval.cjs"
 Cohesion: 0.17
@@ -142,12 +142,12 @@ Cohesion: 0.14
 Nodes (25): bounds(), center(), frame(), kick(), measure(), openReview(), orbitEnd(), orbitMove() (+17 more)
 
 ### Community 12 - "metrics.cjs"
-Cohesion: 0.17
+Cohesion: 0.19
 Nodes (14): applySure(), fall, files, fs, heading(), indicators(), measure(), n0() (+6 more)
 
 ### Community 13 - "organize.test.cjs"
-Cohesion: 0.11
-Nodes (12): applyAll(), edge(), fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath (+4 more)
+Cohesion: 0.18
+Nodes (8): fixesOf(), fs, path, { S, O, makeMap, fixesOf, applyAll, edge }, skill, skillPath, sure(), test()
 
 ### Community 14 - "Inventaire"
 Cohesion: 0.17
@@ -170,12 +170,12 @@ Cohesion: 0.36
 Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), write()
 
 ### Community 19 - "harness.cjs"
-Cohesion: 0.25
-Nodes (6): ctx, files, fs, path, root, vm
+Cohesion: 0.12
+Nodes (10): applyAll(), ctx, edge(), files, fs, path, root, vm (+2 more)
 
 ### Community 20 - "gen.cjs"
-Cohesion: 0.27
-Nodes (7): Dans une carte, dense(), fs, L(), N(), path, T()
+Cohesion: 0.31
+Nodes (6): dense(), fs, L(), N(), path, T()
 
 ### Community 21 - "revhub.js"
 Cohesion: 0.44
@@ -186,7 +186,7 @@ Cohesion: 0.17
 Nodes (12): 1. Le besoin (Lean UX), 2. Inventaire de contenu, 6. Composition par écran, 7. Lois de l'UX appliquées, 8. Modèle Hooked (Nir Eyal), Desktop (large / extra-large), Hypothèses (format Lean UX), Mobile (compact, Android) (+4 more)
 
 ### Community 23 - "folders.test.cjs"
-Cohesion: 0.25
+Cohesion: 0.29
 Nodes (4): course(), node(), { S, win }, win
 
 ### Community 24 - "checkvis.cjs"
@@ -210,8 +210,8 @@ Cohesion: 0.31
 Nodes (9): 4.6 Cours — des dossiers (dans « Mes cours » seulement), courseCard(), foldGestures(), mount(), openCourse(), reviewBtn(), sessionHero(), tipCard() (+1 more)
 
 ### Community 29 - "Utilisation"
-Cohesion: 0.20
-Nodes (10): Apprendre un chapitre entier, Couleurs des nœuds (option), Lecture seule, Notes (Markdown), Personnaliser une carte (v4.1), Ranger une carte (disposition), Révision, Sauvegarder, importer, partager (+2 more)
+Cohesion: 0.18
+Nodes (11): Apprendre un chapitre entier, Couleurs des nœuds (option), Dans une carte, Lecture seule, Notes (Markdown), Personnaliser une carte (v4.1), Ranger une carte (disposition), Révision (+3 more)
 
 ### Community 30 - "render"
 Cohesion: 0.80
@@ -226,7 +226,7 @@ Cohesion: 0.21
 Nodes (18): contentsText(), countUp(), folderBlock(), levelBlocks(), mapCard(), mount(), notFound(), numeral() (+10 more)
 
 ### Community 33 - "exercises.test.cjs"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (4): course(), EX, node(), { S }
 
 ### Community 39 - "Mindmap-apk"

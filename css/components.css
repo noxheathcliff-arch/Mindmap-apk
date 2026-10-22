@@ -3,21 +3,21 @@
    ========================================================================== */
 
 /* ---- Couche d'état commune -------------------------------------------- */
-.btn, .icon-btn, .fab, .chip, .menu-item, .list-item, .seg-btn, .ctx-btn, .vt-btn, .fmt-btn, .rate-btn, .ripple {
+.btn, .icon-btn, .fab, .chip, .menu-item, .list-item, .seg-btn, .ctx-btn, .vt-btn, .fmt-btn, .ripple {
   position: relative;
   overflow: hidden;
   isolation: isolate;
   -webkit-user-select: none; user-select: none;
 }
 .btn::before, .icon-btn::before, .fab::before, .chip::before, .menu-item::before, .list-item::before,
-.seg-btn::before, .ctx-btn::before, .vt-btn::before, .fmt-btn::before, .rate-btn::before, .ripple::before {
+.seg-btn::before, .ctx-btn::before, .vt-btn::before, .fmt-btn::before, .ripple::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit;
   background: currentColor; opacity: 0; pointer-events: none; z-index: -1;
   transition: opacity var(--dur-sm) var(--ease-out);
 }
 .btn:hover::before, .icon-btn:hover::before, .fab:hover::before, .chip:hover::before, .menu-item:hover::before,
 .list-item:hover::before, .seg-btn:hover::before, .ctx-btn:hover::before, .vt-btn:hover::before,
-.fmt-btn:hover::before, .rate-btn:hover::before, .ripple:hover::before { opacity: var(--state-hover); }
+.fmt-btn:hover::before, .ripple:hover::before { opacity: var(--state-hover); }
 .btn:focus-visible::before, .icon-btn:focus-visible::before, .menu-item:focus-visible::before,
 .list-item:focus-visible::before, .ripple:focus-visible::before { opacity: var(--state-focus); }
 

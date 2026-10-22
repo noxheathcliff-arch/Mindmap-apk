@@ -24,12 +24,35 @@
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
 
-  function nextLabel(review, rating) {
+  function nextLabel(review, rating, back) {
     const b = review.box;
-    if (rating === 'revoir') return 'demain';
     const box = rating === 'compris' ? Math.min(5, Math.max(1, b + 1)) : Math.min(5, Math.max(2, b + 2));
-    const d = S.INTERVALS[box];
-    return d === 1 ? 'demain' : `dans ${d} j`;
+    const d = rating === 'revoir' ? 1 : S.INTERVALS[box];
+    const when = d === 1 ? 'demain' : d >= 28 ? 'dans 1 mois' : d % 7 === 0 ? `dans ${d / 7} sem.` : `dans ${d} j`;
+    return back ? 'revient ' + when : when;
+  }
+
+  /* Noter : le vocabulaire du rappel (ce qui s'est passé dans ta tête), pas celui du niveau */
+  const WORDS = {
+    card: { revoir: 'Oublié', compris: 'Retrouvé', maitrise: 'Évident' },
+    ex: { revoir: 'Raté', compris: 'Réussi', maitrise: 'Facile' },
+  };
+  /* Icônes dessinées au trait (24 × 24, trait 2) : la boucle qui ramène · la clé qui ouvre · l'éclat */
+  const RATE_ICONS = {
+    revoir: ['M4.5 9.5A8 8 0 1 1 4 14', 'M4 4.5v5h5'],
+    compris: ['M8.5 15.5a4.5 4.5 0 1 1 3.2-1.3L20 22', 'M16.5 18.5l2-2', 'M8.5 11.5h.01'],
+    maitrise: ['M12 2.5c.7 5 2.5 6.8 7.5 7.5-5 .7-6.8 2.5-7.5 7.5-.7-5-2.5-6.8-7.5-7.5 5-.7 6.8-2.5 7.5-7.5Z', 'M19 17v4', 'M17 19h4'],
+  };
+  function rateIcon(rating) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); svg.classList.add('rate-ic');
+    RATE_ICONS[rating].forEach((d, i) => {
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', d); p.setAttribute('pathLength', '1'); p.style.setProperty('--i', i);
+      svg.append(p);
+    });
+    return svg;
   }
 
   /** Indice : la forme de la réponse sans la réponse (nombre d'éléments, leur nature, l'initiale) */
@@ -345,20 +368,21 @@
           return;
         }
         if (state === 'rate') {
-          const label = it.ex ? { revoir: 'Pas trouvé', compris: 'Trouvé', maitrise: 'Facile' } : null;
-          // l'encre part du point d'appui ; un doigt qui glisse hors de la touche la retire
-          const ink = (e) => { const b = e.currentTarget, r = b.getBoundingClientRect();
-            b.style.setProperty('--px', (e.clientX - r.left) + 'px'); b.style.setProperty('--py', (e.clientY - r.top) + 'px'); b.classList.add('is-ink'); };
-          const dry = (e) => e.currentTarget.classList.remove('is-ink');
-          const mk = (rating, key) => h('button.rate-btn', { type: 'button', class: 'rate-' + rating, onclick: () => rate(rating),
-            onpointerdown: ink, onpointerleave: dry, onpointercancel: dry },
-            h('span.rate-ic', ui.mastery(rating, 14)),
-            h('span.rate-l', label ? label[rating] : S.RATINGS[rating].label),
-            h('span.rate-next', nextLabel(it.review, rating)),
-            h('kbd.rate-kbd', key));
+          const W = it.ex ? WORDS.ex : WORDS.card;
+          // l'appui enfonce la touche ; un doigt qui glisse hors d'elle la relâche
+          const down = (e) => e.currentTarget.classList.add('is-down');
+          const up = (e) => e.currentTarget.classList.remove('is-down');
+          const mk = (rating, key) => h('button.rate-key', { type: 'button', class: 'rate-' + rating, onclick: () => rate(rating),
+            onpointerdown: down, onpointerup: up, onpointerleave: up, onpointercancel: up,
+            'aria-label': `${W[rating]}, ${nextLabel(it.review, rating, true)}` },
+            h('span.rate-cap',
+              rateIcon(rating),
+              h('span.rate-l', W[rating]),
+              h('span.rate-next', nextLabel(it.review, rating, true)),
+              h('kbd.rate-kbd', key)));
           put(h('div.rate-row', { role: 'group', 'aria-label': it.ex ? 'Tu avais trouvé ?' : 'Tu la connaissais ?' }, mk('revoir', '1'), mk('compris', '2'), mk('maitrise', '3')));
-          // les notes arrivent après la réponse (overlap), en cascade courte : 30 ms
-          R.motion.stagger(Array.from(set.querySelectorAll('.rate-btn')), 0, { step: 30 });
+          // les touches montent l'une après l'autre (30 ms), leurs icônes se dessinent au passage
+          R.motion.stagger(Array.from(set.querySelectorAll('.rate-key')), 0, { step: 30 });
           return;
         }
         // state === 'answer'
@@ -533,12 +557,12 @@
         state = 'busy';
         commit(rating);
         updateProgress();
-        // la touche choisie se gonfle, les autres reculent, puis la barre s'en va
+        // la touche choisie reste enfoncée et s'allume, les autres s'affaissent, puis la rangée s'en va
         const btn = actions.querySelector('.act-set:not(.leaving) .rate-' + rating);
         if (btn && !motion.reduced()) {
           btn.parentNode.classList.add('picked'); btn.classList.add('is-pick');
-          motion.haptic(rating === 'revoir' ? 14 : 8);
-          await wait(260);
+          motion.haptic(rating === 'revoir' ? [10, 40, 10] : rating === 'compris' ? 10 : [6, 30, 14]);
+          await wait(340);
           if (!alive(g)) return;
         }
         paintActions();
@@ -546,7 +570,7 @@
           const r = nb.book.getBoundingClientRect();
           motion.burst(r.left + r.width / 2, r.top + 60, { count: 8, spread: 48 });
         }
-        P.verdict.textContent = ex ? { revoir: 'Pas trouvé', compris: 'Trouvé', maitrise: 'Facile !' }[rating] : { revoir: 'À revoir', compris: 'Compris', maitrise: 'Maîtrisé !' }[rating];
+        P.verdict.textContent = (ex ? WORDS.ex : WORDS.card)[rating] + (rating === 'maitrise' ? ' !' : '');
         follow(P.verdict);
         await nb.write(P.verdict, { ink: 'red', cps: 16, max: 600, lift: rating !== 'revoir' });
         if (!alive(g)) return;
