@@ -1,5 +1,5 @@
 /* Ratio — service worker : coque applicative hors-ligne + polices en cache */
-const VERSION = 'ratio-v4.1.1';
+const VERSION = 'ratio-v4.1.2';
 const SHELL = [
   './',
   'index.html',
@@ -40,9 +40,9 @@ self.addEventListener('fetch', (e) => {
 
   if (url.origin !== location.origin) return;
 
-  // Coque : réseau d'abord pour rester à jour, cache en secours (hors-ligne)
+  // Coque : réseau d'abord en revalidant (no-cache : contourne le max-age=600 de Pages), cache en secours (hors-ligne)
   e.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
         return res;

@@ -884,7 +884,21 @@
     if (!S.data.settings.onboarded) setTimeout(onboarding, 450);
 
     if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      // Mise à jour : sw.js jamais pris dans le cache HTTP, vérifié au retour sur l'app ; nouvelle version = rechargement
+      const hadSW = !!navigator.serviceWorker.controller;
+      let fresh = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!hadSW || fresh) return;
+        fresh = true;
+        if (document.hidden) location.reload();
+        else ui.snack('Nouvelle version de Ratio installée.', { action: 'Recharger', onAction: () => location.reload(), duration: 12000 });
+      });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'visible') return;
+          if (fresh) location.reload(); else reg.update().catch(() => {});
+        });
+      }).catch(() => {});
     }
   };
 
