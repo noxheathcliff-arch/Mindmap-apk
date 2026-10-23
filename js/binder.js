@@ -181,8 +181,11 @@
     ]);
     root.append(el('div', 'cl-cam', null, [back, spineEl]));
 
-    root.setOpen = (v) => { root.style.setProperty('--open', v); return root; };
-    root.setView = (pitch, yaw) => { root.style.setProperty('--pitch', pitch + 'deg'); root.style.setProperty('--yaw', (yaw || 0) + 'deg'); return root; };
+    // en mouvement, on n'écrit que sur ce qui en dépend (dos + plat, ombre portée ; caméra) : une
+    // propriété posée sur le classeur ferait recalculer toute la pile à chaque image
+    const cast = back.lastElementChild, cam = root.lastElementChild;
+    root.setOpen = (v) => { spineEl.style.setProperty('--open', v); cast.style.setProperty('--open', v); return root; };
+    root.setView = (pitch, yaw) => { cam.style.transform = `rotateX(${pitch}deg) rotateY(${yaw || 0}deg)`; return root; };
     return root;
   }
 
@@ -194,20 +197,6 @@
        from    l'élément cliqué (le dossier)      opts.binder : options de Binder.binder (titre, items…)
        opts.tint(el) : colore le classeur          opts.swap() : monte la page du cours, sous la scène
      Renvoie { finish } ; finish() saute à la fin (la page est montée, la scène retirée). */
-  function spring(o) {
-    let x = o.from, v = o.velocity || 0, last = performance.now(), raf = 0, done = false;
-    const step = (now) => {
-      const dt = Math.min(.032, (now - last) / 1000);
-      last = now;
-      for (let i = 0; i < 4; i++) { const h = dt / 4; v += (-o.k * (x - o.to) - o.c * v) * h; x += v * h; }
-      if (Math.abs(v) < .004 && Math.abs(x - o.to) < .0005) { x = o.to; done = true; }
-      o.on(x, v);
-      if (done) { o.end && o.end(); return; }
-      raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => { done = true; cancelAnimationFrame(raf); };
-  }
   const reduced = () => document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* La scène commune à l'entrée et à la sortie : le classeur, sa pose et ses états.
@@ -223,13 +212,14 @@
     if (opts.tint) opts.tint(b);
     b.setView(0, 0);
     const pose = el('div', 'cl-pose', { width: CW * u + 'px', height: CH * u + 'px' }, b);
-    const scene = el('div', 'cl-scene', null, pose);
+    const veil = el('div', 'cl-veil');
+    const scene = el('div', 'cl-scene', null, [veil, pose]);
     document.body.append(scene);
 
     // poses : centre à l'écran (X, Y) et échelle s du point (cx, cy) du classeur (mm)
     const put = (X, Y, s, open) => {
       const cx = 130 - 147 * open, cy = 160;
-      pose.style.transform = `translate3d(${X - cx * u * s}px, ${Y - cy * u * s}px, 0) scale(${s})`;
+      pose.style.transform = `translate3d(${(X - cx * u * s).toFixed(2)}px, ${(Y - cy * u * s).toFixed(2)}px, 0) scale(${s.toFixed(5)})`;
       return Y - cy * u * s;
     };
     let s0 = 1, X0 = vw / 2, lip = Infinity, Y0 = vh * 1.5, Y1 = vh;
@@ -250,7 +240,9 @@
 
     const k = { b, scene, u, at, cover: null, st: { a: 0, b: 0, open: 0, q: 0, z: 0, f: 0 } };
     const st = k.st;
-    let clipped = null;
+    // n'écrire que ce qui change : chaque propriété du classeur recalcule tout son sous-arbre
+    const last = {};
+    const set = (key, v, fn) => { if (last[key] !== v) { last[key] = v; fn(v); } };
     const frame = k.frame = () => {
       const { a, b: t, q, z } = st;
       const open = st.open > 1 ? 2 - st.open : st.open;    // la couverture rebondit sur la table
@@ -276,31 +268,51 @@
         const l = cx - TW / 2 * u * s, r = cx + TW / 2 * u * s, tp = cy - H * FA * u * s, bt = cy + H * (1 - FA) * u * s;
         if (k.cover && l <= 0 && r >= vw && tp <= 0 && bt >= vh) { const c = k.cover; k.cover = null; c(); }
       }
-      scene.style.setProperty('--zf', String(Math.min(1, z * 1.5)));
-      b.setView(pitch, yaw);
-      b.setOpen(Math.max(0, open));
+      const r3 = (v) => Math.round(v * 1000) / 1000;
+      set('view', r3(pitch) + ' ' + r3(yaw), () => b.setView(r3(pitch), r3(yaw)));
+      set('open', r3(Math.max(0, open)), (v) => b.setOpen(v));
       const top = put(X, Y, s, o);
       // le dossier cache ce qui est dans la poche ; la ligne de coupe descend quand le classeur
       // s'avance vers nous (et remonte quand il y retourne)
       const line = (lip + t * 1.4 * vh - top) / s, cut = z > 0 || line >= CH * u ? '' : `inset(-100vh -100vw ${Math.max(0, CH * u - line).toFixed(1)}px -100vw)`;
-      if (cut !== clipped) { clipped = cut; pose.style.clipPath = cut; }
+      set('clip', cut, (v) => { pose.style.clipPath = v; });
       // le relais : la scène se dissout pendant que la page monte dessous
       const f = st.f;
-      scene.style.setProperty('--dim', String(Math.min(1, Math.max(0, t) * 1.4)));
-      scene.style.opacity = String(1 - f * f * (3 - 2 * f));
+      // le voile : assombri pendant le vol (t), plus sombre pendant la poussée de caméra (z)
+      const zf = Math.min(1, z * 1.5);
+      set('veil', r3(Math.min(1, Math.max(0, t) * 1.4) * .14 + zf * .2), (v) => { veil.style.opacity = v; });
+      set('fade', r3(1 - f * f * (3 - 2 * f)), (v) => { scene.style.opacity = v; });
     };
 
-    const stops = [], timers = [];
+    // une seule boucle d'images : ressorts et fondus avancent, puis la scène est dessinée une fois
+    const steps = new Set(), timers = [];
+    let raf = 0, prev = 0;
+    const tick = (now) => {
+      raf = 0;
+      const dt = Math.min(.032, (now - prev) / 1000); prev = now;
+      steps.forEach((fn) => fn(now, dt));
+      frame();
+      if (steps.size) raf = requestAnimationFrame(tick);
+    };
+    const add = (fn) => { steps.add(fn); if (!raf) { prev = performance.now(); raf = requestAnimationFrame(tick); } };
     k.later = (ms, fn) => timers.push(setTimeout(fn, ms));
     k.tween = (key, ms, end, to = 1) => {      // linéaire vers to : la courbe de la caméra est dans frame()
-      const t0 = performance.now(), v0 = st[key]; let raf = 0, done = false;
-      const step = (now) => { if (done) return; const p = Math.min(1, (now - t0) / ms); st[key] = v0 + (to - v0) * p; frame(); if (p >= 1) { done = true; end && end(); } else raf = requestAnimationFrame(step); };
-      raf = requestAnimationFrame(step);
-      stops.push(() => { done = true; cancelAnimationFrame(raf); });
+      const t0 = performance.now(), v0 = st[key];
+      const fn = (now) => { const p = Math.min(1, (now - t0) / ms); st[key] = v0 + (to - v0) * p; if (p >= 1) { steps.delete(fn); end && end(); } };
+      add(fn);
     };
-    k.run = (key, to, kk, c, end) => stops.push(spring({ from: st[key], to, k: kk, c, on: (x) => { st[key] = x; frame(); }, end }));
+    k.run = (key, to, kk, c, end) => {         // ressort (raideur kk, amortissement c)
+      let v = 0;
+      const fn = (now, dt) => {
+        let x = st[key];
+        for (let i = 0; i < 4; i++) { const h = dt / 4; v += (-kk * (x - to) - c * v) * h; x += v * h; }
+        if (Math.abs(v) < .004 && Math.abs(x - to) < .0005) { x = to; steps.delete(fn); end && end(); }
+        st[key] = x;
+      };
+      add(fn);
+    };
     k.tabs = () => [...b.querySelectorAll('.cl-lay > .inter')].reverse();
-    k.stop = () => { stops.forEach((f) => f()); timers.forEach(clearTimeout); };
+    k.stop = () => { steps.clear(); cancelAnimationFrame(raf); raf = 0; timers.forEach(clearTimeout); };
     return k;
   }
 
