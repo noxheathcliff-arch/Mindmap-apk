@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792713497.7596507,
-    "seen": 1792713503.033503,
-    "ast_hash": "0514bb5e5f754c28ab4ebf056c0044d2",
+    "mtime": 1792718235.5916364,
+    "seen": 1792718243.0155945,
+    "ast_hash": "4a6ab8851a74c31159bfe9fdd52e3bce",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792713497.7550614,
-    "seen": 1792713503.0335515,
-    "ast_hash": "5a0f4c42653c9291069845dcef12b517",
+    "mtime": 1792718235.5872102,
+    "seen": 1792718243.015639,
+    "ast_hash": "55f98864589e2bc3506bf95d1c1d27bc",
     "semantic_hash": ""
   },
   "README.md": {
