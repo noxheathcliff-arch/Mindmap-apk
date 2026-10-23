@@ -75,7 +75,8 @@
   /* ---- Feuille blanche ---- */
   function sheet(o = {}) {
     const n = el('div', 'feuille a4' + (o.holes !== false ? ' trous' : '') + (o.pile ? ' pile' : '') + (o.cls ? ' ' + o.cls : ''));
-    if (o.content) n.append(el('div', 'feuille-in', null, o.content));
+    if (o.skeleton) n.append(el('div', 'feuille-in sk-page', null, [el('i', 'sk sk-h'), ...[1, 1, 1, .7, 0, 1, 1, .55].map((w) => el('i', 'sk' + (w ? '' : ' sk-gap'), { width: w * 100 + '%' }))]));
+    else if (o.content) n.append(el('div', 'feuille-in', null, o.content));
     return n;
   }
 
@@ -116,6 +117,8 @@
       svg('path', { class: 'i-edge', d: body }),
     ]);
     const n = el('div', 'inter' + (o.cls ? ' ' + o.cls : ''), { '--tab': o.tab || TABS[index % TABS.length] }, g);
+    // en chargement : des gabarits à la place du texte (le contenu arrive avec la page du cours)
+    if (o.skeleton) { n.append(el('div', 'inter-skel', null, [el('i', 'sk sk-k'), el('i', 'sk sk-t'), el('i', 'sk sk-t2'), ...[1, 1, .64].map((w) => el('i', 'sk', { width: w * 100 + '%' }))])); return n; }
     if (o.num != null) n.append(el('span', 'inter-num', { left: (W / (W + P) * 100) + '%', right: '0', top: (y0 / H * 100) + '%', height: ((y1 - y0) / H * 100) + '%' }, String(o.num)));
     if (o.kicker) n.append(el('p', 'inter-k', null, o.kicker));
     if (o.title) n.append(el('p', 'inter-t', null, o.title));
@@ -141,8 +144,8 @@
     const lays = items.map((it, i) => {
       const z = BASE + (items.length - 1 - i) * STEP;
       const obj = it.kind === 'inter'
-        ? divider({ index: di++, count: dividers, num: it.num, kicker: it.kicker, title: it.title, tab: it.tab, shadow: false })
-        : sheet({ content: it.content });
+        ? divider({ index: di++, count: dividers, num: it.num, kicker: it.kicker, title: it.title, tab: it.tab, shadow: false, skeleton: o.skeleton })
+        : sheet({ content: it.content, skeleton: o.skeleton });
       obj.style.width = obj.classList.contains('inter') ? mm(W + P) : mm(210);
       obj.style.height = mm(H);
       return el('div', 'cl-lay', { transform: `translate3d(${mm(SX)}, ${mm(SY)}, ${mm(z)})` }, obj);
@@ -237,9 +240,10 @@
     // le zoom : une poussée de caméra sur l'intercalaire. Le point visé (son titre) reste presque
     // fixe à l'écran pendant que tout grandit autour de lui ; l'intercalaire finit par couvrir l'écran.
     const FA = .2;                                                       // le titre : à 20 % de la hauteur
-    const DX = SX + (W + P) / 2 - (130 - 147), DY = SY + H * FA - 160;   // le point visé, relatif au centre ouvert (mm)
+    const top0 = (opts.binder && opts.binder.items || [])[0], TW = top0 && top0.kind !== 'inter' ? 210 : W + P;   // feuille ou intercalaire
+    const DX = SX + TW / 2 - (130 - 147), DY = SY + H * FA - 160;   // le point visé, relatif au centre ouvert (mm)
     const FXs = vw / 2, FYs = vh * .36;                                  // où il se pose à l'écran
-    const S = 1.08 * Math.max(FYs / (H * FA * u), (vh - FYs) / (H * (1 - FA) * u), vw / 2 / ((W + P) / 2 * u));
+    const S = 1.2 * Math.max(FYs / (H * FA * u), (vh - FYs) / (H * (1 - FA) * u), vw / 2 / (TW / 2 * u));
 
     const st = { a: 0, b: 0, open: 0, q: 0, z: 0, f: 0 };
     let clip = true;
@@ -257,18 +261,20 @@
       if (z > 0) {
         // caméra : l'échelle croît en exponentielle d'une courbe accélérée (la poussée démarre en
         // douceur puis plonge) ; le titre glisse peu (il se cale tôt) et tout le reste fuit hors cadre
-        const e = z * z * z * (z * (z * 6 - 15) + 10);       // smootherstep
-        s = Math.pow(S, e * e);
+        // échelle exponentielle d'un smootherstep : la caméra démarre, file, puis se pose
+        // (vitesse perçue en ln(s) en cloche) ; après l'échange elle continue un peu (pas d'arrêt net)
+        const e = z * z * z * (z * (z * 6 - 15) + 10);
+        s = Math.pow(S, e) * (1 + .05 * st.f);
         const g = 1 - Math.pow(1 - z, 3);                   // le cadrage se fait avant la plongée
         const px = X + DX * u, py = Y + DY * u;            // le titre de l'intercalaire à s = 1
         const cx = px + (FXs - px) * g, cy = py + (FYs - py) * g;
         X = cx - DX * u * s; Y = cy - DY * u * s;
         pitch = 26 * lean * (1 - g);
         // entré : dès que l'intercalaire couvre l'écran, la page du cours se monte dessous
-        const l = cx - (W + P) / 2 * u * s, r = cx + (W + P) / 2 * u * s, tp = cy - H * FA * u * s, bt = cy + H * (1 - FA) * u * s;
-        if (!swapped && l <= 0 && r >= vw && tp <= 0 && bt >= vh) { swap(); run('f', 1, 300, 35, finish); }
+        const l = cx - TW / 2 * u * s, r = cx + TW / 2 * u * s, tp = cy - H * FA * u * s, bt = cy + H * (1 - FA) * u * s;
+        if (!swapped && l <= 0 && r >= vw && tp <= 0 && bt >= vh) { swap(); tween('f', 420, finish); }
       }
-      scene.style.setProperty('--zf', String(Math.min(1, z * 1.5) * (1 - st.f)));
+      scene.style.setProperty('--zf', String(Math.min(1, z * 1.5)));
       b.setView(pitch, yaw);
       b.setOpen(Math.max(0, open));
       const top = put(X, Y, s, o);
@@ -279,8 +285,10 @@
         if (line >= CH * u) { clip = false; pose.style.clipPath = ''; }
         else pose.style.clipPath = `inset(-100vh -100vw ${Math.max(0, CH * u - line).toFixed(1)}px -100vw)`;
       }
-      scene.style.setProperty('--dim', String(Math.min(1, t * 1.4) * (1 - st.f)));
-      pose.style.opacity = String(1 - st.f);
+      // l'échange : la scène se dissout pendant que la page du cours monte dessous
+      const f = st.f;
+      scene.style.setProperty('--dim', String(Math.min(1, t * 1.4)));
+      scene.style.opacity = String(1 - f * f * (3 - 2 * f));
     };
 
     const stops = [], timers = [];
@@ -311,7 +319,7 @@
     function zoom() {
       if (zooming || ended) return;
       zooming = true;
-      tween('z', 820, () => { if (!swapped) { swap(); run('f', 1, 300, 35, finish); } });
+      tween('z', 1000, () => { if (!swapped) { swap(); tween('f', 420, finish); } });
     }
     function finish() {
       if (ended) return;

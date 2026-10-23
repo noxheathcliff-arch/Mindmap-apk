@@ -331,9 +331,24 @@
       : { kind: 'sheet', content: x.map.title }));
     if (!stack.length) stack.push({ kind: 'sheet' });
     window.Binder.enter(card, {
-      binder: { title: c.title, kicker: 'Cours', sub: c.description || '', items: stack },
+      binder: { title: c.title, kicker: 'Cours', sub: c.description || '', items: stack, skeleton: true },
       tint: (el) => R.courseArt.tint(el, c),
-      swap: go,
+      // la page du cours monte sous la scène qui se dissout : ses blocs remontent un à un (relais du zoom)
+      swap: () => {
+        const before = new Set(U.$$('#view .page-wrap'));
+        go();
+        let tries = 0;
+        const reveal = () => {
+          const page = U.$$('#view .page-wrap').find((n) => !before.has(n));
+          if (!page) { if (++tries < 12) requestAnimationFrame(reveal); return; }
+          if (!page.animate) return;
+          const kids = [...(page.firstElementChild || page).children].slice(0, 8);
+          (kids.length ? kids : [page]).forEach((n, i) => n.animate(
+            [{ opacity: 0, transform: 'translateY(18px) scale(.985)' }, { opacity: 1, transform: 'none' }],
+            { duration: 520, delay: 60 + i * 45, easing: 'cubic-bezier(.2, 0, 0, 1)', fill: 'backwards' }));
+        };
+        reveal();
+      },
     });
   }
 
