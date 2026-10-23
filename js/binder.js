@@ -210,12 +210,12 @@
   }
   const reduced = () => document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function enter(from, opts = {}) {
-    let swapped = false, ended = false;
-    const swap = () => { if (!swapped) { swapped = true; opts.swap && opts.swap(); } };
-    if (reduced() || !from || !from.getBoundingClientRect) { swap(); return { finish() {} }; }
-
-    const vw = innerWidth, vh = innerHeight, r = from.getBoundingClientRect();
+  /* La scène commune à l'entrée et à la sortie : le classeur, sa pose et ses états.
+     st : a sortie de la poche · b vol vers le centre · open couverture · q redressement de face
+          z poussée de caméra dans l'intercalaire · f relais avec la page (la scène se dissout)
+     at(rect) : le dossier d'où il sort (ou où il rentre) ; cover() : appelé quand l'intercalaire couvre l'écran */
+  function stage(opts) {
+    const vw = innerWidth, vh = innerHeight;
     // l'unité : le classeur ouvert (554 mm de large) tient dans l'écran, fermé il occupe 60 % de la hauteur
     const OW = 34 + 260 + 260;
     const u = Math.min(vw * .9 / OW, vh * .6 / CH, 1.5);
@@ -232,10 +232,13 @@
       pose.style.transform = `translate3d(${X - cx * u * s}px, ${Y - cy * u * s}px, 0) scale(${s})`;
       return Y - cy * u * s;
     };
-    const s0 = Math.min(r.width * .62 / (CW * u), r.height * .8 / (CH * u));
-    const X0 = r.left + r.width / 2, lip = r.top + r.height * .12;   // le bord de la poche du dossier
-    const Y0 = lip + CH * u * s0 * .5 + 2;                              // rangé : le haut affleure la poche
-    const Y1 = lip - CH * u * s0 * .1;                                  // à moitié sorti
+    let s0 = 1, X0 = vw / 2, lip = Infinity, Y0 = vh * 1.5, Y1 = vh;
+    const at = (r) => {
+      s0 = Math.min(r.width * .62 / (CW * u), r.height * .8 / (CH * u));
+      X0 = r.left + r.width / 2; lip = r.top + r.height * .12;   // le bord de la poche du dossier
+      Y0 = lip + CH * u * s0 * .5 + 2;                            // rangé : le haut affleure la poche
+      Y1 = lip - CH * u * s0 * .1;                                // à moitié sorti
+    };
     const Xc = vw / 2, Yc = vh * .52;
     // le zoom : une poussée de caméra sur l'intercalaire. Le point visé (son titre) reste presque
     // fixe à l'écran pendant que tout grandit autour de lui ; l'intercalaire finit par couvrir l'écran.
@@ -245,9 +248,10 @@
     const FXs = vw / 2, FYs = vh * .36;                                  // où il se pose à l'écran
     const S = 1.2 * Math.max(FYs / (H * FA * u), (vh - FYs) / (H * (1 - FA) * u), vw / 2 / (TW / 2 * u));
 
-    const st = { a: 0, b: 0, open: 0, q: 0, z: 0, f: 0 };
-    let clip = true;
-    const frame = () => {
+    const k = { b, scene, u, at, cover: null, st: { a: 0, b: 0, open: 0, q: 0, z: 0, f: 0 } };
+    const st = k.st;
+    let clipped = null;
+    const frame = k.frame = () => {
       const { a, b: t, q, z } = st;
       const open = st.open > 1 ? 2 - st.open : st.open;    // la couverture rebondit sur la table
       // sortie (a) puis vol vers le centre (t), en arc : x en retard sur y
@@ -259,9 +263,7 @@
       let pitch = (4 + 22 * t - 4 * a * (1 - t)) * lean, yaw = -7 * t * lean * (1 - z);
       const o = Math.min(1, Math.max(0, open));
       if (z > 0) {
-        // caméra : l'échelle croît en exponentielle d'une courbe accélérée (la poussée démarre en
-        // douceur puis plonge) ; le titre glisse peu (il se cale tôt) et tout le reste fuit hors cadre
-        // échelle exponentielle d'un smootherstep : la caméra démarre, file, puis se pose
+        // caméra : échelle exponentielle d'un smootherstep : la caméra démarre, file, puis se pose
         // (vitesse perçue en ln(s) en cloche) ; après l'échange elle continue un peu (pas d'arrêt net)
         const e = z * z * z * (z * (z * 6 - 15) + 10);
         s = Math.pow(S, e) * (1 + .05 * st.f);
@@ -270,70 +272,136 @@
         const cx = px + (FXs - px) * g, cy = py + (FYs - py) * g;
         X = cx - DX * u * s; Y = cy - DY * u * s;
         pitch = 26 * lean * (1 - g);
-        // entré : dès que l'intercalaire couvre l'écran, la page du cours se monte dessous
+        // dès que l'intercalaire couvre l'écran, la page de destination peut se monter dessous
         const l = cx - TW / 2 * u * s, r = cx + TW / 2 * u * s, tp = cy - H * FA * u * s, bt = cy + H * (1 - FA) * u * s;
-        if (!swapped && l <= 0 && r >= vw && tp <= 0 && bt >= vh) { swap(); tween('f', 420, finish); }
+        if (k.cover && l <= 0 && r >= vw && tp <= 0 && bt >= vh) { const c = k.cover; k.cover = null; c(); }
       }
       scene.style.setProperty('--zf', String(Math.min(1, z * 1.5)));
       b.setView(pitch, yaw);
       b.setOpen(Math.max(0, open));
       const top = put(X, Y, s, o);
-      if (clip) {
-        // le dossier cache ce qui est encore dans la poche ; la ligne de coupe descend quand le
-        // classeur s'avance vers nous, le bas sort en glissant
-        const line = (lip + t * 1.4 * vh - top) / s;
-        if (line >= CH * u) { clip = false; pose.style.clipPath = ''; }
-        else pose.style.clipPath = `inset(-100vh -100vw ${Math.max(0, CH * u - line).toFixed(1)}px -100vw)`;
-      }
-      // l'échange : la scène se dissout pendant que la page du cours monte dessous
+      // le dossier cache ce qui est dans la poche ; la ligne de coupe descend quand le classeur
+      // s'avance vers nous (et remonte quand il y retourne)
+      const line = (lip + t * 1.4 * vh - top) / s, cut = z > 0 || line >= CH * u ? '' : `inset(-100vh -100vw ${Math.max(0, CH * u - line).toFixed(1)}px -100vw)`;
+      if (cut !== clipped) { clipped = cut; pose.style.clipPath = cut; }
+      // le relais : la scène se dissout pendant que la page monte dessous
       const f = st.f;
-      scene.style.setProperty('--dim', String(Math.min(1, t * 1.4)));
+      scene.style.setProperty('--dim', String(Math.min(1, Math.max(0, t) * 1.4)));
       scene.style.opacity = String(1 - f * f * (3 - 2 * f));
     };
 
     const stops = [], timers = [];
-    const later = (ms, fn) => timers.push(setTimeout(fn, ms));
-    const tween = (key, ms, end) => {      // linéaire 0 → 1 : la courbe de la caméra est dans frame()
-      const t0 = performance.now(); let raf = 0, done = false;
-      const step = (now) => { if (done) return; st[key] = Math.min(1, (now - t0) / ms); frame(); if (st[key] >= 1) { done = true; end && end(); } else raf = requestAnimationFrame(step); };
+    k.later = (ms, fn) => timers.push(setTimeout(fn, ms));
+    k.tween = (key, ms, end, to = 1) => {      // linéaire vers to : la courbe de la caméra est dans frame()
+      const t0 = performance.now(), v0 = st[key]; let raf = 0, done = false;
+      const step = (now) => { if (done) return; const p = Math.min(1, (now - t0) / ms); st[key] = v0 + (to - v0) * p; frame(); if (p >= 1) { done = true; end && end(); } else raf = requestAnimationFrame(step); };
       raf = requestAnimationFrame(step);
       stops.push(() => { done = true; cancelAnimationFrame(raf); });
     };
-    const run = (key, to, k, c, end) => stops.push(spring({ from: st[key], to, k, c, on: (x) => { st[key] = x; frame(); }, end }));
+    k.run = (key, to, kk, c, end) => stops.push(spring({ from: st[key], to, k: kk, c, on: (x) => { st[key] = x; frame(); }, end }));
+    k.tabs = () => [...b.querySelectorAll('.cl-lay > .inter')].reverse();
+    k.stop = () => { stops.forEach((f) => f()); timers.forEach(clearTimeout); };
+    return k;
+  }
 
-    // anticipation : le dossier se tasse, puis rebondit quand le classeur en sort
-    if (from.animate) from.animate([{ transform: 'scale(1)' }, { transform: 'scale(.97)', offset: .4 }, { transform: 'scale(1.01)', offset: .75 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.3,0,.2,1)' });
-    frame();
-    let zooming = false;
-    later(70, () => run('a', 1, 520, 44, null));
-    later(190, () => run('b', 1, 240, 29, null));
-    later(330, () => run('open', 1, 150, 15.5, null));
-    // les onglets se déploient l'un après l'autre (40 ms), quand la couverture dégage la pile
-    const tabs = [...b.querySelectorAll('.cl-lay > .inter')].reverse();
-    later(470, () => tabs.forEach((n, i) => n.animate && n.animate(
-      [{ transform: `translateX(${-7 * u}px)` }, { transform: 'none' }],
-      { duration: 380, delay: i * 40, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'backwards' })));
-    // redressement de face quand la couverture s'est posée, le zoom part juste avant la fin (chevauchement)
-    later(800, () => run('q', 1, 190, 26, null));
-    later(1060, zoom);
-    function zoom() {
-      if (zooming || ended) return;
-      zooming = true;
-      tween('z', 1000, () => { if (!swapped) { swap(); tween('f', 420, finish); } });
-    }
-    function finish() {
-      if (ended) return;
-      ended = true;
-      stops.forEach((f) => f()); timers.forEach(clearTimeout);
-      swap();
-      removeEventListener('keydown', onKey, true); removeEventListener('pointerdown', finish, true);
-      scene.remove();
-    }
+  /* Interruptible : un geste ou Échap finit tout de suite. Renvoie { finish }. */
+  function interruptible(finish) {
     const onKey = (e) => { if (e.key === 'Escape') finish(); };
     addEventListener('keydown', onKey, true);
     addEventListener('pointerdown', finish, true);
+    return () => { removeEventListener('keydown', onKey, true); removeEventListener('pointerdown', finish, true); };
+  }
+
+  function enter(from, opts = {}) {
+    let swapped = false, ended = false;
+    const swap = () => { if (!swapped) { swapped = true; opts.swap && opts.swap(); } };
+    if (reduced() || !from || !from.getBoundingClientRect) { swap(); return { finish() {} }; }
+
+    const k = stage(opts), { u } = k;
+    k.at(from.getBoundingClientRect());
+    // entré : dès que l'intercalaire couvre l'écran, la page du cours se monte dessous
+    k.cover = () => { swap(); k.tween('f', 420, finish); };
+
+    // anticipation : le dossier se tasse, puis rebondit quand le classeur en sort
+    if (from.animate) from.animate([{ transform: 'scale(1)' }, { transform: 'scale(.97)', offset: .4 }, { transform: 'scale(1.01)', offset: .75 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.3,0,.2,1)' });
+    k.frame();
+    let zooming = false;
+    k.later(70, () => k.run('a', 1, 520, 44, null));
+    k.later(190, () => k.run('b', 1, 240, 29, null));
+    k.later(330, () => k.run('open', 1, 150, 15.5, null));
+    // les onglets se déploient l'un après l'autre (40 ms), quand la couverture dégage la pile
+    k.later(470, () => k.tabs().forEach((n, i) => n.animate && n.animate(
+      [{ transform: `translateX(${-7 * u}px)` }, { transform: 'none' }],
+      { duration: 380, delay: i * 40, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'backwards' })));
+    // redressement de face quand la couverture s'est posée, le zoom part juste avant la fin (chevauchement)
+    k.later(800, () => k.run('q', 1, 190, 26, null));
+    k.later(1060, () => {
+      if (zooming || ended) return;
+      zooming = true;
+      k.tween('z', 1000, () => { if (!swapped) { k.cover = null; swap(); k.tween('f', 420, finish); } });
+    });
+    function finish() {
+      if (ended) return;
+      ended = true;
+      k.stop(); release();
+      swap();
+      k.scene.remove();
+    }
+    const release = interruptible(finish);
     return { finish };
   }
 
-  window.Binder = { sheet, divider, binder, enter, TABS };
+  /* ---- La sortie d'un cours : l'entrée jouée à l'envers ----
+     L'intercalaire revient couvrir l'écran par-dessus la page du cours, la page d'arrivée se monte
+     dessous, puis la caméra recule, se penche, la couverture se referme (les onglets rentrent avant),
+     le classeur repart en arc vers son dossier et redescend dans la poche ; le dossier le reçoit.
+       opts.swap()   monte la page d'arrivée, sous la scène
+       opts.target() après swap : le dossier où ranger le classeur (null : la scène se dissout au centre)
+     Renvoie { finish }, ou null si le mouvement est réduit (l'appelant navigue normalement). */
+  function leave(opts = {}) {
+    if (reduced()) return null;
+    let swapped = false, ended = false, to = null;
+    const swap = () => { if (!swapped) { swapped = true; opts.swap && opts.swap(); } };
+    const k = stage(opts), { u, st } = k;
+    Object.assign(st, { a: 1, b: 1, open: 1, q: 1, z: 1, f: 1 });
+    k.frame();
+    // le relais à l'envers : l'intercalaire se recompose par-dessus la page du cours
+    k.tween('f', 300, () => {
+      if (ended) return;
+      swap();
+      to = opts.target && opts.target();
+      const r = to && to.getBoundingClientRect();
+      if (!r || !r.width || r.bottom < 0 || r.top > innerHeight) {
+        // pas de dossier visible : la caméra recule puis la scène se dissout
+        k.tween('z', 700, () => k.tween('f', 320, finish), 0);
+        return;
+      }
+      k.at(r);
+      k.frame();
+      k.tween('z', 760, null, 0);
+      k.later(320, () => k.run('q', 0, 220, 28, null));
+      // les onglets rentrent dans la pile juste avant que la couverture ne se rabatte
+      k.later(420, () => k.tabs().reverse().forEach((n, i) => n.animate && n.animate(
+        [{ transform: 'none' }, { transform: `translateX(${-7 * u}px)` }],
+        { duration: 240, delay: i * 25, easing: 'cubic-bezier(.3,0,.8,.15)', fill: 'forwards' })));
+      k.later(500, () => k.run('open', 0, 190, 24, null));
+      k.later(720, () => k.run('b', 0, 300, 30, null));
+      // le dossier reçoit le classeur : il se tasse sous le poids puis reprend sa forme
+      k.later(1000, () => to.animate && to.animate([{ transform: 'scale(1)' }, { transform: 'scale(.97)', offset: .45 }, { transform: 'scale(1.01)', offset: .8 }, { transform: 'scale(1)' }], { duration: 440, easing: 'cubic-bezier(.3,0,.2,1)' }));
+      k.later(900, () => k.run('a', 0, 600, 46, null));
+      // rangé : le classeur est sous la ligne de la poche, la scène peut partir sans attendre la fin du ressort
+      k.later(1400, finish);
+    }, 0);
+    function finish() {
+      if (ended) return;
+      ended = true;
+      k.stop(); release();
+      swap();
+      k.scene.remove();
+    }
+    const release = interruptible(finish);
+    return { finish };
+  }
+
+  window.Binder = { sheet, divider, binder, enter, leave, TABS };
 })();
