@@ -273,6 +273,8 @@
     const d2 = e.a2 ? DIRS[e.a2.s] : (base && base.d2) || snapDir([p1[0] - p2[0], p1[1] - p2[1]]);
     const m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
     const shape = st.shape || 'auto';
+    // points de passage libres : le trait passe par chacun, dans l'ordre
+    if (e.via && e.via.length) return Object.assign(throughCurve(p1, d1, p2, d2, e.via.map((q) => viaPoint(p1, p2, q)), shape), { d1, d2 });
     if (shape === 'straight' && !e.bend) return Object.assign(elbow([p1, p2]), { d1, d2 });
     if (shape === 'elbow') {
       if (!e.bend) return Object.assign(orthoOf(p1, d1, p2, d2, 14), { d1, d2 });
@@ -291,6 +293,88 @@
     }
     if (base && !e.a1 && !e.a2 && shape === 'auto') return base;
     return cubic(p1, d1, p2, d2, handle(p1, p2));
+  }
+
+  /**
+   * Points de passage d'un lien (e.via) : repère attaché aux ancres — u le long de p1 → p2,
+   * v en travers, tous deux en fraction de la longueur. Le tracé suit donc les nœuds qu'on
+   * déplace (il s'étire, tourne, se resserre) au lieu de rester cloué dans le vide.
+   */
+  function viaFrame(p1, p2) {
+    let dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+    if (Math.hypot(dx, dy) < 1) { dx = 1; dy = 0; }
+    return [dx, dy];
+  }
+  function viaPoint(p1, p2, q) {
+    const [dx, dy] = viaFrame(p1, p2);
+    return [p1[0] + q.u * dx - q.v * dy, p1[1] + q.u * dy + q.v * dx];
+  }
+  function toVia(p1, p2, p) {
+    const [dx, dy] = viaFrame(p1, p2), l2 = dx * dx + dy * dy;
+    const rx = p[0] - p1[0], ry = p[1] - p1[1];
+    const r = (x) => Math.round(x * 1000) / 1000;
+    return { u: r((rx * dx + ry * dy) / l2), v: r((ry * dx - rx * dy) / l2) };
+  }
+  /** Rang où insérer un point saisi en p sur la ligne p1 → via… → p2 (segment le plus proche) */
+  function viaInsertAt(p1, p2, pts, p) {
+    const P = [p1, ...pts, p2];
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < P.length - 1; i++) {
+      const a = P[i], b = P[i + 1], vx = b[0] - a[0], vy = b[1] - a[1], l2 = vx * vx + vy * vy || 1;
+      const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / l2));
+      const d = Math.hypot(a[0] + vx * t - p[0], a[1] + vy * t - p[1]);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  /**
+   * Tracé passant par des points : courbe = spline de Catmull-Rom (tangentes de départ et
+   * d'arrivée imposées par les ancres), droite = polyligne aux coins arrondis, coude = marches
+   * orthogonales qui touchent chaque point.
+   */
+  function throughCurve(p1, d1, p2, d2, pts, shape) {
+    const P = [p1, ...pts, p2].filter((q, i, A) => !i || i === A.length - 1 || Math.hypot(q[0] - A[i - 1][0], q[1] - A[i - 1][1]) > 0.5);
+    if (shape === 'straight') return elbow(P, 18);
+    if (shape === 'elbow') {
+      const out = [P[0]];
+      let horiz = !!d1[0];
+      for (let i = 1; i < P.length; i++) {
+        const c = out[out.length - 1], t = P[i];
+        if (i === P.length - 1) horiz = !d2[0]; // on arrive dans l'axe de l'ancre d'arrivée
+        out.push(horiz ? [t[0], c[1]] : [c[0], t[1]], t);
+        horiz = !horiz;
+      }
+      return elbow(out.filter((q, i, A) => !i || Math.hypot(q[0] - A[i - 1][0], q[1] - A[i - 1][1]) > 0.5), 14);
+    }
+    const n = P.length - 1, T = [];
+    const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+    for (let i = 0; i <= n; i++) {
+      if (i === 0) { const l = dist(P[0], P[1]); T.push([d1[0] * l, d1[1] * l]); }
+      else if (i === n) { const l = dist(P[n - 1], P[n]); T.push([-d2[0] * l, -d2[1] * l]); }
+      else T.push([(P[i + 1][0] - P[i - 1][0]) / 2, (P[i + 1][1] - P[i - 1][1]) / 2]);
+    }
+    const segs = [];
+    let d = `M${P[0][0]},${P[0][1]}`, total = 0;
+    for (let i = 0; i < n; i++) {
+      const a = P[i], b = P[i + 1];
+      const c1 = [a[0] + T[i][0] / 3, a[1] + T[i][1] / 3], c2 = [b[0] - T[i + 1][0] / 3, b[1] - T[i + 1][1] / 3];
+      d += ` C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${b[0]},${b[1]}`;
+      const l = dist(a, b) || 0.001;
+      segs.push({ a, b, c1, c2, l }); total += l;
+    }
+    const at = (t) => {
+      let k = Math.max(0, Math.min(1, t)) * total;
+      for (let i = 0; i < segs.length; i++) {
+        const g = segs[i];
+        if (k <= g.l || i === segs.length - 1) {
+          const f = Math.min(1, k / g.l), u = 1 - f;
+          return [0, 1].map((j) => u * u * u * g.a[j] + 3 * u * u * f * g.c1[j] + 3 * u * f * f * g.c2[j] + f * f * f * g.b[j]);
+        }
+        k -= g.l;
+      }
+      return P[n];
+    };
+    return { p1: P[0], p2: P[n], at, d };
   }
 
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
@@ -1496,6 +1580,6 @@
     P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow, separate, SAFE,
-    treeSides, treeCurve, sequencePrev, calm, orthoOf, manualCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
+    treeSides, treeCurve, sequencePrev, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);

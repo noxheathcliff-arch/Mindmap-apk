@@ -950,7 +950,8 @@
 .plan-root { font: var(--headline-s); margin-bottom: var(--sp-3); }
 .plan-intro { margin-bottom: var(--sp-6); }
 .plan-sec { margin-top: var(--sp-6); }
-.plan-sec.lvl-1, .plan-sec.lvl-2, .plan-sec.lvl-3, .plan-sec.lvl-4 { margin-top: var(--sp-4); padding-left: var(--sp-5); border-left: 1px solid var(--outline-variant); }
+/* sous-parties : simple retrait, sans filet vertical (plus de peigne) */
+.plan-sec.lvl-1, .plan-sec.lvl-2, .plan-sec.lvl-3, .plan-sec.lvl-4 { margin-top: var(--sp-4); padding-left: var(--sp-5); }
 .plan-h { display: flex; align-items: baseline; gap: var(--sp-3); }
 .plan-h.lvl-0 { font: var(--headline-s); }
 .plan-h.lvl-1 { font: 500 20px/28px var(--font-brand); }
@@ -1000,8 +1001,7 @@
 
 /* jointures ET / OU entre éléments frères : la pastille chevauche le filet de leur niveau */
 .plan-join { margin: var(--sp-2) 0 calc(-1 * var(--sp-2)); line-height: 0; }
-.plan-join:not(.lvl-0) .chip-mini { transform: translateX(-50%); }
-.plan-join .chip-mini { position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--surface); }
+.plan-join .chip-mini { position: relative; z-index: 1; }
 
 /* rythme : plus d'air entre les grandes parties, moins à l'intérieur */
 .plan > .plan-sec.lvl-0, .plan-struct-sec > .plan-sec.lvl-0 { margin-top: var(--sp-10); }

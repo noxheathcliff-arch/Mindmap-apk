@@ -62,7 +62,8 @@
 .edge.rel { stroke: var(--on-surface-variant); stroke-width: 2; }
 .edge.sel { stroke: var(--on-surface); stroke-width: 2.6; }
 .edge.spine.rel { stroke-width: 2.6; }
-.edge-hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
+.edge-hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: grab; }
+.is-ro .edge-hit { cursor: pointer; }
 .canvas.is-dragging .edge-hit, .canvas.is-masked .edge-hit { pointer-events: none; }
 .edges g.fade-in { animation: fade-in var(--dur-md) var(--ease-out); }
 .temp-edge { fill: none; stroke: var(--on-surface); stroke-width: 2; stroke-dasharray: 4 4; animation: dash 600ms linear infinite; }
@@ -291,6 +292,12 @@
 .eh.set b { background: var(--primary); border-color: var(--on-primary); }
 .eh-bend b { width: 16px; height: 16px; border-radius: 5px; rotate: 45deg; }
 .eh > i:hover b { scale: 1.15; }
+/* « + » : ajoute un point de passage au milieu d'un tronçon */
+.eh-ghost b { width: 12px; height: 12px; background: var(--surface); border: 1.5px dashed var(--primary); opacity: .75; position: relative; }
+.eh-ghost b::before, .eh-ghost b::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 1.5px; background: var(--primary); translate: -50% -50%; }
+.eh-ghost b::after { rotate: 90deg; }
+.eh-ghost > i:hover b { opacity: 1; border-style: solid; }
+.canvas.is-eh .eh-ghost > i { opacity: 0; }
 .eh.grab b { scale: .8; }
 .eh.grab > i { cursor: grabbing; }
 .canvas.is-eh .eh.grab b { scale: 1.35; }

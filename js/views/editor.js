@@ -77,7 +77,7 @@
     // libellés au-dessus des nœuds : un libellé masqué par un nœud est une information perdue
     // poignées du lien sélectionné (départ, arrivée, courbure) : au-dessus de tout, taille constante à l'écran
     const handlesLayer = h('div.edge-handles', { hidden: true },
-      ['a1', 'a2', 'bend'].map((w) => h('div.eh', { dataset: { eh: w }, class: 'eh-' + w, 'aria-hidden': 'true' }, h('i', h('b')))));
+      ['a1', 'a2'].map((w) => h('div.eh', { dataset: { eh: w }, class: 'eh-' + w, 'aria-hidden': 'true' }, h('i', h('b')))));
     const world = h('div.world', svg, nodesLayer, labelsLayer, junctionLayer, handlesLayer);
     const marquee = h('div.marquee', { hidden: true });
     const grid = h('div.grid', { 'aria-hidden': 'true' });
@@ -655,7 +655,7 @@
         - implicite : enfants d'un nœud ET/OU sans libellé propre → « ET » affiché une fois.
        Une branche retouchée à la main (courbure, forme, ancre d'arrivée) reste accrochée à la jonction :
        seul un départ déplacé (ancre a1) la sort de sa fourche. */
-    const shaped = (e) => !!(e.a1 || e.a2 || e.bend || (e.style && e.style.shape));
+    const shaped = (e) => !!(e.a1 || e.a2 || e.bend || (e.via && e.via.length) || (e.style && e.style.shape));
     /** Séquences en ligne (méthode, chronologie) : enfant → étape précédente */
     function seqMap(visible) {
       const at = new Map();
@@ -852,7 +852,7 @@
       for (const n of map.nodes) if (!hidden.has(n.id)) { const s2 = size(n); rects.push({ id: n.id, x: n.x, y: n.y, w: s2.w, h: s2.h }); }
       const rectAt = new Map(rects.map((r) => [r.id, r]));
       // signature de la géométrie : si rien n'a bougé ni changé (sélection, survol…), les renvois gardent leur tracé sans recalcul
-      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '') + (shaped(e) ? JSON.stringify([e.a1, e.a2, e.bend, e.style && e.style.shape]) : '')).join('|') + '#' + map.layout + (map.calm || 0);
+      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '') + (shaped(e) ? JSON.stringify([e.a1, e.a2, e.bend, e.via, e.style && e.style.shape]) : '')).join('|') + '#' + map.layout + (map.calm || 0);
       const sameGeo = st.geoSig === geoSig;
       if (!st.fastEdges) st.geoSig = geoSig;
       if (!st.routePrev) st.routePrev = new Map();
@@ -1044,7 +1044,10 @@
     }
     ed._newEdges = new Set();
 
-    /** Extrémités et point de courbure du lien tel qu'il est dessiné (les poignées s'y posent) */
+    /**
+     * Extrémités et points de passage du lien tel qu'il est dessiné (les poignées s'y posent).
+     * s0 → p2 : repère des points de passage (s0 = la jonction pour une branche de fourche).
+     */
     function edgeGeom(e) {
       const rec = st.edgeEls.get(e.id);
       const a = S.node(map, e.from), b = S.node(map, e.to);
@@ -1053,28 +1056,63 @@
       // branche de fourche : le tracé part de la jonction — la poignée de départ se pose sur le bord le plus proche
       const p1 = e.a1 ? L.anchorPoint(a, sa, e.a1) : rec.bundled ? L.anchorPoint(a, sa, L.nearestAnchor(a, sa, rec.cv.at(0))) : rec.cv.at(0);
       const p2 = e.a2 ? L.anchorPoint(b, sb, e.a2) : rec.cv.at(1);
-      // la courbure se mesure depuis le vrai départ du tracé (la jonction pour une branche)
       const s0 = rec.bundled ? rec.cv.at(0) : p1;
       const m = [(s0[0] + p2[0]) / 2, (s0[1] + p2[1]) / 2];
-      const k = e.bend ? [m[0] + e.bend.x, m[1] + e.bend.y] : rec.cv.at(0.5);
-      return { a, b, sa, sb, p1, p2, m, k, bundled: rec.bundled };
+      // ancien point de courbure unique (bend) : affiché comme un point de passage, converti à la prise
+      const vp = e.via && e.via.length ? e.via.map((q) => L.viaPoint(s0, p2, q)) : e.bend ? [[m[0] + e.bend.x, m[1] + e.bend.y]] : [];
+      // poignées « + » : au milieu (sur le trait) de chaque tronçon entre deux points
+      const knots = [s0, ...vp, p2], samp = L.sample(rec.cv, 64), ghosts = [];
+      for (let i = 0; i < knots.length - 1; i++) {
+        const c = [(knots[i][0] + knots[i + 1][0]) / 2, (knots[i][1] + knots[i + 1][1]) / 2];
+        let best = samp[0], bd = Infinity;
+        for (const q of samp) { const d = Math.hypot(q[0] - c[0], q[1] - c[1]); if (d < bd) { bd = d; best = q; } }
+        ghosts.push(best);
+      }
+      return { a, b, sa, sb, p1, p2, s0, m, vp, ghosts, bundled: rec.bundled };
+    }
+    /** Fige le repère (ancres) et convertit l'ancien point de courbure avant de toucher aux points de passage */
+    function freezeVia(ex, g) {
+      const L = R.layout;
+      if (!ex.a1 && !g.bundled) ex.a1 = L.nearestAnchor(g.a, g.sa, g.p1);
+      if (!ex.a2) ex.a2 = L.nearestAnchor(g.b, g.sb, g.p2);
+      const s0 = g.bundled ? st.edgeEls.get(ex.id).cv.at(0) : L.anchorPoint(g.a, g.sa, ex.a1), p2 = L.anchorPoint(g.b, g.sb, ex.a2);
+      // les points restent où on les voit : on les ré-exprime dans le repère figé
+      ex.via = g.vp.map((q) => L.toVia(s0, p2, q));
+      delete ex.bend;
+      return { s0, p2 };
+    }
+    function ehEl(w, cls) {
+      let el = handlesLayer.querySelector(`[data-eh="${w}"]`);
+      if (!el) {
+        el = h('div.eh', { dataset: { eh: w }, class: cls, 'aria-hidden': 'true' }, h('i', h('b')));
+        handlesLayer.appendChild(el);
+        if (!handlesLayer.hidden && !motion.reduced()) el.firstChild.firstChild.animate([{ scale: 0 }, { scale: 1 }], { duration: 260, easing: 'cubic-bezier(.42,1.67,.21,.9)' });
+      }
+      return el;
     }
     function positionHandles() {
       const e = st.selEdge && !ro() && !st.masked && !st.linking ? map.edges.find((x) => x.id === st.selEdge) : null;
       const g = e && edgeGeom(e);
       if (!g) { handlesLayer.hidden = true; return; }
       const dragging = st.ehDrag;
-      const pos = { a1: g.p1, a2: g.p2, bend: g.k };
-      for (const el of handlesLayer.children) {
+      const pos = { a1: g.p1, a2: g.p2 };
+      const keep = new Set(['a1', 'a2']);
+      g.vp.forEach((p, i) => { pos['v' + i] = p; keep.add('v' + i); ehEl('v' + i, 'eh-bend eh-v'); });
+      // pendant qu'on tire un point, les « + » restent figés et s'effacent en CSS
+      // (ne pas les retirer : le doigt peut tenir l'un d'eux en capture)
+      if (!dragging) g.ghosts.forEach((p, i) => { pos['g' + i] = p; keep.add('g' + i); ehEl('g' + i, 'eh-ghost'); });
+      for (const el of [...handlesLayer.children]) {
         const w = el.dataset.eh, p = pos[w];
+        if (dragging && w[0] === 'g') continue;
+        if (!keep.has(w) || !p) { el.remove(); continue; }
         el.style.transform = `translate(${p[0]}px, ${p[1]}px)`;
-        el.classList.toggle('set', !!e[w]);
+        el.classList.toggle('set', w[0] === 'v' || !!e[w]);
         el.classList.toggle('grab', dragging === w);
       }
       if (handlesLayer.hidden) {
         handlesLayer.hidden = false;
-        // apparition : les poignées naissent depuis le trait (échelonnées, départ → courbure → arrivée)
-        if (!motion.reduced()) [...handlesLayer.children].forEach((el, i) => el.firstChild.firstChild.animate([{ scale: 0 }, { scale: 1.15 }, { scale: 1 }], { duration: 320, delay: [0, 80, 40][i], easing: 'cubic-bezier(.42,1.67,.21,.9)', fill: 'backwards' }));
+        // apparition : les poignées naissent depuis le trait (échelonnées, départ → points → arrivée)
+        if (!motion.reduced()) [...handlesLayer.children].forEach((el, i) => el.firstChild.firstChild.animate([{ scale: 0 }, { scale: 1.15 }, { scale: 1 }], { duration: 320, delay: Math.min(i, 8) * 30, easing: 'cubic-bezier(.42,1.67,.21,.9)', fill: 'backwards' }));
       }
     }
 
@@ -2069,9 +2107,9 @@
           h('div.es-row', h('span.es-row-l', 'Flèche'), seg('Flèche', ARROWS, es.arrow || 'auto', (v) => styleSet('arrow', v === 'auto' ? null : v)))));
         // tracé : forme, ancres, courbure
         const sideSeg = (k) => seg(k === 'a1' ? 'Départ' : 'Arrivée', SIDE_OPTS, x[k] ? x[k].s : 'auto', (v) => live(() => { const y = cur(); if (v === 'auto') delete y[k]; else y[k] = { s: v, t: 0.5 }; }), 'es-sides');
-        const reshaped = x.a1 || x.a2 || x.bend || es.shape;
+        const reshaped = x.a1 || x.a2 || x.bend || (x.via && x.via.length) || es.shape;
         const reset = ui.btn('Réinitialiser le tracé', { icon: 'undo', variant: 'text', onClick: () => {
-          live(() => { for (const y of targets()) { delete y.a1; delete y.a2; delete y.bend; if (y.style) { const s2 = { ...y.style }; delete s2.shape; if (Object.keys(s2).length) y.style = s2; else delete y.style; } } });
+          live(() => { for (const y of targets()) { delete y.a1; delete y.a2; delete y.bend; delete y.via; if (y.style) { const s2 = { ...y.style }; delete s2.shape; if (Object.keys(s2).length) y.style = s2; else delete y.style; } } });
           paint();
         } });
         reset.disabled = !reshaped;
@@ -2079,7 +2117,7 @@
           seg('Forme', SHAPES, es.shape || 'auto', (v) => styleSet('shape', v === 'auto' ? null : v)),
           h('div.es-row', h('span.es-row-l', `Départ · ${title(x.from)}`), sideSeg('a1')),
           h('div.es-row', h('span.es-row-l', `Arrivée · ${title(x.to)}`), sideSeg('a2')),
-          h('p.sty-help', 'Sur la carte, glissez les poignées du lien sélectionné : les extrémités s’aimantent aux bords, le losange courbe le trait. Double-clic sur une poignée : retour à l’automatique.'),
+          h('p.sty-help', 'Glissez le trait pour le déformer : un point naît sous le doigt (les « + » en ajoutent entre deux points). Les extrémités s’aimantent aux bords. Double-clic sur un point pour le retirer ; aligné sur ses voisins, il disparaît au lâcher.'),
           h('div.sty-foot', reset)));
       }
       paint();
@@ -2452,10 +2490,17 @@
       const eh = e.target.closest && e.target.closest('[data-eh]');
       if (eh && st.selEdge && !ro() && !st.masked && !st.linking) {
         const which = eh.dataset.eh, now = Date.now(), cur = map.edges.find((x) => x.id === st.selEdge);
-        // double-clic sur une poignée : elle revient au tracé automatique
+        // double-clic sur une poignée : l'ancre revient au tracé automatique, le point de passage disparaît
         if (st.lastEhTap && st.lastEhTap.w === which && now - st.lastEhTap.t < 350) {
           st.lastEhTap = null;
-          if (cur && cur[which]) { mutate(() => { delete cur[which]; }); ui.snack(which === 'bend' ? 'Courbure automatique' : 'Ancre automatique'); }
+          if (cur && which[0] === 'v') {
+            const i = +which.slice(1);
+            mutate(() => {
+              if (cur.via) { cur.via.splice(i, 1); if (!cur.via.length) delete cur.via; }
+              delete cur.bend;
+            });
+            ui.snack(cur.via ? 'Point retiré' : 'Tracé sans détour');
+          } else if (cur && cur[which]) { mutate(() => { delete cur[which]; }); ui.snack('Ancre automatique'); }
           return;
         }
         st.lastEhTap = { w: which, t: now };
@@ -2600,12 +2645,20 @@
         const ex = map.edges.find((x) => x.id === gesture.edgeId);
         if (!ex) return;
         const p = toWorld(e.clientX, e.clientY);
-        if (gesture.which === 'bend') {
-          const b = { x: Math.round(p.x - gesture.m[0]), y: Math.round(p.y - gesture.m[1]) };
-          // près de l'axe des ancres : la courbure s'aimante à « aucune » (trait sans détour)
-          const near = Math.hypot(b.x, b.y) < 10 / st.view.k;
-          if (near && ex.bend) motion.haptic(6);
-          if (near) delete ex.bend; else ex.bend = b;
+        if (gesture.which[0] === 'v') {
+          const i = +gesture.which.slice(1), L = R.layout, f = gesture.frame;
+          ex.via[i] = L.toVia(f.s0, f.p2, [p.x, p.y]);
+          // aligné sur ses voisins : il s'aimante (trait droit à cet endroit) — retiré au lâcher
+          const P = [f.s0, ...ex.via.map((q) => L.viaPoint(f.s0, f.p2, q)), f.p2];
+          const A = P[i], B = P[i + 2], vx = B[0] - A[0], vy = B[1] - A[1], l = Math.hypot(vx, vy) || 1;
+          const off = Math.abs((p.x - A[0]) * vy - (p.y - A[1]) * vx) / l;
+          const near = off < 8 / st.view.k;
+          if (near !== !!gesture.straight) motion.haptic(6);
+          gesture.straight = near;
+          if (near) {
+            const t = ((p.x - A[0]) * vx + (p.y - A[1]) * vy) / (l * l);
+            ex.via[i] = L.toVia(f.s0, f.p2, [A[0] + vx * t, A[1] + vy * t]);
+          }
         } else {
           const n = S.node(map, gesture.which === 'a1' ? ex.from : ex.to);
           const a = R.layout.nearestAnchor(n, size(n), [p.x, p.y]);
@@ -2659,19 +2712,33 @@
         canvas.classList.add('is-resizing');
         return;
       }
+      if (gesture.type === 'edge' && !st.linking && !st.masked && !ro()) {
+        // tirer le trait lui-même : il se déforme là où on l'a saisi (un point de passage naît sous le doigt)
+        if (st.selEdge !== gesture.edgeId) { st.sel.clear(); st.primary = null; st.selEdge = gesture.edgeId; render(); renderPane(); }
+        const ex = map.edges.find((x) => x.id === gesture.edgeId), g = ex && edgeGeom(ex);
+        if (!g) { gesture.type = 'none'; return; }
+        const p = toWorld(gesture.start.x, gesture.start.y);
+        Object.assign(gesture, { type: 'edge-handle', which: 'v' + R.layout.viaInsertAt(g.s0, g.p2, g.vp, [p.x, p.y]), insert: [p.x, p.y], moved: true });
+      }
       if (gesture.type === 'edge-handle') {
         const ex = map.edges.find((x) => x.id === gesture.edgeId), g = ex && edgeGeom(ex);
         if (!g) { gesture.type = 'none'; st.ehDrag = null; return; }
         st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
-        if (gesture.which === 'bend') {
-          // les ancres se figent : le point de courbure se mesure depuis un milieu qui ne bouge plus
+        let w = gesture.which;
+        if (w[0] === 'g') { w = 'v' + w.slice(1); gesture.insert = g.ghosts[+gesture.which.slice(1)]; }
+        if (w[0] === 'v') {
+          // les ancres se figent : les points se mesurent dans un repère qui ne bouge plus
           // (branche de fourche : le départ reste la jonction, on ne fige que l'arrivée)
-          if (!ex.a1 && !g.bundled) ex.a1 = R.layout.nearestAnchor(g.a, g.sa, g.p1);
-          if (!ex.a2) ex.a2 = R.layout.nearestAnchor(g.b, g.sb, g.p2);
-          const p1 = g.bundled ? st.edgeEls.get(ex.id).cv.at(0) : R.layout.anchorPoint(g.a, g.sa, ex.a1), p2 = R.layout.anchorPoint(g.b, g.sb, ex.a2);
-          gesture.m = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+          gesture.frame = freezeVia(ex, g);
+          if (gesture.insert) {
+            if (ex.via.length >= 12) { gesture.type = 'none'; st.ehDrag = null; ui.snack('12 points au plus'); return; }
+            ex.via.splice(+w.slice(1), 0, R.layout.toVia(gesture.frame.s0, gesture.frame.p2, gesture.insert));
+            motion.haptic(8);
+          }
+          gesture.which = w; st.ehDrag = w;
         }
         canvas.classList.add('is-eh');
+        positionHandles();
         return;
       }
       if (gesture.type === 'node') {
@@ -2731,6 +2798,11 @@
 
       if (g.type === 'edge-handle') {
         st.ehDrag = null;
+        if (g.moved && g.straight && g.which[0] === 'v') {
+          // lâché dans l'alignement : le point disparaît, le trait se tend
+          const ex = map.edges.find((x) => x.id === g.edgeId);
+          if (ex && ex.via) { ex.via.splice(+g.which.slice(1), 1); if (!ex.via.length) delete ex.via; }
+        }
         if (g.moved) {
           // follow-through : la poignée relâchée rebondit avant de se poser (transition ressort)
           S.normalizeGroups(map.edges);

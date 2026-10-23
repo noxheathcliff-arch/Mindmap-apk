@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1792701863.2733,
-    "seen": 1792701884.5577528,
-    "ast_hash": "5caeeec5d754a1fcc94764c18d152444",
+    "mtime": 1792725227.8704436,
+    "seen": 1792725585.4751341,
+    "ast_hash": "79894a68374d2f13255a3cce420c2e27",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1792701863.2757201,
-    "seen": 1792701884.557773,
-    "ast_hash": "df0bb940607a9d948023dcd98b364adb",
+    "mtime": 1792725227.871613,
+    "seen": 1792725585.4751499,
+    "ast_hash": "33415162f90fe5e78be244bf824cb6b7",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1792713026.231356,
-    "seen": 1792713076.9872792,
-    "ast_hash": "8b01b87e4d0756269a14a3f402e4dfb7",
+    "mtime": 1792725435.1752117,
+    "seen": 1792725585.475156,
+    "ast_hash": "5a9621bef11dc0c56b51e5122b7745cb",
     "semantic_hash": ""
   },
   "js/views/library.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792720940.1240354,
-    "seen": 1792720946.6452851,
-    "ast_hash": "23c59eea5bd8265cd29116031e8346c4",
+    "mtime": 1792725572.4816682,
+    "seen": 1792725585.4751678,
+    "ast_hash": "28143f10d3ac2a095996b6115225f658",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1792720940.1387334,
-    "seen": 1792720946.6453307,
-    "ast_hash": "4a2b95c876111eff9d1a5cc2b608efea",
+    "mtime": 1792725578.6568356,
+    "seen": 1792725585.4752119,
+    "ast_hash": "375598d2ac808790e479a2efc22354e3",
     "semantic_hash": ""
   },
   "README.md": {

@@ -229,6 +229,12 @@
     if (e.bend && Number.isFinite(+e.bend.x) && Number.isFinite(+e.bend.y) && e.bend.x !== null && e.bend.y !== null) {
       o.bend = { x: U.clamp(Math.round(+e.bend.x), -4000, 4000), y: U.clamp(Math.round(+e.bend.y), -4000, 4000) };
     }
+    // points de passage libres (repère des ancres, voir R.layout.viaPoint), 12 au plus
+    if (Array.isArray(e.via)) {
+      const via = e.via.filter((q) => q && Number.isFinite(+q.u) && Number.isFinite(+q.v) && q.u !== null && q.v !== null).slice(0, 12)
+        .map((q) => ({ u: U.clamp(Math.round(+q.u * 1000) / 1000, -20, 20), v: U.clamp(Math.round(+q.v * 1000) / 1000, -20, 20) }));
+      if (via.length) { o.via = via; delete o.bend; }
+    }
     return o;
   }
   /** Chiffres romains (préfixe « Paragraphe II ») */
