@@ -109,7 +109,12 @@
     padding: var(--sp-5) var(--sp-5) var(--sp-5); row-gap: var(--sp-2); border-radius: var(--shape-xli);
   }
   .lbx-head { padding-top: 0; }
-  .lbx-stage { height: 190px; margin: 0 calc(-1 * var(--sp-3)); }
+  .lbx-stage { height: 140px; margin: 0 calc(-1 * var(--sp-3)); }
   .lbx-foot { gap: var(--sp-3); }
+  /* au repos, le compte se tait : le bouton « Réviser · n » le dit déjà ; il revient quand on fouille */
+  .lbx-read.idle { visibility: hidden; }
+  .lbx-read { left: 50%; right: auto; transform: translateX(-50%); max-width: calc(100% - 16px); border-radius: 12px; padding: 2px var(--sp-3); background: color-mix(in oklab, var(--primary-container) 88%, transparent); opacity: 1; }
+  .lbx .wide { display: none; }
 }
+@media (min-width: 600px) { .lbx .narrow { display: none; } }
 @media (prefers-reduced-motion: reduce) { .lbx-view svg { transition: none; } }

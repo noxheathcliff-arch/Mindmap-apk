@@ -1,7 +1,7 @@
 # Graph Report - Mindmap-apk  (2026-10-23)
 
 ## Corpus Check
-- 62 files · ~281,356 words
+- 62 files · ~281,507 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `34948bd2`
+- Built from commit: `257b10ed`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

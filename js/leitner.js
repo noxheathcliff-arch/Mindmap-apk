@@ -164,10 +164,11 @@
       return { x0, x1, y0, y1 };
     }
     let room = 0, scMax = .6;
+    const narrow = matchMedia('(max-width: 599.98px)');
     const fit = (b) => Math.min((W * .94) / (b.x1 - b.x0), (room * .9) / (b.y1 - b.y0));
     function measure() {
       W = stage.clientWidth; H = stage.clientHeight;
-      room = H - 26;                                   // la ligne de lecture en bas
+      room = H - (narrow.matches ? 8 : 26);            // la ligne de lecture en bas (sur mobile, elle passe par-dessus)
       scMax = Math.min(...VIEWS.map((v) => fit(bounds(v.tx * rad, v.ty * rad))));
       center();
     }
@@ -283,6 +284,7 @@
     function compartment(x) { return clamp(Math.floor((x + L / 2) / CL), 0, 5); }
 
     function say() {
+      read.classList.toggle('idle', !pulled && !(lifted || (finger != null && sel)));
       if (pulled) { read.textContent = 'Touche la fiche pour la réviser'; return; }
       const p = lifted || (finger != null ? sel : null);
       if (!p) {

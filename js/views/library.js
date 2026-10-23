@@ -154,9 +154,11 @@
     const courses = S.coursesSorted().filter((c) => S.courseStats(c.id).due).length;
     const mins = Math.max(1, Math.round((due * 25) / 60));
     const hour = new Date().getHours();
-    const title = due ? (hour >= 18 || hour < 5 ? 'Ta session du soir est prête' : 'Ta session du jour est prête') : today ? 'Bravo, tout est révisé' : 'Tout est à jour';
+    // sur mobile, le titre et le sous-titre tiennent sur une ligne : la forme longue se replie (.wide)
+    const moment = hour >= 18 || hour < 5 ? 'soir' : 'jour';
+    const title = due ? [h('span.wide', 'Ta s'), h('span.narrow', 'S'), `ession du ${moment} `, h('span.wide', 'est '), 'prête'] : today ? 'Bravo, tout est révisé' : 'Tout est à jour';
     const sub = due
-      ? `${U.plural(courses, 'cours', 'cours')} · ≈ ${mins} min. Le rappel actif fixe mieux qu’une relecture.`
+      ? [`${U.plural(courses, 'cours', 'cours')} · ≈ ${mins} min`, h('span.wide', '. Le rappel actif fixe mieux qu’une relecture.')]
       : today ? `${U.plural(today, 'carte')} révisée${today > 1 ? 's' : ''} aujourd’hui.` : next.tomorrow ? `Demain : ${U.plural(next.tomorrow, 'carte')}.` : 'Décompose une nouvelle notion pour alimenter tes révisions.';
     const streakEl = h('div.today-streak', { class: streak ? 'lit' : '' },
       h('span.flame', R.icon('flame', 20)),
