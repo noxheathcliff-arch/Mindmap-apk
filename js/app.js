@@ -94,8 +94,6 @@
   }
 
   function render() {
-    // une animation de sortie encore en cours (ex. le classeur qui rentre) : on la termine d'abord
-    if (app.overlay) { const o = app.overlay; app.overlay = null; o.finish(); }
     const route = parse();
     const prev = app.route;
     const nav = pendingNav;
@@ -116,12 +114,6 @@
     const still = !!(nav && nav.still);
     const useVT = !!prev && !still && supportsVT && !U.reducedMotion() && !document.hidden;
 
-    // la vue d'arrivée peut jouer sa propre sortie de la page précédente et se monter dessous
-    const arrive = prev && !still && !document.hidden && R.views[route.name].arrive;
-    if (arrive) {
-      const o = arrive(prev, () => { if (app.route === prev) mountRoute(route, prev, dir, false, true); });
-      if (o) { app.overlay = o; swap(false); return; }
-    }
     if (!useVT) { swap(false); mountRoute(route, prev, dir, false, still); return; }
 
     if (vtRunning) { try { vtRunning.skipTransition(); } catch (e) { /* ignore */ } }

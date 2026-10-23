@@ -304,14 +304,14 @@
 }
 
 /* ------------------------------------------------------------- l'entrée */
-.cl-scene { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
-/* le voile : la page derrière s'assombrit (sortie du dossier, puis poussée de caméra). Une simple
-   opacité, réglée par le script : pas de flou d'arrière-plan ni de propriété héritée par le classeur */
-.cl-veil { position: absolute; inset: 0; background: var(--scrim, #000); opacity: 0; will-change: opacity; }
-/* en mouvement, le papier perd son grain (un bruit SVG redessiné à chaque image, invisible en vol) */
-.cl-scene { --blanc-grain: none; }
-.cl-scene .i-grain { display: none; }
-.cl-scene .i-shadow, .cl-scene .cl-ring.back { filter: none; }
+.cl-scene {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none;
+  --dim: 0;
+}
+.cl-scene::before { content: ""; position: absolute; inset: 0; background: var(--scrim, #000); opacity: calc(var(--dim) * .14); }
+/* la poussée de caméra : profondeur de champ, la page derrière se floute et s'assombrit */
+.cl-scene { --zf: 0; }
+.cl-scene::after { content: ""; position: absolute; inset: 0; backdrop-filter: blur(calc(var(--zf) * 10px)); background: rgb(0 0 0 / calc(var(--zf) * .22)); opacity: min(1, calc(var(--zf) * 4)); }
 .cl-pose { z-index: 1; }
 .cl-pose { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform, opacity; }
 

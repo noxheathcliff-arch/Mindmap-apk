@@ -319,43 +319,19 @@
       },
     };
   }
-  /** Le classeur d'un cours : ses premiers intercalaires et feuilles, en gabarits */
-  function binderOf(c) {
+  /** Entrer dans un cours : le classeur sort du dossier, s'ouvre sur son premier intercalaire,
+      et l'on plonge dedans (js/binder.js) ; la page du cours s'échange dessous, sans transition. */
+  function openCourse(card, c) {
+    const go = () => R.app.go('#/cours/' + c.id, { still: true });
+    if (!window.Binder) { R.app.go('#/cours/' + c.id); return; }
     const { items } = S.unitsIn(c.id, null);
     let nf = 0;
     const stack = items.slice(0, 9).map((x) => (x.folder
       ? { kind: 'inter', num: R.numeral ? R.numeral(x.folder.label, nf++) : String(++nf), kicker: x.folder.label || S.FOLDER_LABELS[x.folder.kind], title: x.folder.title }
       : { kind: 'sheet', content: x.map.title }));
     if (!stack.length) stack.push({ kind: 'sheet' });
-    return { title: c.title, kicker: 'Cours', sub: c.description || '', items: stack, skeleton: true };
-  }
-  /** Sortir d'un cours : l'entrée à l'envers. La page du cours s'efface sous l'intercalaire qui
-      revient couvrir l'écran ; l'accueil se monte dessous ; le classeur se referme et rentre dans
-      son dossier. Renvoie la poignée de l'animation, ou null (navigation normale). */
-  function leaveCourse(id, mount) {
-    const c = S.course(id);
-    if (!window.Binder || !window.Binder.leave || !c) return null;
-    const page = U.$('#view .page-wrap');
-    const kids = page ? [...(page.firstElementChild || page).children].slice(0, 8) : [];
-    const anim = kids.map((n, i) => n.animate && n.animate(
-      [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(18px) scale(.985)' }],
-      { duration: 300, delay: (kids.length - 1 - i) * 25, easing: 'cubic-bezier(.3, 0, .8, .15)', fill: 'forwards' }));
-    const o = window.Binder.leave({
-      binder: binderOf(c),
-      tint: (el) => R.courseArt.tint(el, c),
-      swap: mount,
-      target: () => { const t = document.getElementById('cc-' + c.id); return t && t.closest('.fiche'); },
-    });
-    if (!o) anim.forEach((a) => a && a.cancel());
-    return o;
-  }
-  /** Entrer dans un cours : le classeur sort du dossier, s'ouvre sur son premier intercalaire,
-      et l'on plonge dedans (js/binder.js) ; la page du cours s'échange dessous, sans transition. */
-  function openCourse(card, c) {
-    const go = () => R.app.go('#/cours/' + c.id, { still: true });
-    if (!window.Binder) { R.app.go('#/cours/' + c.id); return; }
     window.Binder.enter(card, {
-      binder: binderOf(c),
+      binder: { title: c.title, kicker: 'Cours', sub: c.description || '', items: stack, skeleton: true },
       tint: (el) => R.courseArt.tint(el, c),
       // la page du cours monte sous la scène qui se dissout : ses blocs remontent un à un (relais du zoom)
       swap: () => {
@@ -458,8 +434,6 @@
 
   /* ---------------- Vue -------------------------------------------- */
   R.views.library = {
-    // en arrivant d'un cours : le classeur rentre dans son dossier (l'entrée à l'envers)
-    arrive(prev, mount) { return prev.name === 'course' ? leaveCourse(prev.id, mount) : null; },
     mount(el) {
       // première visite de la session : entrée en cascade, balayage, compteurs.
       // Les visites suivantes (et les mises à jour) restent immobiles : vu souvent = calme.
