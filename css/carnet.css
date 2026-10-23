@@ -319,33 +319,51 @@
   /* toute la largeur de la page, marge comprise ; aucune ligne de texte dessous */
   margin: calc(var(--nb-line) / 2) -8px calc(var(--nb-line) / 2) calc(-1 * var(--nb-margin));
 }
+/* Post-it « vectoriel » : aplats nets, bande collante franche, reflet en biais, coin replié
+   dessiné (rabat + ombre portée), ombre douce teintée. Trois teintes qui alternent. */
 .nb-postit {
-  --pi-bg: #fff2a6; --pi-edge: #f2df78; --pi-back: #e3cd5c; --pi-ink: #c3271c;
+  --pi-bg: #ffe98a; --pi-band: #ffdd5c; --pi-fold: #fff6c4; --pi-shade: #e9c63c;
+  --pi-glow: rgba(255, 255, 255, 0.34); --pi-sh: 120, 86, 0; --pi-ink: #c3271c;
   position: absolute; z-index: 3;
   transform: rotate(var(--r, 0deg));
   transform-origin: 50% 100%;
   pointer-events: auto;
 }
-.nb-root.is-dark .nb-postit { --pi-bg: #d9cc84; --pi-edge: #c9bb6c; --pi-back: #a9994a; --pi-ink: #9c1d14; }
+.nb-postit.is-c1 { --pi-bg: #ffd3ad; --pi-band: #ffbf8a; --pi-fold: #ffe9d6; --pi-shade: #f0a467; --pi-sh: 140, 70, 10; }
+.nb-postit.is-c2 { --pi-bg: #c9f0d4; --pi-band: #a6e4b9; --pi-fold: #e6f9ec; --pi-shade: #84cf9c; --pi-sh: 20, 100, 50; }
+.nb-root.is-dark .nb-postit { --pi-bg: #dcc96c; --pi-band: #cdb853; --pi-fold: #ece0a2; --pi-shade: #a8932f; --pi-glow: rgba(255, 255, 255, 0.16); --pi-sh: 0, 0, 0; --pi-ink: #9c1d14; }
+.nb-root.is-dark .nb-postit.is-c1 { --pi-bg: #dcae88; --pi-band: #cf9a6d; --pi-fold: #ecc9ab; --pi-shade: #b07a4b; }
+.nb-root.is-dark .nb-postit.is-c2 { --pi-bg: #a6cdb1; --pi-band: #8fbf9d; --pi-fold: #c5e2cd; --pi-shade: #6e9f7d; }
 .nb-postit-shadow {
-  position: absolute; inset: 4px 2px 0 2px; border-radius: 2px;
-  box-shadow: 0 1.5px 2.5px rgba(40, 30, 0, 0.22);
+  position: absolute; inset: 6px 5px 0 5px; border-radius: 10px;
+  box-shadow: 0 1.5px 2.5px rgba(var(--pi-sh), 0.22);
 }
-.nb-root.is-dark .nb-postit-shadow { filter: brightness(0.4); }
 .nb-postit-paper {
-  position: absolute; inset: 0; border-radius: 1px 1px 2px 2px;
+  position: absolute; inset: 0; border-radius: 5px 5px 7px 7px;
   background:
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent 16px),          /* bande collante, un rien plus mate */
-    linear-gradient(170deg, var(--pi-bg) 60%, var(--pi-edge));
-  /* coin bas droit décollé : coupé ici, dessiné par .nb-postit-curl */
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+    linear-gradient(118deg, transparent 0 74%, var(--pi-glow) 74% 80%, transparent 80% 83%, var(--pi-glow) 83% 84.5%, transparent 84.5%),   /* reflet, dans le coin */
+    linear-gradient(to bottom, var(--pi-band) 0 15px, rgba(255, 255, 255, 0.35) 15px 16.5px, transparent 16.5px),              /* bande collante */
+    var(--pi-bg);
+  /* coin bas droit replié : coupé ici, le rabat est dessiné par .nb-postit-curl */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%);
 }
 .nb-postit-curl {
-  position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+  position: absolute; right: 0; bottom: 0; width: 24px; height: 24px;
   transform-origin: 100% 100%;
-  background: linear-gradient(315deg, transparent 50%, var(--pi-back) 50%, var(--pi-edge) 78%, var(--pi-back));
-  filter: drop-shadow(-1px -1px 1px rgba(40, 30, 0, 0.18));
-  border-radius: 0 0 0 3px;
+  filter: drop-shadow(-2.5px -2.5px 0 rgba(var(--pi-sh), 0.13)) drop-shadow(-1px -1px 1.5px rgba(var(--pi-sh), 0.18));
+}
+.nb-postit-curl::before {
+  content: ''; position: absolute; inset: 0; border-top-left-radius: 7px;
+  background: linear-gradient(135deg, var(--pi-fold) 0, var(--pi-fold) 30%, var(--pi-shade) 50%, transparent 50%);
+}
+/* surlignage : invisible tant que le mot n'est pas écrit ; sur post-it, couleur de la bande */
+.nb-writing mark { background: none !important; }
+.nb-postit .nb-postit-body mark { color: inherit; background: linear-gradient(transparent 58%, var(--pi-band) 58% 92%, transparent 92%); }
+/* atterrissage : petits traits qui jaillissent des coins (façon Lottie) */
+.nb-puff { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 4; }
+.nb-puff i {
+  position: absolute; left: 0; top: -1.5px; width: 9px; height: 3px; border-radius: 2px;
+  background: var(--pi-shade, #e9c63c); transform-origin: 0 50%; opacity: 0;
 }
 .nb-postit-body {
   position: absolute; inset: 14px 12px 10px 13px; overflow: hidden;

@@ -351,6 +351,7 @@
         p.style.left = Math.round(x0 + col * (pw + gap) + (i % 2 ? 3 : -2)) + 'px';
         p.style.top = r * (ph + gap) + 'px';
         p.style.setProperty('--r', rot[i % 3] + 'deg');
+        if (i % 3) p.classList.add('is-c' + (i % 3));
         p.style.opacity = '0';
       });
       slot.style.height = slotH(g, ph) + 'px';
@@ -370,9 +371,12 @@
         }
         const r = parseFloat(p.style.getPropertyValue('--r')) || 0;
         // en main : plus haut, plus grand, plus de biais, ombre large et douce
-        const air = { x: 16, y: -54, r: r - 5, s: 1.08 };
+        // décalé vers le milieu de la réserve : un post-it de droite ne sort pas de l'écran
+        const side = Math.sign(p.offsetLeft + p.offsetWidth / 2 - p.parentNode.clientWidth / 2);
+        const air = { x: -16 * side || 8, y: -54, r: r - 5 * (-side || 1), s: 1.08 };
         const T = (x, y, rr, sx, sy = sx) => `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rr.toFixed(2)}deg) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
-        const SH = (y, b, a) => `0 ${y.toFixed(1)}px ${b.toFixed(1)}px rgba(40, 30, 0, ${a.toFixed(3)})`;
+        const tint = getComputedStyle(p).getPropertyValue('--pi-sh').trim() || '40, 30, 0';
+        const SH = (y, b, a) => `0 ${y.toFixed(1)}px ${b.toFixed(1)}px rgba(${tint}, ${a.toFixed(3)})`;
         const sh = p.querySelector('.nb-postit-shadow');
         p.style.opacity = '';
         // 1. apparition : la feuille se détache du bloc, se déplie vers le lecteur
@@ -426,9 +430,35 @@
         a1.cancel(); s1.cancel();
         const all = [p.animate(kf, { ...opt, fill: 'none' }), sh.animate(ks, { ...opt, fill: 'none' }), p.querySelector('.nb-postit-curl').animate(kc, { ...opt, fill: 'none' })];
         this.cur = { anims: all, pen: null };
+        this._puff(p, D * tB);
         await Promise.all(all.map((a) => a.finished)).catch(() => {});
         if (this.cur && this.cur.anims === all) this.cur = null;
+        if (p.body.scrollTop > 0) p.body.scrollTo({ top: 0, behavior: 'smooth' });   // relire depuis le début
       }
+    },
+
+    // au contact, trois petits traits jaillissent de chaque coin bas puis s'effacent
+    _puff(p, delay) {
+      const host = p.parentNode;
+      if (!host) return;
+      const x0 = p.offsetLeft, x1 = x0 + p.offsetWidth, y = p.offsetTop + p.offsetHeight - 2;
+      [[x0 - 3, 1], [x1 + 3, -1]].forEach(([x, d]) => {
+        const g = h('div', 'nb-puff');
+        g.style.left = x + 'px'; g.style.top = y + 'px';
+        g.style.setProperty('--pi-shade', getComputedStyle(p).getPropertyValue('--pi-shade'));
+        host.append(g);
+        [-150, -118, -86].forEach((deg, k) => {
+          const a = d > 0 ? deg : -180 - deg, i = h('i');
+          g.append(i);
+          const T = (t, sx) => `rotate(${a}deg) translateX(${t}px) scaleX(${sx})`;
+          i.animate([
+            { transform: T(2, 0.2), opacity: 0 },
+            { transform: T(5, 1), opacity: 1, offset: 0.3 },
+            { transform: T(13 + k * 2, 0.15), opacity: 0 },
+          ], { duration: 380, delay: delay + k * 25, easing: 'cubic-bezier(.2,.8,.3,1)', fill: 'both' });
+        });
+        setTimeout(() => g.remove(), delay + 520);
+      });
     },
 
     // ---- ouverture -----------------------------------------------------------
@@ -547,25 +577,91 @@
         { opacity: 1, offset: 0.2 },
         { clipPath: show, opacity: 1 },
       ], { duration: dur, delay: times[i], fill: 'both', easing: 'cubic-bezier(.3,.1,.4,1)' }));
-      // la plume suit la lettre en cours, en sautillant un peu d'une lettre à l'autre
-      const pts = [];
-      let lastTop = null;
+      // la plume suit la lettre en cours, en sautillant un peu d'une lettre à l'autre. Sur un
+      // post-it (tenu de biais, peut-être défilant), les points sont pris dans son repère et
+      // bornés à sa surface : la pointe ne sort jamais du papier.
+      const fr = this._frame(root.closest('.nb-postit') && root);
+      const pts = [], S = [], maxS = fr ? Math.max(0, root.scrollHeight - root.clientHeight) : 0;
+      let lastTop = null, sc = 0;
       chars.forEach((c, i) => {
-        const r = this._local(c.getBoundingClientRect());
+        const r = fr ? fr.loc(c) : this._local(c.getBoundingClientRect());
+        if (fr && maxS) sc = clamp(Math.max(sc, r.y + r.h * 0.9 + 6 - fr.h), 0, maxS);   // le texte remonte sous la plume
+        S.push(sc);
+        const y0 = r.y - sc;
         if (lastTop != null && Math.abs(r.y - lastTop) > 8) {
           const p = pts[pts.length - 1];
           if (p) pts.push({ x: p.x + 6, y: p.y - 9, at: times[i] - gap * 0.6 });   // retour à la ligne : la plume se lève
         }
         lastTop = r.y;
-        pts.push({ x: r.x + r.w * 0.9, y: r.y + r.h * 0.78 + (i % 2 ? -1.6 : 0.6), at: times[i] + dur * 0.7 });
+        pts.push({ x: r.x + r.w * 0.9, y: y0 + r.h * 0.78 + (i % 2 ? -1.6 : 0.6), at: times[i] + dur * 0.7 });
       });
-      const pen = this._pen(ink, pts, total, lift);
-      const cur = (this.cur = { anims, pen });
+      if (fr) pts.forEach((p) => Object.assign(p, fr.toBook(p.x, p.y)));
+      const scroll = maxS ? this._follow(root, S, times, total) : null;
+      const pen = this._pen(ink, pts, total, lift, fr && fr.bound);
+      const cur = (this.cur = { anims, pen, scroll });
       await Promise.all(anims.map((a) => a.finished)).catch(() => {});
       root.classList.remove('nb-writing');
       anims.forEach((a) => a.cancel());
       if (pen) await pen.finished.catch(() => {});
+      if (scroll) scroll.stop();
       if (this.cur === cur) this.cur = null;
+    },
+    /* repère d'un post-it : ses 4 coins réels à l'écran (sonde), donc la rotation et l'échelle
+       « en main » comprises. loc(el) : boîte de el dans le repère du papier (x, y en px CSS du
+       corps, défilement nul) ; toBook(x, y) : retour au repère du carnet ; bound : borne un point
+       du carnet à la surface du papier. */
+    _frame(body) {
+      if (!body) return null;
+      const top = body.scrollTop;
+      body.scrollTop = 0;
+      const pr = ['0 0', '100% 0', '0 100%'].map((p) => {
+        const [l, t] = p.split(' ');
+        const e = h('span');
+        e.style.cssText = `position:absolute;left:${l};top:${t};width:0;height:0`;
+        body.append(e);
+        const r = e.getBoundingClientRect();
+        e.remove();
+        return this._local(r);
+      });
+      body.scrollTop = top;
+      const w = body.clientWidth, hh = body.clientHeight;
+      const [o, a, b] = pr, ax = (a.x - o.x) / w, ay = (a.y - o.y) / w, bx = (b.x - o.x) / hh, by = (b.y - o.y) / hh;
+      const det = ax * by - ay * bx || 1, sc = Math.hypot(ax, ay) || 1;
+      const toLoc = (X, Y) => { const dx = X - o.x, dy = Y - o.y; return { x: (dx * by - dy * bx) / det, y: (ax * dy - ay * dx) / det }; };
+      const toBook = (x, y) => ({ x: o.x + x * ax + y * bx, y: o.y + x * ay + y * by });
+      const PAD = 3;
+      return {
+        w, h: hh, toBook,
+        loc: (el) => {
+          const r = this._local(el.getBoundingClientRect()), c = toLoc(r.x + r.w / 2, r.y + r.h / 2);
+          const cw = el.offsetWidth || r.w / sc, ch = el.offsetHeight || r.h / sc;
+          return { x: c.x - cw / 2, y: c.y - ch / 2 + top, w: cw, h: ch };
+        },
+        bound: (X, Y) => { const l = toLoc(X, Y); return toBook(clamp(l.x, PAD, w - PAD), clamp(l.y, PAD, hh - PAD)); },
+      };
+    },
+    /* le corps d'un post-it trop plein défile au rythme de l'écriture : la ligne en cours reste
+       sous la plume, sans à-coup (rampe de 220 ms avant chaque lettre qui l'exige) */
+    _follow(body, S, times, total) {
+      const ks = [{ t: 0, s: S[0] || 0 }];
+      S.forEach((v, i) => { if (v > ks[ks.length - 1].s + 0.5) ks.push({ t: Math.max(ks[ks.length - 1].t, times[i] - 220), s: ks[ks.length - 1].s }, { t: times[i], s: v }); });
+      const at = (t) => {
+        let i = 1;
+        while (i < ks.length && ks[i].t < t) i++;
+        if (i >= ks.length) return ks[ks.length - 1].s;
+        const a = ks[i - 1], b = ks[i];
+        return lerp(a.s, b.s, smooth(clamp((t - a.t) / (b.t - a.t || 1), 0, 1)));
+      };
+      const t0 = performance.now();
+      let raf = 0, on = true;
+      const tick = () => {
+        if (!on) return;
+        const t = performance.now() - t0;
+        body.scrollTop = at(t);
+        if (t < total) raf = requestAnimationFrame(tick);
+      };
+      tick();
+      return { stop: () => { on = false; cancelAnimationFrame(raf); }, finish: () => { on = false; cancelAnimationFrame(raf); body.scrollTop = ks[ks.length - 1].s; } };
     },
     skip() {
       this.fast = true;
@@ -573,14 +669,19 @@
       if (!c) return;
       c.anims.forEach((a) => a.finish());
       if (c.pen) c.pen.finish();
+      if (c.scroll) c.scroll.finish();
     },
-    _pen(ink, pts, total, lift) {
+    _pen(ink, pts, total, lift, bound) {
       if (!pts.length) return null;
       const pen = this.pen;
       pen.classList.toggle('is-red', ink === 'red');
       pen.classList.toggle('is-lead', ink === 'lead');
       // la main pivote un peu autour de la pointe à chaque lettre, et se redresse en levant
-      const tf = (p, dx = 0, dy = 0, r = 0) => `translate(${(p.x - 2 + dx).toFixed(1)}px, ${(p.y - 82 + dy).toFixed(1)}px) translateZ(10px) rotate(${r.toFixed(2)}deg)`;
+      // bound (post-it) : même l'approche et le lever restent sur le papier
+      const tf = (p, dx = 0, dy = 0, r = 0) => {
+        const q = bound ? bound(p.x + dx, p.y + dy) : { x: p.x + dx, y: p.y + dy };
+        return `translate(${(q.x - 2).toFixed(1)}px, ${(q.y - 82).toFixed(1)}px) translateZ(10px) rotate(${r.toFixed(2)}deg)`;
+      };
       const end = total + (lift ? 280 : 60);
       const kf = [];
       const from = this._penAt;
