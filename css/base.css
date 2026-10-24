@@ -427,37 +427,28 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 
 /* ==========================================================================
    Mouvement réduit (préférence système ou réglage de l'app)
-   On ne supprime pas tout : les déplacements, zooms et boucles deviennent
-   des fondus courts (≤ 150 ms) qui gardent la compréhension des changements.
+   Rien ne glisse, ne zoome, ne rebondit ni ne tourne en boucle : les contenus
+   apparaissent directement à leur état final. Seules les surfaces qui se posent
+   AU-DESSUS de la page (dialogue, voile, menu, snackbar) gardent un fondu unique
+   de 150 ms — un seul calque à la fois, jamais de fondu vers le vide entre deux
+   pages ni de fondus en cascade, qui se lisent comme des clignotements.
    ========================================================================== */
-:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
-  animation-duration: 150ms !important;
-  animation-delay: 0s !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 120ms !important;
+:root[data-motion="reduce"] *:not(.splash), :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  animation-name: none !important;
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }
-:root[data-motion="reduce"] .stagger, :root[data-motion="reduce"] .page-wrap.entering,
-:root[data-motion="reduce"] .dialog:not(.out),
-:root[data-motion="reduce"] .empty, :root[data-motion="reduce"] .today, :root[data-motion="reduce"] .tip-card,
-:root[data-motion="reduce"] .onb.swap > *, :root[data-motion="reduce"] .fab, :root[data-motion="reduce"] .node.born,
-:root[data-motion="reduce"] .vtoolbar, :root[data-motion="reduce"] .bottombar.swap .ctx-btn,
-:root[data-motion="reduce"] .pane-inner.swap .pane-body > *, :root[data-motion="reduce"] .review-end > *,
-:root[data-motion="reduce"] .today-shape, :root[data-motion="reduce"] .daydeck .dd-top, :root[data-motion="reduce"] .end-flame,
-:root[data-motion="reduce"] .nav-cta, 
-:root[data-motion="reduce"] .navbar, :root[data-motion="reduce"] .ctxbar {
-  animation-name: rm-fade !important;
+:root[data-motion="reduce"] * { transition-duration: 120ms !important; }
+/* pages : échange net, l'ancienne disparaît à l'instant où la nouvelle est là */
+:root[data-motion="reduce"] .page-wrap.leaving { display: none !important; }
+/* surfaces superposées : un fondu, sur le conteneur seulement */
+:root[data-motion="reduce"] :is(.scrim, .dialog:not(.out), .snackbar) {
+  animation: rm-fade 150ms linear both !important;
 }
-/* dock : le saut d'icône disparaît, la pilule glisse sans étirement */
-:root[data-motion="reduce"] .navbar .nav-item .ic { animation: none !important; }
-:root[data-motion="reduce"] .lux::after, :root[data-motion="reduce"] .lux .ic, :root[data-motion="reduce"] .lux-count { animation: none !important; }
-/* rotations des formes cookie : supprimées (la silhouette est la même à chaque lobe) */
-:root[data-motion="reduce"] :is(.today-shape, .dd-top, .end-flame)::before { animation: none !important; transition: none !important; }
-:root[data-motion="reduce"] .page-wrap.leaving, :root[data-motion="reduce"] .dialog.out,
-:root[data-motion="reduce"] .node.dying {
-  animation-name: rm-fade-out !important;
-}
+:root[data-motion="reduce"] .dialog.out { animation: rm-fade-out 120ms linear forwards !important; }
+:root[data-motion="reduce"] .menu, :root[data-motion="reduce"] .menu.out { transform: none !important; transition-property: opacity !important; }
+:root[data-motion="reduce"] .menu-item { transition: none !important; }
+:root[data-motion="reduce"] .node.dying { opacity: 0 !important; }
 :root[data-motion="reduce"] .ripple-wave, :root[data-motion="reduce"] .burst { display: none !important; }
 @keyframes rm-fade { from { opacity: 0; } }
 @keyframes rm-fade-out { to { opacity: 0; } }

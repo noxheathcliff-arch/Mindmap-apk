@@ -595,7 +595,7 @@
   function openTypo() {
     const LV = S.TYPO_LEVELS;
     let lv = 'chapitre';
-    const box = h('div.sty.typo');
+    const box = h('div.st.ty');
     const save = (field, v) => {
       const all = { ...(S.data.settings.typo || {}) };
       const o = { ...(all[lv] || {}) };
@@ -608,16 +608,33 @@
       lecon: 'Introduction au droit', notion: 'Hiérarchie des normes', idee: 'La Constitution prime sur la loi', ref: '« Nul n’est censé ignorer la loi »',
       note: 'La loi est votée par le Parlement puis promulguée par le président de la République dans les quinze jours.' };
 
+    // même langage que les Réglages : barre (retour · titre · réinitialiser), aperçu fixe en haut, réglages en listes
+    let closeFn = null;
+    const tuned = () => !!(S.data.settings.typo || {})[lv];
+    const reset = ui.iconBtn('undo', { title: 'Réinitialiser ce niveau', onClick: () => {
+      const all = { ...(S.data.settings.typo || {}) }; delete all[lv];
+      if (Object.keys(all).length) S.data.settings.typo = all; else delete S.data.settings.typo;
+      S.changed('settings'); paint();
+    } });
+    const stage = h('div.ty-stage');
+    const scroll = h('div.st-scroll');
+    box.append(
+      h('header.st-bar', ui.iconBtn('back', { title: 'Retour', cls: 'st-close', onClick: () => closeFn && closeFn(true) }),
+        h('h2.st-title', 'Typographie'), h('span.ty-bar-fill'), reset),
+      stage, scroll);
+
     function paint() {
       const t = S.typoOf(lv);
-      const keep = box.querySelector('.typo-levels')?.scrollLeft || 0;
-      U.clear(box);
+      const keep = stage.querySelector('.typo-levels')?.scrollLeft || 0;
+      const top = scroll.scrollTop;
+      U.clear(stage); U.clear(scroll);
+      reset.disabled = !tuned();
       const chips = h('div.typo-levels', { role: 'radiogroup', 'aria-label': 'Niveau' },
         Object.entries(LV).map(([k, d]) => {
-          const tuned = !!(S.data.settings.typo || {})[k];
+          const on = !!(S.data.settings.typo || {})[k];
           const b = h('button.chip.chip-filter', { type: 'button', role: 'radio', 'aria-checked': String(k === lv), class: k === lv ? 'on' : '' },
-            k === lv ? R.icon('check', 16) : null, h('span', d.label), tuned ? h('i.typo-dot', { 'aria-label': 'personnalisé' }) : null);
-          b.addEventListener('click', () => { lv = k; paint(); });
+            k === lv ? R.icon('check', 18) : null, h('span', d.label), on ? h('i.typo-dot', { 'aria-label': 'personnalisé' }) : null);
+          b.addEventListener('click', () => { if (k !== lv) { lv = k; paint(); } });
           return b;
         }));
       R.fonts.ensure(t.font);
@@ -625,51 +642,47 @@
       const sample = h('div.typo-preview', { class: lv === 'note' ? 'is-note' : lv === 'ref' ? 'is-ref' : lv === 'idee' ? 'is-idee' : 'is-notion',
         style: { fontFamily: R.fonts.family(t.font), fontSize: t.size + 'px', fontWeight: t.bold ? '700' : '400' } },
       pre ? h('span.typo-pre', pre) : null, SAMPLE[lv]);
+      stage.append(chips, h('div.ty-canvas', { 'aria-label': 'Aperçu' }, sample));
 
-      const reset = ui.btn('Réinitialiser ce niveau', { icon: 'undo', variant: 'text', disabled: !(S.data.settings.typo || {})[lv], onClick: () => {
-        const all = { ...(S.data.settings.typo || {}) }; delete all[lv];
-        if (Object.keys(all).length) S.data.settings.typo = all; else delete S.data.settings.typo;
-        S.changed('settings'); paint();
-      } });
       // police : pas de nouveau rendu à chaque choix, la liste garde sa place ; l'aperçu et « personnalisé » suivent
       const fonts = ui.fontPicker({ value: t.font, key: 'typo-font', label: 'Police', sample: SAMPLE[lv].slice(0, 60),
         onPick: (k) => {
           save('font', k);
           sample.style.fontFamily = R.fonts.family(k);
-          const tuned = !!(S.data.settings.typo || {})[lv];
-          reset.disabled = !tuned;
+          reset.disabled = !tuned();
           const chip = chips.querySelector('[aria-checked="true"]');
           const dot = chip && chip.querySelector('.typo-dot');
-          if (chip && tuned && !dot) chip.appendChild(h('i.typo-dot', { 'aria-label': 'personnalisé' }));
-          else if (dot && !tuned) dot.remove();
+          if (chip && tuned() && !dot) chip.appendChild(h('i.typo-dot', { 'aria-label': 'personnalisé' }));
+          else if (dot && !tuned()) dot.remove();
         } });
-      const out = h('output.sty-val', t.size + ' px');
+      const out = h('output.ty-val', t.size + ' px');
       const size = h('input.slider', { type: 'range', min: String(S.SIZE.fs[0]), max: String(S.SIZE.fs[1]), step: '1', value: String(t.size), 'aria-label': 'Taille' });
       const syncSize = () => { out.textContent = size.value + ' px'; size.style.setProperty('--p', ((size.value - S.SIZE.fs[0]) / (S.SIZE.fs[1] - S.SIZE.fs[0]) * 100) + '%'); sample.style.fontSize = size.value + 'px'; };
       syncSize();
       size.addEventListener('input', syncSize);
       size.addEventListener('change', () => save('size', +size.value));
-      const sw = (label, sub, on, field) => {
-        const b = h('button.list-item.choice.sty-switch', { type: 'button', role: 'switch', 'aria-checked': String(on) },
-          h('span.choice-l', h('b', label), sub ? h('span.choice-sub', sub) : null), h('span.m3-switch', { 'aria-hidden': 'true' }, h('i')));
+      const sw = (icon, label, sub, on, field) => {
+        const b = h('button.st-item.sty-switch', { type: 'button', role: 'switch', 'aria-checked': String(on) },
+          h('span.st-ic', R.icon(icon, 20)),
+          h('span.st-txt', h('span.st-t', label), sub ? h('span.st-d', sub) : null),
+          h('span.m3-switch', { 'aria-hidden': 'true' }, h('i')));
         b.addEventListener('click', () => { save(field, b.getAttribute('aria-checked') !== 'true'); paint(); });
         return b;
       };
-      const sec = (label, ...kids) => h('section.sty-sec', h('p.sty-label', label), ...kids);
-      requestAnimationFrame(() => { chips.scrollLeft = keep; });
-      box.append(
-        chips,
-        sample,
-        sec('Police', fonts),
-        sec('Texte',
-          h('div.sty-slide', h('div.sty-slide-h', h('span', 'Taille'), out), size),
-          sw('Gras', null, !!t.bold, 'bold'),
-          'prefix' in LV[lv] ? sw('Préfixe numéroté', `« ${LV[lv].label} I », « ${LV[lv].label} II »… devant le titre`, !!t.prefix, 'prefix') : null),
-        h('p.sty-help', lv === 'note' ? 'S’applique au texte des notes, dans l’éditeur et en lecture.' : 'Un nœud peut toujours garder sa propre police ou sa taille (fiche « Apparence »).'),
-        h('div.sty-foot', reset));
+      const group = (title, ...kids) => h('section.st-group', h('h3.st-h', title), h('div.st-list', ...kids));
+      requestAnimationFrame(() => { chips.scrollLeft = keep; scroll.scrollTop = top; });
+      scroll.append(
+        group('Police', h('div.ty-fp', fonts)),
+        group('Texte',
+          h('div.st-block',
+            h('div.st-item', h('span.st-ic', R.icon('heading', 20)), h('span.st-txt', h('span.st-t', 'Taille')), out),
+            h('div.st-below.ty-slide', size)),
+          sw('bold', 'Gras', null, !!t.bold, 'bold'),
+          'prefix' in LV[lv] ? sw('list', 'Préfixe numéroté', `« ${LV[lv].label} I », « ${LV[lv].label} II »… devant le titre`, !!t.prefix, 'prefix') : null),
+        h('p.ty-help', lv === 'note' ? 'S’applique au texte des notes, dans l’éditeur et en lecture.' : 'Un nœud peut toujours garder sa propre police ou sa taille (fiche « Apparence »).'));
     }
     paint();
-    return ui.dialog({ title: 'Typographie des cartes', icon: 'type', body: box, cls: 'dialog-typo', actions: [{ label: 'OK', value: true, variant: 'filled', primary: true }] });
+    return ui.dialog({ body: box, cls: 'dialog-settings dialog-typo', onOpen: (_, close) => { closeFn = close; } });
   }
 
   /* ------------------------------------------------------------------ */

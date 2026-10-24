@@ -515,7 +515,6 @@
 :root[data-motion="reduce"] .rate-gauge *, :root[data-motion="reduce"] .rate-gauge *::before { transition: none !important; animation: none !important; }
 @media (hover: none) { .rate-kbd, .btn-kbd { display: none; } }
 .review-stage.is-end .review-actions { display: none; }
-:root[data-motion="reduce"] .act-set.enter { animation-name: rm-fade !important; }
 :root[data-motion="reduce"] .act-set.leaving { animation: none; opacity: 0; }
 :root[data-motion="reduce"] .receipt, :root[data-motion="reduce"] .rc-stamp, :root[data-motion="reduce"] .rc-bar > span,
 
