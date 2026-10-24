@@ -16,8 +16,8 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .today.lbx { --lbx-mat: color-mix(in oklab, var(--primary) 45%, var(--primary-container)); --sheet: color-mix(in oklab, var(--inverse-surface) 72%, #fff); --sheet-ink: var(--inverse-on-surface); --sheet-sub: color-mix(in oklab, var(--inverse-on-surface) 72%, var(--sheet)); --lbx-div: color-mix(in oklab, var(--tertiary) 45%, #e9e2d4); } }
 
 .lbx-head { grid-area: head; display: flex; align-items: flex-start; gap: var(--sp-2); padding-top: var(--sp-2); min-width: 0; }
-.lbx-titles { display: grid; gap: var(--sp-2); flex: 1; min-width: 0; }
-.lbx-view { flex: none; margin: -6px -10px 0 0; color: inherit; }
+.lbx-titles { display: grid; gap: var(--space-text); flex: 1; min-width: 0; }
+.lbx-view { flex: none; margin: -4px -8px 0 0; color: inherit; }
 .lbx-view svg { transition: transform var(--dur-m, 300ms) var(--ease-out); }
 .lbx.is-top .lbx-view svg { transform: rotate(-30deg) scaleY(.8); }
 .lbx-foot { grid-area: foot; display: grid; gap: var(--sp-3); justify-items: start; }
@@ -126,13 +126,13 @@
   .is-compact .lbx-stage { height: 64px; margin: 0 -6px; pointer-events: none; }
   .is-compact .lbx-read, .is-compact .lbx-view, .is-compact .today-streak { display: none; }
   .is-compact .lbx-head { align-items: center; }
-  .is-compact .lbx-titles { gap: 2px; }
+  .is-compact .lbx-titles { gap: var(--space-hair); }
   .is-compact .today-title { font: var(--title-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .is-compact .today-sub { font: var(--body-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .is-compact .lbx-fold { display: none; }
   .is-compact .today-cta { margin: 0; width: 48px; height: 48px; padding: 0; justify-content: center; }
   .is-compact .today-cta .btn-label { display: none; }
-  .lbx-fold { flex: none; margin: -6px -10px 0 0; color: inherit; }
+  .lbx-fold { flex: none; margin: -4px -8px 0 0; color: inherit; }
   /* déplié sur téléphone : la série est déjà dans l'en-tête */
   .today.lbx:not(.is-compact) .today-streak { display: none; }
 }

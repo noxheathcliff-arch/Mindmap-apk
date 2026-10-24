@@ -59,7 +59,7 @@
   --space-inset-l: 24px;    /* padding des grandes cartes, dialogues, héros */
   --space-block: 16px;      /* blocs d'une même carte / titre de section → contenu */
   --space-gutter: 16px;     /* gouttière entre cartes d'une grille */
-  --space-section: 40px;    /* entre sections d'une page */
+  --space-section: 32px;    /* entre sections d'une page */
   --target: 48px;           /* minimum touch target */
 
   /* ---- Shape scale (M3 Expressive) -------------------------------------- */
@@ -272,7 +272,7 @@
 
 /* ---- Window size classes -------------------------------------------- */
 @media (min-width: 600px) {
-  :root { --margin: 24px; --space-gutter: 24px; --space-section: 48px; }
+  :root { --margin: 24px; --space-gutter: 24px; --space-section: 40px; }
 }
 /* rail étendu (large ≥ 1200) : 260 dp avec la liste des cours */
 @media (min-width: 1200px) {

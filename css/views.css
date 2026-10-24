@@ -11,7 +11,7 @@
 }
 @media (min-width: 600px) { .lib-layout, .course-layout { padding-top: var(--sp-8); padding-bottom: var(--sp-16); } }
 @media (min-width: 1200px) { .lib-layout, .course-layout { padding-left: var(--sp-10); padding-right: var(--sp-10); } }
-.lib-main { min-width: 0; display: grid; gap: var(--sp-8); }
+.lib-main { min-width: 0; display: grid; gap: var(--space-section); }
 
 .hero { display: grid; gap: var(--sp-1); }
 .hero-date { font: var(--label-l); color: var(--on-surface-variant); }
@@ -19,7 +19,7 @@
 @media (min-width: 840px) { .hero-title { font: var(--display-m); } }
 
 .lib-sec { min-width: 0; }
-.sec-head { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.sec-head { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--space-block); }
 .sec-title { font: var(--title-l); }
 .sec-count { font: var(--label-l); color: var(--on-surface-variant); }
 
@@ -104,7 +104,7 @@
 @property --lift2 { syntax: '<number>'; inherits: true; initial-value: 0; }
 @property --stretch { syntax: '<number>'; inherits: true; initial-value: 0; }
 
-.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: var(--sp-10) var(--sp-4); padding-top: var(--sp-10); }
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(256px, 1fr)); gap: var(--sp-10) var(--space-gutter); padding-top: var(--sp-10); }
 
 .fiche {
   --tab-h: 18px;
@@ -316,7 +316,7 @@
 .course-title { font: var(--headline-l); overflow-wrap: anywhere; letter-spacing: -.01em; }
 @media (min-width: 840px) { .course-title { font: var(--display-s); letter-spacing: var(--tracking-display); } }
 .course-desc { font: var(--body-l); }
-.course-head { display: grid; gap: var(--sp-6); margin-bottom: var(--sp-8); }
+.course-head { display: grid; gap: var(--sp-6); margin-bottom: var(--space-section); }
 .course-stats { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-8); align-items: flex-end; }
 .stat { display: grid; gap: var(--space-text); }
 .stat-n { font: 700 28px/36px var(--font-brand); font-variant-numeric: tabular-nums; }
@@ -1098,7 +1098,7 @@
 .hero-part:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
 
 /* Le pont : carte du plan + reprise de la révision */
-.deck { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-8); }
+.deck { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: var(--sp-3); margin-bottom: var(--space-section); }
 .deck.solo { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 839.98px) { .deck { grid-template-columns: minmax(0, 1fr); } }
 

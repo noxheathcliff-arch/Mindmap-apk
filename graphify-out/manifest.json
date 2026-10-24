@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1792813138.8481696,
-    "seen": 1792813159.580923,
-    "ast_hash": "7d080e6a6916b4057454ee8dfe379a01",
+    "mtime": 1792813812.8434365,
+    "seen": 1792813909.378432,
+    "ast_hash": "3cb593f5720850359aeecbd804f36c2e",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {

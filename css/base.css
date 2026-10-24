@@ -27,7 +27,7 @@ img, svg { display: block; }
 ::selection { background: var(--primary); color: var(--on-primary); }
 kbd {
   font: 500 11px/16px var(--font-plain);
-  padding: 1px 6px;
+  padding: var(--space-hair) var(--sp-2);
   border-radius: var(--shape-xs);
   border: 1px solid var(--outline-variant);
   border-bottom-width: 2px;
@@ -163,7 +163,7 @@ body.immersive .rail, body.immersive .dock { display: none; }
   .rail .nav-item:hover:not(.active) { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
   .rail .nav-badge { position: static; margin-left: auto; order: 2; }
   .rail .nav-label { position: relative; }
-  .rail-courses { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-top: var(--sp-3); padding-bottom: var(--sp-2); }
+  .rail-courses { display: flex; flex-direction: column; gap: var(--space-hair); flex: 1 1 auto; min-height: 0; overflow-y: auto; margin-top: var(--sp-3); padding-bottom: var(--sp-2); }
   .rail-spacer { flex: 0 0 var(--sp-2); }
 }
 .rail-sec { padding: var(--sp-3) var(--sp-4) var(--sp-2); font: var(--title-s); color: var(--on-surface-variant); }
