@@ -469,9 +469,7 @@
 
         const grid = h('div.course-grid');
         courses.forEach((c) => grid.appendChild(courseCard(c, draw)));
-        const add = h('button.course-card.course-add.ripple', { type: 'button', onclick: (e) => R.actions.newCourse({ from: e.currentTarget }) },
-          h('span.add-ic', R.icon('plus', 24)), h('span.add-txt', h('span.add-l', 'Nouveau cours'), h('span.add-s', 'Un dossier par matière')));
-        grid.appendChild(add);
+        // pas de tuile « Nouveau cours » : le + (téléphone) et le rail (ordinateur) la portent déjà
         if (intro) R.motion.stagger(Array.from(grid.children), 1);
         // les premiers dossiers s'ouvrent l'un après l'autre, le temps de montrer ce qu'ils rangent
         if (intro && !R.motion.reduced()) Array.from(grid.querySelectorAll('.fiche')).slice(0, 6).forEach((f, i) => f.fold.demo(420 + i * 120));
