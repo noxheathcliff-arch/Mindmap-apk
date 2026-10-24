@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792583550.49191,
-    "seen": 1792640190.2832654,
-    "ast_hash": "27fbce9df129e26ab37743c2c3652b65",
+    "mtime": 1792835119.4164796,
+    "seen": 1792835130.0229673,
+    "ast_hash": "661c712cb4bff888c5b17e5d66f6ac4a",
     "semantic_hash": ""
   },
   "tests/folders.test.cjs": {
@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   ".claude/hooks/quota-router.sh": {
-    "mtime": 1792583550.4910367,
-    "seen": 1792640190.2831886,
-    "ast_hash": "543fa918555ab5ac5c9c9cb4cee36565",
+    "mtime": 1792835119.4109356,
+    "seen": 1792835130.0228503,
+    "ast_hash": "2c169561282ff8adb508aadc6d46ec37",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -330,21 +330,15 @@
     "semantic_hash": ""
   },
   ".claude/agents/quota-triage.md": {
-    "mtime": 1792583550.4910367,
-    "seen": 1792640190.2832606,
-    "ast_hash": "3068c0f8e21dbf4e17fa61956fcc01ed",
-    "semantic_hash": ""
-  },
-  ".claude/agents/sonnet-worker.md": {
-    "mtime": 1792583550.4910367,
-    "seen": 1792640190.283262,
-    "ast_hash": "7f1246ae2b88e239696784b546afbf8f",
+    "mtime": 1792835119.4069357,
+    "seen": 1792835130.022962,
+    "ast_hash": "9a25da4942726d8289494030b63c1949",
     "semantic_hash": ""
   },
   ".claude/skills/quota-router/SKILL.md": {
-    "mtime": 1792583550.49191,
-    "seen": 1792640190.283263,
-    "ast_hash": "403111d2bbec571838ac52b2b3838bea",
+    "mtime": 1792835119.4040985,
+    "seen": 1792835130.0229638,
+    "ast_hash": "b7ef7fc72804b52f7ad93510bd034739",
     "semantic_hash": ""
   },
   "cours/cours-droit-successions-liberalites.json": {
@@ -471,6 +465,12 @@
     "mtime": 1792711156.3657668,
     "seen": 1792711193.2849522,
     "ast_hash": "3e0731c2db70a52c082b737cc412ad5c",
+    "semantic_hash": ""
+  },
+  ".claude/agents/opus-worker.md": {
+    "mtime": 1792835119.406674,
+    "seen": 1792835130.0229604,
+    "ast_hash": "ededd7a45d28eff87ba78cc040f6be70",
     "semantic_hash": ""
   }
 }

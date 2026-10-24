@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-24)
 
 ## Corpus Check
-- 62 files · ~281,879 words
+- 62 files · ~281,911 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 955 nodes · 2167 edges · 55 communities (43 shown, 12 thin omitted)
+- 954 nodes · 2166 edges · 54 communities (42 shown, 12 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 192 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2940f2f1`
+- Built from commit: `da101959`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -35,7 +35,6 @@
 - paint
 - 4. Système de design (Material Design 3)
 - gen.cjs
-- Refonte des cartes — plan (v4.1)
 - revhub.js
 - Utilisation
 - folders.test.cjs
@@ -83,15 +82,15 @@
   DESIGN.md → js/carnet.js
 - `3. Style par nœud (données)` --references--> `h()`  [INFERRED]
   docs/plan-refonte-cartes.md → js/carnet.js
-- `3. Style par nœud (données)` --references--> `calm()`  [INFERRED]
-  docs/plan-refonte-cartes.md → js/layout.js
-- `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
-  docs/audit-organisation-3.md → js/organize.js
+- `Routage et libellés (`js/layout.js`, `js/views/editor.js`)` --references--> `route()`  [INFERRED]
+  docs/audit-organisation-3.md → js/layout.js
+- `Routage et libellés (`js/layout.js`, `js/views/editor.js`)` --references--> `placeLabel()`  [INFERRED]
+  docs/audit-organisation-3.md → js/layout.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (55 total, 12 thin omitted)
+## Communities (54 total, 12 thin omitted)
 
 ### Community 0 - "render"
 Cohesion: 0.14
@@ -102,12 +101,12 @@ Cohesion: 0.14
 Nodes (23): addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder(), deleteMap() (+15 more)
 
 ### Community 2 - "layout.js"
-Cohesion: 0.08
-Nodes (60): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), anchorPoint(), arrange(), bbox(), buildTree() (+52 more)
+Cohesion: 0.06
+Nodes (71): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur, 5. Typographie (+63 more)
 
 ### Community 3 - "organize.js"
 Cohesion: 0.07
-Nodes (49): A. Qualité des relations, Audit de l'organisation des cartes — deuxième génération, B. Organisation des sous-graphes, C. Décomposition modulaire, Constat principal, D. Révision, E. Contrôle, paramètres, mesure, Inventaire (+41 more)
+Nodes (50): A. Qualité des relations, Audit de l'organisation des cartes — deuxième génération, B. Organisation des sous-graphes, C. Décomposition modulaire, Constat principal, D. Révision, E. Contrôle, paramètres, mesure, Inventaire (+42 more)
 
 ### Community 4 - "ui"
 Cohesion: 0.09
@@ -165,10 +164,6 @@ Nodes (22): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur 
 Cohesion: 0.31
 Nodes (6): dense(), fs, L(), N(), path, T()
 
-### Community 19 - "Refonte des cartes — plan (v4.1)"
-Cohesion: 0.15
-Nodes (12): 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur, 5. Typographie, 6. Liens, 7. Peigne → stabilisateur (+4 more)
-
 ### Community 21 - "revhub.js"
 Cohesion: 0.44
 Nodes (8): courseRow(), dayDeck(), forecastCard(), loyaltyCard(), masteryRing(), mount(), sessionHref(), weakList()
@@ -222,8 +217,8 @@ Cohesion: 0.11
 Nodes (37): Carnet(), carve(), close(), cutAt(), draw(), fit(), flag(), _flipCover() (+29 more)
 
 ### Community 41 - "quota-router"
-Cohesion: 0.22
-Nodes (8): 1. Caveman (toujours), 2. Graphify avant toute lecture de code, 3. Routage du modèle (tri à chaque requête), 4. Effort et réflexion, 5. Hygiène du contexte, 6. Garde-fous coûteux, 7. Suivi hebdomadaire (rappels à l'utilisateur, une ligne max, rarement), quota-router
+Cohesion: 0.25
+Nodes (7): 1. Toujours, 2. Paliers (indice Artificial Analysis · coût tokens), 3. Décider (dans cet ordre), 4. Délégation (Agent), 5. Hygiène du contexte, 6. Suivi hebdo, quota-router
 
 ### Community 46 - "Editor"
 Cohesion: 0.11
