@@ -46,6 +46,20 @@
   --sp-12: 48px;
   --sp-16: 64px;
   --margin: 16px;           /* window margin, compact */
+
+  /* ---- Espacements par signification (grille 8, demi-pas 4) ------------
+     Règle de proximité : un espace interne est toujours plus petit que
+     l'espace qui sépare l'élément de ses voisins. */
+  --space-hair: 2px;        /* réglage optique seulement (traits, badges) */
+  --space-text: 4px;        /* titre ↔ sous-titre, lignes d'un même bloc */
+  --space-icon: 8px;        /* icône ↔ libellé */
+  --space-group: 8px;       /* éléments liés : puces, boutons voisins, items de liste */
+  --space-inset-s: 12px;    /* padding des petits conteneurs (puces, champs, lignes) */
+  --space-inset: 16px;      /* padding des cartes compactes */
+  --space-inset-l: 24px;    /* padding des grandes cartes, dialogues, héros */
+  --space-block: 16px;      /* blocs d'une même carte / titre de section → contenu */
+  --space-gutter: 16px;     /* gouttière entre cartes d'une grille */
+  --space-section: 40px;    /* entre sections d'une page */
   --target: 48px;           /* minimum touch target */
 
   /* ---- Shape scale (M3 Expressive) -------------------------------------- */
@@ -258,7 +272,7 @@
 
 /* ---- Window size classes -------------------------------------------- */
 @media (min-width: 600px) {
-  :root { --margin: 24px; }
+  :root { --margin: 24px; --space-gutter: 24px; --space-section: 48px; }
 }
 /* rail étendu (large ≥ 1200) : 260 dp avec la liste des cours */
 @media (min-width: 1200px) {
