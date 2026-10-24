@@ -158,8 +158,8 @@
     const moment = hour >= 18 || hour < 5 ? 'soir' : 'jour';
     const title = due ? [h('span.wide', 'Ta s'), h('span.narrow', 'S'), `ession du ${moment} `, h('span.wide', 'est '), 'prête'] : today ? 'Bravo, tout est révisé' : 'Tout est à jour';
     const sub = due
-      ? [`${U.plural(courses, 'cours', 'cours')} · ≈ ${mins} min`, h('span.wide', '. Le rappel actif fixe mieux qu’une relecture.')]
-      : today ? `${U.plural(today, 'carte')} révisée${today > 1 ? 's' : ''} aujourd’hui.` : next.tomorrow ? `Demain : ${U.plural(next.tomorrow, 'carte')}.` : 'Décompose une nouvelle notion pour alimenter tes révisions.';
+      ? [`${U.plural(due, 'fiche')} à réviser · ≈ ${mins} min`, h('span.wide', ` · ${U.plural(courses, 'cours', 'cours')}. Le rappel actif fixe mieux qu’une relecture.`)]
+      : today ? `${U.plural(today, 'fiche')} révisée${today > 1 ? 's' : ''} aujourd’hui.` : next.tomorrow ? `Demain : ${U.plural(next.tomorrow, 'fiche')}.` : 'Décompose une nouvelle notion pour alimenter tes révisions.';
     const streakEl = h('div.today-streak', { class: streak ? 'lit' : '' },
       h('span.flame', R.icon('flame', 20)),
       h('span', streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Lance ta série aujourd’hui'),
@@ -182,9 +182,8 @@
     const b = due
       ? ui.btn(`Réviser · ${due}`, { icon: 'play', variant: 'filled', cls: 'today-cta', onClick: (e) => R.app.go('#/reviser/tout', { from: e.currentTarget.closest('.today') }) })
       : ui.btn('Réviser quand même', { icon: 'cards', variant: 'filled', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') });
-    // bande compacte (téléphone) : le bouton se réduit à ▶ et au nombre
-    b.dataset.short = due ? String(due) : 'Réviser';
-    b.setAttribute('aria-label', due ? `Réviser ${due} cartes` : 'Réviser quand même');
+    // bande compacte (téléphone) : le bouton se réduit à ▶ (le nombre est dans le sous-titre)
+    b.setAttribute('aria-label', due ? `Réviser ${U.plural(due, 'fiche')}` : 'Réviser quand même');
     return b;
   }
 
@@ -416,13 +415,13 @@
     let action = null;
     if (next) {
       action = h('a.btn.btn-filled.fiche-cta', { href: reviewHref, 'aria-label': `Réviser ${U.plural(st.due, 'fiche')} de ${c.title}` },
-        R.icon('play', 18), h('span.fiche-cta-l', 'Réviser'), h('span.fiche-count', String(st.due)));
+        R.icon('play', 18), h('span.fiche-cta-l', 'Réviser'), h('span.fiche-count', String(st.due), h('span.fiche-count-u', st.due > 1 ? 'fiches' : 'fiche')));
     } else if (!st.maps) {
       action = ui.btn('Nouvelle carte', { icon: 'plus', variant: 'tonal', cls: 'fiche-cta', onClick: (e) => { e.preventDefault(); e.stopPropagation(); R.actions.newMap(c.id); } });
     }
     const foot = h('footer.fiche-foot',
       h('div.fiche-stats',
-        st.maps ? h('span.fiche-meta', U.plural(st.maps, 'carte'), h('span.fiche-meta-n', ` · ${U.plural(st.nodes, 'nœud')}`)) : null,
+        st.maps ? h('span.fiche-meta', { title: `${U.plural(st.maps, 'carte')} mentale${st.maps > 1 ? 's' : ''} · ${U.plural(st.nodes, 'nœud')}` }, U.plural(st.maps, 'carte')) : null,
         st.reviewable ? h('span.fiche-meter', { role: 'img', 'aria-label': `Maîtrise ${Math.round(st.progress * 100)} %` },
           h('i', { style: { transform: `scaleX(${st.progress})` } })) : null),
       action);

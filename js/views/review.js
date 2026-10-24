@@ -179,7 +179,7 @@
       const history = []; // notes de la session, pour Annuler
       const missed = new Map(); // clé → { mapId, key } notés « À revoir » (fin de session)
       const score = { asked: 0, right: 0 }; // QCM et vrai ou faux : corrigés par l'app
-      const noun = queue.some((x) => x.exId) ? 'question' : 'carte';
+      const noun = queue.some((x) => x.exId) ? 'question' : 'fiche';
       let idx = 0, hinted = false, done = 0, ended = false, dead = false, opened = false;
       let cur = null; // l'élément affiché (idx avance dès la note, la correction reste à l'écran)
       // busy : le stylo écrit · answer : à toi · rate : réponse ouverte, à noter · next : corrigé

@@ -33,11 +33,11 @@
     const order = S.coursesSorted().slice().sort((a, b) => a.createdAt - b.createdAt);
     const used = order.filter((c) => days.some((d) => d.by[c.id]));
     // k : rang du segment dans sa pile (0 = en bas) — les fiches se posent l'une sur l'autre
-    const seg = (c, n, k) => R.courseArt.tint(h('span.fc-seg', { style: { flexGrow: String(n), '--k': k }, dataset: { c: c.id }, title: `${c.title} · ${U.plural(n, 'carte')}` }), c);
+    const seg = (c, n, k) => R.courseArt.tint(h('span.fc-seg', { style: { flexGrow: String(n), '--k': k }, dataset: { c: c.id }, title: `${c.title} · ${U.plural(n, 'fiche')}` }), c);
     const card = h('section.hub-card', { 'aria-label': 'À venir' },
       h('div.hub-card-head', h('h2.hub-card-title', 'Échéancier'), h('span.hub-card-sub', total ? `${U.plural(total, 'fiche')} sur 6 jours` : 'Rien de prévu')),
       h('div.fc', { role: 'img', 'aria-label': days.map((d, i) => `${fmt(d.day, i)} : ${d.n}` + (used.length > 1 && d.n ? ` (${used.filter((c) => d.by[c.id]).map((c) => `${c.title} ${d.by[c.id]}`).join(', ')})` : '')).join(' ; ') },
-        days.map((d, i) => h('div.fc-col', { class: (i === 0 ? 'is-today ' : '') + (d.n ? '' : 'zero'), title: `${new Date(d.day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' })} · ${U.plural(d.n, 'carte')}` },
+        days.map((d, i) => h('div.fc-col', { class: (i === 0 ? 'is-today ' : '') + (d.n ? '' : 'zero'), title: `${new Date(d.day).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric' })} · ${U.plural(d.n, 'fiche')}` },
           h('span.fc-n', d.n ? String(d.n) : ''),
           h('span.fc-track', h('span.fc-bar', { style: { '--h': String(d.n / max), '--i': i }, class: intro ? 'grow' : '' },
             used.filter((c) => d.by[c.id]).map((c, k) => seg(c, d.by[c.id], k)))),
@@ -151,14 +151,14 @@
       return sh;
     };
     const num = due ? h('span.dd-n', String(take)) : h('span.dd-n.dd-ok', R.icon('check', 36));
-    const unit = h('span.dd-u', due ? (take > 1 ? 'cartes' : 'carte') : 'tout est à jour');
+    const unit = h('span.dd-u', due ? (take > 1 ? 'fiches' : 'fiche') : 'tout est à jour');
     const time = due ? h('span.dd-time', minutes(take)) : null;
     // répartition par cours : un trait par cours, à l'encre du cours, long comme sa part du dû
     const mix = due && tinted.length > 1 ? h('span.dd-mix', { 'aria-hidden': 'true' },
       tinted.map((c, k) => R.courseArt.tint(h('i', { style: { flexGrow: String(S.courseStats(c.id).due), '--k': k }, title: c.title }), c))) : null;
     const top = h('span.dd-top', { dataset: { hero: 'session:all:card' } },
       h('span.dd-k', due ? 'Paquet du jour' : 'Entraînement'), num, unit, mix, time);
-    const deck = h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${take} cartes` : 'Réviser quand même', onclick: start });
+    const deck = h('button.daydeck', { type: 'button', 'aria-label': due ? `Commencer : ${U.plural(take, 'fiche')}` : 'Réviser quand même', onclick: start });
     for (let i = layersFor(take, size); i >= 1; i--) deck.appendChild(sheet(i));
     deck.appendChild(top);
 
@@ -183,9 +183,9 @@
       // le compte défile de l'ancienne valeur à la nouvelle (interruptible : seul le dernier écrit)
       const from = shown, my = ++token;
       shown = n;
-      unit.textContent = n > 1 ? 'cartes' : 'carte';
+      unit.textContent = n > 1 ? 'fiches' : 'fiche';
       if (time) time.textContent = minutes(n);
-      deck.setAttribute('aria-label', `Commencer : ${n} cartes`);
+      deck.setAttribute('aria-label', `Commencer : ${U.plural(n, 'fiche')}`);
       // changement d'état : le cookie tourne d'un lobe (30°, symétrie d'ordre 12 → même silhouette),
       // dans le sens de la variation ; le chiffre, lui, défile
       if (from !== n && !motion.reduced()) { rot += n > from ? 30 : -30; top.style.setProperty('--rot', rot + 'deg'); }
@@ -262,7 +262,7 @@
           main = h('div.hub-main',
             h('div.hero.hub-hero',
               h('p.overline.hero-date', new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })),
-              h('h1.hero-title', due ? [h('span.hub-num', String(due)), due > 1 ? ' cartes à réviser' : ' carte à réviser'] : 'Tout est à jour')),
+              h('h1.hero-title', due ? [h('span.hub-num', String(due)), due > 1 ? ' fiches à réviser' : ' fiche à réviser'] : 'Tout est à jour')),
             // le bloc « Commencer » devient la première fiche de la session (élément partagé)
             h('section.hub-start',
               deck,

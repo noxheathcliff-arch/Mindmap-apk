@@ -1215,7 +1215,7 @@
       this.changed('review');
     },
     /**
-     * Charge à venir : nombre de cartes à réviser par jour, sur `days` jours à partir d'aujourd'hui
+     * Charge à venir : nombre de fiches à réviser par jour, sur `days` jours à partir d'aujourd'hui
      * (aujourd'hui = cartes dues + cartes nouvelles ; les jours suivants = échéances qui tombent ce jour-là).
      */
     forecast(days = 7, scope = {}) {

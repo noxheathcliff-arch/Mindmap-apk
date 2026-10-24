@@ -224,7 +224,8 @@
 .fiche-meter i { display: block; height: 100%; background: var(--c-onpc); border-radius: inherit; transform-origin: left; }
 .fiche-cta { position: relative; z-index: 3; flex: none; height: 40px; padding: 0 6px 0 12px; gap: 6px; }
 .fiche-cta .ic svg { width: 18px; height: 18px; }
-.fiche-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--shape-full); background: color-mix(in srgb, var(--on-primary) 18%, transparent); font: 700 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; }
+.fiche-count { white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; border-radius: var(--shape-full); background: color-mix(in srgb, var(--on-primary) 18%, transparent); font: 700 12px/1 var(--font-plain); font-variant-numeric: tabular-nums; }
+.fiche-count-u { margin-left: .3em; font-weight: 600; }
 .btn-tonal.fiche-cta { padding: 0 14px 0 10px; }
 /* mouvement réduit : les états restent, sans trajet */
 :root[data-motion="reduce"] .fiche { translate: none; }
@@ -246,7 +247,6 @@
   .fiche-more { width: 36px; height: 36px; margin-top: -8px; }
   .fiche-foot { padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3); gap: var(--sp-2); }
   .fiche-meta { font-size: 11px; }
-  .fiche-meta-n { display: none; }
   .fiche-meter { width: 100%; }
   .fiche-stats { flex: 1; }
   .fiche-cta { height: 32px; padding: 0 4px 0 8px; gap: 2px; }

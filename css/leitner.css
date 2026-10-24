@@ -130,9 +130,8 @@
   .is-compact .today-title { font: var(--title-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .is-compact .today-sub { font: var(--body-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .is-compact .lbx-fold { display: none; }
-  .is-compact .today-cta { margin: 0; height: 48px; padding: 0 var(--sp-4) 0 var(--sp-3); gap: var(--sp-1); }
+  .is-compact .today-cta { margin: 0; width: 48px; height: 48px; padding: 0; justify-content: center; }
   .is-compact .today-cta .btn-label { display: none; }
-  .is-compact .today-cta::after { content: attr(data-short); font: var(--title-s); font-variant-numeric: tabular-nums; }
   .lbx-fold { flex: none; margin: -6px -10px 0 0; color: inherit; }
   /* déplié sur téléphone : la série est déjà dans l'en-tête */
   .today.lbx:not(.is-compact) .today-streak { display: none; }
