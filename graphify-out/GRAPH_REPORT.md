@@ -1,17 +1,17 @@
-# Graph Report - Mindmap-apk  (2026-10-23)
+# Graph Report - Mindmap-apk  (2026-10-24)
 
 ## Corpus Check
-- 62 files · ~281,507 words
+- 62 files · ~281,780 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 953 nodes · 2163 edges · 60 communities (48 shown, 12 thin omitted)
+- 955 nodes · 2167 edges · 55 communities (43 shown, 12 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 192 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `257b10ed`
+- Built from commit: `92e6cc51`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,15 +36,13 @@
 - 4. Système de design (Material Design 3)
 - gen.cjs
 - Refonte des cartes — plan (v4.1)
-- library.js
 - revhub.js
-- Pioneer — Dossier de conception
+- Utilisation
 - folders.test.cjs
 - checkvis.cjs
 - mark.js
 - syncCoverage
 - binder.js
-- Utilisation
 - render
 - sanitize
 - course.js
@@ -63,11 +61,8 @@
 - paneNode
 - skill-rules.cjs
 - childrenOf
-- Pioneer — cartes mentales pour le droit
 - fit
 - fonts.js
-- 3. Architecture de l'information
-- 5. Motion design
 
 ## God Nodes (most connected - your core abstractions)
 1. `Editor()` - 161 edges
@@ -96,7 +91,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (60 total, 12 thin omitted)
+## Communities (55 total, 12 thin omitted)
 
 ### Community 0 - "render"
 Cohesion: 0.14
@@ -140,7 +135,7 @@ Nodes (12): dir, { execFileSync }, file, folderText, fs, os, path, raw (+4 more)
 
 ### Community 11 - "leitner.js"
 Cohesion: 0.14
-Nodes (25): bounds(), center(), frame(), kick(), measure(), openReview(), orbitEnd(), orbitMove() (+17 more)
+Nodes (26): bounds(), center(), fold(), frame(), kick(), measure(), openReview(), orbitEnd() (+18 more)
 
 ### Community 12 - "metrics.cjs"
 Cohesion: 0.19
@@ -163,8 +158,8 @@ Cohesion: 0.30
 Nodes (11): articleRef(), byMap(), highlight(), open(), finish(), group(), paint(), paintScopes() (+3 more)
 
 ### Community 17 - "4. Système de design (Material Design 3)"
-Cohesion: 0.17
-Nodes (12): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.5 Classes de fenêtre M3 → composition (+4 more)
+Cohesion: 0.11
+Nodes (22): 4.0 Règle permanente — pas de surlignage de contour, 4.1 Couleur — Material 3 Expressive, rôles tonals, 4.2 Typographie — échelle M3 Expressive, 4.3 bis Navigation et actions — rail, dock, barre contextuelle, 4.3 Grille, forme, mouvement des composants, 4.4 bis Couleurs des nœuds (option), 4.4 ter Relations d'abord, définitions modulaires, 4.5 Classes de fenêtre M3 → composition (+14 more)
 
 ### Community 18 - "gen.cjs"
 Cohesion: 0.31
@@ -174,17 +169,13 @@ Nodes (6): dense(), fs, L(), N(), path, T()
 Cohesion: 0.15
 Nodes (12): 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur, 5. Typographie, 6. Liens, 7. Peigne → stabilisateur (+4 more)
 
-### Community 20 - "library.js"
-Cohesion: 0.31
-Nodes (9): 4.6 Cours — des dossiers (dans « Mes cours » seulement), courseCard(), foldGestures(), mount(), openCourse(), reviewBtn(), sessionHero(), tipCard() (+1 more)
-
 ### Community 21 - "revhub.js"
 Cohesion: 0.44
 Nodes (8): courseRow(), dayDeck(), forecastCard(), loyaltyCard(), masteryRing(), mount(), sessionHref(), weakList()
 
-### Community 22 - "Pioneer — Dossier de conception"
-Cohesion: 0.17
-Nodes (12): 1. Le besoin (Lean UX), 2. Inventaire de contenu, 6. Composition par écran, 7. Lois de l'UX appliquées, 8. Modèle Hooked (Nir Eyal), Desktop (large / extra-large), Hypothèses (format Lean UX), Mobile (compact, Android) (+4 more)
+### Community 22 - "Utilisation"
+Cohesion: 0.05
+Nodes (41): 1. Le besoin (Lean UX), 2. Inventaire de contenu, 3.1 Systèmes d'organisation, 3.2 Système d'étiquetage, 3.3 bis Vue Plan — lire un plan long sans perdre le fil, 3.3 Systèmes de navigation, 3.4 Système de recherche, 3.5 Plan du site (routes) (+33 more)
 
 ### Community 23 - "folders.test.cjs"
 Cohesion: 0.29
@@ -205,10 +196,6 @@ Nodes (4): exercisesFor(), rate(), syncCoverage(), unrate()
 ### Community 27 - "binder.js"
 Cohesion: 0.20
 Nodes (14): binder(), defs(), divider(), el(), enter(), finish(), zoom(), norm() (+6 more)
-
-### Community 29 - "Utilisation"
-Cohesion: 0.18
-Nodes (11): Apprendre un chapitre entier, Couleurs des nœuds (option), Dans une carte, Lecture seule, Notes (Markdown), Personnaliser une carte (v4.1), Ranger une carte (disposition), Révision (+3 more)
 
 ### Community 30 - "render"
 Cohesion: 0.80
@@ -274,21 +261,9 @@ Nodes (8): compare(), dir, expected(), fs, path, skillFile(), validatorLine(), w
 Cohesion: 0.16
 Nodes (16): ancestors(), canTree(), childrenOf(), descendants(), hiddenSet(), isComponent(), isReviewable(), kickerOf() (+8 more)
 
-### Community 55 - "Pioneer — cartes mentales pour le droit"
-Cohesion: 0.29
-Nodes (5): Installer sur Android, Lancer, Mettre en ligne (GitHub Pages), Pioneer — cartes mentales pour le droit, Structure
-
 ### Community 56 - "fit"
 Cohesion: 0.23
 Nodes (16): addFreeCenter(), animateView(), applyView(), autoPan(), bbox(), buildBar(), buildVToolbar(), fit() (+8 more)
-
-### Community 58 - "3. Architecture de l'information"
-Cohesion: 0.29
-Nodes (7): 3.1 Systèmes d'organisation, 3.2 Système d'étiquetage, 3.3 bis Vue Plan — lire un plan long sans perdre le fil, 3.3 Systèmes de navigation, 3.4 Système de recherche, 3.5 Plan du site (routes), 3. Architecture de l'information
-
-### Community 59 - "5. Motion design"
-Cohesion: 0.33
-Nodes (6): 5.1 Diagnostic, 5.2 Tokens (un seul système, CSS et JS), 5.3 Spécification, 5.4 Performance, 5.5 Accessibilité, 5. Motion design
 
 ## Knowledge Gaps
 - **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
@@ -297,16 +272,16 @@ Nodes (6): 5.1 Diagnostic, 5.2 Tokens (un seul système, CSS et JS), 5.3 Spécif
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `key()` connect `ui` to `checkvis.cjs`?**
-  _High betweenness centrality (0.261) - this node is a cross-community bridge._
+  _High betweenness centrality (0.262) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `Editor()` (e.g. with `onCancel()` and `onContext()`) actually correct?**
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `render` be split into smaller, more focused modules?**
   _Cohesion score 0.13765182186234817 - nodes in this community are weakly interconnected._
-- **Why does `4. Système de design (Material Design 3)` connect `4. Système de design (Material Design 3)` to `layout.js`, `library.js`, `app.js`, `Pioneer — Dossier de conception`?**
-  _High betweenness centrality (0.234) - this node is a cross-community bridge._
+- **Why does `4. Système de design (Material Design 3)` connect `4. Système de design (Material Design 3)` to `layout.js`, `app.js`, `Utilisation`?**
+  _High betweenness centrality (0.235) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `changed` be split into smaller, more focused modules?**
   _Cohesion score 0.1383399209486166 - nodes in this community are weakly interconnected._
 - **Why does `4.4 Types de nœuds — trois apparences (v4.1)` connect `layout.js` to `carnet.js`, `4. Système de design (Material Design 3)`, `sanitize`?**
-  _High betweenness centrality (0.183) - this node is a cross-community bridge._
+  _High betweenness centrality (0.184) - this node is a cross-community bridge._

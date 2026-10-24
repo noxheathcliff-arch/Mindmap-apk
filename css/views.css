@@ -58,6 +58,17 @@
 .today-streak.lit .flame svg { fill: currentColor; }
 .intro .today-streak.lit .flame { animation: flicker 1.6s cubic-bezier(0.37, 0, 0.63, 1) 400ms 2; transform-origin: 50% 90%; }
 @keyframes flicker { 0%, 100% { transform: scale(1) rotate(0); } 30% { transform: scale(1.04, .97) rotate(-3deg); } 60% { transform: scale(.98, 1.03) rotate(2deg); } }
+/* série dans l'en-tête de l'accueil (téléphone seulement : sur grand écran, elle est dans le héros) */
+.streak-chip {
+  display: none; align-items: center; gap: 4px; height: 32px; padding: 0 var(--sp-3) 0 var(--sp-2); margin-right: var(--sp-1);
+  border: 0; border-radius: 16px; background: var(--surface-container-high); color: var(--on-surface-variant);
+  font: var(--label-l); font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.streak-chip.lit { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+.streak-chip.lit svg { fill: currentColor; }
+@media (max-width: 599.98px) { .streak-chip { display: inline-flex; } }
+.streak-week { display: grid; gap: var(--sp-4); justify-items: center; text-align: center; }
+.streak-week .week { margin: 0; gap: 10px; }
 .week { display: flex; gap: 6px; margin-left: var(--sp-2); }
 .week-day { display: grid; justify-items: center; gap: 2px; }
 .week-dot { display: grid; width: 16px; height: 16px; }

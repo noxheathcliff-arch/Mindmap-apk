@@ -166,12 +166,26 @@
       R.weekDots());
     return R.leitnerHero({ title, sub, streakEl, cta: reviewBtn(due), intro });
   }
+  /** Téléphone : la série quitte le héros pour une puce de l'en-tête ; un toucher montre la semaine */
+  function streakChip() {
+    const streak = S.streak();
+    return h('button.streak-chip', { type: 'button', class: streak ? 'lit' : '',
+      'aria-label': streak ? `Série : ${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Série : pas encore lancée',
+      onclick: () => ui.dialog({ title: streak ? `${streak} jour${streak > 1 ? 's' : ''} de suite` : 'Lance ta série aujourd’hui', icon: 'flame',
+        body: h('div.streak-week', R.weekDots(), h('p', 'Un jour de révision coche sa case. La série tient jusqu’à ce soir.')),
+        actions: [{ label: 'OK', value: true }] }) },
+      R.icon('flame', 18), h('span', String(streak)));
+  }
   function reviewBtn(due) {
     const any = S.data.maps.some((m) => S.mapStats(m).reviewable);
     if (!any) return null;
-    return due
+    const b = due
       ? ui.btn(`Réviser · ${due}`, { icon: 'play', variant: 'filled', cls: 'today-cta', onClick: (e) => R.app.go('#/reviser/tout', { from: e.currentTarget.closest('.today') }) })
       : ui.btn('Réviser quand même', { icon: 'cards', variant: 'filled', cls: 'today-cta', onClick: () => R.app.go('#/reviser/tout?all=1') });
+    // bande compacte (téléphone) : le bouton se réduit à ▶ et au nombre
+    b.dataset.short = due ? String(due) : 'Réviser';
+    b.setAttribute('aria-label', due ? `Réviser ${due} cartes` : 'Réviser quand même');
+    return b;
   }
 
   /* ---------------- Carte de cours : un dossier fermé qui s'ouvre ----------------
@@ -450,6 +464,7 @@
         const topbar = h('header.topbar.topbar-lib',
           h('a.topbar-brand', { href: '#/' }, R.app.logo(), h('span.brand-name', 'Pioneer')),
           h('div.topbar-actions',
+            streakChip(),
             ui.iconBtn('search', { title: 'Rechercher', onClick: (e) => R.search.open('', { from: e.currentTarget }) }),
             ui.iconBtn('settings', { title: 'Réglages', onClick: () => R.app.openSettings() })));
 

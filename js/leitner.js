@@ -38,6 +38,7 @@
   const PITCH = [-88, 6];          // butées du tangage (au-delà : élastique)
   const BOX_LABEL = ['Aujourd’hui', 'Chaque jour', 'Tous les 3 j', 'Chaque semaine', 'Tous les 15 j', 'Chaque mois'];
   const SHORT = ['0', '1 j', '3 j', '7 j', '15 j', '30 j'];
+  let open = false;                // sur téléphone : héros déplié (sinon bande compacte), gardé d'un rendu à l'autre
 
   /** Un ressort : x vers target ; k raideur, c amortissement. Renvoie vrai s'il bouge encore */
   function spring(o, k, c, dt) {
@@ -82,8 +83,9 @@
       'aria-label': `Boîte de Leitner : ${U.plural(total, 'fiche')}, ${due} à réviser. Flèches pour parcourir, Entrée pour sortir une fiche, Maj et flèches ou haut et bas pour tourner la boîte, V pour changer de vue.`,
     }, world, read);
     const viewBtn = h('button.lbx-view.icon-btn', { type: 'button' }, R.icon('view3d', 22));
+    const foldBtn = h('button.lbx-fold.icon-btn', { type: 'button' });
     const sec = h('section.today.lbx', { 'aria-label': 'Aujourd’hui', dataset: { hero: 'session:all:card' } },
-      h('div.lbx-head', h('div.lbx-titles', h('h2.today-title', title), h('p.today-sub', sub)), viewBtn),
+      h('div.lbx-head', h('div.lbx-titles', h('h2.today-title', title), h('p.today-sub', sub)), viewBtn, foldBtn),
       stage,
       h('div.lbx-foot', streakEl, cta));
 
@@ -508,6 +510,25 @@
       } else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); setView(view < 0 ? 0 : (view + 1) % VIEWS.length); }
     });
     stage.addEventListener('blur', () => { if (kx != null) { kx = null; release(); } });
+
+    /* ---- téléphone : bande compacte (vignette · titre · ▶) qui se déplie au toucher ----
+       Les cours passent avant : au repos, la boîte n'est qu'une vignette. */
+    function fold(o) {
+      open = o;
+      sec.classList.toggle('is-compact', !o);
+      foldBtn.replaceChildren(R.icon(o ? 'collapse' : 'expand', 22));
+      foldBtn.setAttribute('aria-expanded', String(o));
+      foldBtn.setAttribute('aria-label', o ? 'Réduire la boîte' : 'Déplier la boîte');
+      stage.tabIndex = o || !narrow.matches ? 0 : -1;
+      if (!o) putBack();
+    }
+    foldBtn.addEventListener('click', (e) => { e.stopPropagation(); fold(!open); });
+    sec.addEventListener('click', (e) => {
+      if (open || !narrow.matches || (cta && cta.contains(e.target))) return;
+      fold(true);
+    });
+    narrow.addEventListener('change', () => fold(open));
+    fold(open);
 
     const ro = new ResizeObserver(() => { measure(); kick(); });
     ro.observe(stage);
