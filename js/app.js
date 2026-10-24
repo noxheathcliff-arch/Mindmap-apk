@@ -496,94 +496,97 @@
   /* Réglages                                                           */
   /* ------------------------------------------------------------------ */
   function openSettings() {
-    const makeSeg = (label, key, options, current, onPick) => {
-      const seg = h('div.segmented', { role: 'radiogroup', 'aria-label': label });
-      for (const [v, text, icon] of options) {
-        const b = h('button.seg-btn', { type: 'button', role: 'radio', 'aria-checked': String(current === v) }, R.icon(icon, 18), h('span', text));
+    let closeFn = null;
+    // choix exclusif : groupe de boutons connectés (M3 Expressive), le choix porte une coche
+    const choice = (label, options, current, onPick) => {
+      const g = h('div.st-choice', { role: 'radiogroup', 'aria-label': label });
+      for (const [v, text] of options) {
+        const b = h('button.st-opt', { type: 'button', role: 'radio', 'aria-checked': String(current === v) },
+          h('span.st-opt-check', R.icon('check', 18)), h('span', text));
         b.addEventListener('click', (e) => {
-          U.$$('.seg-btn', seg).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
-          seg._place();
+          U.$$('.st-opt', g).forEach((x) => x.setAttribute('aria-checked', String(x === b)));
           onPick(v, e);
         });
-        seg.appendChild(b);
+        g.appendChild(b);
       }
-      ui.segIndicator(seg, key);
-      return seg;
+      return g;
     };
-    const seg = makeSeg('Thème', 'settings-theme', [['system', 'Système', 'panel'], ['light', 'Clair', 'sun'], ['dark', 'Sombre', 'moon']],
+    const themeC = choice('Thème', [['system', 'Auto'], ['light', 'Clair'], ['dark', 'Sombre']],
       S.data.settings.theme, (v, e) => app.setTheme(v, { x: e.clientX || innerWidth / 2, y: e.clientY || innerHeight / 2 }));
-    const motionSeg = makeSeg('Animations', 'settings-motion', [['system', 'Système', 'panel'], ['reduce', 'Réduites', 'pause'], ['full', 'Complètes', 'sparkle']],
+    const motionC = choice('Animations', [['system', 'Auto'], ['reduce', 'Réduites'], ['full', 'Complètes']],
       S.data.settings.motion || 'system', (v) => app.setMotion(v));
 
-    const colorsP = h('span.set-d');
-    const paintColorsP = () => {
+    const colorsD = h('span.st-d');
+    const paintColors = () => {
       const c = R.colors.settings();
-      const names = { familles: 'une couleur par famille', daltonisme: 'palette daltonisme', perso: 'couleurs personnalisées' };
-      colorsP.textContent = c.mode === 'off' ? 'Monochrome : les types se distinguent par leur forme.' : `Actives : ${names[c.mode]}, intensité ${c.intensity === 'vif' ? 'vive' : 'douce'}.`;
+      const names = { familles: 'Une couleur par famille', daltonisme: 'Palette daltonisme', perso: 'Couleurs personnalisées' };
+      colorsD.textContent = c.mode === 'off' ? 'Monochrome — les types se distinguent par leur forme' : `${names[c.mode]} · intensité ${c.intensity === 'vif' ? 'vive' : 'douce'}`;
     };
-    paintColorsP();
-    const typoP = h('span.set-d');
-    const paintTypoP = () => {
+    paintColors();
+    const typoD = h('span.st-d');
+    const paintTypo = () => {
       const mine = Object.keys(S.data.settings.typo || {}).length;
-      typoP.textContent = mine ? `Police, taille et gras réglés pour ${U.plural(mine, 'niveau', 'niveaux')}.` : 'Police, taille et gras par niveau (chapitre, section… notes).';
+      typoD.textContent = mine ? `Réglée pour ${U.plural(mine, 'niveau', 'niveaux')}` : 'Police, taille et gras par niveau';
     };
-    paintTypoP();
+    paintTypo();
 
     /* Données : jauge de stockage + date de la dernière sauvegarde (rappel au-delà de 14 jours) */
     const size = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(b / 1024)) + ' Ko');
-    const meter = h('span.set-meter', h('i'));
-    const usageD = h('span.set-d', 'Calcul…');
+    const meter = h('span.st-meter', h('i'));
+    const usageD = h('span.st-d', 'Calcul…');
     S.usage().then((u) => {
-      const where = u.backend === 'indexeddb' ? 'base locale du navigateur' : 'stockage local (≈ 5 Mo)';
-      usageD.textContent = `${size(u.bytes)} utilisés${u.quota ? ` sur ${size(u.quota)}` : ''} · ${where}`;
+      const where = u.backend === 'indexeddb' ? 'base locale' : 'stockage local';
+      usageD.textContent = `${size(u.bytes)}${u.quota ? ` sur ${size(u.quota)}` : ''} · ${where}`;
       meter.firstChild.style.transform = `scaleX(${u.quota ? Math.min(1, Math.max(0.01, u.bytes / u.quota)) : 0.02})`;
     });
     const last = S.data.settings.lastExport;
     const lastDays = last ? Math.floor((Date.now() - last) / U.DAY) : null;
-    const lastD = h('span.set-d', { class: last && lastDays < 14 ? '' : 'warn' },
-      last ? `Dernière sauvegarde ${U.relTime(last)}${lastDays >= 14 ? ' — pense à en refaire une' : ''}` : 'Aucune sauvegarde exportée pour l’instant');
+    const lastD = h('span.st-d', { class: last && lastDays < 14 ? '' : 'warn' },
+      last ? `Dernière ${U.relTime(last)}${lastDays >= 14 ? ' — pense à en refaire une' : ''}` : 'Aucune sauvegarde pour l’instant');
 
-    const row = (icon, title, desc, control, cls = '') => h('div.set-row', { class: cls },
-      h('span.set-ic', R.icon(icon, 20)),
-      h('span.set-txt', h('span.set-t', title), desc || null),
-      control ? h('span.set-ctl', control) : null);
+    // ligne de liste M3 : pastille d'icône · intitulé + précision · fin (chevron, ou rien) ; toute la ligne est la cible
+    const item = (icon, title, desc, { onClick, trail = 'chevronRight', cls = '', below } = {}) => {
+      const inner = [h('span.st-ic', R.icon(icon, 20)), h('span.st-txt', h('span.st-t', title), desc || null),
+        onClick && trail ? h('span.st-trail', R.icon(trail, 20)) : null];
+      const el = onClick ? h('button.st-item', { type: 'button', class: cls, onclick: onClick }, inner) : h('div.st-item', { class: cls }, inner);
+      return below ? h('div.st-block', el, h('div.st-below', below)) : el;
+    };
+    const after = (fn) => () => { closeFn(); setTimeout(fn, 220); };
+    const group = (title, ...items) => h('section.st-group', h('h3.st-h', title), h('div.st-list', items));
 
-    const body = h('div.settings',
-      h('section.set-group', h('h3.settings-h', 'Apparence'),
-        h('div.set-card',
-          row('sun', 'Thème', null, seg, 'stack'),
-          row('sparkle', 'Animations', h('span.set-d', '« Réduites » remplace déplacements et zooms par des fondus courts.'), motionSeg, 'stack'),
-          row('palette', 'Couleurs des nœuds', colorsP, ui.btn('Personnaliser', { variant: 'tonal', onClick: () => R.colors.openDialog().then(paintColorsP) })),
-          row('type', 'Typographie des cartes', typoP, ui.btn('Personnaliser', { variant: 'tonal', onClick: () => openTypo().then(paintTypoP) })))),
-      h('section.set-group', h('h3.settings-h', 'Données'),
-        h('div.set-card',
-          row('folder', 'Stockage sur cet appareil', h('span.set-dd', usageD, meter)),
-          row('export', 'Sauvegarde', lastD, ui.btn('Exporter tout', { icon: 'export', variant: 'tonal', onClick: () => {
+    const body = h('div.st',
+      h('header.st-bar',
+        ui.iconBtn('close', { title: 'Fermer', cls: 'st-close', onClick: () => closeFn() }),
+        h('h2.st-title', 'Réglages')),
+      h('div.st-scroll',
+        group('Apparence',
+          item('sun', 'Thème', null, { below: themeC }),
+          item('sparkle', 'Animations', h('span.st-d', '« Réduites » : fondus courts à la place des zooms'), { below: motionC }),
+          item('palette', 'Couleurs des nœuds', colorsD, { onClick: () => R.colors.openDialog().then(paintColors) }),
+          item('type', 'Typographie des cartes', typoD, { onClick: () => openTypo().then(paintTypo) })),
+        group('Données',
+          item('folder', 'Stockage sur cet appareil', h('span.st-dd', usageD, meter)),
+          item('export', 'Exporter une sauvegarde', lastD, { trail: 'download', onClick: () => {
             U.download(`pioneer-sauvegarde-${U.dayKey()}.json`, S.exportAll());
-            lastD.textContent = 'Dernière sauvegarde à l’instant'; lastD.classList.remove('warn');
+            lastD.textContent = 'Dernière à l’instant'; lastD.classList.remove('warn');
             ui.snack('Sauvegarde téléchargée');
+          } }),
+          item('import', 'Importer', h('span.st-d', 'Sauvegarde, cours exporté ou généré par une IA'), { onClick: after(() => openImport()) })),
+        group('Aide',
+          item('keyboard', 'Raccourcis clavier', null, { onClick: after(showShortcuts) }),
+          item('help', 'Guide de démarrage', null, { onClick: after(onboarding) })),
+        group('Zone sensible',
+          item('trash', 'Tout effacer', h('span.st-d', 'Supprime cours, cartes et notes de cet appareil'), { cls: 'danger', trail: null, onClick: async () => {
+            const ok = await ui.confirm('Tout effacer ?', 'Tous les cours, cartes et notes de cet appareil seront supprimés. Exporte une sauvegarde avant si besoin.', { ok: 'Tout effacer', danger: true, icon: 'trash' });
+            if (!ok) return;
+            S.reset();
+            closeFn && closeFn();
+            app.go('#/', { replace: true });
+            ui.snack('Données effacées');
           } })),
-          row('import', 'Importer', h('span.set-d', 'Une sauvegarde, un cours exporté ou un cours généré par une IA (fichier ou texte collé).'),
-            ui.btn('Importer…', { icon: 'import', variant: 'tonal', onClick: () => { closeFn(); setTimeout(() => openImport(), 220); } })))),
-      h('section.set-group', h('h3.settings-h', 'Aide'),
-        h('div.set-card',
-          row('keyboard', 'Raccourcis clavier', null, ui.btn('Afficher', { variant: 'text', onClick: () => { closeFn(); setTimeout(showShortcuts, 220); } })),
-          row('help', 'Guide de démarrage', null, ui.btn('Revoir', { variant: 'text', onClick: () => { closeFn(); setTimeout(onboarding, 220); } })))),
-      h('section.set-group', h('h3.settings-h', 'Zone sensible'),
-        h('div.set-card.set-danger',
-          row('trash', 'Tout effacer', h('span.set-d', 'Supprime tous les cours, cartes et notes de cet appareil.'),
-            ui.btn('Effacer…', { variant: 'text', cls: 'danger', onClick: async () => {
-              const ok = await ui.confirm('Tout effacer ?', 'Tous les cours, cartes et notes de cet appareil seront supprimés. Exporte une sauvegarde avant si besoin.', { ok: 'Tout effacer', danger: true, icon: 'trash' });
-              if (!ok) return;
-              S.reset();
-              closeFn && closeFn();
-              app.go('#/', { replace: true });
-              ui.snack('Données effacées');
-            } })))),
-      h('p.settings-foot', 'Pioneer · fonctionne hors ligne · installable sur Android et ordinateur'));
+        h('p.st-foot', 'Pioneer · hors ligne · installable sur Android et ordinateur')));
 
-    let closeFn = null;
-    ui.dialog({ title: 'Réglages', icon: 'settings', body, cls: 'dialog-settings', actions: [{ label: 'Fermer', value: true, variant: 'text' }], onOpen: (_, close) => { closeFn = close; } });
+    ui.dialog({ body, cls: 'dialog-settings', onOpen: (_, close) => { closeFn = close; } });
   }
   app.openSettings = openSettings;
 
