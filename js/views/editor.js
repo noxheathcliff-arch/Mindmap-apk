@@ -352,7 +352,7 @@
       const left = U.isCompact() ? 24 : 112;
       // on ouvre sur la racine, là où commence la lecture : à gauche (droite), au centre (centrée), en haut (pyramide)
       if (map.layout === 'balanced' || map.layout === 'organic') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + r.h / 2 - (root.y + s.h / 2) * kk });
-      else if (map.layout === 'down') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + 24 - root.y * kk });
+      else if (map.layout === 'down' || map.layout === 'tree') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + 24 - root.y * kk });
       else Object.assign(st.view, { k: kk, x: left - root.x * kk, y: r.h / 2 - (root.y + s.h / 2) * kk });
       applyView();
     }
@@ -384,7 +384,7 @@
     /* Rendu des nœuds                                                    */
     /* ------------------------------------------------------------------ */
     function size(n) {
-      return st.sizes.get(n.id) || R.layout.estimate(n);
+      return st.sizes.get(n.id) || R.layout.estimate(n, map);
     }
     const sizeFn = (n) => size(n);
 
@@ -564,6 +564,7 @@
       const s = size(p);
       const f = R.layout.flow(map, p);
       if (f.child === 'down') return { x: p.x + s.w / 2, y: p.y + s.h };
+      if (f.child === 'list') return { x: p.x + Math.min(R.layout.P.treeSpine, s.w / 2), y: p.y + s.h };
       return { x: f.child === 'left' ? p.x : p.x + s.w, y: p.y + s.h / 2 };
     }
     function playEmerge(list) {
@@ -678,7 +679,7 @@
           if (!p || !p.logic) continue;
           // un faisceau par côté (carte centrée : la racine a des enfants des deux côtés)
           const c = S.node(map, e.to);
-          const side = map.layout === 'down' ? '' : c && c.x < p.x ? ':L' : ':R';
+          const side = map.layout === 'down' || map.layout === 'tree' ? '' : c && c.x < p.x ? ':L' : ':R';
           add('l:' + e.from + side, e, false);
         }
       }
@@ -731,7 +732,13 @@
       // côté de sortie : direction dominante entre le centre de la source et celui des cibles
       const dx = (x0 + x1) / 2 - (a.x + sa.w / 2), dy = (y0 + y1) / 2 - (a.y + sa.h / 2);
       let p1, d1;
-      if (b.kind === 'tree' && map.layout === 'down') {
+      if (b.kind === 'tree' && map.layout === 'tree' && S.parentEdge(map, b.from)) {
+        // vers le bas, dans une partie : la jonction est sur l'arête, juste sous le parent
+        d1 = [0, 1];
+        p1 = [a.x + Math.min(R.layout.P.treeSpine, sa.w / 2), a.y + sa.h];
+        return { p1, d1, J: [p1[0], p1[1] + Math.max(12, Math.min(24, (y0 - p1[1]) / 2))], spine: true };
+      }
+      if (b.kind === 'tree' && (map.layout === 'down' || map.layout === 'tree')) {
         // pyramide : la jonction est sur le bus, à mi-chemin entre le parent et ses enfants
         d1 = [0, Math.sign(dy) || 1];
         p1 = [a.x + sa.w / 2, d1[1] > 0 ? a.y + sa.h : a.y];
@@ -759,9 +766,13 @@
       }
       return { p1, d1, J };
     }
-    function branchCurve(J, d1, t, kind) {
+    function branchCurve(J, d1, t, kind, spine = false) {
       const pt = { x: J[0], y: J[1] };
-      if (kind === 'tree' && map.layout === 'down') {
+      if (kind === 'tree' && spine) {
+        const cy = t.y + size(t).h / 2;
+        return R.layout.elbow([J, [J[0], cy], [t.x, cy]]);
+      }
+      if (kind === 'tree' && (map.layout === 'down' || map.layout === 'tree')) {
         const st2 = size(t), below = d1[1] >= 0;
         return R.layout.busDown(J, [t.x + st2.w / 2, below ? t.y : t.y + st2.h], J[1]);
       }
@@ -960,7 +971,7 @@
             c = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), Object.assign({}, cv, { d1: gm.d1 })) : { d: cv.d, at: cv.at };
             polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
           } else {
-            const base = branchCurve(gm.J, gm.d1, b, e.kind);
+            const base = branchCurve(gm.J, gm.d1, b, e.kind, gm.spine);
             // branche retouchée : sa forme part de la jonction, elle ne quitte pas la fourche
             c = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), Object.assign({}, base, { d1: gm.d1 })) : R.layout.calm(base, calmK);
           }
@@ -977,8 +988,11 @@
             const sp = size(prevStep), sb = size(b);
             cv = R.layout.elbow([[prevStep.x + sp.w, b.y + Math.min(sp.h, sb.h) / 2], [b.x, b.y + Math.min(sp.h, sb.h) / 2]]);
           } else if (e.kind === 'tree') {
-            cv = R.layout.treeCurve(map.layout, a, size(a), b, size(b));
+            cv = R.layout.treeCurve(map.layout, a, size(a), b, size(b), !S.parentEdge(map, a.id));
+            // (vers le bas : le libellé se pose sur le trait qui mène à l'enfant — lu avant calm, qui recopie la courbe)
+            const lt = cv.lt;
             cv = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), cv) : R.layout.calm(cv, calmK);
+            if (lt != null && !shaped(e)) cv.lt = lt;
           } else {
             const sa = size(a), sb = size(b);
             const lb = edgeLabel(e);
@@ -1002,7 +1016,7 @@
           if (lbl) {
             // ET / OU sur un lien isolé : près de l'enfant ; libellé : là où il ne cache rien
             const sz = { w: rec.label.offsetWidth || R.layout.labelSize(lbl).w, h: rec.label.offsetHeight || 19 };
-            const prefer = !e.label && e.kind === 'tree' ? 0.78 : 0.5;
+            const prefer = !e.label && e.kind === 'tree' ? 0.78 : cv.lt != null ? cv.lt : 0.5;
             const spot = R.layout.placeLabel(cv, sz, rects, placed, { prefer, segs: polys, ends: [e.from, e.to], zones });
             rec.mid = [spot.x, spot.y];
             rec.label.style.transform = `translate(${spot.x}px, ${spot.y}px) translate(-50%, -50%)`;
@@ -1184,11 +1198,13 @@
       const sibs = S.childrenOf(map, p.id);
       const idx = sibs.findIndex((s) => s.id === id);
       const next = sibs[idx + 1];
-      const across = map.layout === 'down'; // pyramide : les frères se suivent de gauche à droite
-      let at = across ? { x: cur.x + cs.w + R.layout.P.downSibGap, y: cur.y } : { x: cur.x, y: cur.y + cs.h + R.layout.GAP_Y };
+      // pyramide (et parties de « vers le bas ») : les frères se suivent de gauche à droite
+      const across = map.layout === 'down' || (map.layout === 'tree' && !S.parentEdge(map, p.id));
+      const sibGap = map.layout === 'tree' ? R.layout.P.treeColGap : R.layout.P.downSibGap;
+      let at = across ? { x: cur.x + cs.w + sibGap, y: cur.y } : { x: cur.x, y: cur.y + cs.h + R.layout.GAP_Y };
       const n = addChild(p.id, { type: cur.type, at, edit: true });
       if (n && next) { // pousse les frères suivants
-        const shift = across ? size(n).w + R.layout.P.downSibGap : size(n).h + R.layout.GAP_Y;
+        const shift = across ? size(n).w + sibGap : size(n).h + R.layout.GAP_Y;
         for (const s of sibs.slice(idx + 1)) { if (across) moveBranch(s.id, shift, 0); else moveBranch(s.id, 0, shift); }
         render();
       }
@@ -1341,6 +1357,8 @@
     const LAYOUT_CHOICES = [
       ['auto', 'Automatique (conseillé)', 'Pioneer compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
         '<rect x="2.5" y="9.5" width="7" height="5" rx="1.2"/><path d="M9.5 12h3"/><path d="M17 3.5l1.1 2.6 2.6 1.1-2.6 1.1L17 10.9l-1.1-2.6-2.6-1.1 2.6-1.1z"/><path d="M17.5 14.5v5M15 17h5"/>'],
+      ['tree', 'Vers le bas', 'Les grandes parties côte à côte, de gauche à droite : on voit d’emblée comment la carte se divise. Chaque partie se lit de haut en bas.',
+        '<rect x="8.5" y="2" width="7" height="4.5" rx="1.2"/><rect x="2" y="10" width="7" height="3.5" rx="1.2"/><rect x="15" y="10" width="7" height="3.5" rx="1.2"/><rect x="5.5" y="17.5" width="4.5" height="3.5" rx="1"/><rect x="18.5" y="17.5" width="3.5" height="3.5" rx="1"/><path d="M12 6.5V8M5.5 8h13M5.5 8v2M18.5 8v2M3.5 13.5v5.75h2M16.5 13.5v5.75h2"/>'],
       ['right', 'Vers la droite', 'La lecture la plus familière : de gauche à droite, de haut en bas.',
         '<rect x="2" y="9.5" width="6" height="5" rx="1.2"/><rect x="15" y="3.5" width="7" height="4" rx="1.2"/><rect x="15" y="10" width="7" height="4" rx="1.2"/><rect x="15" y="16.5" width="7" height="4" rx="1.2"/><path d="M8 12h3.5M11.5 5.5v13M11.5 5.5H15M11.5 12H15M11.5 18.5H15"/>'],
       ['organic', 'Libre', 'Les branches s’ouvrent en éventail, un peu en désordre, comme à la main — sans qu’aucun lien ne traverse un nœud.',

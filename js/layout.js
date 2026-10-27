@@ -31,6 +31,13 @@
     cousinGap: 32,    // entre deux groupes voisins, aux niveaux plus profonds
     downSibGap: 24,   // pyramide : entre deux sœurs
     rootGap: 96,      // entre deux arbres indépendants
+    // « vers le bas » : parties côte à côte sous la racine, chacune en liste indentée
+    treeGap: 48,      // bas du parent → haut du premier enfant (air de lecture entre niveaux)
+    treeSib: 32,      // entre deux feuilles sœurs d'une liste
+    treeGroup: 48,    // après une sœur qui a des enfants (on change de groupe)
+    treeColGap: 64,   // entre deux parties voisines
+    treeSpine: 22,    // l'arête verticale part à cette distance du bord gauche du parent
+    treeStub: 28,     // longueur minimale du trait horizontal qui mène à l'enfant
     w: {              // poids de la note globale (plus bas = mieux)
       // échelle commune : 1 croisement ≈ 300 px de renvoi à suivre des yeux (Ware et al. 2002 :
       // longueur et croisements pèsent sur le suivi d'un chemin) ; 1 nœud traversé ≈ 5 croisements
@@ -46,7 +53,7 @@
       aspect: 6,      // écart de forme avec l'écran (|log| du rapport des proportions)
       // familiarité ; « libre » est préférée (rendu fait à la main) tant qu'elle reste propre :
       // les contraintes (nœud traversé, libellé masqué, croisement) pèsent bien plus lourd
-      mode: { right: 0, balanced: 15, down: 10, organic: -18 },
+      mode: { right: 0, balanced: 15, down: 10, organic: -18, tree: -60 },
     },
   };
   // rôle de lecture de chaque type : structure, contenu, appui (exemple, source…), synthèse
@@ -78,10 +85,10 @@
   };
 
   /** Estimation de taille hors DOM (seed, import, vignettes, avant la première mesure) */
-  function estimate(n) {
+  function estimate(n, map) {
     const S = R.store;
     const T = S.TYPES[n.type] || {};
-    const sty = S.styleOf(n);
+    const sty = S.styleOf(n, map);
     const B = T.rank ? BOX.struct : BOX[sty.look];
     const cw = sty.fs * sty.font.cw * (sty.bold ? 1.07 : 1);
     const pre = sty.prefix ? (T.kicker || '').length + 5 : 0;
@@ -93,7 +100,13 @@
     const h = Math.max(sty.h, Math.round(B.base + top + lines * sty.fs * 1.3));
     return { w, h };
   }
-  const labelSize = (text) => ({ w: Math.round(String(text).length * 5.6 + 18), h: 19 }); // recalibré sur les libellés mesurés (11 px)
+  /** Libellé d'un lien : une ligne jusqu'à LABEL_W px, au-delà il passe à la ligne (une petite phrase
+      tient sur deux lignes) — reflète .edge-label (max-width) dans editor.css */
+  const LABEL_W = 240;
+  const labelSize = (text) => {
+    const w = Math.round(String(text).length * 5.6 + 18); // recalibré sur les libellés mesurés (11 px)
+    return { w: Math.min(w, LABEL_W), h: 19 + (Math.ceil(w / LABEL_W) - 1) * 14 };
+  };
 
   /* ------------------------------------------------------------------ */
   /* Géométrie des liens (partagée par l'éditeur, les vignettes et la note) */
@@ -127,8 +140,9 @@
   const polyLen = (pts) => { let s = 0; for (let i = 1; i < pts.length; i++) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return s; };
 
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
-  function treeSides(mode, a, sa, b, sb) {
-    if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
+  function treeSides(mode, a, sa, b, sb, top = false) {
+    if (mode === 'down' || (mode === 'tree' && top)) return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
+    if (mode === 'tree' && isIndented(a, sa, b, sb)) return ['b', 'l'];
     const gap = 6;
     if (b.x >= a.x + sa.w + gap) return ['r', 'l'];
     if (b.x + sb.w <= a.x - gap) return ['l', 'r'];
@@ -164,6 +178,18 @@
     };
     return { d, at, p1: pts[0], p2: z };
   }
+  /** « Vers le bas », sous une partie : l'enfant est en dessous et décalé à droite de l'arête */
+  const spineX = (a, sa) => a.x + Math.min(P.treeSpine, sa.w / 2);
+  const isIndented = (a, sa, b, sb) => b.x >= spineX(a, sa) + 8 && b.y + sb.h / 2 >= a.y + sa.h + 4;
+  /** Liste indentée : arête verticale sous le parent, puis trait horizontal vers l'enfant. cv.lt :
+      position du libellé, au milieu du trait horizontal (il se lit entre l'arête et l'enfant) */
+  function spineCurve(a, sa, b, sb) {
+    const sx = spineX(a, sa), p1 = [sx, a.y + sa.h], cy = b.y + sb.h / 2;
+    const cv = elbow([p1, [sx, cy], [b.x, cy]]);
+    const stub = b.x - sx, total = cy - p1[1] + stub;
+    cv.lt = total > 0 ? 1 - stub / 2 / total : 0.5;
+    return cv;
+  }
   /** Pyramide : parent → bus horizontal à mi-hauteur → enfant (bus partagé par les frères) */
   function busDown(p1, p2, busY) {
     if (Math.abs(p1[0] - p2[0]) < 1) return elbow([p1, p2]);
@@ -176,7 +202,7 @@
    */
   function sequencePrev(map, at, mode = map.layout) {
     const out = new Map();
-    if (mode === 'down') return out;
+    if (mode === 'down' || mode === 'tree') return out;
     const kids = new Map();
     for (const e of map.edges) if (e.kind === 'tree') { if (!kids.has(e.from)) kids.set(e.from, []); kids.get(e.from).push(e.to); }
     for (const [pid, ids] of kids) {
@@ -378,8 +404,18 @@
   }
 
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
-  function treeCurve(mode, a, sa, b, sb) {
-    const [s1, s2] = treeSides(mode, a, sa, b, sb);
+  function treeCurve(mode, a, sa, b, sb, top = false) {
+    const [s1, s2] = treeSides(mode, a, sa, b, sb, top);
+    if (mode === 'tree' && top) {
+      // racine → parties : bus court sous la racine, puis longue descente qui porte le libellé
+      const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
+      const dy = p2[1] - p1[1], busY = p1[1] + Math.sign(dy) * Math.min(24, Math.abs(dy) / 2);
+      const cv = busDown(p1, p2, busY);
+      const drop = Math.abs(p2[1] - busY), total = Math.abs(busY - p1[1]) + Math.abs(p2[0] - p1[0]) + drop;
+      cv.lt = total > 0 ? 1 - drop / 2 / total : 0.5;
+      return cv;
+    }
+    if (mode === 'tree' && s1 === 'b' && s2 === 'l') return spineCurve(a, sa, b, sb);
     if (mode === 'down') {
       const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
       return busDown(p1, p2, p1[1] + (p2[1] - p1[1]) / 2);
@@ -975,11 +1011,12 @@
   function busySides(map, mode, at, szOf) {
     const busy = new Map();
     const add = (id, s) => busy.set(id, (busy.get(id) || '') + s);
+    const child = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
     for (const e of map.edges) {
       if (e.kind !== 'tree') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
-      const [s1, s2] = treeSides(mode, a, szOf(a), b, szOf(b));
+      const [s1, s2] = treeSides(mode, a, szOf(a), b, szOf(b), !child.has(e.from));
       add(e.from, s1); add(e.to, s2);
     }
     return busy;
@@ -1140,6 +1177,7 @@
     const out = {};
     const root = T.byId.get(rootId);
     const rs = size(root);
+    if (mode === 'tree') return layoutDown(rootId, T, size, prm);
     if (mode === 'down') {
       const cfg = { gap: prm.downGap, leafGap: prm.downSibGap, sibGap: prm.downSibGap, structGap: prm.downSibGap + 16, cousinGap: prm.downSibGap, satGap: prm.downSibGap, summaryGap: prm.downSibGap + 12 };
       const dimD = (n) => { const s = size(n); return { dl: s.h, bl: s.w }; };
@@ -1179,6 +1217,80 @@
     return out;
   }
 
+  /**
+   * « Vers le bas » : la racine en haut, ses enfants (les grandes parties) côte à côte de gauche à
+   * droite dans l'ordre du cours — on voit d'un coup d'œil en combien de parties la carte se divise —,
+   * et sous chaque partie sa descendance en liste indentée, lue de haut en bas.
+   */
+  function layoutDown(rootId, T, size, prm) {
+    const out = { [rootId]: { x: 0, y: 0 } };
+    const rs = size(T.byId.get(rootId));
+    const kids = T.kids.get(rootId) || [];
+    if (!kids.length) return out;
+    const seen = new Set([rootId]);
+    const lbl = (id) => { const L = T.labels && T.labels.get(id); return L ? labelSize('x'.repeat(L)) : null; };
+    // liste indentée : renvoie le bas et la droite de la sous-branche
+    const list = (id, x, y) => {
+      seen.add(id);
+      out[id] = { x, y };
+      const s = size(T.byId.get(id));
+      let bottom = y + s.h, right = x + s.w;
+      const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
+      if (!ch.length) return { bottom, right };
+      // le trait horizontal porte le libellé : assez long pour lui, le même pour toute la fratrie (colonne alignée)
+      const ls = lbl(id);
+      const cx = x + Math.min(prm.treeSpine, s.w / 2) + (ls ? Math.max(prm.treeStub, ls.w + 16) : prm.treeStub);
+      let cy = bottom + prm.treeGap, prev = null;
+      for (const c of ch) {
+        const n = T.byId.get(c);
+        if (prev) {
+          const group = (T.kids.get(prev) || []).length || isStruct(T.byId.get(prev)) || isStruct(n);
+          cy += (group ? prm.treeGroup : prm.treeSib) + linkGap(T, prev, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
+        }
+        const r = list(c, cx, cy);
+        cy = r.bottom; right = Math.max(right, r.right); prev = c;
+      }
+      return { bottom: cy, right };
+    };
+    // les parties : sous un bus, assez bas pour que la descente porte son libellé
+    const ls = lbl(rootId);
+    const top = rs.h + prm.downGap + (ls ? Math.max(0, ls.h + 20 - (prm.downGap - 24)) : 0);
+    // chaque partie glisse vers la gauche jusqu'à frôler les précédentes (une partie courte se loge
+    // sous le vide laissé par une voisine plus étroite en bas), sa tête toujours à droite de la précédente
+    const rectOf = (id) => { const s = size(T.byId.get(id)); return { x: out[id].x, y: out[id].y, w: s.w, h: s.h }; };
+    const placed = [];
+    const centers = [];
+    let headRight = -Infinity;
+    for (const c of kids) {
+      if (seen.has(c)) continue;
+      const before = new Set(Object.keys(out));
+      list(c, 0, top);
+      const ids = Object.keys(out).filter((id) => !before.has(id));
+      const mine = ids.map((id) => [id, rectOf(id)]);
+      // l'emprise compte aussi l'arête et les traits (avec leurs libellés) : rien ne doit les traverser
+      for (const id of ids) {
+        const ch = (T.kids.get(id) || []).filter((k) => ids.includes(k));
+        if (!ch.length) continue;
+        const r = rectOf(id), sx = r.x + Math.min(prm.treeSpine, r.w / 2);
+        const last = ch.map(rectOf).reduce((m, k) => (k.y > m.y ? k : m));
+        mine.push([null, { x: sx - 4, y: r.y + r.h, w: Math.min(...ch.map((k) => out[k].x)) - sx + 4, h: last.y + last.h / 2 - r.y - r.h + 4 }]);
+      }
+      const hs = size(T.byId.get(c));
+      let dx = headRight === -Infinity ? 0 : headRight + prm.treeColGap + (ls ? Math.max(0, ls.w - hs.w) / 2 : 0);
+      for (const [, m] of mine) for (const p of placed) {
+        if (m.y < p.y + p.h + prm.treeSib && p.y < m.y + m.h + prm.treeSib) dx = Math.max(dx, p.x + p.w + prm.treeColGap - m.x);
+      }
+      for (const id of ids) out[id].x += dx;
+      for (const [, m] of mine) placed.push({ ...m, x: m.x + dx });
+      headRight = out[c].x + hs.w;
+      centers.push(out[c].x + hs.w / 2);
+    }
+    // la racine au-dessus du milieu des parties
+    const dx = rs.w / 2 - (centers[0] + centers[centers.length - 1]) / 2;
+    for (const id in out) if (id !== rootId) out[id].x += dx;
+    return out;
+  }
+
   function bbox(pos, T, size, ids) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const id of ids) {
@@ -1200,10 +1312,11 @@
       ids.forEach((id) => done.add(id));
       const bb = bbox(loc, T, size, ids);
       // arbres successifs : les uns sous les autres (pyramide : côte à côte)
-      const dx = mode === 'down' ? cursor - bb.x0 : -bb.x0 + (loc[r] ? 0 : 0);
-      const dy = mode === 'down' ? -bb.y0 : cursor - bb.y0;
+      const across = mode === 'down' || mode === 'tree';
+      const dx = across ? cursor - bb.x0 : -bb.x0;
+      const dy = across ? -bb.y0 : cursor - bb.y0;
       for (const id of ids) out[id] = { x: loc[id].x + dx, y: loc[id].y + dy };
-      cursor += (mode === 'down' ? bb.w : bb.h) + prm.rootGap;
+      cursor += (across ? bb.w : bb.h) + prm.rootGap;
     }
     // la première racine ne bouge pas (pas de saut de caméra)
     const a = T.byId.get(T.roots[0]);
@@ -1245,6 +1358,10 @@
     const sub = (id, out = new Set()) => { if (out.has(id)) return out; out.add(id); for (const k of kids.get(id) || []) sub(k, out); return out; };
     const sz = new Map(ids.map((id) => [id, size(S.node(map, id) || map.nodes.find((n) => n.id === id))]));
     const vertical = mode !== 'down';
+    // « vers le bas » : deux parties voisines s'écartent de côté (toute la partie glisse vers la droite)
+    const par = new Map();
+    for (const e of map.edges) if (e.kind === 'tree') par.set(e.to, e.from);
+    const partOf = (id) => { let x = id, k = 0; while (par.has(x) && par.get(x) !== root && k++ < 999) x = par.get(x); return par.get(x) === root ? x : null; };
     let moved = false;
     for (let it = 0; it < 400; it++) {
       let fix = null;
@@ -1255,16 +1372,24 @@
         if (ox <= 0.5 || oy <= 0.5) continue;
         // le second dans le sens de lecture (plus bas / plus à droite) s'écarte vers l'avant ;
         // s'il est la racine ou un ancêtre de l'autre, c'est le premier qui recule
+        if (mode === 'tree') {
+          const pa = partOf(a), pb = partOf(b);
+          if (pa && pb && pa !== pb) {
+            const second = A.x + sa.w / 2 <= B.x + sb.w / 2 ? pb : pa;
+            fix = { id: second, d: ox, sgn: 1, v: false };
+            break;
+          }
+        }
         const [first, second] = vertical ? (A.y + sa.h / 2 <= B.y + sb.h / 2 ? [a, b] : [b, a]) : (A.x + sa.w / 2 <= B.x + sb.w / 2 ? [a, b] : [b, a]);
         const d = vertical ? oy : ox;
-        if (second !== root && !sub(second).has(first)) fix = { id: second, d, sgn: 1 };
-        else if (first !== root && !sub(first).has(second)) fix = { id: first, d, sgn: -1 };
+        if (second !== root && !sub(second).has(first)) fix = { id: second, d, sgn: 1, v: vertical };
+        else if (first !== root && !sub(first).has(second)) fix = { id: first, d, sgn: -1, v: vertical };
         else continue;
         break;
       }
       if (!fix) break;
       moved = true;
-      for (const id of sub(fix.id)) { if (vertical) pos[id].y += fix.sgn * Math.ceil(fix.d); else pos[id].x += fix.sgn * Math.ceil(fix.d); }
+      for (const id of sub(fix.id)) { if (fix.v) pos[id].y += fix.sgn * Math.ceil(fix.d); else pos[id].x += fix.sgn * Math.ceil(fix.d); }
     }
     return moved;
   }
@@ -1377,6 +1502,7 @@
     const treeLabels = [];
     const busy = busySides(map, mode, at, (r) => r);
     const seqPrev = sequencePrev(map, at, mode);
+    const child = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
     for (const e of map.edges) {
       if (e.kind !== 'tree') continue;
       const a = at.get(e.from), b = at.get(e.to);
@@ -1384,13 +1510,13 @@
       let cv;
       const prev = seqPrev.get(e.to);
       if (prev) { const q = at.get(prev); cv = elbow([[q.x + q.w, q.y + q.h / 2], [b.x, b.y + b.h / 2]]); }
-      else cv = treeCurve(mode, a, a, b, b);
+      else cv = treeCurve(mode, a, a, b, b, !child.has(e.from));
       polys.push({ pts: sample(cv, 8), ends: new Set([e.from, e.to]) });
       if (e.label) treeLabels.push({ cv, label: e.label });
     }
     let hits = 0, cross = 0, len = 0, lblOv = 0, over = 0;
     const placed = [];
-    for (const t of treeLabels) { const p = placeLabel(t.cv, labelSize(t.label), rects, placed, { prefer: 0.5 }); if (p.ov > 0) lblOv++; }
+    for (const t of treeLabels) { const p = placeLabel(t.cv, labelSize(t.label), rects, placed, { prefer: t.cv.lt != null ? t.cv.lt : 0.5 }); if (p.ov > 0) lblOv++; }
     for (const e of map.edges) {
       if (e.kind !== 'link') continue;
       const a = at.get(e.from), b = at.get(e.to);
@@ -1428,7 +1554,8 @@
     for (const g of cousinGaps) if (g < medSib * 1.8) amb++;
     // longs arcs de la hiérarchie : un parent loin de ses enfants oblige à suivre une longue courbe
     let reach = 0;
-    for (const e of map.edges) {
+    // (« vers le bas » : l'arête d'une liste est droite, sa longueur ne coûte rien à suivre)
+    if (mode !== 'tree') for (const e of map.edges) {
       if (e.kind !== 'tree') continue;
       const a = at.get(e.from), b = at.get(e.to);
       if (!a || !b) continue;
@@ -1445,10 +1572,10 @@
   }
 
   /**
-   * Range la carte. opts.mode : 'auto' (défaut) | 'right' | 'balanced' | 'down' | 'organic'.
+   * Range la carte. opts.mode : 'auto' (défaut) | 'tree' | 'right' | 'balanced' | 'down' | 'organic'.
    * Renvoie { pos: {id: {x, y}}, mode, score, tried: [...] } sans muter la carte.
    */
-  function arrange(map, size = estimate, opts = {}) {
+  function arrange(map, size = (n) => estimate(n, map), opts = {}) {
     const T = buildTree(map);
     if (!T.roots.length) return { pos: {}, mode: 'right', score: null, tried: [] };
     // la carte du plan est toujours une pyramide : sommaire lisible d'un coup d'œil
@@ -1457,6 +1584,8 @@
     const cands = [];
     const push = (mode, split) => cands.push({ mode, split });
     if (want === 'auto' || want === 'right') push('right');
+    // vers le bas : dès deux parties, on voit d'emblée comment la carte se divise (préférée en automatique)
+    if (want === 'tree' || (want === 'auto' && main.length >= 2)) push('tree');
     // pyramide : seulement pour une petite hiérarchie peu profonde (sinon trop large pour être lue)
     const depthOf = (id, d = 0, seen = new Set()) => { if (seen.has(id)) return d; seen.add(id); return Math.max(d, ...(T.kids.get(id) || []).map((c) => depthOf(c, d + 1, seen))); };
     const small = map.nodes.length <= 24 && depthOf(T.roots[0]) <= 3;
@@ -1514,7 +1643,7 @@
       for (let round = 0; round < budget; round++) {
         let improved = false;
         for (const [k, vals] of Object.entries(SEARCH)) {
-          if (cur.mode === 'down' && k !== 'structGap') continue;
+          if (cur.mode === 'tree' || (cur.mode === 'down' && k !== 'structGap')) continue;
           if (cur.mode === 'organic' && !['depthGap', 'cousinGap', 'leafGap'].includes(k)) continue;
           for (const v of vals) {
             if (cur.prm[k] === v) continue;
@@ -1537,7 +1666,7 @@
   }
 
   /** Compatibilité : positions seules, dans la disposition actuelle (ou celle demandée) */
-  function tidy(map, size = estimate, opts = {}) {
+  function tidy(map, size = (n) => estimate(n, map), opts = {}) {
     return arrange(map, size, { mode: opts.mode || map.layout || 'right', viewport: opts.viewport }).pos;
   }
 
@@ -1545,6 +1674,8 @@
   function flow(map, node) {
     if (map.layout === 'down') return { child: 'down', sib: 'x' };
     const S = R.store;
+    // vers le bas : la racine pose ses parties en ligne, une partie pose sa liste en dessous
+    if (map.layout === 'tree') return S.parentOf(map, node.id) ? { child: 'list', sib: 'y' } : { child: 'down', sib: 'x' };
     const p = S.parentOf(map, node.id);
     // côté gauche d'une carte centrée : la branche pousse vers la gauche
     if (p && node.x + 1 < p.x) return { child: 'left', sib: 'y' };
@@ -1555,7 +1686,7 @@
   }
 
   /** Position d'un nouvel enfant : après le dernier enfant existant, du bon côté */
-  function childSlot(map, parent, size = estimate) {
+  function childSlot(map, parent, size = (n) => estimate(n, map)) {
     const S = R.store;
     const ch = S.childrenOf(map, parent.id);
     const ps = size(parent);
@@ -1563,7 +1694,14 @@
     if (f.child === 'down') {
       if (!ch.length) return { x: parent.x + ps.w / 2 - 60, y: parent.y + ps.h + P.downGap };
       const last = ch[ch.length - 1];
-      return { x: last.x + size(last).w + P.downSibGap, y: last.y };
+      return { x: last.x + size(last).w + (map.layout === 'tree' ? P.treeColGap : P.downSibGap), y: last.y };
+    }
+    if (f.child === 'list') {
+      if (!ch.length) return { x: parent.x + Math.min(P.treeSpine, ps.w / 2) + P.treeStub, y: parent.y + ps.h + P.treeGap };
+      const last = ch.reduce((m, c) => (c.y > m.y ? c : m), ch[0]);
+      const below = S.descendants(map, last.id).map((id) => S.node(map, id)).filter(Boolean);
+      const bottom = Math.max(last.y + size(last).h, ...below.map((n) => n.y + size(n).h));
+      return { x: last.x, y: bottom + P.treeSib };
     }
     // séquence en ligne (méthode, chronologie) : l'étape suivante se pose à droite de la dernière
     if (ch.length >= 2 && ch.every((c) => Math.abs(c.y - ch[0].y) <= 1) && ch[0].x > parent.x + ps.w) {
@@ -1580,6 +1718,6 @@
     P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow, separate, SAFE,
-    treeSides, treeCurve, sequencePrev, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
+    treeSides, treeCurve, spineCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);

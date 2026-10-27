@@ -75,7 +75,9 @@
   padding: 1px 8px; border-radius: var(--shape-full);
   background: var(--surface-container-high); border: 1px solid transparent;
   font: var(--label-s); color: var(--on-surface-variant);
-  white-space: nowrap; cursor: pointer;
+  /* un libellé peut être une petite phrase : il passe à la ligne au-delà de 240 px (cf. layout.labelSize) */
+  box-sizing: border-box; width: max-content; max-width: 240px;
+  white-space: normal; text-align: center; line-height: 14px; cursor: pointer;
   transition: background-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
 }
 /* changement de libellé : petit pop (feedback d'état), jamais depuis 0 */

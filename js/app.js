@@ -611,7 +611,7 @@
       S.changed('settings');
     };
     const SAMPLE = { chapitre: 'Les sources du droit', section: 'La loi', soussection: 'L’élaboration de la loi', paragraphe: 'Le vote au Parlement',
-      lecon: 'Introduction au droit', notion: 'Hiérarchie des normes', idee: 'La Constitution prime sur la loi', ref: '« Nul n’est censé ignorer la loi »',
+      lecon: 'Introduction au droit', centre: 'Introduction', notion: 'Hiérarchie des normes', idee: 'La Constitution prime sur la loi', ref: '« Nul n’est censé ignorer la loi »',
       note: 'La loi est votée par le Parlement puis promulguée par le président de la République dans les quinze jours.' };
 
     // même langage que les Réglages : barre (retour · titre · réinitialiser), aperçu fixe en haut, réglages en listes

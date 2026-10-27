@@ -34,9 +34,9 @@
     flatMin: 5,            // une partie de ≥ 5 éléments sans aucune relation entre eux = liste plate
     defMinChars: 80,       // définition assez longue pour être décomposée…
     defMinParts: 3,        // … en au moins 3 composantes réelles
-    linkBudgetPerNodes: 5, // budget de renvois d'une carte : n / 5, borné à [2, 8] (une fourche = un renvoi)
+    linkBudgetPerNodes: 8, // budget de renvois d'une carte : n / 8, borné à [2, 5] (une fourche = un renvoi) : la hiérarchie d'abord
     linkBudgetMin: 2,
-    linkBudgetMax: 8,
+    linkBudgetMax: 5,
     linksPerNodeMax: 3,    // au plus 3 renvois proposés vers une même notion
     commonWordShare: 0.15, // un mot présent dans > 15 % des nœuds ne compte plus comme indice
   };

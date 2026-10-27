@@ -46,7 +46,7 @@ console.log('Skill : ' + path.basename(file) + ' (version ' + skill.version + ')
 
 check('version 4 et fichier choisi par le tri', () => {
   ok(/^4\./.test(skill.version), 'version ' + skill.version);
-  ok(path.basename(file) === 'pioneer_book_to_course_compiler_v4.4.json', path.basename(file));
+  ok(path.basename(file) === 'pioneer_book_to_course_compiler_v4.5.json', path.basename(file));
 });
 
 check('pipeline : P3 (carte de compréhension), P3c, P6a présents et ordonnés', () => {
@@ -274,7 +274,7 @@ check('v4.4 : type paragraphe et libellés jusqu’à 80 caractères (spec, vali
   const longE = (d) => d.maps[0].edges.find((e) => e.kind === 'tree' && e.label);
   let d = base(); longE(d).label = 'x'.repeat(60);
   let r = validate(d, 'lib60', ['--hors-droit']);
-  ok(r.code === 0 && warnings(r.out).some((l) => /libellé long/.test(l)), '60 car. : ' + r.out.trim());
+  ok(r.code === 0 && !warnings(r.out).some((l) => /libellé long/.test(l)), '60 car. (libellé-phrase, v4.5) : ' + r.out.trim());
   d = base(); longE(d).label = 'x'.repeat(81);
   r = validate(d, 'lib81', ['--hors-droit']);
   ok(r.code === 1 && /plus de 80 caractères/.test(r.out), '81 car. : ' + r.out.trim());
@@ -282,7 +282,17 @@ check('v4.4 : type paragraphe et libellés jusqu’à 80 caractères (spec, vali
   ch.type = 'paragraphe';
   r = validate(d, 'para', ['--hors-droit']);
   ok(!/type .*paragraphe|paragraphe.*inconnu|supprimé/.test(r.out), 'paragraphe refusé : ' + r.out.trim());
-  return 'paragraphe accepté, 60 car. averti, 81 car. refusé';
+  return 'paragraphe accepté, 60 car. accepté, 81 car. refusé';
+});
+
+check('v4.5 : hiérarchie d’abord, libellés-phrases, synthèse, racine notion', () => {
+  ok(O.RULES.linkBudgetPerNodes === 8 && O.RULES.linkBudgetMin === 2 && O.RULES.linkBudgetMax === 5, 'budget du moteur');
+  ok(/"linkBudgetPerNodes":8,"linkBudgetMin":2,"linkBudgetMax":5/.test(skill.self_check.validator_python), 'budget du validateur');
+  ok(/ce qui peut/.test(skill.edge_rules.labels.rule) && /phrase/.test(skill.normative_core.decisions.join(' ')), 'libellés-phrases');
+  ok(/SYNTHÈSE/.test(skill.node_types.types.find((t) => t.startsWith('retenir'))), 'retenir = synthèse');
+  ok(/exactement « Introduction »/.test(skill.reader_first.rules.find((r) => r.id === 'L11').rule), 'racine Introduction');
+  ok(S.TYPO_LEVELS && S.TYPO_LEVELS.centre, 'niveau typographique centre dans Pioneer');
+  return 'budget 8/2/5, phrases, synthèse, Introduction en notion';
 });
 
 fs.rmSync(tmp, { recursive: true, force: true });

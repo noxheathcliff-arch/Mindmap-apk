@@ -36,7 +36,7 @@ const samp = (cv) => Array.from({ length: 41 }, (_, i) => cv.at(i / 40));
 
 let prevKeys = null;
 function render(map, order) {
-  const size = new Map(map.nodes.map((n) => [n.id, Ly.estimate(n)]));
+  const size = new Map(map.nodes.map((n) => [n.id, Ly.estimate(n, map)]));
   const byId = new Map(map.nodes.map((n) => [n.id, n]));
   const rects = map.nodes.map((n) => ({ id: n.id, x: n.x, y: n.y, ...size.get(n.id) }));
   const links = map.edges.filter((e) => e.kind === 'link');

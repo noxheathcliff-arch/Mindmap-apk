@@ -190,6 +190,8 @@
     paragraphe:  { label: 'Paragraphe',   font: 'jakarta', size: 15, bold: true,  prefix: false },
     lecon:       { label: 'Leçon',        font: 'jakarta', size: 21, bold: false, prefix: false },
     notion:      { label: 'Notion',       font: 'jakarta', size: 16, bold: true },
+    // une notion au centre d'une carte (introduction, thème qui n'est pas un chapitre) : grand titre, sans préfixe
+    centre:      { label: 'Notion centrale', font: 'jakarta', size: 24, bold: true },
     idee:        { label: 'Idée',         font: 'jakarta', size: 14, bold: false },
     ref:         { label: 'Référence',    font: 'serif4',  size: 15, bold: false },
     note:        { label: 'Notes',        font: 'jakarta', size: 15, bold: false },
@@ -248,7 +250,7 @@
   /** Libellé de lien : 80 caractères (double de l'ancienne limite) */
   const LABEL_MAX = 80;
   /** Dispositions de carte : arbre vers la droite, centrée (branches des deux côtés), pyramide */
-  const LAYOUTS = ['right', 'balanced', 'down', 'organic'];
+  const LAYOUTS = ['right', 'balanced', 'down', 'organic', 'tree'];
   /** Dossiers du plan d'un cours : le niveau (pour l'affichage) ; le numéro exact est dans `label` */
   const FOLDER_KINDS = ['partie', 'titre', 'soustitre', 'chapitre', 'section', 'soussection', 'paragraphe', 'autre'];
   const FOLDER_LABELS = { partie: 'Partie', titre: 'Titre', soustitre: 'Sous-titre', chapitre: 'Chapitre', section: 'Section', soussection: 'Sous-section', paragraphe: 'Paragraphe', autre: 'Dossier' };
@@ -549,7 +551,7 @@
     },
     /** Style résolu d'un nœud : apparence, police, corps, gras, préfixe, couleur (nœud › type dans la carte › rien) */
     styleOf(n, map) {
-      const level = levelOf(n.type);
+      const level = n.type === 'notion' && map && this.isCentre(map, n.id) ? 'centre' : levelOf(n.type);
       const t = this.typoOf(level);
       const fontKey = n.font || t.font;
       const color = n.color || (map && map.typeColors && map.typeColors[n.type]) || null;
@@ -921,14 +923,18 @@
     },
     node(map, id) { return map.nodes.find((n) => n.id === id); },
     parentEdge(map, id) { return map.edges.find((e) => e.kind === 'tree' && e.to === id); },
+    /** Notion au centre de la carte : racine (sans parent) qui a des enfants — elle prend le niveau typographique « centre » */
+    isCentre(map, id) { return !this.parentEdge(map, id) && map.edges.some((e) => e.kind === 'tree' && e.from === id); },
     parentOf(map, id) { const e = this.parentEdge(map, id); return e ? this.node(map, e.from) : null; },
     /** Enfants dans l'ordre de lecture, qui dépend de la disposition :
-        droite → haut en bas ; pyramide → gauche à droite ; centrée → sens horaire autour de la
+        droite → haut en bas ; pyramide → gauche à droite ; vers le bas → parties de gauche à droite, puis haut en bas ; centrée → sens horaire autour de la
         racine (côté droit de haut en bas, puis côté gauche de bas en haut), haut en bas ensuite. */
     childrenOf(map, id) {
       const ids = new Set(map.edges.filter((e) => e.kind === 'tree' && e.from === id).map((e) => e.to));
       const list = map.nodes.filter((n) => ids.has(n.id));
       if (map.layout === 'down') return list.sort((a, b) => a.x - b.x || a.y - b.y);
+      // vers le bas : les parties sous la racine se lisent de gauche à droite, le reste de haut en bas
+      if (map.layout === 'tree' && !this.parentEdge(map, id)) return list.sort((a, b) => a.x - b.x || a.y - b.y);
       if (map.layout === 'balanced' || map.layout === 'organic') {
         const p = this.node(map, id);
         if (p && !this.parentEdge(map, id)) {
@@ -942,7 +948,7 @@
     roots(map) {
       const has = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
       const list = map.nodes.filter((n) => !has.has(n.id));
-      return map.layout === 'down' ? list.sort((a, b) => a.x - b.x || a.y - b.y) : list.sort((a, b) => a.y - b.y || a.x - b.x);
+      return map.layout === 'down' || map.layout === 'tree' ? list.sort((a, b) => a.x - b.x || a.y - b.y) : list.sort((a, b) => a.y - b.y || a.x - b.x);
     },
     descendants(map, id) {
       const out = [];
@@ -1460,7 +1466,7 @@
       const stacked = m.nodes.every((n) => n.x === m.nodes[0].x && n.y === m.nodes[0].y);
       if (!stacked && !force) return false;
       const vp = typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight - 64 } : undefined;
-      const r = R.layout.arrange(m, R.layout.estimate, { mode: m.layoutPick || m.layout || 'auto', viewport: vp, fast: true });
+      const r = R.layout.arrange(m, (n) => R.layout.estimate(n, m), { mode: m.layoutPick || m.layout || 'auto', viewport: vp, fast: true });
       for (const n of m.nodes) if (r.pos[n.id]) Object.assign(n, r.pos[n.id]);
       m.layout = r.mode;
       return true;
