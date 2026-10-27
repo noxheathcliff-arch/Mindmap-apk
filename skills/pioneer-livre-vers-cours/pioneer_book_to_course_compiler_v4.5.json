@@ -3,7 +3,7 @@
   "type": "portable_ai_skill_specification",
   "id": "pioneer_book_to_course_compiler",
   "name": "Pioneer — Compilateur Livre → Cours",
-  "version": "4.5.0",
+  "version": "4.5.1",
   "language": "fr",
   "how_to_read": "reader_first d'abord (lecture directe : le titre est le contenu, le libellé est une phrase vraie ; il prime sur toute habitude de forme) ; normative_core (il l'emporte pour les valeurs chiffrées) ; course_architecture et architecture_maps (plan réel en dossiers, cartes du plan) ; puis pipeline P0 → P7 sans sauter de phase (P3 Carte de compréhension et P3c Passe transversale AVANT tout nœud, P6a Audit interne AVANT le JSON final) ; comprehension_map, construction, modular_decomposition, note_rules, edge_rules pour lire puis écrire les relations ; node_types, readability_rules, target_format, quality_gates, self_check pour typer et valider ; exercises (P5b : questions, QCM et vrai ou faux de révision qui couvrent chaque carte) ; example (hors droit, de bout en bout). Les annexes étalonnent, elles ne priment jamais.",
   "purpose": {
@@ -708,7 +708,7 @@
     "R7 Titres de 15 à 40 caractères de préférence (80 au plus), uniques dans la carte, sans numéro, sans « : » ni « . » final ; « ? » pour une vraie question. Un titre énonce le contenu (reader_first L1) : jamais « Illustration », « Exemple de… », « La leçon », « Les outils », « Étape 1 ». Les intitulés du livre se recopient normalisés (même mots, ponctuation finale retirée).",
     "R8 Libellés-phrases : autant de mots qu'il faut pour que « parent + libellé + enfant » se lise comme une phrase claire, 80 caractères au plus (deux lignes).",
     "R9 Carte de contenu : 10 à 35 nœuds (8 minimum, 45 maximum) ; au-delà, une carte par section réelle.",
-    "R10 Ne pas fournir x, y : Pioneer range la carte (needsLayout). Facultatif : layoutPick « tree » (défaut conseillé pour le contenu : racine en haut, parties côte à côte de gauche à droite, chaque partie déroulée vers le bas), « right », « balanced » (4 à 6 branches équilibrées), « down » (≤ 24 nœuds, ≤ 3 niveaux).",
+    "R10 Ne pas fournir x, y : Pioneer range la carte (needsLayout). Facultatif : layoutPick « tree » (défaut conseillé pour le contenu, « Vers le bas » : racine en haut, grandes parties côte à côte de gauche à droite ; disposition en atome — les enfants de chaque nœud l'entourent, sauf du côté de son propre lien, feuilles au plus près ; une dernière partie légère, typiquement le retenir final, gravite au-dessus de la racine. D'où : l'ordre des enfants de la racine = ordre de lecture des parties, retenir en DERNIER), « right », « balanced » (4 à 6 branches équilibrées), « down » (≤ 24 nœuds, ≤ 3 niveaux).",
     "R11 Constructions : FRISE (methode avec de 3 à 6 etape feuilles ≤ 34 caractères, ou de 3 à 6 date sœurs dans l'ordre) ; PEIGNE (parent à 4 enfants ou plus, titres parallèles) ; ANNOTATIONS (exemples « illustré par », juris, doctrine, texte, citation, personne feuilles, juste après l'élément) ; NUMÉROS des branches principales dans l'ordre du JSON ; une branche = une idée suivie de bout en bout.",
     "R12 Test des trois secondes (reader_first.test) sur chaque arête : « parent — libellé → enfant » vrai, spécifique, dans le bon sens, compris notes fermées.",
     "R13 Sous un intitulé, aucun verbe qui décrit le livre (commence par, présente, rappelle, vise à, sert à, met en lumière, aboutit à) : le rôle de l'enfant pour le sujet.",
@@ -1367,6 +1367,11 @@
     "Racine qui n'est pas un chapitre (introduction, thème…) : type notion, titre court (« Introduction ») ; Pioneer l'affiche en grand titre central.",
     "Disposition « tree » (Vers le bas) conseillée pour les cartes de contenu.",
     "Fichier renommé pioneer_book_to_course_compiler_v4.5.json."
+  ],
+  "changelog_4_5_1": [
+    "Disposition « tree » en atome : les enfants de chaque nœud l'entourent (sauf du côté du lien qui arrive), les feuilles au plus près, les sous-grappes plus loin, le même motif à chaque niveau ; courbes souples.",
+    "La racine est elle aussi un atome : la ou les dernières parties légères (au plus un tiers de la plus grosse, typiquement le retenir final) se placent au-dessus d'elle ; on lit la rangée de gauche à droite, puis le haut. Garder le retenir en DERNIER enfant de la racine.",
+    "Aucun changement de format : le JSON produit en v4.5.0 reste valide."
   ],
   "changelog_4_4": [
     "Nouveau type paragraphe (22 types) : subdivision d'une sous-section — hiérarchie Chapitre › Section › Sous-section › Paragraphe ; aussi kind de dossier « paragraphe ».",

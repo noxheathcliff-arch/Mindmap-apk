@@ -3,7 +3,7 @@ name: pioneer-livre-vers-cours
 description: Transforme un livre, un PDF de cours, un polycopié ou des notes en un cours complet pour l'application Pioneer (JSON importable rangé selon le plan réel en dossiers, cartes du plan, cartes mentales typées, notes Markdown, relations libellées). À utiliser quand l'utilisateur fournit un document et demande des cartes, des fiches ou un cours Pioneer.
 ---
 
-# Pioneer — Compilateur Livre → Cours (v4.5)
+# Pioneer — Compilateur Livre → Cours (v4.5.1)
 
 La spécification complète est dans `pioneer_book_to_course_compiler_v4.5.json` (même dossier). **Lis-la en entier avant de commencer** (ordre conseillé : `how_to_read`), puis applique son `pipeline` P0 → P7 sans sauter de phase. Les `annexes` étalonnent le jugement ; elles ne priment jamais sur le reste.
 
@@ -20,7 +20,7 @@ La spécification complète est dans `pioneer_book_to_course_compiler_v4.5.json`
 - **Racine qui n'est pas un chapitre** (introduction, avant-propos, conclusion générale, thème) : type `notion`, titre court sans « Chapitre », sans numéro ni sous-titre.
   - Pour l'introduction, le titre est exactement « Introduction ».
   - Pioneer affiche une notion racine en grand titre central.
-- **Disposition** : `layoutPick: "tree"` (« Vers le bas ») est conseillé pour les cartes de contenu. La racine est en haut, les parties côte à côte de gauche à droite, chaque partie déroulée vers le bas.
+- **Disposition** : `layoutPick: "tree"` (« Vers le bas ») est conseillé pour les cartes de contenu. La racine est en haut, les grandes parties côte à côte de gauche à droite, et tout s'organise en atome : les enfants de chaque nœud l'entourent (sauf du côté de son propre lien). Une dernière partie légère — le `retenir` final — gravite au-dessus de la racine : garder le `retenir` en **dernier** enfant de la racine.
 
 ## Lecture directe (v4.1, prime sur le reste : `reader_first`)
 

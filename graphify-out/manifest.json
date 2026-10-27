@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1793073415.3963168,
-    "seen": 1793073560.155136,
-    "ast_hash": "67e3b25f0ffd347d106b694d2213ba96",
+    "mtime": 1793073698.6949654,
+    "seen": 1793073760.3194573,
+    "ast_hash": "c89476197bcd5f87c5acb8e17fdf6697",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1793072257.4630742,
-    "seen": 1793072620.9573894,
-    "ast_hash": "49192dfb8116c2c570751287b361e365",
+    "mtime": 1793073707.588659,
+    "seen": 1793073760.319471,
+    "ast_hash": "d2b4286286f46a9ff0b9be7b6673a93a",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793073545.607718,
-    "seen": 1793073560.155222,
-    "ast_hash": "f3fed4e7cab2d5b331de3901abb809d1",
+    "mtime": 1793073749.5087948,
+    "seen": 1793073760.3194861,
+    "ast_hash": "b844b281bc645ad9ba39f6e1d612601e",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1793073545.6001005,
-    "seen": 1793073560.1552975,
-    "ast_hash": "c620219fdc08dca2fca7d29fdcf10d1a",
+    "mtime": 1793073749.504412,
+    "seen": 1793073760.319525,
+    "ast_hash": "598cf6e9679d41b56c81b6719c1c0daf",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793073545.6010387,
-    "seen": 1793073560.1553004,
-    "ast_hash": "d5eae287c49626b4f0254fb20bc0fb5c",
+    "mtime": 1793073749.5048773,
+    "seen": 1793073760.3195264,
+    "ast_hash": "9748ef42598bed49c83ccf30c6e150b4",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "skills/pioneer-livre-vers-cours/SKILL.md": {
-    "mtime": 1793072473.1629717,
-    "seen": 1793072620.957459,
-    "ast_hash": "8f81224d139fd4ae71e7c67f0f91104c",
+    "mtime": 1793073749.4876025,
+    "seen": 1793073760.3195348,
+    "ast_hash": "27f804d66f0be7e79bb00866e91a447f",
     "semantic_hash": ""
   },
   "shots/app-desk-dark.png": {
@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "skills/pioneer-livre-vers-cours/pioneer_book_to_course_compiler_v4.5.json": {
-    "mtime": 1793072507.0648897,
-    "seen": 1793072620.9574049,
-    "ast_hash": "75f605565e39f6f5fb8d33569a8cd77f",
+    "mtime": 1793073749.4870226,
+    "seen": 1793073760.319485,
+    "ast_hash": "160817a060f3bb8494dca59c38284ef8",
     "semantic_hash": ""
   }
 }

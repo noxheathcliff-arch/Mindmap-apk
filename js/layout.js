@@ -41,6 +41,7 @@
     molTry: 7,        // pas angulaire quand une place est prise (degrés)
     molJa: 10,        // léger désordre déterministe (degrés, stable d'un rangement à l'autre)
     molJy: 18,
+    molLight: 0.34,   // une partie pèse au plus ce tiers de la plus grosse → elle peut graviter au-dessus de la racine
     w: {              // poids de la note globale (plus bas = mieux)
       // échelle commune : 1 croisement ≈ 300 px de renvoi à suivre des yeux (Ware et al. 2002 :
       // longueur et croisements pèsent sur le suivi d'un chemin) ; 1 nœud traversé ≈ 5 croisements
@@ -1316,12 +1317,23 @@
     // des bords), pour qu'aucune grappe ne pousse dans ce lien
     const ls = lbl(rootId);
     const top = rs.h + prm.downGap + 24 + (ls ? ls.h + 12 : 0);
+    // la racine est elle aussi un atome : les dernières parties, si elles sont légères (une feuille,
+    // une petite grappe — « À retenir », une conclusion), gravitent au-dessus d'elle au lieu
+    // d'allonger la rangée ; on lit donc la rangée de gauche à droite, puis le haut
+    const weight = (id) => { let n = 1; for (const c of T.kids.get(id) || []) n += weight(c); return n; };
+    const heavy = Math.max(...kids.map(weight));
+    const above = [];
+    for (let i = kids.length - 1; i >= 0 && kids.length - above.length > 2 && above.length < Math.floor(kids.length / 3); i--) {
+      if (weight(kids[i]) > Math.max(1, heavy * prm.molLight)) break;
+      above.unshift(kids[i]);
+    }
+    const row = kids.filter((c) => !above.includes(c));
     const parts = (dirs) => {
       seen.clear(); seen.add(rootId);
       for (const id in out) if (id !== rootId) delete out[id];
       const placed = [], hubs = [];
       let from = 0;
-      for (const c of kids) {
+      for (const c of row) {
         if (seen.has(c)) continue;
         const g = dirs ? atome(c, dirs.get(c).a, dirs.get(c).reach) : atome(c, Math.PI / 2);
         const y0 = Math.min(...g.rects.map((r) => r.y0)), x0 = Math.min(...g.rects.map((r) => r.x0));
@@ -1341,6 +1353,45 @@
     };
     const first = parts(null);
     parts(new Map(first.map((h) => [h.c, { a: Math.max(35 * DEG, Math.min(145 * DEG, Math.atan2(h.y - rs.h, h.x - rs.w / 2))), reach: Math.max(prm.molLane, Math.hypot(h.y - rs.h, h.x - rs.w / 2)) }])));
+    if (!above.length) return out;
+    // les parties du haut : autour de la racine, de gauche à droite, sans rien toucher de ce qui est posé
+    // (repère : centre de la racine)
+    const cx = rs.w / 2, cy = rs.h / 2;
+    const rects = [], segs = [];
+    const centre = (id) => { const z = size(T.byId.get(id)); return { x: out[id].x + z.w / 2 - cx, y: out[id].y + z.h / 2 - cy, w: z.w, h: z.h }; };
+    for (const id in out) { const q = centre(id); rects.push(box(q.x, q.y, q.w, q.h)); }
+    for (const [id, cs] of T.kids) if (out[id]) for (const c of cs) if (out[c]) { const a = centre(id), b = centre(c); segs.push([a.x, a.y, b.x, b.y]); }
+    const k = above.length;
+    above.forEach((c, i) => {
+      const want = -Math.PI / 2 + (k > 1 ? (i / (k - 1) - 0.5) * 100 * DEG : 0) + (rnd(c, 4) - 0.5) * prm.molJa * DEG;
+      const g = atome(c, want);
+      const cs = size(T.byId.get(c));
+      const free = (a, r) => {
+        const ux = Math.cos(a), uy = Math.sin(a), ox = ux * r, oy = uy * r;
+        const own = g.rects.map((q) => mv(q, ox, oy));
+        for (const q of own) {
+          const qm = { x0: q.x0 - M, y0: q.y0 - M, x1: q.x1 + M, y1: q.y1 + M };
+          for (const p of rects) if (hit(qm, p)) return false;
+          for (const sg of segs) if (cut(sg, q)) return false;
+        }
+        const e1 = edge(rs.w, rs.h, ux, uy), e2 = edge(cs.w, cs.h, ux, uy);
+        const body = [ux * e1, uy * e1, ox - ux * e2, oy - uy * e2];
+        for (const p of rects.slice(1)) if (cut(body, p)) return false;
+        for (const q of own.slice(1)) if (cut(body, q)) return false;
+        for (const sg of g.segs) for (const p of rects) if (cut([sg[0] + ox, sg[1] + oy, sg[2] + ox, sg[3] + oy], p)) return false;
+        return { ox, oy, own };
+      };
+      const ux = Math.cos(want), uy = Math.sin(want);
+      const r0 = edge(rs.w, rs.h, ux, uy) + edge(cs.w, cs.h, ux, uy) + prm.molGap + 24;
+      let got = null;
+      for (let r = r0; !got && r < r0 + 3000; r += 8 + (r - r0) * 0.15) {
+        for (const d of [0, 1, -1, 2, -2, 3, -3, 4, -4]) if ((got = free(want + d * prm.molTry * DEG, r))) break;
+      }
+      if (!got) got = { ox: ux * (r0 + 3000), oy: uy * (r0 + 3000), own: g.rects.map((q) => mv(q, ux * (r0 + 3000), uy * (r0 + 3000))) };
+      for (const [id, p] of g.pos) { const z = size(T.byId.get(id)); out[id] = { x: p.x + got.ox + cx - z.w / 2, y: p.y + got.oy + cy - z.h / 2 }; }
+      rects.push(...got.own);
+      segs.push([0, 0, got.ox, got.oy], ...g.segs.map((sg) => [sg[0] + got.ox, sg[1] + got.oy, sg[2] + got.ox, sg[3] + got.oy]));
+    });
     return out;
   }
 

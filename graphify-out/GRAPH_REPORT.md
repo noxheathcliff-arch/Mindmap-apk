@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-27)
 
 ## Corpus Check
-- 62 files · ~286,244 words
+- 62 files · ~287,199 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 957 nodes · 2175 edges · 54 communities (42 shown, 12 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 194 edges (avg confidence: 0.87)
+- 957 nodes · 2176 edges · 54 communities (42 shown, 12 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 195 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8193f570`
+- Built from commit: `567f945d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -279,4 +279,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `changed` be split into smaller, more focused modules?**
   _Cohesion score 0.11396011396011396 - nodes in this community are weakly interconnected._
 - **Why does `4.4 Types de nœuds — trois apparences (v4.1)` connect `layout.js` to `carnet.js`, `4. Système de design (Material Design 3)`, `store.js`?**
-  _High betweenness centrality (0.193) - this node is a cross-community bridge._
+  _High betweenness centrality (0.189) - this node is a cross-community bridge._
