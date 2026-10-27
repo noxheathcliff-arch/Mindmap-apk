@@ -486,7 +486,12 @@
   const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
   function applyMotion() {
     const m = S.data.settings.motion || 'system';
-    document.documentElement.dataset.motion = m === 'system' ? (mqReduce.matches ? 'reduce' : 'full') : m;
+    const v = m === 'system' ? (mqReduce.matches ? 'reduce' : 'full') : m;
+    if (document.documentElement.dataset.motion === v) return;
+    // changer de mode change le nom des animations : sans ça, le dialogue ouvert (Réglages) rejouait
+    // son entrée depuis l'opacité 0 et laissait voir la page dessous un instant
+    U.$$('.scrim, .dialog, .dialog > *, .snackbar').forEach((el) => el.classList.add('settled'));
+    document.documentElement.dataset.motion = v;
   }
   app.setMotion = (m) => { S.data.settings.motion = m; S.changed('settings'); applyMotion(); };
   mqReduce.addEventListener('change', applyMotion);
@@ -551,7 +556,8 @@
       const el = onClick ? h('button.st-item', { type: 'button', class: cls, onclick: onClick }, inner) : h('div.st-item', { class: cls }, inner);
       return below ? h('div.st-block', el, h('div.st-below', below)) : el;
     };
-    const after = (fn) => () => { closeFn(); setTimeout(fn, 220); };
+    // animations réduites : la suite s'ouvre par-dessus, puis les réglages s'effacent dessous (jamais la page entre les deux)
+    const after = (fn) => () => { if (U.reducedMotion()) { fn(); closeFn(); } else { closeFn(); setTimeout(fn, 220); } };
     const group = (title, ...items) => h('section.st-group', h('h3.st-h', title), h('div.st-list', items));
 
     const body = h('div.st',

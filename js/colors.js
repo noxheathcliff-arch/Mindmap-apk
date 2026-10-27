@@ -289,11 +289,10 @@
     };
     const preview = (t, s, pal) => {
       const T = S.TYPES[t];
-      const el = h('span.cp-node', { class: 'cp-' + t }, h('span.cp-k', T.kicker || T.label), h('span.cp-t', T.label));
+      const el = h('span.cp-node', { class: 'cp-' + t }, h('span.cp-t', T.label));
       if (pal[t]) {
         const d = derive(pal[t], currentTheme(), variantOf(t, s));
         el.style.background = d.bg; el.style.color = d.fg; el.style.borderColor = d.line;
-        el.querySelector('.cp-k').style.color = d.sub;
         if (d.adjusted) el.title = 'Texte ajusté automatiquement pour rester lisible';
       }
       return el;
@@ -304,34 +303,43 @@
       const pal = palette(s);
       U.clear(body);
       body.appendChild(h('div.cp-sec',
-        h('p.cp-label', 'Couleurs'),
+        h('h3.cp-label', 'Palette'),
         segRow('Couleurs des nœuds', 'cp-mode', MODES.map(([v, l]) => [v, l]), s.mode, (v) => { set(v === 'perso' ? { mode: 'perso', custom: toPerso() } : { mode: v }); paint(); }),
         h('p.cp-help', MODES.find((m) => m[0] === s.mode)[2])));
       if (s.mode !== 'off') {
         body.appendChild(h('div.cp-sec',
-          h('p.cp-label', 'Intensité'),
+          h('h3.cp-label', 'Intensité'),
           segRow('Intensité', 'cp-int', [['doux', 'Douce'], ['vif', 'Vive']], s.intensity, (v) => { set({ intensity: v }); paint(); }),
           h('p.cp-help', s.intensity === 'vif' ? 'Aplats de la couleur choisie : repérage immédiat.' : 'Fonds pâles et bordures colorées : plus calme pour lire longtemps.')));
       }
-      // types, par familles (le menu Type suit le même ordre)
+      // types, par familles (le menu Type suit le même ordre) : une carte tonale par type, aperçu puis nuancier
       for (const g of S.TYPE_GROUPS) {
         const rows = g.types.map((t) => {
           const cur = pal[t];
-          const sw = h('div.cp-swatches', { role: 'group', 'aria-label': 'Couleur : ' + S.TYPES[t].label },
-            SWATCHES.map((c, i) => {
-              const b = h('button.cp-sw', { type: 'button', 'aria-label': `Nuance ${i + 1}`, 'aria-pressed': String(cur === c), style: { background: c } });
-              b.addEventListener('click', () => pick(t, c));
-              return b;
-            }));
-          const input = h('input.cp-input', { type: 'color', value: cur || '#888888', 'aria-label': 'Autre couleur : ' + S.TYPES[t].label, title: 'Autre couleur…' });
+          const label = S.TYPES[t].label;
+          const opt = (cls, attrs, ...kids) => {
+            const b = h('button.cp-opt' + cls, { type: 'button', ...attrs }, ...kids, h('span.cp-check', { 'aria-hidden': 'true' }, R.icon('check', 18)));
+            return b;
+          };
+          const none = opt('.cp-none', { 'aria-pressed': String(!cur), title: 'Sans couleur', 'aria-label': 'Sans couleur' }, R.icon('close', 18));
+          none.addEventListener('click', () => pick(t, null));
+          const sws = SWATCHES.map((c, i) => {
+            const b = opt('.cp-sw', { 'aria-label': `Nuance ${i + 1}`, 'aria-pressed': String(cur === c), style: { '--sw': c } });
+            b.addEventListener('click', () => pick(t, c));
+            return b;
+          });
+          // autre couleur : nuancier natif sous une pastille arc-en-ciel (montre la couleur perso si elle est choisie)
+          const own = !!cur && !SWATCHES.includes(cur);
+          const input = h('input.cp-input', { type: 'color', value: cur || '#888888', 'aria-label': 'Autre couleur : ' + label });
           input.addEventListener('input', () => { pendingColor = [t, input.value]; });
           input.addEventListener('change', () => { pick(t, input.value); pendingColor = null; });
-          const none = h('button.cp-none', { type: 'button', 'aria-pressed': String(!cur), title: 'Sans couleur (monochrome)', 'aria-label': 'Sans couleur' }, R.icon('close', 16));
-          none.addEventListener('click', () => pick(t, null));
-          sw.append(input, none);
-          return h('div.cp-row', preview(t, s, pal), h('div.cp-pick', sw));
+          const custom = h('label.cp-opt.cp-custom', { title: 'Autre couleur…', 'data-on': String(own), style: own ? { '--sw': cur } : null },
+            input, own ? null : R.icon('plus', 18), h('span.cp-check', { 'aria-hidden': 'true' }, R.icon('check', 18)));
+          return h('div.cp-row',
+            h('div.cp-head', preview(t, s, pal), h('span.cp-state', cur ? (own ? 'Perso' : 'Nuance') : 'Sans couleur')),
+            h('div.cp-swatches', { role: 'group', 'aria-label': 'Couleur : ' + label }, none, ...sws, custom));
         });
-        body.appendChild(h('div.cp-group', h('p.cp-label', g.label), ...rows));
+        body.appendChild(h('section.cp-group', h('h3.cp-label', g.label), h('div.cp-list', ...rows)));
       }
       if (s.mode === 'perso') {
         const pairs = closePairs(s);

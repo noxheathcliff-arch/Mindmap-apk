@@ -72,7 +72,7 @@
       gras) vient de R.store.styleOf : chasse moyenne = corps × cw de la police, interligne = corps × 1.3. */
   const BOX = {
     notion: { pad: 43, base: 27, min: 64, max: 260 },
-    struct: { pad: 43, base: 27, min: 120, max: 340, bar: 10 },
+    struct: { pad: 43, base: 27, min: 120, max: 340 },
     idee:   { pad: 31, base: 22, min: 64, max: 260 },
     ref:    { pad: 33, base: 22, min: 64, max: 260 },
   };
@@ -90,7 +90,7 @@
     const perLine = Math.max(4, Math.floor((w - B.pad) / cw));
     const lines = Math.max(1, Math.ceil(len / perLine));
     const top = ((T.kicker && !sty.prefix) || n.note || (n.review && n.review.rating)) ? 18 : 0;
-    const h = Math.max(sty.h, Math.round(B.base + top + lines * sty.fs * 1.3 + (B.bar || 0)));
+    const h = Math.max(sty.h, Math.round(B.base + top + lines * sty.fs * 1.3));
     return { w, h };
   }
   const labelSize = (text) => ({ w: Math.round(String(text).length * 5.6 + 18), h: 19 }); // recalibré sur les libellés mesurés (11 px)

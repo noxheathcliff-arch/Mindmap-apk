@@ -445,9 +445,12 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
 /* pages : échange net, l'ancienne disparaît à l'instant où la nouvelle est là */
 :root[data-motion="reduce"] .page-wrap.leaving { display: none !important; }
 /* surfaces superposées : un fondu, sur le conteneur seulement */
-:root[data-motion="reduce"] :is(.scrim, .dialog:not(.out), .snackbar) {
+:root[data-motion="reduce"] :is(.scrim:not(.out), .dialog:not(.out), .snackbar) {
   animation: rm-fade 150ms linear both !important;
 }
+:root[data-motion="reduce"] .scrim.out { animation: rm-fade-out 120ms linear forwards !important; }
+/* surface déjà ouverte quand on change de mode : elle reste posée, rien ne se rejoue */
+:root[data-motion] .settled:not(.out) { animation: none !important; }
 :root[data-motion="reduce"] .dialog.out { animation: rm-fade-out 120ms linear forwards !important; }
 :root[data-motion="reduce"] .menu, :root[data-motion="reduce"] .menu.out { transform: none !important; transition-property: opacity !important; transition-duration: 120ms !important; }
 :root[data-motion="reduce"] .menu-item { transition: none !important; }

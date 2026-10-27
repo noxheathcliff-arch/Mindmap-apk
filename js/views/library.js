@@ -422,8 +422,9 @@
     const foot = h('footer.fiche-foot',
       h('div.fiche-stats',
         st.maps ? h('span.fiche-meta', { title: `${U.plural(st.maps, 'carte')} mentale${st.maps > 1 ? 's' : ''} · ${U.plural(st.nodes, 'nœud')}` }, U.plural(st.maps, 'carte')) : null,
-        st.reviewable ? h('span.fiche-meter', { role: 'img', 'aria-label': `Maîtrise ${Math.round(st.progress * 100)} %` },
-          h('i', { style: { transform: `scaleX(${st.progress})` } })) : null),
+        // maîtrise : anneau + pourcentage sur la même ligne que le compte de cartes (plus de barre qui prend une ligne)
+        st.reviewable ? h('span.fiche-meter', { title: `Maîtrise ${Math.round(st.progress * 100)} %`, style: { '--ring': st.progress } },
+          h('i', { 'aria-hidden': 'true' }), Math.round(st.progress * 100) + ' %') : null),
       action);
 
     // ordre du DOM : la façade (titre) d'abord pour la lecture ; les feuilles, en absolu, passent dessous

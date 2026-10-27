@@ -391,7 +391,7 @@
     function nodeEl(n) {
       const el = h('div.node', { dataset: { id: n.id }, role: 'treeitem', tabindex: '-1' });
       el.innerHTML = '<span class="node-top"><span class="node-kicker"></span><span class="node-meta"></span></span><span class="node-title"><span class="node-pre"></span><span class="hl"></span></span>' +
-        '<span class="node-meter" aria-hidden="true"><i></i></span><span class="node-order" aria-hidden="true"></span>' +
+        '<span class="node-order" aria-hidden="true"></span>' +
         '<button type="button" class="node-collapse" tabindex="-1" aria-label="Replier"></button>' +
         '<span class="node-handle" data-handle="1" aria-hidden="true" title="Glisser pour relier · cliquer pour ajouter un enfant"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>' +
         '<span class="node-resize" data-resize="1" aria-hidden="true" title="Glisser pour redimensionner · double-clic : taille automatique"></span>';
@@ -451,21 +451,22 @@
         el.querySelector('.node-kicker').textContent = ctx.kicker;
         el.querySelector('.node-pre').textContent = pre;
         el.classList.toggle('has-pre', !!pre);
-        // structure : jauge de maîtrise de toute la branche (chapitre, leçon, section)
-        const meter = el.querySelector('.node-meter');
-        el.classList.toggle('has-meter', !!(bs && bs.reviewable));
-        if (bs && bs.reviewable) meter.style.setProperty('--p', String(bs.progress));
         const hl = el.querySelector('.hl');
         if (st.editing !== n.id) titleInto(hl, n);
         el.classList.toggle('untitled', !n.title);
         const meta = el.querySelector('.node-meta');
         U.clear(meta);
+        // structure : maîtrise de toute la branche (chapitre, leçon, section), en anneau discret dans la ligne du haut
+        if (bs && bs.reviewable) {
+          const pc = Math.round(bs.progress * 100);
+          meta.appendChild(h('span.node-ring', { title: `Maîtrise de la branche : ${pc} %`, style: { '--ring': bs.progress } }, h('i'), pc + ' %'));
+        }
         if (n.note.trim()) meta.appendChild(R.icon('note', 14, 'node-has-note'));
         if (n.review.rating) meta.appendChild(ui.mastery(n.review.rating, 10));
         const ref = refTarget(n);
         if (ref) meta.appendChild(h('span.node-go', { title: ref.label }, R.icon('chevronRight', 14)));
         el.classList.toggle('is-ref', !!ref);
-        el.classList.toggle('has-top', !!(T.kicker || n.note.trim() || n.review.rating || ref));
+        el.classList.toggle('has-top', !!(T.kicker || (bs && bs.reviewable) || n.note.trim() || n.review.rating || ref));
         const col = el.querySelector('.node-collapse');
         col.textContent = n.collapsed ? '+' + ctx.descCount : '';
         col.setAttribute('aria-label', n.collapsed ? `Déplier (${ctx.descCount})` : 'Replier');

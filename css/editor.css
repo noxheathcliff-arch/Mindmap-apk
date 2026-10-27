@@ -194,12 +194,14 @@
   :root:not([data-theme="light"]) .node.tinted.look-idee .node-top, :root:not([data-theme="light"]) .node.tinted.look-ref .node-top { color: oklch(.82 calc(var(--nc) * .5) var(--nh)); }
 }
 
-/* jauge de maîtrise de la branche (value change : transform, 360 ms) */
-.node-meter { display: none; height: 4px; margin-top: 8px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, currentColor 16%, transparent); }
-.node.has-meter .node-meter { display: block; }
-.node-meter i { display: block; height: 100%; background: currentColor; transform: scaleX(var(--p, 0)); transform-origin: left; transition: transform var(--dur-lg) var(--ease-out); }
-.node.struct .node-meter i { background: var(--primary); }
-.node.masked .node-meter { visibility: hidden; }
+/* maîtrise de la branche : anneau 12 px + pourcentage dans la ligne du haut (ne pousse plus le titre) */
+.node-ring { display: inline-flex; align-items: center; gap: 4px; font: var(--label-s); font-variant-numeric: tabular-nums; }
+.node-ring i { width: 12px; height: 12px; border-radius: 50%; flex: none;
+  background: conic-gradient(currentColor calc(var(--ring, 0) * 1turn), color-mix(in srgb, currentColor 22%, transparent) 0);
+  -webkit-mask: radial-gradient(closest-side, transparent 58%, #000 62%); mask: radial-gradient(closest-side, transparent 58%, #000 62%); }
+.node.struct .node-ring i { color: var(--primary); }
+.node.selected .node-ring i, .node.editing .node-ring i { color: inherit; }
+.node.masked .node-ring { visibility: hidden; }
 
 /* états */
 .node.selected { border-color: var(--on-surface); z-index: 2; }
@@ -610,6 +612,8 @@
   .bottombar:empty { display: none; }
   .bottombar .ctx-btn { flex: none; display: grid; gap: var(--space-hair); place-items: center; height: 56px; width: 64px; border-radius: var(--shape-li); color: inherit; }
   .bottombar .ctx-btn:active { border-radius: var(--shape-m); }
+  /* état actif sur barre vibrante : pastille inversée (on-primary-container), pas de gris secondaire sur le bleu */
+  .bottombar .ctx-btn.on { background: var(--on-primary-container); color: var(--primary-container); }
   .bottombar .ctx-l { font: var(--label-s); }
   .bottombar.swap .ctx-btn { animation: bar-in var(--dur-sm) var(--ease-out) both; }
   .bottombar.swap .ctx-btn:nth-child(2) { animation-delay: 15ms; }

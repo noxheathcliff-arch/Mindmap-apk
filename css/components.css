@@ -427,20 +427,26 @@
 .tbl-cell::placeholder { color: var(--on-surface-variant); opacity: .6; font-weight: 400; }
 .tbl-hint { font: var(--body-s); color: var(--on-surface-variant); }
 
-/* ---- Couleurs des nœuds (dialogue) ----------------------------------- */
+/* ---- Couleurs des nœuds (dialogue, Material You) ----------------------
+   Titres de section en casse de phrase, segmentés pleine largeur, une carte tonale par type :
+   aperçu du nœud + état, puis un nuancier en grille qui passe à la ligne (jamais rogné), cibles ≥ 40 px. */
 .dialog-colors .dialog-actions { justify-content: space-between; }
-.cp { display: grid; gap: var(--sp-4); min-width: 0; }
-.cp-sec, .cp-group { display: grid; gap: var(--sp-2); min-width: 0; }
-.cp-label { font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); }
-.cp-help { font: var(--body-s); color: var(--on-surface-variant); }
-.cp-seg { justify-self: start; max-width: 100%; }
-.cp-row { display: grid; grid-template-columns: minmax(120px, 168px) minmax(0, 1fr); align-items: center; gap: var(--sp-3); padding: var(--sp-1) 0; }
+.cp { display: grid; gap: var(--sp-6); min-width: 0; }
+.cp-sec, .cp-group { display: grid; gap: var(--sp-3); min-width: 0; }
+.cp-label { margin: 0; font: var(--title-s); color: var(--on-surface); }
+.cp-help { margin: 0; font: var(--body-m); color: var(--on-surface-variant); }
+.cp-seg { display: flex; width: 100%; }
+.cp-seg > .seg-btn { flex: 1 1 0; min-width: 0; padding-inline: var(--sp-2); }
+.cp-seg > .seg-btn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-list { display: grid; gap: var(--sp-2); }
+.cp-row { display: grid; gap: var(--sp-3); padding: var(--sp-3); border-radius: var(--shape-l); background: var(--surface-container-highest); min-width: 0; }
+.cp-head { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.cp-state { margin-left: auto; flex: none; font: var(--label-m); color: var(--on-surface-variant); }
 .cp-node {
-  display: grid; gap: var(--space-hair); min-width: 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--shape-m);
+  display: inline-flex; align-items: center; min-width: 0; max-width: 70%; min-height: 36px; padding: 0 var(--sp-4); border-radius: var(--shape-s);
   background: var(--surface-container-lowest); border: 1.5px solid var(--outline-variant); color: var(--on-surface);
   font: var(--body-m); transition: background-color var(--dur-sm) var(--ease-out), border-color var(--dur-sm) var(--ease-out), color var(--dur-sm) var(--ease-out);
 }
-.cp-k { font: var(--label-s); letter-spacing: var(--tracking-overline); text-transform: uppercase; color: var(--on-surface-variant); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cp-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* la forme de chaque type reste visible dans l'aperçu (teinte = famille, forme = type) */
 .cp-notion, .cp-chapitre { font-weight: 600; }
@@ -456,27 +462,31 @@
 .cp-chiffre .cp-t { font-weight: 700; }
 .cp-formule .cp-t { font-family: var(--font-mono); font-size: 13px; }
 .cp-etape .cp-t { font-weight: 600; } .cp-conseil { border-radius: 14px 4px 14px 4px; } .cp-exercice { border-width: 2px; }
-.cp-pick { display: grid; gap: var(--space-group); min-width: 0; }
-.cp-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-group); }
-.cp-sw { width: 26px; height: 26px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); transition: transform var(--dur-xs) var(--ease-out), box-shadow var(--dur-xs) var(--ease-out); }
-.cp-sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface-container-high), 0 0 0 4px var(--on-surface); }
-@media (hover: hover) { .cp-sw:hover { transform: scale(1.12); } }
-.cp-input { width: 34px; height: 28px; padding: 0; border: 1px solid var(--outline-variant); border-radius: var(--shape-xs); background: none; cursor: pointer; }
-.cp-input::-webkit-color-swatch-wrapper { padding: 2px; }
-.cp-input::-webkit-color-swatch { border: 0; border-radius: 3px; }
-.cp-none { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px dashed var(--outline); color: var(--on-surface-variant); }
-.cp-none[aria-pressed="true"] { border-style: solid; border-color: var(--on-surface); color: var(--on-surface); }
-.cp-warn { display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-3); border-radius: var(--shape-s); background: var(--surface-container); font: var(--body-s); color: var(--on-surface); }
-.cp-warn .ic { flex: none; margin-top: 1px; }
-@media (max-width: 599px) {
-  .cp-row { grid-template-columns: minmax(0, 1fr); gap: var(--space-group); padding: var(--sp-2) 0; }
-  .cp-node { padding: var(--sp-2) var(--sp-3); }
-  /* une seule ligne qui défile au doigt : le dialogue reste court */
-  .cp-swatches { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 4px 2px; margin: -4px -2px; scroll-snap-type: x proximity; }
-  .cp-swatches::-webkit-scrollbar { display: none; }
-  .cp-swatches > * { flex: none; scroll-snap-align: start; }
-  .cp-sw { width: 32px; height: 32px; }
+/* nuancier : 7 colonnes sur téléphone (2 lignes), une seule ligne dès que la place le permet */
+.cp-swatches { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--sp-2); justify-items: center; }
+@media (min-width: 600px) { .cp-swatches { grid-template-columns: repeat(14, minmax(0, 1fr)); gap: var(--sp-1); } }
+.cp-opt {
+  position: relative; display: grid; place-items: center; width: 100%; max-width: 40px; aspect-ratio: 1; border-radius: 50%; border: 0; padding: 0;
+  background: var(--sw, transparent); color: var(--on-surface-variant); cursor: pointer;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 12%, transparent);
+  transition: border-radius var(--dur-sm) var(--ease-out), box-shadow var(--dur-xs) var(--ease-out);
 }
+.cp-opt:active { transform: scale(.92); }
+.cp-opt:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* sélection : la pastille devient un carré arrondi (forme M3 Expressive) + anneau + coche */
+.cp-opt[aria-pressed="true"], .cp-opt[data-on="true"] { border-radius: var(--shape-m); box-shadow: 0 0 0 2px var(--surface-container-highest), 0 0 0 4px var(--on-surface); }
+.cp-check { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; opacity: 0; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .45)); transition: opacity var(--dur-xs) var(--ease-out); }
+.cp-opt[aria-pressed="true"] .cp-check, .cp-opt[data-on="true"] .cp-check { opacity: 1; }
+.cp-none { background: transparent; box-shadow: inset 0 0 0 1.5px var(--outline); }
+.cp-none[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); }
+.cp-none[aria-pressed="true"] > .ic { opacity: 0; }
+.cp-none .cp-check { color: var(--on-secondary-container); filter: none; }
+.cp-custom:not([data-on="true"]) { background: conic-gradient(from 0deg, #e5484d, #f5a524, #e5d84d, #46a758, #12a5b4, #3e63dd, #8e4ec6, #e5484d); color: #fff; }
+.cp-custom:not([data-on="true"]) > .ic { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .5)); }
+.cp-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.cp-warn { display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-3); border-radius: var(--shape-m); background: var(--tertiary-container); font: var(--body-s); color: var(--on-tertiary-container); }
+.cp-warn .ic { flex: none; margin-top: 1px; }
+@media (hover: hover) { .cp-opt:not([aria-pressed="true"]):not([data-on="true"]):hover { border-radius: var(--shape-l); } }
 /* pastille de couleur dans les menus (Type) et la légende */
 .menu-swatch { flex: none; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid; margin-left: auto; }
 .menu-item .menu-swatch + .menu-hint { margin-left: var(--sp-2); }
