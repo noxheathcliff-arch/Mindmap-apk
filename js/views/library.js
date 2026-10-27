@@ -356,7 +356,7 @@
         const reveal = () => {
           const page = U.$$('#view .page-wrap').find((n) => !before.has(n));
           if (!page) { if (++tries < 12) requestAnimationFrame(reveal); return; }
-          if (!page.animate) return;
+          if (!page.animate || U.reducedMotion()) return;
           const kids = [...(page.firstElementChild || page).children].slice(0, 8);
           (kids.length ? kids : [page]).forEach((n, i) => n.animate(
             [{ opacity: 0, transform: 'translateY(18px) scale(.985)' }, { opacity: 1, transform: 'none' }],

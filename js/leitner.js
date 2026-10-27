@@ -339,6 +339,7 @@
       }
       poseWorld();
       for (const p of parts) pose(p);
+      if (W) stage.style.visibility = '';
       if (moving) raf = requestAnimationFrame(frame);
     }
 
@@ -530,7 +531,9 @@
     narrow.addEventListener('change', () => fold(open));
     fold(open);
 
-    const ro = new ResizeObserver(() => { measure(); kick(); });
+    // posé avant la 1re peinture (le RO passe après la mise en page) : jamais de boîte à la mauvaise taille
+    stage.style.visibility = 'hidden';            // rien tant que la boîte n'est pas cadrée
+    const ro = new ResizeObserver(() => { measure(); cancelAnimationFrame(raf); last = performance.now(); frame(last); });
     ro.observe(stage);
     requestAnimationFrame(() => { measure(); say(); if (intro && !reduced()) drop.t = 0; kick(); });
     return sec;

@@ -438,7 +438,10 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }
-:root[data-motion="reduce"] * { transition-duration: 120ms !important; }
+/* 1 ms et non 120 : transition-property vaut « all » par défaut, une durée imposée animerait
+   CHAQUE changement de style (mise en page comprise) — d'où des images intermédiaires à chaque écran.
+   1 ms reste instantané mais laisse partir transitionend. */
+:root[data-motion="reduce"] * { transition-duration: 1ms !important; }
 /* pages : échange net, l'ancienne disparaît à l'instant où la nouvelle est là */
 :root[data-motion="reduce"] .page-wrap.leaving { display: none !important; }
 /* surfaces superposées : un fondu, sur le conteneur seulement */
@@ -446,7 +449,7 @@ a.crumb:hover { color: var(--on-surface); text-decoration: underline; text-under
   animation: rm-fade 150ms linear both !important;
 }
 :root[data-motion="reduce"] .dialog.out { animation: rm-fade-out 120ms linear forwards !important; }
-:root[data-motion="reduce"] .menu, :root[data-motion="reduce"] .menu.out { transform: none !important; transition-property: opacity !important; }
+:root[data-motion="reduce"] .menu, :root[data-motion="reduce"] .menu.out { transform: none !important; transition-property: opacity !important; transition-duration: 120ms !important; }
 :root[data-motion="reduce"] .menu-item { transition: none !important; }
 :root[data-motion="reduce"] .node.dying { opacity: 0 !important; }
 :root[data-motion="reduce"] .ripple-wave, :root[data-motion="reduce"] .burst { display: none !important; }
