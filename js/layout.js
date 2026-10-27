@@ -31,13 +31,15 @@
     cousinGap: 32,    // entre deux groupes voisins, aux niveaux plus profonds
     downSibGap: 24,   // pyramide : entre deux sœurs
     rootGap: 96,      // entre deux arbres indépendants
-    // « vers le bas » : parties côte à côte sous la racine, chacune en liste indentée
-    treeGap: 48,      // bas du parent → haut du premier enfant (air de lecture entre niveaux)
-    treeSib: 32,      // entre deux feuilles sœurs d'une liste
-    treeGroup: 48,    // après une sœur qui a des enfants (on change de groupe)
-    treeColGap: 64,   // entre deux parties voisines
-    treeSpine: 22,    // l'arête verticale part à cette distance du bord gauche du parent
-    treeStub: 28,     // longueur minimale du trait horizontal qui mène à l'enfant
+    // « vers le bas » : parties côte à côte sous la racine, chacune en grappe (molécule)
+    treeColGap: 72,   // entre deux parties voisines
+    molGapX: 40,      // entre deux grappes sœurs d'une rangée
+    molGapY: 56,      // bas du parent → haut de ses enfants (place pour la courbe et son libellé)
+    molFan: 22,       // arc : le milieu d'une fratrie descend, ses extrémités remontent vers le parent
+    molNook: 56,      // quinconce : écart entre deux feuilles hautes, où passe le lien de la feuille basse
+    molNookY: 28,     // quinconce : la feuille basse, sous ses deux voisines
+    molJx: 16,        // léger désordre déterministe (stable d'un rangement à l'autre)
+    molJy: 18,
     w: {              // poids de la note globale (plus bas = mieux)
       // échelle commune : 1 croisement ≈ 300 px de renvoi à suivre des yeux (Ware et al. 2002 :
       // longueur et croisements pèsent sur le suivi d'un chemin) ; 1 nœud traversé ≈ 5 croisements
@@ -141,8 +143,8 @@
 
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
   function treeSides(mode, a, sa, b, sb, top = false) {
-    if (mode === 'down' || (mode === 'tree' && top)) return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
-    if (mode === 'tree' && isIndented(a, sa, b, sb)) return ['b', 'l'];
+    if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
+    if (mode === 'tree' && (b.y >= a.y + sa.h + 8 || b.y + sb.h <= a.y - 8)) return b.y > a.y ? ['b', 't'] : ['t', 'b'];
     const gap = 6;
     if (b.x >= a.x + sa.w + gap) return ['r', 'l'];
     if (b.x + sb.w <= a.x - gap) return ['l', 'r'];
@@ -177,18 +179,6 @@
       return z;
     };
     return { d, at, p1: pts[0], p2: z };
-  }
-  /** « Vers le bas », sous une partie : l'enfant est en dessous et décalé à droite de l'arête */
-  const spineX = (a, sa) => a.x + Math.min(P.treeSpine, sa.w / 2);
-  const isIndented = (a, sa, b, sb) => b.x >= spineX(a, sa) + 8 && b.y + sb.h / 2 >= a.y + sa.h + 4;
-  /** Liste indentée : arête verticale sous le parent, puis trait horizontal vers l'enfant. cv.lt :
-      position du libellé, au milieu du trait horizontal (il se lit entre l'arête et l'enfant) */
-  function spineCurve(a, sa, b, sb) {
-    const sx = spineX(a, sa), p1 = [sx, a.y + sa.h], cy = b.y + sb.h / 2;
-    const cv = elbow([p1, [sx, cy], [b.x, cy]]);
-    const stub = b.x - sx, total = cy - p1[1] + stub;
-    cv.lt = total > 0 ? 1 - stub / 2 / total : 0.5;
-    return cv;
   }
   /** Pyramide : parent → bus horizontal à mi-hauteur → enfant (bus partagé par les frères) */
   function busDown(p1, p2, busY) {
@@ -406,16 +396,16 @@
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
   function treeCurve(mode, a, sa, b, sb, top = false) {
     const [s1, s2] = treeSides(mode, a, sa, b, sb, top);
-    if (mode === 'tree' && top) {
-      // racine → parties : bus court sous la racine, puis longue descente qui porte le libellé
+    if (mode === 'tree' && (s1 === 'b' || s1 === 't')) {
+      // vers le bas : des courbes souples, comme tracées à la main — les départs s'étalent sur le
+      // bas du parent et partent déjà penchés vers leur enfant (la grappe s'ouvre en bouquet)
       const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
-      const dy = p2[1] - p1[1], busY = p1[1] + Math.sign(dy) * Math.min(24, Math.abs(dy) / 2);
-      const cv = busDown(p1, p2, busY);
-      const drop = Math.abs(p2[1] - busY), total = Math.abs(busY - p1[1]) + Math.abs(p2[0] - p1[0]) + drop;
-      cv.lt = total > 0 ? 1 - drop / 2 / total : 0.5;
-      return cv;
+      const lim = Math.max(0, sa.w / 2 - 12);
+      p1[0] += Math.max(-lim, Math.min(lim, (p2[0] - p1[0]) * 0.35));
+      const dy = Math.abs(p2[1] - p1[1]) || 1, sl = Math.max(-1.2, Math.min(1.2, (p2[0] - p1[0]) / dy));
+      const n = Math.hypot(1, sl);
+      return cubic(p1, [sl / n, DIRS[s1][1] / n], p2, DIRS[s2], handle(p1, p2));
     }
-    if (mode === 'tree' && s1 === 'b' && s2 === 'l') return spineCurve(a, sa, b, sb);
     if (mode === 'down') {
       const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
       return busDown(p1, p2, p1[1] + (p2[1] - p1[1]) / 2);
@@ -1219,8 +1209,11 @@
 
   /**
    * « Vers le bas » : la racine en haut, ses enfants (les grandes parties) côte à côte de gauche à
-   * droite dans l'ordre du cours — on voit d'un coup d'œil en combien de parties la carte se divise —,
-   * et sous chaque partie sa descendance en liste indentée, lue de haut en bas.
+   * droite dans l'ordre du cours — on voit d'un coup d'œil en combien de parties la carte se divise.
+   * Sous chaque partie, pas de liste ni de branches droites : une grappe, comme une molécule. Les
+   * enfants d'un nœud se posent sous lui en une rangée en arc (les extrémités remontent vers
+   * le parent), avec un léger désordre déterministe ; chacun porte sa propre grappe. Lecture :
+   * de haut en bas, et de gauche à droite dans une rangée.
    */
   function layoutDown(rootId, T, size, prm) {
     const out = { [rootId]: { x: 0, y: 0 } };
@@ -1229,61 +1222,74 @@
     if (!kids.length) return out;
     const seen = new Set([rootId]);
     const lbl = (id) => { const L = T.labels && T.labels.get(id); return L ? labelSize('x'.repeat(L)) : null; };
-    // liste indentée : renvoie le bas et la droite de la sous-branche
-    const list = (id, x, y) => {
+    // une grappe → { pos: id → {x, y} (le nœud centré sur x = 0, en haut), x0, x1 (emprise), h }
+    const grappe = (id) => {
       seen.add(id);
-      out[id] = { x, y };
       const s = size(T.byId.get(id));
-      let bottom = y + s.h, right = x + s.w;
+      const pos = new Map([[id, { x: -s.w / 2, y: 0 }]]);
+      let x0 = -s.w / 2, x1 = s.w / 2, h = s.h;
       const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
-      if (!ch.length) return { bottom, right };
-      // le trait horizontal porte le libellé : assez long pour lui, le même pour toute la fratrie (colonne alignée)
-      const ls = lbl(id);
-      const cx = x + Math.min(prm.treeSpine, s.w / 2) + (ls ? Math.max(prm.treeStub, ls.w + 16) : prm.treeStub);
-      let cy = bottom + prm.treeGap, prev = null;
-      for (const c of ch) {
-        const n = T.byId.get(c);
-        if (prev) {
-          const group = (T.kids.get(prev) || []).length || isStruct(T.byId.get(prev)) || isStruct(n);
-          cy += (group ? prm.treeGroup : prm.treeSib) + linkGap(T, prev, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
-        }
-        const r = list(c, cx, cy);
-        cy = r.bottom; right = Math.max(right, r.right); prev = c;
+      if (!ch.length) return { pos, x0, x1, h };
+      const subs = ch.map((c) => ({ c, g: grappe(c) }));
+      const ls = lbl(id), gx = prm.molGapX + (ls ? 16 : 0);
+      // une seule rangée par fratrie (une deuxième rangée obligerait ses liens à traverser la première),
+      // en arc : le milieu descend, les extrémités remontent vers le parent. Dans une suite d'au moins
+      // trois feuilles, une sur deux descend d'un cran entre ses voisines (quinconce) : la grappe se
+      // resserre, et son lien passe dans l'écart laissé entre les deux feuilles du dessus
+      const y = s.h + prm.molGapY + (ls ? ls.h + 12 : 0);
+      const leaf = (sb) => sb.g.pos.size === 1;
+      const low = subs.map(() => false);
+      for (let i = 0; i < subs.length;) {
+        let j = i;
+        while (j < subs.length && leaf(subs[j])) j++;
+        if (j - i >= 3) for (let k = i + 1; k < j - 1; k += 2) low[k] = true;
+        i = Math.max(j, i + 1);
       }
-      return { bottom: cy, right };
+      const fan = prm.molFan * Math.min(2, (subs.length - 1) / 2);
+      const at = [];
+      let x = 0;
+      subs.forEach((sb, i) => {
+        const w = sb.g.x1 - sb.g.x0;
+        if (low[i]) { at.push({ cx: x + prm.molNook / 2 }); x += prm.molNook; return; }
+        const left = x + (i && !low[i - 1] ? gx : 0);
+        at.push({ ox: left - sb.g.x0 + (rnd(sb.c, 1) - 0.5) * prm.molJx });
+        x = left + w;
+      });
+      const mid = x / 2;
+      subs.forEach((sb, i) => {
+        const t = subs.length > 1 ? (i / (subs.length - 1)) * 2 - 1 : 0;
+        let ox, oy;
+        if (low[i]) {
+          ox = at[i].cx - (sb.g.x1 + sb.g.x0) / 2;
+          oy = 0;
+        } else {
+          ox = at[i].ox;
+          oy = y + fan * (1 - t * t) + rnd(sb.c, 2) * prm.molJy;
+        }
+        at[i].ox = ox - mid; at[i].oy = oy;
+      });
+      // les feuilles basses se calent après coup (elles dépendent de leurs deux voisines)
+      subs.forEach((sb, i) => {
+        if (low[i]) at[i].oy = Math.max(at[i - 1].oy + subs[i - 1].g.h, at[i + 1].oy + subs[i + 1].g.h) + prm.molNookY + rnd(sb.c, 2) * prm.molJy;
+        const { ox, oy } = at[i];
+        for (const [k, p] of sb.g.pos) pos.set(k, { x: p.x + ox, y: p.y + oy });
+        x0 = Math.min(x0, ox + sb.g.x0); x1 = Math.max(x1, ox + sb.g.x1);
+        h = Math.max(h, oy + sb.g.h);
+      });
+      return { pos, x0, x1, h };
     };
-    // les parties : sous un bus, assez bas pour que la descente porte son libellé
+    // les parties : côte à côte sous la racine, à des hauteurs un peu différentes (pas un alignement raide)
     const ls = lbl(rootId);
-    const top = rs.h + prm.downGap + (ls ? Math.max(0, ls.h + 20 - (prm.downGap - 24)) : 0);
-    // chaque partie glisse vers la gauche jusqu'à frôler les précédentes (une partie courte se loge
-    // sous le vide laissé par une voisine plus étroite en bas), sa tête toujours à droite de la précédente
-    const rectOf = (id) => { const s = size(T.byId.get(id)); return { x: out[id].x, y: out[id].y, w: s.w, h: s.h }; };
-    const placed = [];
+    const top = rs.h + prm.downGap + 24 + (ls ? ls.h + 12 : 0);
     const centers = [];
-    let headRight = -Infinity;
+    let cursor = 0;
     for (const c of kids) {
       if (seen.has(c)) continue;
-      const before = new Set(Object.keys(out));
-      list(c, 0, top);
-      const ids = Object.keys(out).filter((id) => !before.has(id));
-      const mine = ids.map((id) => [id, rectOf(id)]);
-      // l'emprise compte aussi l'arête et les traits (avec leurs libellés) : rien ne doit les traverser
-      for (const id of ids) {
-        const ch = (T.kids.get(id) || []).filter((k) => ids.includes(k));
-        if (!ch.length) continue;
-        const r = rectOf(id), sx = r.x + Math.min(prm.treeSpine, r.w / 2);
-        const last = ch.map(rectOf).reduce((m, k) => (k.y > m.y ? k : m));
-        mine.push([null, { x: sx - 4, y: r.y + r.h, w: Math.min(...ch.map((k) => out[k].x)) - sx + 4, h: last.y + last.h / 2 - r.y - r.h + 4 }]);
-      }
-      const hs = size(T.byId.get(c));
-      let dx = headRight === -Infinity ? 0 : headRight + prm.treeColGap + (ls ? Math.max(0, ls.w - hs.w) / 2 : 0);
-      for (const [, m] of mine) for (const p of placed) {
-        if (m.y < p.y + p.h + prm.treeSib && p.y < m.y + m.h + prm.treeSib) dx = Math.max(dx, p.x + p.w + prm.treeColGap - m.x);
-      }
-      for (const id of ids) out[id].x += dx;
-      for (const [, m] of mine) placed.push({ ...m, x: m.x + dx });
-      headRight = out[c].x + hs.w;
-      centers.push(out[c].x + hs.w / 2);
+      const g = grappe(c);
+      const ox = cursor - g.x0, oy = top + rnd(c, 3) * prm.molJy * 1.5;
+      for (const [k, p] of g.pos) out[k] = { x: p.x + ox, y: p.y + oy };
+      centers.push(ox);
+      cursor = ox + g.x1 + prm.treeColGap;
     }
     // la racine au-dessus du milieu des parties
     const dx = rs.w / 2 - (centers[0] + centers[centers.length - 1]) / 2;
@@ -1674,8 +1680,8 @@
   function flow(map, node) {
     if (map.layout === 'down') return { child: 'down', sib: 'x' };
     const S = R.store;
-    // vers le bas : la racine pose ses parties en ligne, une partie pose sa liste en dessous
-    if (map.layout === 'tree') return S.parentOf(map, node.id) ? { child: 'list', sib: 'y' } : { child: 'down', sib: 'x' };
+    // vers le bas : chaque nœud pose ses enfants en dessous, côte à côte
+    if (map.layout === 'tree') return { child: 'down', sib: 'x' };
     const p = S.parentOf(map, node.id);
     // côté gauche d'une carte centrée : la branche pousse vers la gauche
     if (p && node.x + 1 < p.x) return { child: 'left', sib: 'y' };
@@ -1696,13 +1702,6 @@
       const last = ch[ch.length - 1];
       return { x: last.x + size(last).w + (map.layout === 'tree' ? P.treeColGap : P.downSibGap), y: last.y };
     }
-    if (f.child === 'list') {
-      if (!ch.length) return { x: parent.x + Math.min(P.treeSpine, ps.w / 2) + P.treeStub, y: parent.y + ps.h + P.treeGap };
-      const last = ch.reduce((m, c) => (c.y > m.y ? c : m), ch[0]);
-      const below = S.descendants(map, last.id).map((id) => S.node(map, id)).filter(Boolean);
-      const bottom = Math.max(last.y + size(last).h, ...below.map((n) => n.y + size(n).h));
-      return { x: last.x, y: bottom + P.treeSib };
-    }
     // séquence en ligne (méthode, chronologie) : l'étape suivante se pose à droite de la dernière
     if (ch.length >= 2 && ch.every((c) => Math.abs(c.y - ch[0].y) <= 1) && ch[0].x > parent.x + ps.w) {
       const last = ch.reduce((m, c) => (c.x > m.x ? c : m), ch[0]);
@@ -1718,6 +1717,6 @@
     P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow, separate, SAFE,
-    treeSides, treeCurve, spineCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
+    treeSides, treeCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);
