@@ -252,9 +252,13 @@
   .fiche-meta { font-size: 11px; }
   .fiche-meter { font-size: 11px; }
   .fiche-stats { flex: 1; }
-  .fiche-cta { height: 32px; padding: 0 var(--sp-1) 0 var(--sp-2); gap: var(--space-hair); }
-  .fiche-cta-l { display: none; }
-  .fiche-count { min-width: 22px; height: 22px; padding: 0 var(--sp-1); font-size: 11px; }
+  /* Réviser : bouton rond plein (même gabarit que le + des autres dossiers), nombre en pastille sur le coin */
+  .btn-filled.fiche-cta { width: 40px; height: 40px; padding: 0; gap: 0; justify-content: center; border-radius: var(--shape-full); overflow: visible;
+    background: var(--c-onpc); color: var(--c-pc); box-shadow: 0 1px 3px rgb(0 0 0 / .25); }
+  .btn-filled.fiche-cta .ic svg { width: 20px; height: 20px; margin-left: 2px; }
+  .fiche-cta-l, .fiche-count-u { display: none; }
+  .fiche-count { position: absolute; top: -6px; right: -8px; min-width: 20px; height: 20px; padding: 0 5px;
+    background: var(--c-pc); color: var(--c-onpc); box-shadow: 0 0 0 2px var(--c-onpc); font-size: 11px; pointer-events: none; }
   /* sans libellé : bouton icône rond, le + au centre exact */
   .btn-tonal.fiche-cta { width: 36px; height: 36px; padding: 0; gap: 0; justify-content: center; }
   .btn-tonal.fiche-cta .btn-label, .btn-tonal.fiche-cta > span:not(.ic) { display: none; }

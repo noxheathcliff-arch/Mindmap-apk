@@ -415,7 +415,7 @@
     let action = null;
     if (next) {
       action = h('a.btn.btn-filled.fiche-cta', { href: reviewHref, 'aria-label': `Réviser ${U.plural(st.due, 'fiche')} de ${c.title}` },
-        R.icon('play', 18), h('span.fiche-cta-l', 'Réviser'), h('span.fiche-count', String(st.due), h('span.fiche-count-u', st.due > 1 ? 'fiches' : 'fiche')));
+        R.icon('play', 18), h('span.fiche-cta-l', 'Réviser'), h('span.fiche-count', st.due > 999 ? '999+' : String(st.due), h('span.fiche-count-u', st.due > 1 ? 'fiches' : 'fiche')));
     } else if (!st.maps) {
       action = ui.btn('Nouvelle carte', { icon: 'plus', variant: 'tonal', cls: 'fiche-cta', onClick: (e) => { e.preventDefault(); e.stopPropagation(); R.actions.newMap(c.id); } });
     }
