@@ -551,8 +551,7 @@
       const el = onClick ? h('button.st-item', { type: 'button', class: cls, onclick: onClick }, inner) : h('div.st-item', { class: cls }, inner);
       return below ? h('div.st-block', el, h('div.st-below', below)) : el;
     };
-    // animations réduites : la suite s'ouvre d'abord, puis les réglages se ferment dessous (pas d'accueil entrevu)
-    const after = (fn) => () => { if (U.reducedMotion()) { fn(); closeFn(); } else { closeFn(); setTimeout(fn, 220); } };
+    const after = (fn) => () => { closeFn(); setTimeout(fn, 220); };
     const group = (title, ...items) => h('section.st-group', h('h3.st-h', title), h('div.st-list', items));
 
     const body = h('div.st',

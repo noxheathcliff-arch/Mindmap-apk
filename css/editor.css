@@ -195,7 +195,7 @@
 }
 
 /* jauge de maîtrise de la branche (value change : transform, 360 ms) */
-.node-meter { display: none; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; overflow: hidden; background: color-mix(in srgb, currentColor 12%, transparent); pointer-events: none; }
+.node-meter { display: none; height: 4px; margin-top: 8px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, currentColor 16%, transparent); }
 .node.has-meter .node-meter { display: block; }
 .node-meter i { display: block; height: 100%; background: currentColor; transform: scaleX(var(--p, 0)); transform-origin: left; transition: transform var(--dur-lg) var(--ease-out); }
 .node.struct .node-meter i { background: var(--primary); }
@@ -230,7 +230,6 @@
 .node.collapsed.selected { box-shadow: 4px 4px 0 -1px var(--surface), 4px 4px 0 0 var(--on-surface), 8px 8px 0 -1px var(--surface), 8px 8px 0 0 var(--on-surface); }
 .node.editing { cursor: text; }
 .node.editing .hl { background-size: 100% 100%; color: var(--on-primary); -webkit-user-select: text; user-select: text; min-width: 4ch; display: inline-block; }
-.node.editing .hl::selection { background: var(--on-primary); color: var(--primary); }
 .node.editing .hl:empty::before { content: attr(data-placeholder); color: color-mix(in srgb, var(--on-primary) 55%, transparent); font-style: italic; }
 
 /* mode masqué : rappel actif sur la carte */
