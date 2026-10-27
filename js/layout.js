@@ -33,12 +33,13 @@
     rootGap: 96,      // entre deux arbres indépendants
     // « vers le bas » : parties côte à côte sous la racine, chacune en grappe (molécule)
     treeColGap: 72,   // entre deux parties voisines
-    molGapX: 40,      // entre deux grappes sœurs d'une rangée
-    molGapY: 56,      // bas du parent → haut de ses enfants (place pour la courbe et son libellé)
-    molFan: 22,       // arc : le milieu d'une fratrie descend, ses extrémités remontent vers le parent
-    molNook: 56,      // quinconce : écart entre deux feuilles hautes, où passe le lien de la feuille basse
-    molNookY: 28,     // quinconce : la feuille basse, sous ses deux voisines
-    molJx: 16,        // léger désordre déterministe (stable d'un rangement à l'autre)
+    molGap: 34,       // bord du parent → bord de l'enfant (place pour la courbe)
+    molPad: 14,       // marge autour de chaque nœud posé
+    molSpread: 125,   // demi-ouverture max de l'atome (degrés autour de la direction d'arrivée)
+    molStep: 32,      // demi-ouverture ajoutée par enfant
+    molLane: 220,     // couloir laissé libre pour le lien entrant
+    molTry: 7,        // pas angulaire quand une place est prise (degrés)
+    molJa: 10,        // léger désordre déterministe (degrés, stable d'un rangement à l'autre)
     molJy: 18,
     w: {              // poids de la note globale (plus bas = mieux)
       // échelle commune : 1 croisement ≈ 300 px de renvoi à suivre des yeux (Ware et al. 2002 :
@@ -144,7 +145,13 @@
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
   function treeSides(mode, a, sa, b, sb, top = false) {
     if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
-    if (mode === 'tree' && (b.y >= a.y + sa.h + 8 || b.y + sb.h <= a.y - 8)) return b.y > a.y ? ['b', 't'] : ['t', 'b'];
+    if (mode === 'tree' && top) return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
+    if (mode === 'tree') {
+      // atome : le lien part du flanc qui fait face à l'enfant (le plus grand écart l'emporte)
+      const dx = b.x + sb.w / 2 - (a.x + sa.w / 2), dy = b.y + sb.h / 2 - (a.y + sa.h / 2);
+      if (Math.abs(dy) - (sa.h + sb.h) / 2 >= Math.abs(dx) - (sa.w + sb.w) / 2) return dy > 0 ? ['b', 't'] : ['t', 'b'];
+      return dx > 0 ? ['r', 'l'] : ['l', 'r'];
+    }
     const gap = 6;
     if (b.x >= a.x + sa.w + gap) return ['r', 'l'];
     if (b.x + sb.w <= a.x - gap) return ['l', 'r'];
@@ -413,7 +420,7 @@
     const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
     // libre : les départs s'étalent sur le flanc du parent selon la hauteur de l'enfant
     // (les courbes ne naissent pas toutes du même point, comme tracées à la main)
-    if (mode === 'organic' && (s1 === 'l' || s1 === 'r')) {
+    if ((mode === 'organic' || mode === 'tree') && (s1 === 'l' || s1 === 'r')) {
       const lim = Math.max(0, sa.h / 2 - 7);
       p1[1] += Math.max(-lim, Math.min(lim, (p2[1] - p1[1]) * 0.3));
       // et partent déjà orientés vers leur enfant (bouquet) : les courbes d'une grande fratrie
@@ -1025,11 +1032,12 @@
     for (const n of map.nodes) kids.set(n.id, n.collapsed ? [] : S.childrenOf(map, n.id).map((c) => c.id));
     // libellé le plus long des liens d'arbre sortant de chaque parent
     const labels = new Map();
-    for (const e of map.edges || []) if (e.kind === 'tree' && e.label) labels.set(e.from, Math.max(labels.get(e.from) || 0, String(e.label).length));
+    const labelTo = new Map(); // libellé du lien qui arrive à chaque enfant
+    for (const e of map.edges || []) if (e.kind === 'tree' && e.label) { labels.set(e.from, Math.max(labels.get(e.from) || 0, String(e.label).length)); labelTo.set(e.to, String(e.label).length); }
     // renvois entre deux nœuds : deux voisins reliés s'écartent (place pour la flèche et son libellé)
     const links = new Map();
     for (const e of map.edges || []) if (e.kind !== 'tree') { const v = e.label ? 24 : 16; links.set(e.from + '|' + e.to, v); links.set(e.to + '|' + e.from, v); }
-    return { byId, kids, roots: S.roots(map).map((n) => n.id), labels, links };
+    return { byId, kids, roots: S.roots(map).map((n) => n.id), labels, labelTo, links };
   }
   /** Écart en profondeur réservé aux libellés des liens parent → enfant (0 si aucun, multiple de 8) */
   function labelExtra(T, parentId) {
@@ -1210,10 +1218,13 @@
   /**
    * « Vers le bas » : la racine en haut, ses enfants (les grandes parties) côte à côte de gauche à
    * droite dans l'ordre du cours — on voit d'un coup d'œil en combien de parties la carte se divise.
-   * Sous chaque partie, pas de liste ni de branches droites : une grappe, comme une molécule. Les
-   * enfants d'un nœud se posent sous lui en une rangée en arc (les extrémités remontent vers
-   * le parent), avec un léger désordre déterministe ; chacun porte sa propre grappe. Lecture :
-   * de haut en bas, et de gauche à droite dans une rangée.
+   * Sous chaque partie, pas de liste ni de branches : des atomes. Les enfants d'un nœud gravitent
+   * autour de lui, sur tout le tour sauf le côté d'où arrive le lien de son propre parent (un
+   * couloir laissé libre), dans l'ordre du cours (en tournant depuis la gauche). Les feuilles se
+   * posent au plus près, les enfants qui portent eux-mêmes une grappe un peu plus loin ; chaque
+   * enfant reprend le même motif autour de lui, dans le prolongement de sa direction. Chaque
+   * place est essayée du plus près au plus loin, et retenue seulement si ni le nœud, ni son lien,
+   * ni le libellé du lien ne touchent ce qui est déjà posé. Léger désordre déterministe.
    */
   function layoutDown(rootId, T, size, prm) {
     const out = { [rootId]: { x: 0, y: 0 } };
@@ -1222,78 +1233,114 @@
     if (!kids.length) return out;
     const seen = new Set([rootId]);
     const lbl = (id) => { const L = T.labels && T.labels.get(id); return L ? labelSize('x'.repeat(L)) : null; };
-    // une grappe → { pos: id → {x, y} (le nœud centré sur x = 0, en haut), x0, x1 (emprise), h }
-    const grappe = (id) => {
+    const DEG = Math.PI / 180, M = prm.molPad;
+    // géométrie : boîtes { x0, y0, x1, y1 } et segments [ax, ay, bx, by]
+    const box = (cx, cy, w, h, m = 0) => ({ x0: cx - w / 2 - m, y0: cy - h / 2 - m, x1: cx + w / 2 + m, y1: cy + h / 2 + m });
+    const mv = (r, dx, dy) => ({ x0: r.x0 + dx, y0: r.y0 + dy, x1: r.x1 + dx, y1: r.y1 + dy });
+    const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+    const cut = (sg, r) => { // segment ∩ boîte (Liang–Barsky)
+      const [ax, ay, bx, by] = sg, dx = bx - ax, dy = by - ay;
+      let t0 = 0, t1 = 1;
+      for (const [p, q] of [[-dx, ax - r.x0], [dx, r.x1 - ax], [-dy, ay - r.y0], [dy, r.y1 - ay]]) {
+        if (p === 0) { if (q < 0) return false; continue; }
+        const t = q / p;
+        if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+      }
+      return t0 < t1;
+    };
+    // distance du centre au bord d'une boîte w × h dans la direction (ux, uy)
+    const edge = (w, h, ux, uy) => Math.min(ux ? w / 2 / Math.abs(ux) : Infinity, uy ? h / 2 / Math.abs(uy) : Infinity);
+    // un atome → { pos: id → centre (relatif au centre du nœud), rects (nœuds et libellés), segs (liens) }
+    const atome = (id, dir, reach = prm.molLane) => {
       seen.add(id);
       const s = size(T.byId.get(id));
-      const pos = new Map([[id, { x: -s.w / 2, y: 0 }]]);
-      let x0 = -s.w / 2, x1 = s.w / 2, h = s.h;
+      const pos = new Map([[id, { x: 0, y: 0 }]]);
+      const rects = [box(0, 0, s.w, s.h)];
+      const segs = [];
       const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
-      if (!ch.length) return { pos, x0, x1, h };
-      const subs = ch.map((c) => ({ c, g: grappe(c) }));
-      const ls = lbl(id), gx = prm.molGapX + (ls ? 16 : 0);
-      // une seule rangée par fratrie (une deuxième rangée obligerait ses liens à traverser la première),
-      // en arc : le milieu descend, les extrémités remontent vers le parent. Dans une suite d'au moins
-      // trois feuilles, une sur deux descend d'un cran entre ses voisines (quinconce) : la grappe se
-      // resserre, et son lien passe dans l'écart laissé entre les deux feuilles du dessus
-      const y = s.h + prm.molGapY + (ls ? ls.h + 12 : 0);
-      const leaf = (sb) => sb.g.pos.size === 1;
-      const low = subs.map(() => false);
-      for (let i = 0; i < subs.length;) {
-        let j = i;
-        while (j < subs.length && leaf(subs[j])) j++;
-        if (j - i >= 3) for (let k = i + 1; k < j - 1; k += 2) low[k] = true;
-        i = Math.max(j, i + 1);
-      }
-      const fan = prm.molFan * Math.min(2, (subs.length - 1) / 2);
-      const at = [];
-      let x = 0;
-      subs.forEach((sb, i) => {
-        const w = sb.g.x1 - sb.g.x0;
-        if (low[i]) { at.push({ cx: x + prm.molNook / 2 }); x += prm.molNook; return; }
-        const left = x + (i && !low[i - 1] ? gx : 0);
-        at.push({ ox: left - sb.g.x0 + (rnd(sb.c, 1) - 0.5) * prm.molJx });
-        x = left + w;
+      if (!ch.length) return { pos, rects, segs };
+      const n = ch.length;
+      // le couloir du lien entrant : rien ne s'y pose
+      // (droit vers le parent, et dans l'axe : le lien entre par un flanc, perpendiculairement)
+      const back = [Math.cos(dir + Math.PI), Math.sin(dir + Math.PI)];
+      const axis = Math.abs(back[1]) * s.w >= Math.abs(back[0]) * s.h ? [0, Math.sign(back[1])] : [Math.sign(back[0]), 0];
+      const lanes = [[0, 0, back[0] * reach, back[1] * reach], [0, 0, axis[0] * reach * 0.7, axis[1] * reach * 0.7]];
+      const S = n > 1 ? Math.min(prm.molSpread, prm.molStep * (n - 1)) * DEG : 0;
+      const subs = ch.map((c, i) => {
+        const a = dir + (n > 1 ? S - (2 * S * i) / (n - 1) : 0) + (rnd(c, 1) - 0.5) * prm.molJa * DEG;
+        return { c, a, i, g: atome(c, a) };
       });
-      const mid = x / 2;
-      subs.forEach((sb, i) => {
-        const t = subs.length > 1 ? (i / (subs.length - 1)) * 2 - 1 : 0;
-        let ox, oy;
-        if (low[i]) {
-          ox = at[i].cx - (sb.g.x1 + sb.g.x0) / 2;
-          oy = 0;
-        } else {
-          ox = at[i].ox;
-          oy = y + fan * (1 - t * t) + rnd(sb.c, 2) * prm.molJy;
+      // les feuilles d'abord (au plus près), puis les grappes, des plus petites aux plus grandes
+      const order = subs.slice().sort((p, q) => p.g.pos.size - q.g.pos.size || p.i - q.i);
+      for (const sb of order) {
+        const cs = size(T.byId.get(sb.c));
+        const L = T.labelTo && T.labelTo.get(sb.c), ls = L ? labelSize('x'.repeat(L)) : null;
+        const free = (a, r) => {
+          const ux = Math.cos(a), uy = Math.sin(a), ox = ux * r, oy = uy * r;
+          const link = [0, 0, ox, oy];
+          const own = sb.g.rects.map((q) => mv(q, ox, oy));
+          const tag = ls ? box(ox / 2, oy / 2, ls.w, ls.h, 4) : null;
+          for (const q of own) {
+            const qm = { x0: q.x0 - M, y0: q.y0 - M, x1: q.x1 + M, y1: q.y1 + M };
+            for (const p of rects) if (hit(qm, p)) return false;
+            for (const g of segs) if (cut(g, q)) return false;
+            for (const g of lanes) if (cut(g, q)) return false;
+            if (tag && hit(q, tag)) return false;
+          }
+          // le lien (sans ses deux extrémités) et son libellé ne touchent rien
+          const e1 = edge(s.w, s.h, ux, uy), e2 = edge(cs.w, cs.h, ux, uy);
+          const body = [ux * e1, uy * e1, ox - ux * e2, oy - uy * e2];
+          for (const p of rects.slice(1)) { if (cut(body, p)) return false; if (tag && hit(tag, p)) return false; }
+          for (const q of own.slice(1)) if (cut(body, q)) return false;
+          for (const g of sb.g.segs) for (const p of rects) if (cut([g[0] + ox, g[1] + oy, g[2] + ox, g[3] + oy], p)) return false;
+          return { ox, oy, link, own, tag };
+        };
+        const ux = Math.cos(sb.a), uy = Math.sin(sb.a);
+        const r0 = edge(s.w, s.h, ux, uy) + edge(cs.w, cs.h, ux, uy) + prm.molGap + (ls ? Math.max(ls.w * Math.abs(ux), ls.h * Math.abs(uy)) + 8 : 0);
+        let got = null;
+        for (let r = r0; !got && r < r0 + 3000; r += 8 + (r - r0) * 0.15) {
+          for (const d of [0, 1, -1, 2, -2, 3, -3]) if ((got = free(sb.a + d * prm.molTry * DEG, r))) break;
         }
-        at[i].ox = ox - mid; at[i].oy = oy;
-      });
-      // les feuilles basses se calent après coup (elles dépendent de leurs deux voisines)
-      subs.forEach((sb, i) => {
-        if (low[i]) at[i].oy = Math.max(at[i - 1].oy + subs[i - 1].g.h, at[i + 1].oy + subs[i + 1].g.h) + prm.molNookY + rnd(sb.c, 2) * prm.molJy;
-        const { ox, oy } = at[i];
-        for (const [k, p] of sb.g.pos) pos.set(k, { x: p.x + ox, y: p.y + oy });
-        x0 = Math.min(x0, ox + sb.g.x0); x1 = Math.max(x1, ox + sb.g.x1);
-        h = Math.max(h, oy + sb.g.h);
-      });
-      return { pos, x0, x1, h };
+        if (!got) got = free(sb.a, r0 + 3000) || { ox: ux * (r0 + 3000), oy: uy * (r0 + 3000), link: [0, 0, ux * (r0 + 3000), uy * (r0 + 3000)], own: sb.g.rects.map((q) => mv(q, ux * (r0 + 3000), uy * (r0 + 3000))), tag: null };
+        for (const [k, p] of sb.g.pos) pos.set(k, { x: p.x + got.ox, y: p.y + got.oy });
+        rects.push(...got.own);
+        if (got.tag) rects.push(got.tag);
+        segs.push(got.link, ...sb.g.segs.map((g) => [g[0] + got.ox, g[1] + got.oy, g[2] + got.ox, g[3] + got.oy]));
+      }
+      return { pos, rects, segs };
     };
-    // les parties : côte à côte sous la racine, à des hauteurs un peu différentes (pas un alignement raide)
+    // les parties : côte à côte sous la racine, de gauche à droite, au plus serré sans se toucher,
+    // à des hauteurs un peu différentes (pas un alignement raide). Deux passes : la première pose
+    // les parties en les supposant toutes alimentées d'en haut ; la seconde refait chaque atome en
+    // laissant libre le vrai couloir du lien qui descend de la racine (en biais pour les parties
+    // des bords), pour qu'aucune grappe ne pousse dans ce lien
     const ls = lbl(rootId);
     const top = rs.h + prm.downGap + 24 + (ls ? ls.h + 12 : 0);
-    const centers = [];
-    let cursor = 0;
-    for (const c of kids) {
-      if (seen.has(c)) continue;
-      const g = grappe(c);
-      const ox = cursor - g.x0, oy = top + rnd(c, 3) * prm.molJy * 1.5;
-      for (const [k, p] of g.pos) out[k] = { x: p.x + ox, y: p.y + oy };
-      centers.push(ox);
-      cursor = ox + g.x1 + prm.treeColGap;
-    }
-    // la racine au-dessus du milieu des parties
-    const dx = rs.w / 2 - (centers[0] + centers[centers.length - 1]) / 2;
-    for (const id in out) if (id !== rootId) out[id].x += dx;
+    const parts = (dirs) => {
+      seen.clear(); seen.add(rootId);
+      for (const id in out) if (id !== rootId) delete out[id];
+      const placed = [], hubs = [];
+      let from = 0;
+      for (const c of kids) {
+        if (seen.has(c)) continue;
+        const g = dirs ? atome(c, dirs.get(c).a, dirs.get(c).reach) : atome(c, Math.PI / 2);
+        const y0 = Math.min(...g.rects.map((r) => r.y0)), x0 = Math.min(...g.rects.map((r) => r.x0));
+        const oy = top - y0 + rnd(c, 3) * prm.molJy;
+        let ox = from - x0;
+        const clash = (dx) => g.rects.some((q) => placed.some((p) => hit(mv(q, dx, oy), { x0: p.x0 - prm.treeColGap, y0: p.y0, x1: p.x1 + prm.treeColGap, y1: p.y1 })));
+        if (placed.length) { ox = hubs[hubs.length - 1].x; while (clash(ox)) ox += 8; }
+        placed.push(...g.rects.map((q) => mv(q, ox, oy)));
+        hubs.push({ c, x: ox, y: oy });
+        for (const [k, p] of g.pos) { const z = size(T.byId.get(k)); out[k] = { x: p.x + ox - z.w / 2, y: p.y + oy - z.h / 2 }; }
+        from = Math.max(...placed.map((r) => r.x1)) + prm.treeColGap;
+      }
+      // la racine au-dessus du milieu des parties
+      const dx = rs.w / 2 - (hubs[0].x + hubs[hubs.length - 1].x) / 2;
+      for (const id in out) if (id !== rootId) out[id].x += dx;
+      return hubs.map((h) => ({ c: h.c, x: h.x + dx, y: h.y }));
+    };
+    const first = parts(null);
+    parts(new Map(first.map((h) => [h.c, { a: Math.max(35 * DEG, Math.min(145 * DEG, Math.atan2(h.y - rs.h, h.x - rs.w / 2))), reach: Math.max(prm.molLane, Math.hypot(h.y - rs.h, h.x - rs.w / 2)) }])));
     return out;
   }
 
