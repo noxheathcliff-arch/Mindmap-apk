@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-10-27)
 
 ## Corpus Check
-- 62 files · ~287,199 words
+- 62 files · ~286,773 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 10 file(s) not represented in the graph (top: .css 8, (none) 1, .webmanifest 1)
 
 ## Summary
-- 957 nodes · 2176 edges · 54 communities (42 shown, 12 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 195 edges (avg confidence: 0.87)
+- 957 nodes · 2177 edges · 54 communities (42 shown, 12 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 196 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `567f945d`
+- Built from commit: `0c9f9f6c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -273,10 +273,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `render` be split into smaller, more focused modules?**
   _Cohesion score 0.13765182186234817 - nodes in this community are weakly interconnected._
 - **Why does `4. Système de design (Material Design 3)` connect `4. Système de design (Material Design 3)` to `layout.js`, `app.js`, `Utilisation`?**
-  _High betweenness centrality (0.239) - this node is a cross-community bridge._
+  _High betweenness centrality (0.240) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `changed` be split into smaller, more focused modules?**
   _Cohesion score 0.11396011396011396 - nodes in this community are weakly interconnected._
 - **Why does `4.4 Types de nœuds — trois apparences (v4.1)` connect `layout.js` to `carnet.js`, `4. Système de design (Material Design 3)`, `store.js`?**
-  _High betweenness centrality (0.189) - this node is a cross-community bridge._
+  _High betweenness centrality (0.188) - this node is a cross-community bridge._

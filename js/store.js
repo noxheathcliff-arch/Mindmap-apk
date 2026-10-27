@@ -933,11 +933,13 @@
       const ids = new Set(map.edges.filter((e) => e.kind === 'tree' && e.from === id).map((e) => e.to));
       const list = map.nodes.filter((n) => ids.has(n.id));
       if (map.layout === 'down') return list.sort((a, b) => a.x - b.x || a.y - b.y);
-      // vers le bas : les parties sous la racine se lisent de gauche à droite, puis celles qui gravitent
-      // au-dessus d'elle (de gauche à droite) ; le reste de haut en bas
+      // vers le bas : les parties autour de la racine se lisent en tournant — à gauche, dessous, à
+      // droite —, puis celles qui gravitent au-dessus d'elle (de gauche à droite) ; le reste de haut en bas
       if (map.layout === 'tree' && !this.parentEdge(map, id)) {
-        const p = this.node(map, id), up = (n) => (p && n.y < p.y ? 1 : 0);
-        return list.sort((a, b) => up(a) - up(b) || a.x - b.x || a.y - b.y);
+        const p = this.node(map, id) || { x: 0, y: 0 };
+        const up = (n) => (n.y - p.y < -20 && p.y - n.y > Math.abs(n.x - p.x) * 0.5 ? 1 : 0);
+        const turn = (n) => Math.atan2(Math.max(n.y - p.y, 0), n.x - p.x);
+        return list.sort((a, b) => up(a) - up(b) || (up(a) ? a.x - b.x : turn(b) - turn(a)) || a.y - b.y);
       }
       if (map.layout === 'balanced' || map.layout === 'organic') {
         const p = this.node(map, id);

@@ -34,7 +34,7 @@
     // « vers le bas » : parties côte à côte sous la racine, chacune en grappe (molécule)
     treeColGap: 72,   // entre deux parties voisines
     molGap: 34,       // bord du parent → bord de l'enfant (place pour la courbe)
-    molPad: 14,       // marge autour de chaque nœud posé
+    molPad: 18,       // marge autour de chaque nœud posé
     molSpread: 125,   // demi-ouverture max de l'atome (degrés autour de la direction d'arrivée)
     molStep: 32,      // demi-ouverture ajoutée par enfant
     molLane: 220,     // couloir laissé libre pour le lien entrant
@@ -146,12 +146,11 @@
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
   function treeSides(mode, a, sa, b, sb, top = false) {
     if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
-    if (mode === 'tree' && top) return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
     if (mode === 'tree') {
-      // atome : le lien part du flanc qui fait face à l'enfant (le plus grand écart l'emporte)
+      // atome : chaque bout du lien sort par le côté que traverse la droite qui joint les deux centres
       const dx = b.x + sb.w / 2 - (a.x + sa.w / 2), dy = b.y + sb.h / 2 - (a.y + sa.h / 2);
-      if (Math.abs(dy) - (sa.h + sb.h) / 2 >= Math.abs(dx) - (sa.w + sb.w) / 2) return dy > 0 ? ['b', 't'] : ['t', 'b'];
-      return dx > 0 ? ['r', 'l'] : ['l', 'r'];
+      const side = (s, x, y) => (Math.abs(y) * s.w >= Math.abs(x) * s.h ? (y > 0 ? 'b' : 't') : (x > 0 ? 'r' : 'l'));
+      return [side(sa, dx, dy), side(sb, -dx, -dy)];
     }
     const gap = 6;
     if (b.x >= a.x + sa.w + gap) return ['r', 'l'];
@@ -404,15 +403,21 @@
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
   function treeCurve(mode, a, sa, b, sb, top = false) {
     const [s1, s2] = treeSides(mode, a, sa, b, sb, top);
-    if (mode === 'tree' && (s1 === 'b' || s1 === 't')) {
-      // vers le bas : des courbes souples, comme tracées à la main — les départs s'étalent sur le
-      // bas du parent et partent déjà penchés vers leur enfant (la grappe s'ouvre en bouquet)
-      const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
-      const lim = Math.max(0, sa.w / 2 - 12);
-      p1[0] += Math.max(-lim, Math.min(lim, (p2[0] - p1[0]) * 0.35));
-      const dy = Math.abs(p2[1] - p1[1]) || 1, sl = Math.max(-1.2, Math.min(1.2, (p2[0] - p1[0]) / dy));
-      const n = Math.hypot(1, sl);
-      return cubic(p1, [sl / n, DIRS[s1][1] / n], p2, DIRS[s2], handle(p1, p2));
+    if (mode === 'tree') {
+      // atome : le lien s'ancre là où la droite des centres sort de chaque nœud (jamais de crochet :
+      // il part déjà vers son enfant) et ne fléchit qu'un peu vers la normale du côté — une courbe souple
+      const ca = [a.x + sa.w / 2, a.y + sa.h / 2], cb = [b.x + sb.w / 2, b.y + sb.h / 2];
+      const L = Math.hypot(cb[0] - ca[0], cb[1] - ca[1]) || 1, u = [(cb[0] - ca[0]) / L, (cb[1] - ca[1]) / L];
+      const anchor = (c, z, n, ux, uy, sd) => {
+        const t = Math.min(ux ? z.w / 2 / Math.abs(ux) : Infinity, uy ? z.h / 2 / Math.abs(uy) : Infinity);
+        const ix = Math.min(14, z.w / 2 - 2), iy = Math.min(8, z.h / 2 - 2);
+        const x = c[0] + ux * t, y = c[1] + uy * t;
+        if (sd === 'l' || sd === 'r') return [n.x + (sd === 'r' ? z.w : 0), Math.max(n.y + iy, Math.min(n.y + z.h - iy, y))];
+        return [Math.max(n.x + ix, Math.min(n.x + z.w - ix, x)), n.y + (sd === 'b' ? z.h : 0)];
+      };
+      const p1 = anchor(ca, sa, a, u[0], u[1], s1), p2 = anchor(cb, sb, b, -u[0], -u[1], s2);
+      const bend = (v, d) => { const x = v[0] * 0.7 + d[0] * 0.3, y = v[1] * 0.7 + d[1] * 0.3, m = Math.hypot(x, y) || 1; return [x / m, y / m]; };
+      return cubic(p1, bend(u, DIRS[s1]), p2, bend([-u[0], -u[1]], DIRS[s2]), handle(p1, p2) * 0.8);
     }
     if (mode === 'down') {
       const p1 = sidePoint(a, sa, s1), p2 = sidePoint(b, sb, s2);
@@ -1252,7 +1257,7 @@
     // distance du centre au bord d'une boîte w × h dans la direction (ux, uy)
     const edge = (w, h, ux, uy) => Math.min(ux ? w / 2 / Math.abs(ux) : Infinity, uy ? h / 2 / Math.abs(uy) : Infinity);
     // un atome → { pos: id → centre (relatif au centre du nœud), rects (nœuds et libellés), segs (liens) }
-    const atome = (id, dir, reach = prm.molLane) => {
+    const atome = (id, dir, reach = prm.molLane, aim = null) => {
       seen.add(id);
       const s = size(T.byId.get(id));
       const pos = new Map([[id, { x: 0, y: 0 }]]);
@@ -1265,14 +1270,15 @@
       // (droit vers le parent, et dans l'axe : le lien entre par un flanc, perpendiculairement)
       const back = [Math.cos(dir + Math.PI), Math.sin(dir + Math.PI)];
       const axis = Math.abs(back[1]) * s.w >= Math.abs(back[0]) * s.h ? [0, Math.sign(back[1])] : [Math.sign(back[0]), 0];
-      const lanes = [[0, 0, back[0] * reach, back[1] * reach], [0, 0, axis[0] * reach * 0.7, axis[1] * reach * 0.7]];
+      const lanes = aim ? [] : [[0, 0, back[0] * reach, back[1] * reach], [0, 0, axis[0] * reach * 0.7, axis[1] * reach * 0.7]];
       const S = n > 1 ? Math.min(prm.molSpread, prm.molStep * (n - 1)) * DEG : 0;
       const subs = ch.map((c, i) => {
-        const a = dir + (n > 1 ? S - (2 * S * i) / (n - 1) : 0) + (rnd(c, 1) - 0.5) * prm.molJa * DEG;
+        const a = (aim ? aim(c, i) : dir + (n > 1 ? S - (2 * S * i) / (n - 1) : 0)) + (rnd(c, 1) - 0.5) * prm.molJa * DEG;
         return { c, a, i, g: atome(c, a) };
       });
       // les feuilles d'abord (au plus près), puis les grappes, des plus petites aux plus grandes
-      const order = subs.slice().sort((p, q) => p.g.pos.size - q.g.pos.size || p.i - q.i);
+      // (autour de la racine, l'inverse : les grosses parties d'abord, au plus près — les petites se glissent)
+      const order = subs.slice().sort((p, q) => (aim ? -1 : 1) * (p.g.pos.size - q.g.pos.size) || p.i - q.i);
       for (const sb of order) {
         const cs = size(T.byId.get(sb.c));
         const L = T.labelTo && T.labelTo.get(sb.c), ls = L ? labelSize('x'.repeat(L)) : null;
@@ -1310,16 +1316,9 @@
       }
       return { pos, rects, segs };
     };
-    // les parties : côte à côte sous la racine, de gauche à droite, au plus serré sans se toucher,
-    // à des hauteurs un peu différentes (pas un alignement raide). Deux passes : la première pose
-    // les parties en les supposant toutes alimentées d'en haut ; la seconde refait chaque atome en
-    // laissant libre le vrai couloir du lien qui descend de la racine (en biais pour les parties
-    // des bords), pour qu'aucune grappe ne pousse dans ce lien
-    const ls = lbl(rootId);
-    const top = rs.h + prm.downGap + 24 + (ls ? ls.h + 12 : 0);
-    // la racine est elle aussi un atome : les dernières parties, si elles sont légères (une feuille,
-    // une petite grappe — « À retenir », une conclusion), gravitent au-dessus d'elle au lieu
-    // d'allonger la rangée ; on lit donc la rangée de gauche à droite, puis le haut
+    // la racine est elle aussi un atome : ses parties l'entourent dans l'ordre du cours — à gauche,
+    // dessous, à droite — et les dernières, si elles sont légères (une feuille, une petite grappe :
+    // « À retenir », une conclusion), gravitent au-dessus d'elle
     const weight = (id) => { let n = 1; for (const c of T.kids.get(id) || []) n += weight(c); return n; };
     const heavy = Math.max(...kids.map(weight));
     const above = [];
@@ -1328,70 +1327,16 @@
       above.unshift(kids[i]);
     }
     const row = kids.filter((c) => !above.includes(c));
-    const parts = (dirs) => {
-      seen.clear(); seen.add(rootId);
-      for (const id in out) if (id !== rootId) delete out[id];
-      const placed = [], hubs = [];
-      let from = 0;
-      for (const c of row) {
-        if (seen.has(c)) continue;
-        const g = dirs ? atome(c, dirs.get(c).a, dirs.get(c).reach) : atome(c, Math.PI / 2);
-        const y0 = Math.min(...g.rects.map((r) => r.y0)), x0 = Math.min(...g.rects.map((r) => r.x0));
-        const oy = top - y0 + rnd(c, 3) * prm.molJy;
-        let ox = from - x0;
-        const clash = (dx) => g.rects.some((q) => placed.some((p) => hit(mv(q, dx, oy), { x0: p.x0 - prm.treeColGap, y0: p.y0, x1: p.x1 + prm.treeColGap, y1: p.y1 })));
-        if (placed.length) { ox = hubs[hubs.length - 1].x; while (clash(ox)) ox += 8; }
-        placed.push(...g.rects.map((q) => mv(q, ox, oy)));
-        hubs.push({ c, x: ox, y: oy });
-        for (const [k, p] of g.pos) { const z = size(T.byId.get(k)); out[k] = { x: p.x + ox - z.w / 2, y: p.y + oy - z.h / 2 }; }
-        from = Math.max(...placed.map((r) => r.x1)) + prm.treeColGap;
-      }
-      // la racine au-dessus du milieu des parties
-      const dx = rs.w / 2 - (hubs[0].x + hubs[hubs.length - 1].x) / 2;
-      for (const id in out) if (id !== rootId) out[id].x += dx;
-      return hubs.map((h) => ({ c: h.c, x: h.x + dx, y: h.y }));
+    const n = row.length, k = above.length;
+    const S = n > 1 ? Math.min(90, 45 * (n - 1)) * DEG : 0;
+    const aim = (c) => {
+      const i = row.indexOf(c);
+      if (i >= 0) return Math.PI / 2 + (n > 1 ? S - (2 * S * i) / (n - 1) : 0);
+      const j = above.indexOf(c);
+      return -Math.PI / 2 + (k > 1 ? (j / (k - 1) - 0.5) * 100 * DEG : 0);
     };
-    const first = parts(null);
-    parts(new Map(first.map((h) => [h.c, { a: Math.max(35 * DEG, Math.min(145 * DEG, Math.atan2(h.y - rs.h, h.x - rs.w / 2))), reach: Math.max(prm.molLane, Math.hypot(h.y - rs.h, h.x - rs.w / 2)) }])));
-    if (!above.length) return out;
-    // les parties du haut : autour de la racine, de gauche à droite, sans rien toucher de ce qui est posé
-    // (repère : centre de la racine)
-    const cx = rs.w / 2, cy = rs.h / 2;
-    const rects = [], segs = [];
-    const centre = (id) => { const z = size(T.byId.get(id)); return { x: out[id].x + z.w / 2 - cx, y: out[id].y + z.h / 2 - cy, w: z.w, h: z.h }; };
-    for (const id in out) { const q = centre(id); rects.push(box(q.x, q.y, q.w, q.h)); }
-    for (const [id, cs] of T.kids) if (out[id]) for (const c of cs) if (out[c]) { const a = centre(id), b = centre(c); segs.push([a.x, a.y, b.x, b.y]); }
-    const k = above.length;
-    above.forEach((c, i) => {
-      const want = -Math.PI / 2 + (k > 1 ? (i / (k - 1) - 0.5) * 100 * DEG : 0) + (rnd(c, 4) - 0.5) * prm.molJa * DEG;
-      const g = atome(c, want);
-      const cs = size(T.byId.get(c));
-      const free = (a, r) => {
-        const ux = Math.cos(a), uy = Math.sin(a), ox = ux * r, oy = uy * r;
-        const own = g.rects.map((q) => mv(q, ox, oy));
-        for (const q of own) {
-          const qm = { x0: q.x0 - M, y0: q.y0 - M, x1: q.x1 + M, y1: q.y1 + M };
-          for (const p of rects) if (hit(qm, p)) return false;
-          for (const sg of segs) if (cut(sg, q)) return false;
-        }
-        const e1 = edge(rs.w, rs.h, ux, uy), e2 = edge(cs.w, cs.h, ux, uy);
-        const body = [ux * e1, uy * e1, ox - ux * e2, oy - uy * e2];
-        for (const p of rects.slice(1)) if (cut(body, p)) return false;
-        for (const q of own.slice(1)) if (cut(body, q)) return false;
-        for (const sg of g.segs) for (const p of rects) if (cut([sg[0] + ox, sg[1] + oy, sg[2] + ox, sg[3] + oy], p)) return false;
-        return { ox, oy, own };
-      };
-      const ux = Math.cos(want), uy = Math.sin(want);
-      const r0 = edge(rs.w, rs.h, ux, uy) + edge(cs.w, cs.h, ux, uy) + prm.molGap + 24;
-      let got = null;
-      for (let r = r0; !got && r < r0 + 3000; r += 8 + (r - r0) * 0.15) {
-        for (const d of [0, 1, -1, 2, -2, 3, -3, 4, -4]) if ((got = free(want + d * prm.molTry * DEG, r))) break;
-      }
-      if (!got) got = { ox: ux * (r0 + 3000), oy: uy * (r0 + 3000), own: g.rects.map((q) => mv(q, ux * (r0 + 3000), uy * (r0 + 3000))) };
-      for (const [id, p] of g.pos) { const z = size(T.byId.get(id)); out[id] = { x: p.x + got.ox + cx - z.w / 2, y: p.y + got.oy + cy - z.h / 2 }; }
-      rects.push(...got.own);
-      segs.push([0, 0, got.ox, got.oy], ...g.segs.map((sg) => [sg[0] + got.ox, sg[1] + got.oy, sg[2] + got.ox, sg[3] + got.oy]));
-    });
+    const g = atome(rootId, Math.PI / 2, prm.molLane, aim);
+    for (const [id, p] of g.pos) { const z = size(T.byId.get(id)); out[id] = { x: p.x + rs.w / 2 - z.w / 2, y: p.y + rs.h / 2 - z.h / 2 }; }
     return out;
   }
 
@@ -1765,7 +1710,8 @@
     const pos = {};
     for (const id in best.pos) pos[id] = { ...best.pos[id] };
     separate(map, pos, size, best.mode);
-    aerate(map, pos, size, best.mode);
+    // vers le bas : l'atome a déjà gardé ses distances (molPad) — l'aérer le disloquerait
+    if (best.mode !== 'tree') aerate(map, pos, size, best.mode);
     return { pos, mode: best.mode, score: best.score, params: best.prm, tried };
   }
 
