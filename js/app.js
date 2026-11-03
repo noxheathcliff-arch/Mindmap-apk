@@ -560,6 +560,9 @@
     const after = (fn) => () => { if (U.reducedMotion()) { fn(); closeFn(); } else { closeFn(); setTimeout(fn, 220); } };
     const group = (title, ...items) => h('section.st-group', h('h3.st-h', title), h('div.st-list', items));
 
+    // apprentissage du rangement : ce qu'il a retenu de tes corrections (reste sur cet appareil)
+    const learnText = () => { const st = R.learn.stats(); return st.corrections ? `${st.corrections} correction${st.corrections > 1 ? 's' : ''} retenue${st.corrections > 1 ? 's' : ''}${st.gap ? ` · écart préféré ${st.gap} px` : ''} — toucher pour oublier` : 'Apprend de tes corrections en « Vers le bas » (reste sur cet appareil)'; };
+    const learnD = R.learn ? h('span.st-d', learnText()) : null;
     const body = h('div.st',
       h('header.st-bar',
         ui.iconBtn('close', { title: 'Fermer', cls: 'st-close', onClick: () => closeFn() }),
@@ -577,7 +580,13 @@
             lastD.textContent = 'Dernière à l’instant'; lastD.classList.remove('warn');
             ui.snack('Sauvegarde téléchargée');
           } }),
-          item('import', 'Importer', h('span.st-d', 'Sauvegarde, cours exporté ou généré par une IA'), { onClick: after(() => openImport()) })),
+          item('import', 'Importer', h('span.st-d', 'Sauvegarde, cours exporté ou généré par une IA'), { onClick: after(() => openImport()) }),
+          R.learn && item('sparkle', 'Rangement appris', learnD, { onClick: async () => {
+            const ok = await ui.confirm('Oublier ce qui a été appris ?', 'Le rangement « Vers le bas » revient à ce qu’il savait à l’installation. Tes cartes ne bougent pas.', { ok: 'Oublier', icon: 'sparkle' });
+            if (!ok) return;
+            R.learn.reset(); learnD.textContent = learnText();
+            ui.snack('Rangement remis à zéro');
+          } })),
         group('Aide',
           item('keyboard', 'Raccourcis clavier', null, { onClick: after(showShortcuts) }),
           item('help', 'Guide de démarrage', null, { onClick: after(onboarding) })),
@@ -585,7 +594,7 @@
           item('trash', 'Tout effacer', h('span.st-d', 'Supprime cours, cartes et notes de cet appareil'), { cls: 'danger', trail: null, onClick: async () => {
             const ok = await ui.confirm('Tout effacer ?', 'Tous les cours, cartes et notes de cet appareil seront supprimés. Exporte une sauvegarde avant si besoin.', { ok: 'Tout effacer', danger: true, icon: 'trash' });
             if (!ok) return;
-            S.reset();
+            S.reset(); if (R.learn) R.learn.reset();
             closeFn && closeFn();
             app.go('#/', { replace: true });
             ui.snack('Données effacées');

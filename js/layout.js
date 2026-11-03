@@ -1679,8 +1679,27 @@
       tried.push({ mode: c.mode, split: c.split, ...sc });
       return { pos, mode: c.mode, split: c.split, prm, score: sc };
     };
+    // vers le bas : réglages appris (corrections à la main), départs proposés par les cartes
+    // semblables (méta-apprentissage), puis affinage réglage par réglage avec la note apprise
+    const L = opts.learn === false ? null : R.learn;
+    const tuneTree = (c) => {
+      const own = { ...P, ...L.params() };
+      const note = (prm) => { const pos = place(map, T, size, 'tree', c.split, prm); return { prm, v: L.cost(L.features(map, pos, size, opts.viewport)) }; };
+      const base = note(own);
+      let cur = base;
+      for (const p of L.suggest(map)) { const t = note({ ...own, ...p }); if (t.v < cur.v - 0.01) cur = t; }
+      if (!opts.fast && map.nodes.length <= 120) {
+        for (const [k, vals] of Object.entries(L.TUNE)) for (const v of vals) {
+          if (cur.prm[k] === v) continue;
+          const t = note({ ...cur.prm, [k]: v });
+          if (t.v < cur.v - 0.01) cur = t;
+        }
+      }
+      if (!opts.fast && cur !== base) L.remember(map, cur.prm, base.v - cur.v);
+      return run(c, cur.prm);
+    };
     // 1) chaque disposition avec les réglages par défaut
-    const firsts = cands.map((c) => run(c, P)).sort((a, b) => a.score.cost - b.score.cost);
+    const firsts = cands.map((c) => (c.mode === 'tree' && L ? tuneTree(c) : run(c, P))).sort((a, b) => a.score.cost - b.score.cost);
     best = firsts[0];
     // 2) l'optimiseur affine les deux meilleures (descente par coordonnées sur SEARCH) :
     //    écarts, colonnes, retraits — chaque réglage n'est gardé que s'il améliore la note

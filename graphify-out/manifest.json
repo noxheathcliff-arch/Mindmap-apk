@@ -1,8 +1,8 @@
 {
   "js/app.js": {
-    "mtime": 1793072250.018512,
-    "seen": 1793072620.9573622,
-    "ast_hash": "0f278b13e1f6492ef5eb68152825aea3",
+    "mtime": 1793674166.8350852,
+    "seen": 1793674334.7282255,
+    "ast_hash": "0863ff9f2afdbab6e68b240ecd198226",
     "semantic_hash": ""
   },
   "js/colors.js": {
@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1793074747.5543637,
-    "seen": 1793074820.6026554,
-    "ast_hash": "123af2b203e034458ccf9428d9dfbd05",
+    "mtime": 1793674066.3805368,
+    "seen": 1793674334.7282398,
+    "ast_hash": "471b10139514461c58d82fe4f655ce1b",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1793072785.2832816,
-    "seen": 1793072966.4493086,
-    "ast_hash": "3a6eeb82b3b9b30ca12644738bfe909e",
+    "mtime": 1793674066.381243,
+    "seen": 1793674334.7282681,
+    "ast_hash": "a6e3a397f3440c10fca58aba8cd6d546",
     "semantic_hash": ""
   },
   "js/views/library.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793074815.4487824,
-    "seen": 1793074820.6026866,
-    "ast_hash": "cd27abf40333af49c654952db7a5bcfc",
+    "mtime": 1793674066.381243,
+    "seen": 1793674334.7282796,
+    "ast_hash": "2d2a8f440521c38f0bb25f67109fc7c1",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1793074815.4430974,
-    "seen": 1793074820.6027443,
-    "ast_hash": "6805ecf2ca361d1973d31da262f4210a",
+    "mtime": 1793674326.0270183,
+    "seen": 1793674334.7283268,
+    "ast_hash": "223e6014257e8c8420a1b813cdeb0e69",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793074815.443329,
-    "seen": 1793074820.6027458,
-    "ast_hash": "8cd5cff1118fc535ce83370f4f215b57",
+    "mtime": 1793674326.0258687,
+    "seen": 1793674334.7283282,
+    "ast_hash": "906733ef4d478175c46e249708122858",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1792814345.8303683,
-    "seen": 1792817488.8375428,
-    "ast_hash": "674f8aee420e0dcdf4d7efed58a205dc",
+    "mtime": 1793674066.378994,
+    "seen": 1793674334.7283363,
+    "ast_hash": "6909a95cf522858810eaeac0daaf2001",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -471,6 +471,30 @@
     "mtime": 1793073749.4870226,
     "seen": 1793073760.319485,
     "ast_hash": "160817a060f3bb8494dca59c38284ef8",
+    "semantic_hash": ""
+  },
+  "js/learn-prior.js": {
+    "mtime": 1793674059.6851313,
+    "seen": 1793674334.7282422,
+    "ast_hash": "37fb56ba234137b29cc18a2be5384c77",
+    "semantic_hash": ""
+  },
+  "js/learn.js": {
+    "mtime": 1793674221.0535395,
+    "seen": 1793674334.728244,
+    "ast_hash": "13b9a76c07aa30e825bfc2f6f67894c8",
+    "semantic_hash": ""
+  },
+  "tests/learn.test.cjs": {
+    "mtime": 1793674150.4771292,
+    "seen": 1793674334.728291,
+    "ast_hash": "e9dee0536d90095bb881aebcd7aae6ee",
+    "semantic_hash": ""
+  },
+  "tests/learn/train.cjs": {
+    "mtime": 1793674050.400081,
+    "seen": 1793674334.7282927,
+    "ast_hash": "a10ac3c422207d53bd781096fef8cae8",
     "semantic_hash": ""
   }
 }

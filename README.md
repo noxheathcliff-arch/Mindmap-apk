@@ -89,6 +89,14 @@ Le moteur ne se contente pas de ranger : il **construit** la carte pour qu'elle 
 
 Pour chaque disposition, un optimiseur règle ensuite les écarts (colonnes, groupes, retraits, frises) en gardant ce qui améliore une note de lisibilité : liens qui traversent un nœud, libellés masqués, croisements, longueur des renvois, groupes ambigus, longs arcs, forme par rapport à l'écran.
 
+**Le rangement « Vers le bas » apprend** (`js/learn.js`), sur l'appareil, sans rien envoyer :
+
+- **une note apprise** : chaque disposition est résumée en douze mesures lisibles (nœuds trop proches, lien qui traverse un nœud, croisements, libellé sur un nœud, longueur et régularité des liens, enfant posé dans le couloir de son parent, ordre de lecture, équilibre autour du sujet, place perdue, forme). Leurs poids ont été appris hors ligne (`tests/learn/train.cjs`) sur les 56 cartes du dépôt, à partir des versions successives du moteur (chacune corrigée parce qu'elle rangeait moins bien) et de dispositions volontairement abîmées comme on les a vues abîmées ;
+- **tes corrections** : quand tu déplaces un nœud d'une carte « Vers le bas », la carte d'avant et celle d'après deviennent une préférence (« celle-ci vaut mieux ») et les poids bougent un peu ; l'écart que tu donnes aux liens est retenu et adopté après trois corrections. Un geste de moins de 12 px, ou qui crée un chevauchement, ne compte pas ;
+- **méta-apprentissage** : chaque carte est décrite (taille, nombre de parties, profondeur, longueur des titres, part de feuilles et de libellés) et les réglages qui lui ont le mieux réussi sont mémorisés ; une nouvelle carte part des réglages des trois cartes les plus proches, puis l'optimiseur affine réglage par réglage avec la note apprise.
+
+Réglages → *Rangement appris* montre ce qui a été retenu et permet de l'oublier. Rien de cela n'est dans les sauvegardes exportées.
+
 ### Personnaliser une carte (v4.1)
 
 - **Apparence d'un nœud** (`A`, ou *Apparence* dans la barre d'actions) : type et niveau, **couleur** parmi 12 teintes avec la portée *Ce nœud* ou *Tous les « Notion »* (la couleur d'un nœud prime sur celle de son type), **forme** (largeur, hauteur, arrondi — ou la poignée de coin sur la carte), **police** (23 polices : sans, serif, display, mono, manuscrites), **taille**, **gras** et **préfixe numéroté**.
@@ -152,6 +160,8 @@ css/views.css           bibliothèque, cours, révision, recherche, plan
 css/editor.css          canvas, nœuds, liens, panneau de note, barres d'outils
 js/store.js             modèle de données, persistance (IndexedDB + miroir), répétition espacée
 js/layout.js            moteur de rangement : dispositions, contours, trajets des renvois, libellés, note de lisibilité
+js/learn.js             apprentissage du rangement « Vers le bas » : note apprise, corrections, mémoire de réglages
+js/learn-prior.js       point de départ appris hors ligne (généré par tests/learn/train.cjs)
 js/colors.js            couleurs des nœuds par type (OKLCH, contraste garanti)
 js/mark.js              identité d'un cours : dossier + empreinte générative (SVG), rôles de couleur M3 par teinte
 js/markdown.js          rendu des notes

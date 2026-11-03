@@ -2757,6 +2757,8 @@
         const moving = new Set();
         for (const s of st.sel) { moving.add(s); if (!gesture.alt) for (const d of S.descendants(map, s)) moving.add(d); }
         gesture.moving = [...moving].filter((i) => st.els.has(i) || S.node(map, i));
+        // apprentissage : on garde la disposition d'avant pour comparer avec la correction
+        if (R.learn && map.layout === 'tree') gesture.before = Object.fromEntries(map.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
         gesture.last = { x: e.clientX, y: e.clientY };
         for (const i of gesture.moving) { const el = st.els.get(i); if (el) el.classList.add('dragging'); }
         canvas.classList.add('is-dragging');
@@ -2854,6 +2856,9 @@
           for (const i of g.moving) { const el = st.els.get(i); if (el) el.classList.remove('dragging'); }
           // dépôt sur un autre nœud ? (Maj) → rattacher
           for (const id of g.moving) { const n = S.node(map, id); n.x = Math.round(n.x); n.y = Math.round(n.y); }
+          if (g.before && R.learn) {
+            try { R.learn.observe(map, g.before, Object.fromEntries(map.nodes.map((n) => [n.id, { x: n.x, y: n.y }])), g.moving, sizeFn, viewportSize()); } catch (err) { /* l'apprentissage ne bloque jamais l'édition */ }
+          }
           S.touchMap(map, 'edit');
           updateHistoryBtns();
           render();
