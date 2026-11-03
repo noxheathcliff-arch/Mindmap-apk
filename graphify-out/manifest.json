@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793674066.381243,
-    "seen": 1793674334.7282796,
-    "ast_hash": "2d2a8f440521c38f0bb25f67109fc7c1",
+    "mtime": 1793675379.5810683,
+    "seen": 1793675384.1510646,
+    "ast_hash": "062db53579adc060d35e2b0c16ff8cdd",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "DESIGN.md": {
-    "mtime": 1793674326.0270183,
-    "seen": 1793674334.7283268,
-    "ast_hash": "223e6014257e8c8420a1b813cdeb0e69",
+    "mtime": 1793675379.6036105,
+    "seen": 1793675384.1511178,
+    "ast_hash": "6fcc15ef29608878131c4bc7869bfa66",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793674326.0258687,
-    "seen": 1793674334.7283282,
-    "ast_hash": "906733ef4d478175c46e249708122858",
+    "mtime": 1793675379.6045358,
+    "seen": 1793675384.151119,
+    "ast_hash": "f09a366af8179851c74bae9e122066e4",
     "semantic_hash": ""
   },
   "docs/audit-organisation-2.md": {
@@ -474,27 +474,33 @@
     "semantic_hash": ""
   },
   "js/learn-prior.js": {
-    "mtime": 1793674059.6851313,
-    "seen": 1793674334.7282422,
-    "ast_hash": "37fb56ba234137b29cc18a2be5384c77",
+    "mtime": 1793675305.324277,
+    "seen": 1793675384.1510248,
+    "ast_hash": "d03cb2f424da2c090d24a4512393bcaf",
     "semantic_hash": ""
   },
   "js/learn.js": {
-    "mtime": 1793674221.0535395,
-    "seen": 1793674334.728244,
-    "ast_hash": "13b9a76c07aa30e825bfc2f6f67894c8",
+    "mtime": 1793675218.3362296,
+    "seen": 1793675384.1510274,
+    "ast_hash": "6be6ceb22528f6a84ebf064fb46daaa1",
     "semantic_hash": ""
   },
   "tests/learn.test.cjs": {
-    "mtime": 1793674150.4771292,
-    "seen": 1793674334.728291,
-    "ast_hash": "e9dee0536d90095bb881aebcd7aae6ee",
+    "mtime": 1793675317.8714175,
+    "seen": 1793675384.151077,
+    "ast_hash": "5de70fafb91ce327de79ebba4f1e009e",
     "semantic_hash": ""
   },
   "tests/learn/train.cjs": {
-    "mtime": 1793674050.400081,
-    "seen": 1793674334.7282927,
-    "ast_hash": "a10ac3c422207d53bd781096fef8cae8",
+    "mtime": 1793675269.5539742,
+    "seen": 1793675384.1510806,
+    "ast_hash": "40bf1b6c1516d67ed71cc5b21896a9e8",
+    "semantic_hash": ""
+  },
+  "tests/learn/intent.json": {
+    "mtime": 1793675246.2762783,
+    "seen": 1793675384.151079,
+    "ast_hash": "8d6a5d8174efcbe6e9e15a922fe1c597",
     "semantic_hash": ""
   }
 }

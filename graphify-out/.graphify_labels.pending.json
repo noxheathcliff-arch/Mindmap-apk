@@ -29,7 +29,7 @@
   "27": "binder.js",
   "28": "splash.js",
   "29": "render",
-  "30": "tidy",
+  "30": "startEdit",
   "31": "learn-prior.js",
   "32": "course.js",
   "33": "exercises.test.cjs",
@@ -53,6 +53,5 @@
   "52": "paneNode",
   "53": "skill-rules.cjs",
   "54": "childrenOf",
-  "56": "fit",
   "57": "fonts.js"
 }

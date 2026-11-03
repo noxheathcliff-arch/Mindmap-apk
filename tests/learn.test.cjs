@@ -60,5 +60,30 @@ const maps = JSON.parse(fs.readFileSync(path.join(root, 'cours/cours-droit-succe
   t('réinitialisation', L.stats().corrections === 0 && L.stats().gap === null);
   t('suggest renvoie des réglages connus', L.suggest(m).every((p) => Object.keys(p).every((k) => k in L.TUNE)));
 }
+{
+  // intentions de l'auteur (explications + captures) : règles dures sur les caractéristiques
+  const { R } = boot(), L = R.learn;
+  const node = (id, title = id) => ({ id, type: 'idee', title, x: 0, y: 0 });
+  const m = { layout: 'tree', nodes: ['r', 'p', 'a', 'b', 'c', 'x'].map((i) => node(i)),
+    edges: [['r', 'p'], ['p', 'a'], ['p', 'b'], ['p', 'c']].map(([from, to], j) => ({ id: 'e' + j, from, to, kind: 'tree' })).concat([{ id: 'l', from: 'p', to: 'x', kind: 'link' }]) };
+  const sz = () => ({ w: 100, h: 40 });
+  const P = (o) => Object.fromEntries(Object.entries(o).map(([k, [x, y]]) => [k, { x: x - 50, y: y - 20 }]));
+  const brush = P({ r: [0, -200], p: [0, 0], a: [-260, 160], b: [0, 160], c: [260, 160], x: [600, 600] });
+  const atom = P({ r: [0, -200], p: [0, 0], a: [-220, 40], b: [30, 190], c: [230, -10], x: [600, 600] });
+  const fb = L.features(m, brush, sz, VP), fa = L.features(m, atom, sz, VP);
+  t('brosse repérée', fb.comb === 1 && fa.comb === 0);
+  t('atome : enfants autour du parent mieux notés qu’en éventail d’un côté', fa.surround < fb.surround);
+  t('brosse plus chère qu’atome', L.cost(fb) > L.cost(fa));
+  const glued = P({ r: [0, -200], p: [0, 0], a: [-220, 40], b: [30, 190], c: [230, 230], x: [600, 600] });
+  t('renvoi collé à un lien hiérarchique repéré', L.features(m, glued, sz, VP).ref > 0 && fa.ref === 0);
+  // les captures de l'auteur : sa retouche doit coûter moins que la proposition d'origine
+  const intent = JSON.parse(fs.readFileSync(path.join(root, 'tests/learn/intent.json'), 'utf8')).maps;
+  for (const im of intent) {
+    const mm = { layout: 'tree', nodes: im.nodes.map((n) => ({ ...n, x: 0, y: 0 })), edges: im.edges.map(([from, to, label, kind], j) => ({ id: 'e' + j, from, to, label, kind: kind || 'tree' })) };
+    const s = (n) => R.layout.estimate(n, mm);
+    const at = (set) => Object.fromEntries(mm.nodes.map((n) => { const z = s(n), c = set[n.id]; return [n.id, { x: c[0] / im.zoom - z.w / 2, y: c[1] / im.zoom - z.h / 2 }]; }));
+    t('retouche de l’auteur préférée (' + im.id + ')', L.cost(L.features(mm, at(im.fixed), s, VP)) < L.cost(L.features(mm, at(im.default), s, VP)));
+  }
+}
 console.log(`${ok} réussi(s), ${ko} échec(s)`);
 process.exit(ko ? 1 : 0);

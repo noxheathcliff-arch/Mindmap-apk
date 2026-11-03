@@ -90,6 +90,32 @@ function degrade(m, pos) {
     const p = clone(pos); shift(p, sub(k, c), (cx - rx) * 0.9, (cy - ry) * 0.9);
     out.push(['étirée', p]);
   }
+  // « brosse » : une fratrie remise en rang bien droit sous son parent (ce que l'auteur refuse)
+  if (fam.length) {
+    const [pid, cs] = fam[Math.floor(rnd() * fam.length)], [px, py] = ctr(m, pos, pid), p = clone(pos);
+    let x = px - (cs.length - 1) * 130;
+    for (const c of cs) { const [cx, cy] = ctr(m, pos, c); shift(p, sub(k, c), x - cx, py + 150 - cy); x += 260; }
+    out.push(['brosse', p]);
+  }
+  // un seul côté : les enfants d'une partie rabattus en éventail serré du même côté (plus d'atome)
+  const fan = inner.filter((id) => (k.get(id) || []).length >= 2);
+  if (fan.length) {
+    const id = fan[Math.floor(rnd() * fan.length)], [ix, iy] = ctr(m, pos, id), cs = k.get(id), p = clone(pos);
+    const base = Math.atan2(iy - ctr(m, pos, parOf.get(id))[1], ix - ctr(m, pos, parOf.get(id))[0]);
+    cs.forEach((c, j) => {
+      const [cx, cy] = ctr(m, pos, c), d = Math.max(140, Math.hypot(cx - ix, cy - iy)), t = base + (j - (cs.length - 1) / 2) * 0.35;
+      shift(p, sub(k, c), ix + Math.cos(t) * d - cx, iy + Math.sin(t) * d - cy);
+    });
+    out.push(['un côté', p]);
+  }
+  // renvoi collé : un enfant reposé pile dans la direction d'un renvoi qui part du même nœud
+  const links = m.edges.filter((e) => e.kind === 'link' && (k.get(e.from) || []).length && pos[e.to]);
+  if (links.length) {
+    const e = links[Math.floor(rnd() * links.length)], c = k.get(e.from)[0];
+    const [fx, fy] = ctr(m, pos, e.from), [tx, ty] = ctr(m, pos, e.to), [cx, cy] = ctr(m, pos, c), L = Math.hypot(tx - fx, ty - fy) || 1, d = Math.hypot(cx - fx, cy - fy);
+    const p = clone(pos); shift(p, sub(k, c), fx + (tx - fx) / L * d - cx, fy + (ty - fy) / L * d - cy);
+    out.push(['renvoi collé', p]);
+  }
   // tout tassé vers la racine (chevauchements)
   { const [rx, ry] = ctr(m, pos, r), p = clone(pos); for (const n of m.nodes) { const [x, y] = ctr(m, pos, n.id); shift(p, [n.id], (x - rx) * -0.35, (y - ry) * -0.35); } out.push(['tassée', p]); }
   return out;
@@ -102,9 +128,19 @@ corpus.forEach((m, i) => {
   for (const o of olds) { try { pairs.push({ i, src: 'moteur ' + o.rev, b: fg, w: feat(m, lay(o.R, m)) }); } catch (e) { /* version incompatible */ } }
   for (const [name, p] of degrade(m, good)) pairs.push({ i, src: name, b: fg, w: feat(m, p) });
 });
+// intentions de l'auteur : ses captures « proposé → retouché à la main », reconstituées (tests/learn/intent.json)
+const intent = JSON.parse(read('tests/learn/intent.json')).maps.map((im) => {
+  const m = { id: im.id, layout: 'tree', nodes: im.nodes.map((n) => ({ ...n, x: 0, y: 0 })),
+    edges: im.edges.map(([from, to, label, kind], j) => ({ id: 'e' + j, from, to, label, kind: kind || 'tree' })) };
+  const at = (set) => { const o = set[m.nodes[0].id]; return Object.fromEntries(m.nodes.map((n) => { const s = size(m)(n), c = set[n.id]; return [n.id, { x: (c[0] - o[0]) / im.zoom - s.w / 2, y: (c[1] - o[1]) / im.zoom - s.h / 2 }]; })); };
+  return { m, good: at(im.fixed), bad: at(im.default) };
+});
+for (const t of intent) pairs.push({ i: -1, src: 'intention', b: feat(t.m, t.good), w: feat(t.m, t.bad) });
 // une paire où les deux dispositions sont identiques n'apprend rien
 const useful = pairs.filter((p) => L.F.some((k) => Math.abs(p.b[k] - p.w[k]) > 1e-9));
-const train = useful.filter((p) => !held(p.i)), test = useful.filter((p) => held(p.i));
+// les captures de l'auteur pèsent comme dix exemples : ce sont les seules corrections faites à la main
+const train = useful.filter((p) => !held(p.i)).flatMap((p) => (p.src === 'intention' ? Array(10).fill(p) : [p])), test = useful.filter((p) => held(p.i));
+const mine = useful.filter((p) => p.src === 'intention');
 const acc = (set, w) => set.length ? set.filter((p) => L.cost(p.b, w) < L.cost(p.w, w)).length / set.length : 1;
 
 const w0 = { ...L.PRIOR }, w = { ...L.PRIOR };
@@ -116,6 +152,8 @@ for (const p of test) { const s = (bySrc[p.src] ||= { n: 0, a: 0, b: 0 }); s.n++
 console.log(`paires utiles : ${useful.length} (apprentissage ${train.length}, mises de côté ${test.length}) · ${corpus.length} cartes · moteurs anciens : ${olds.map((o) => o.rev).join(', ') || 'aucun'}`);
 console.log(`précision sur les cartes mises de côté : ${(before * 100).toFixed(1)} % avant → ${(after * 100).toFixed(1)} % après`);
 for (const [s, v] of Object.entries(bySrc)) console.log(`  ${s.padEnd(16)} ${v.n.toString().padStart(3)} paires · ${(100 * v.b / v.n).toFixed(0)} % → ${(100 * v.a / v.n).toFixed(0)} %`);
+console.log(`captures de l'auteur (apprises, donc précision non indépendante) : ${mine.filter((p) => L.cost(p.b, w0) < L.cost(p.w, w0)).length}/${mine.length} → ${mine.filter((p) => L.cost(p.b, w) < L.cost(p.w, w)).length}/${mine.length}`);
+for (const t of intent) { const fb = feat(t.m, t.good), fw = feat(t.m, t.bad); console.log('  ' + t.m.id, L.F.filter((k) => Math.abs(fb[k] - fw[k]) > 1e-6).map((k) => `${k} ${fw[k].toFixed(2)}→${fb[k].toFixed(2)}`).join(' · ')); }
 const round = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, +v.toFixed(2)]));
 console.log('poids :', JSON.stringify(round(w)));
 

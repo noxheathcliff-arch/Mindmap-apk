@@ -1,0 +1,51 @@
+{
+  "about": "Cartes reconstituées à partir des captures envoyées par l'auteur : « default » = rangement proposé, « fixed » = sa retouche à la main. Coordonnées = centres relevés à l'écran (px), « zoom » = échelle de la capture. Chaque paire dit : fixed vaut mieux que default.",
+  "maps": [
+    {
+      "id": "intent-gentil",
+      "why": "Captures 04:04 → 04:08 : parties en éventail sous la racine, enfants tous du même côté → racine au centre, chaque partie entourée de ses exemples comme un atome, liens courts.",
+      "zoom": 0.47,
+      "nodes": [
+        { "id": "r", "type": "chapitre", "title": "Chapitre I · Comment savoir que je suis trop gentil" },
+        { "id": "a", "type": "idee", "title": "Le oui contre son gré est un premier signal" },
+        { "id": "a1", "type": "idee", "title": "Dire oui malgré son envie de refuser" },
+        { "id": "a2", "type": "idee", "title": "Faire semblant d’être d’accord" },
+        { "id": "a3", "type": "idee", "title": "S’excuser trop souvent" },
+        { "id": "b", "type": "idee", "title": "Le regard d’autrui devient un régulateur" },
+        { "id": "b1", "type": "idee", "title": "Se sentir accablé par les tâches acceptées" },
+        { "id": "b2", "type": "idee", "title": "Être très mal à l’aise face à la colère" },
+        { "id": "b3", "type": "idee", "title": "Se croire responsable de l’humeur des autres" },
+        { "id": "c", "type": "idee", "title": "L’effacement peut modifier les relations et les habitudes" },
+        { "id": "c1", "type": "idee", "title": "Avoir besoin d’éloges constants" },
+        { "id": "c2", "type": "idee", "title": "Cacher ses sentiments blessés" },
+        { "id": "c3", "type": "idee", "title": "Éviter tout conflit au prix de ses besoins" },
+        { "id": "c4", "type": "idee", "title": "Imiter les goûts de son entourage" },
+        { "id": "z", "type": "retenir", "title": "Le chapitre distingue la sympathie de l’abandon de soi : être attentionné" }
+      ],
+      "edges": [
+        ["r", "a", "se reconnaît à"], ["a", "a1", "se manifeste par"], ["a", "a2", "se manifeste aussi par"], ["a", "a3", "se traduit également par"],
+        ["r", "b", "se traduit par"], ["b", "b1", "se traduit par"], ["b", "b2", "se traduit aussi par"], ["b", "b3", "se traduit aussi par"],
+        ["r", "c", "comprend aussi"], ["c", "c1", "se traduit aussi par"], ["c", "c2", "se traduit également par"], ["c", "c3", "culmine dans"], ["c", "c4", "se traduit par"],
+        ["r", "z", ""]
+      ],
+      "default": { "r": [467, 925], "a": [175, 1113], "a1": [50, 1045], "a2": [55, 1194], "a3": [212, 1177], "b": [425, 1045], "b1": [340, 1184], "b2": [605, 1087], "b3": [472, 1133], "c": [760, 1112], "c1": [820, 1040], "c2": [905, 1120], "c3": [690, 1217], "c4": [820, 1173], "z": [460, 845] },
+      "fixed": { "r": [487, 910], "a": [262, 923], "a1": [245, 826], "a2": [85, 981], "a3": [277, 1015], "b": [488, 1122], "b1": [315, 1141], "b2": [633, 1166], "b3": [452, 1282], "c": [712, 908], "c1": [733, 813], "c2": [870, 915], "c3": [642, 1017], "c4": [836, 1014], "z": [477, 808] }
+    },
+    {
+      "id": "intent-renvoi",
+      "why": "Capture 01:51 : le renvoi « sanction » et le lien « appliqué par » partaient du même point de Dol et se chevauchaient → la jurisprudence remontée en biais, les deux traits se séparent dès le départ.",
+      "zoom": 1,
+      "nodes": [
+        { "id": "v", "type": "notion", "title": "Vices du consentement" },
+        { "id": "e", "type": "idee", "title": "Erreur" },
+        { "id": "d", "type": "idee", "title": "Dol" },
+        { "id": "vi", "type": "idee", "title": "Violence" },
+        { "id": "j", "type": "juris", "title": "Cass. 1re civ., 3 mai 2000, Baldus" },
+        { "id": "n", "type": "notion", "title": "Nullité relative" }
+      ],
+      "edges": [["v", "e", "ou"], ["v", "d", "ou"], ["v", "vi", "ou"], ["d", "j", "appliqué par"], ["d", "n", "sanction", "link"]],
+      "default": { "v": [-60, 820], "e": [240, 690], "d": [240, 820], "vi": [262, 960], "j": [750, 820], "n": [-200, 1520] },
+      "fixed": { "v": [-60, 820], "e": [240, 690], "d": [240, 820], "vi": [262, 960], "j": [710, 690], "n": [-200, 1520] }
+    }
+  ]
+}

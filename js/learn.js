@@ -21,8 +21,10 @@
 (function (R) {
   'use strict';
   const KEY = 'pioneer.learn.v1';
-  const F = ['overlap', 'cut', 'cross', 'label', 'len', 'spread', 'long', 'back', 'order', 'balance', 'area', 'aspect'];
-  const BASE = { overlap: 50, cut: 30, cross: 15, label: 10, len: 2, spread: 2, long: 4, back: 6, order: 4, balance: 8, area: 3, aspect: 2 };
+  const F = ['overlap', 'cut', 'cross', 'label', 'len', 'spread', 'long', 'back', 'order', 'balance', 'area', 'aspect', 'comb', 'surround', 'ref'];
+  // comb, surround, ref : intentions tirées des explications de l'auteur (pas de « brosse », des enfants
+  // autour de leur parent comme un atome, un renvoi ne part jamais le long d'un lien hiérarchique)
+  const BASE = { overlap: 50, cut: 30, cross: 15, label: 10, len: 2, spread: 2, long: 4, back: 6, order: 4, balance: 8, area: 3, aspect: 2, comb: 6, surround: 4, ref: 8 };
   const prior = R.learnPrior || {};
   const PRIOR = { ...BASE, ...(prior.w || {}) };
   /** Réglages que l'optimiseur essaie (autour des valeurs par défaut de layout.js) */
@@ -141,6 +143,37 @@
       for (const c of rk) { const b = B.get(c), L = Math.hypot(b.cx - root.cx, b.cy - root.cy) || 1; sx += (b.cx - root.cx) / L; sy += (b.cy - root.cy) / L; }
       f.balance = Math.hypot(sx, sy) / rk.length;
     }
+    // « brosse » : une fratrie d'au moins trois posée en rang ou en colonne bien droite
+    let fams = 0, combs = 0, sur = 0, nsur = 0;
+    for (const [p, cs] of kids) {
+      const pts = cs.map((c) => B.get(c));
+      if (pts.length >= 3) {
+        fams++;
+        const sd = (k) => { const m = pts.reduce((s, b) => s + b[k], 0) / pts.length; return Math.sqrt(pts.reduce((s, b) => s + (b[k] - m) ** 2, 0) / pts.length); };
+        if (Math.min(sd('cx'), sd('cy')) < 14) combs++;
+      }
+      // atome : les enfants entourent leur parent au lieu de partir tous du même côté
+      if (pts.length >= 2 && par.has(p)) {
+        const a = B.get(p); let sx = 0, sy = 0;
+        for (const b of pts) { const L = Math.hypot(b.cx - a.cx, b.cy - a.cy) || 1; sx += (b.cx - a.cx) / L; sy += (b.cy - a.cy) / L; }
+        sur += Math.hypot(sx, sy) / pts.length; nsur++;
+      }
+    }
+    f.comb = fams ? combs / fams : 0;
+    f.surround = nsur ? sur / nsur : 0;
+    // renvoi qui part dans la même direction qu'un lien hiérarchique du même nœud (ils se longent)
+    let nl = 0;
+    const away = (x, y) => { const a = B.get(x), b = B.get(y), L = Math.hypot(b.cx - a.cx, b.cy - a.cy) || 1; return [(b.cx - a.cx) / L, (b.cy - a.cy) / L]; };
+    for (const e of map.edges) {
+      if (e.kind !== 'link' || !B.has(e.from) || !B.has(e.to) || e.from === e.to) continue;
+      nl++;
+      for (const [x, y] of [[e.from, e.to], [e.to, e.from]]) {
+        const u = away(x, y);
+        const tree = [...(kids.get(x) || []), ...(par.has(x) ? [par.get(x)] : [])].filter((t) => t !== y);
+        if (tree.some((t) => { const v = away(x, t); return u[0] * v[0] + u[1] * v[1] > 0.85; })) f.ref++;
+      }
+    }
+    if (nl) f.ref /= nl;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const r of list) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
     const W = x1 - x0, H = y1 - y0;
