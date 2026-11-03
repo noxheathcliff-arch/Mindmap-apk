@@ -73,7 +73,9 @@
 .edge-label {
   position: absolute; left: 0; top: 0;
   padding: 1px 8px; border-radius: var(--shape-full);
-  background: var(--surface-container-high); border: 1px solid transparent;
+  /* pas d'encadrement : texte nu, détaché du trait par un halo couleur du fond */
+  background: transparent; border: 1px solid transparent;
+  text-shadow: 0 0 3px var(--surface), 0 0 3px var(--surface), 0 0 2px var(--surface);
   font: var(--label-s); color: var(--on-surface-variant);
   /* un libellé peut être une petite phrase : il passe à la ligne au-delà de 240 px (cf. layout.labelSize) */
   box-sizing: border-box; width: max-content; max-width: 240px;
@@ -83,14 +85,13 @@
 /* changement de libellé : petit pop (feedback d'état), jamais depuis 0 */
 .edge-label.pop { animation: label-pop var(--dur-md) var(--ease-out); }
 @keyframes label-pop { from { scale: .8; opacity: 0; } }
-.edge-label.logic { background: var(--on-surface); color: var(--surface); border-color: transparent; font-weight: 600; letter-spacing: .04em; padding: 0 6px; }
-.edge-label.sel { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+.edge-label.logic { text-shadow: none; background: var(--on-surface); color: var(--surface); border-color: transparent; font-weight: 600; letter-spacing: .04em; padding: 0 6px; }
+.edge-label.sel { text-shadow: none; background: var(--primary); color: var(--on-primary); border-color: transparent; }
 /* conflit non résolu : le libellé reste lisible (fond plein, détaché par une ombre douce) — jamais caché */
-.edge-label.clash:not(.sel) { background: var(--surface-container-highest); color: var(--on-surface); box-shadow: 0 1px 3px rgb(0 0 0 / .18); z-index: 1; }
+.edge-label.clash:not(.sel) { color: var(--on-surface); z-index: 1; }
 /* Fourche : un tronc, une étiquette posée sur le point de séparation, puis les branches */
 .edge.trunk { stroke-linecap: round; }
-.edge-label.junction { box-shadow: 0 0 0 3px var(--surface); }
-.edge-label.junction:not(.logic):not(.sel) { color: var(--on-surface); background: var(--surface-container-highest); }
+.edge-label.junction:not(.logic):not(.sel) { color: var(--on-surface); }
 .canvas.is-masked .edge-label:not(.logic) { filter: blur(4px); }
 
 /* ---- Nœuds ------------------------------------------------------------- */
