@@ -121,8 +121,29 @@
   /* Géométrie des liens (partagée par l'éditeur, les vignettes et la note) */
   /* ------------------------------------------------------------------ */
   const DIRS = { r: [1, 0], l: [-1, 0], b: [0, 1], t: [0, -1] };
-  /** Marge d'ancrage depuis un coin : plus grand arrondi des nœuds (--shape-l, 16 px) + le trait */
-  const CORNER = 19;
+  /** Arrondi réel d'un nœud (editor.css : notion --shape-l 16, idée --shape-m 12, référence 4 ;
+      réglage « Arrondi » du nœud sinon), borné par la demi-taille comme le fait le navigateur */
+  const LOOK_R = { notion: 16, idee: 12, ref: 4 };
+  function radiusOf(n, s) {
+    let r = Number.isFinite(n.r) ? n.r : null;
+    if (r === null) { try { r = LOOK_R[S.styleOf(n).look]; } catch (e) { r = 12; } }
+    return Math.max(0, Math.min(r == null ? 12 : r, s.w / 2, s.h / 2));
+  }
+  /** Colle un point du côté `side` sur le contour arrondi du nœud : dans un coin, il glisse vers
+      l'intérieur jusqu'à l'arc (le trait reste soudé au nœud, même dans l'arrondi) */
+  function hug(n, s, p, side) {
+    const r = radiusOf(n, s);
+    if (!r) return p;
+    const vert = side === 'l' || side === 'r';
+    const along = vert ? p[1] - n.y : p[0] - n.x, len = vert ? s.h : s.w;
+    const d = along < r ? r - along : along > len - r ? along - (len - r) : 0;
+    if (d <= 0) return p;
+    const inset = r - Math.sqrt(Math.max(0, r * r - Math.min(d, r) ** 2));
+    const q = p.slice();
+    if (side === 'r') q[0] -= inset; else if (side === 'l') q[0] += inset;
+    else if (side === 'b') q[1] -= inset; else q[1] += inset;
+    return q;
+  }
   function sidePoint(n, s, side) {
     if (side === 'r') return [n.x + s.w, n.y + s.h / 2];
     if (side === 'l') return [n.x, n.y + s.h / 2];
@@ -195,7 +216,7 @@
   /** Liste indentée : arête verticale sous le parent, puis trait horizontal vers l'enfant. cv.lt :
       position du libellé, au milieu du trait horizontal (il se lit entre l'arête et l'enfant) */
   function spineCurve(a, sa, b, sb) {
-    const sx = spineX(a, sa), p1 = [sx, a.y + sa.h], cy = b.y + sb.h / 2;
+    const sx = spineX(a, sa), p1 = hug(a, sa, [sx, a.y + sa.h], 'b'), cy = b.y + sb.h / 2;
     const cv = elbow([p1, [sx, cy], [b.x, cy]]);
     const stub = b.x - sx, total = cy - p1[1] + stub;
     cv.lt = total > 0 ? 1 - stub / 2 / total : 0.5;
@@ -282,13 +303,11 @@
   }
   /** Point d'ancrage choisi à la main : côté s (t|r|b|l) et position t (0–1) le long de ce côté */
   function anchorPoint(n, s, a) {
-    // jamais dans l'arrondi d'un coin : là, le trait semblerait décollé du nœud
-    const len = a.s === 'l' || a.s === 'r' ? s.h : s.w, m = Math.min(CORNER, len / 2) / (len || 1);
-    const t = Math.max(m, Math.min(1 - m, a.t == null ? 0.5 : a.t));
-    if (a.s === 'l') return [n.x, n.y + s.h * t];
-    if (a.s === 'r') return [n.x + s.w, n.y + s.h * t];
-    if (a.s === 't') return [n.x + s.w * t, n.y];
-    return [n.x + s.w * t, n.y + s.h];
+    // n'importe où sur le côté, coins compris : dans l'arrondi, le point suit l'arc
+    const t = Math.max(0, Math.min(1, a.t == null ? 0.5 : a.t));
+    const p = a.s === 'l' ? [n.x, n.y + s.h * t] : a.s === 'r' ? [n.x + s.w, n.y + s.h * t]
+      : a.s === 't' ? [n.x + s.w * t, n.y] : [n.x + s.w * t, n.y + s.h];
+    return hug(n, s, p, a.s);
   }
   /** Ancre la plus proche d'un point (aimantée au bord du nœud, milieux à ±4 %) */
   function nearestAnchor(n, s, p) {
@@ -431,9 +450,10 @@
     // libre : les départs s'étalent sur le flanc du parent selon la hauteur de l'enfant
     // (les courbes ne naissent pas toutes du même point, comme tracées à la main)
     if ((mode === 'organic' || mode === 'tree') && (s1 === 'l' || s1 === 'r')) {
-      // jamais dans l'arrondi d'un coin (16 px sur les notions) : le trait y semblerait décollé
-      const lim = Math.max(0, sa.h / 2 - CORNER);
+      // jusque dans l'arrondi des coins : le départ y suit l'arc (hug), soudé au nœud
+      const lim = Math.max(0, sa.h / 2 - 4);
       p1[1] += Math.max(-lim, Math.min(lim, (p2[1] - p1[1]) * 0.3));
+      const q1 = hug(a, sa, p1, s1); p1[0] = q1[0];
       // et partent déjà orientés vers leur enfant (bouquet) : les courbes d'une grande fratrie
       // divergent dès le départ au lieu de courir côte à côte
       const dx = Math.abs(p2[0] - p1[0]) || 1, sl = Math.max(-1.1, Math.min(1.1, (p2[1] - p1[1]) / dx));
@@ -1828,6 +1848,6 @@
     ENGINE, P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow, separate, SAFE, _labelClashes: labelClashes,
-    treeSides, treeCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
+    treeSides, treeCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, hug, radiusOf, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);
