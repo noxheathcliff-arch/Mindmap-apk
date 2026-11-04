@@ -37,7 +37,6 @@
     molPad: 18,       // marge autour de chaque nœud posé
     molSpread: 125,   // demi-ouverture max de l'atome (degrés autour de la direction d'arrivée)
     molStep: 32,      // demi-ouverture ajoutée par enfant
-    fanDepth: 0.5,    // « Vers le bas » : coût d'un cran de descente face à un cran de côté (bas = plus étagé, moins large)
     molLane: 220,     // couloir laissé libre pour le lien entrant
     molTry: 7,        // pas angulaire quand une place est prise (degrés)
     molJa: 10,        // léger désordre déterministe (degrés, stable d'un rangement à l'autre)
@@ -1257,41 +1256,15 @@
    * place est essayée du plus près au plus loin, et retenue seulement si ni le nœud, ni son lien,
    * ni le libellé du lien ne touchent ce qui est déjà posé. Léger désordre déterministe.
    */
-  const STEPS = new Map();
-  /** Pas d'essai (écart latéral, descente, coût) triés du plus proche au plus loin — calculés une fois */
-  function fanSteps(depth) {
-    if (!STEPS.has(depth)) {
-      const st = [];
-      for (let e = 0; e <= 40; e++) for (let k = 0; k <= 150; k++) st.push([k * 12, e * 16, k * 12 + e * 16 * depth]);
-      STEPS.set(depth, st.sort((a, b) => a[2] - b[2]));
-    }
-    return STEPS.get(depth);
-  }
   function layoutDown(rootId, T, size, prm) {
     const out = { [rootId]: { x: 0, y: 0 } };
     const rs = size(T.byId.get(rootId));
-    if (!(T.kids.get(rootId) || []).length) return out;
+    const kids = T.kids.get(rootId) || [];
+    if (!kids.length) return out;
     const seen = new Set([rootId]);
+    const lbl = (id) => { const L = T.labels && T.labels.get(id); return L ? labelSize('x'.repeat(L)) : null; };
     const DEG = Math.PI / 180, M = prm.molPad;
-    // unité : hauteur médiane d'un nœud (le réseau raisonne en hauteurs de nœud, comme sur les miniatures)
-    const hs = []; for (const n of T.byId.values()) hs.push(size(n).h);
-    hs.sort((a, b) => a - b);
-    const U = Math.max(24, hs[hs.length >> 1] || 40);
-    const desc = new Map();
-    const count = (id) => { if (desc.has(id)) return desc.get(id); desc.set(id, 1); let k = 1; for (const c of T.kids.get(id) || []) k += count(c); desc.set(id, k); return k; };
-    count(rootId);
-    // réseau appris (js/fan-net.js) : couches tanh, sortie linéaire
-    const N = R.fanNet;
-    const net = (v) => {
-      if (!N) return null;
-      let h = v.map((x, i) => (x - N.mu[i]) / N.sd[i]);
-      N.W.forEach((W, L) => {
-        const o = N.B[L].slice();
-        for (let i = 0; i < h.length; i++) for (let j = 0; j < o.length; j++) o[j] += h[i] * W[i][j];
-        h = L < N.W.length - 1 ? o.map(Math.tanh) : o;
-      });
-      return [h[0] * N.ys * U, h[1] * N.ys * U];
-    };
+    // géométrie : boîtes { x0, y0, x1, y1 } et segments [ax, ay, bx, by]
     const box = (cx, cy, w, h, m = 0) => ({ x0: cx - w / 2 - m, y0: cy - h / 2 - m, x1: cx + w / 2 + m, y1: cy + h / 2 + m });
     const mv = (r, dx, dy) => ({ x0: r.x0 + dx, y0: r.y0 + dy, x1: r.x1 + dx, y1: r.y1 + dy });
     const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
@@ -1305,93 +1278,98 @@
       }
       return t0 < t1;
     };
+    // distance du centre au bord d'une boîte w × h dans la direction (ux, uy)
     const edge = (w, h, ux, uy) => Math.min(ux ? w / 2 / Math.abs(ux) : Infinity, uy ? h / 2 / Math.abs(uy) : Infinity);
-    // un nœud et sa grappe → { pos: id → centre relatif, rects, segs }
-    const fan = (id, depth, ind) => {
+    // un atome → { pos: id → centre (relatif au centre du nœud), rects (nœuds et libellés), segs (liens) }
+    const atome = (id, dir, reach = prm.molLane, aim = null) => {
       seen.add(id);
       const s = size(T.byId.get(id));
       const pos = new Map([[id, { x: 0, y: 0 }]]);
       const rects = [box(0, 0, s.w, s.h)];
       const segs = [];
       const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
+      if (!ch.length) return { pos, rects, segs };
       const n = ch.length;
-      if (!n) return { pos, rects, segs };
-      // le réseau propose une place pour chaque enfant (cas par cas : rang, fratrie, tailles, poids de la
-      // grappe, direction d'arrivée). On en garde l'étagement en profondeur et l'ordre de gauche à droite ;
-      // l'écart latéral réel vient des vraies largeurs (les miniatures n'ont pas nos tailles de texte).
+      // le couloir du lien entrant : rien ne s'y pose
+      // (droit vers le parent, et dans l'axe : le lien entre par un flanc, perpendiculairement)
+      const back = [Math.cos(dir + Math.PI), Math.sin(dir + Math.PI)];
+      const axis = Math.abs(back[1]) * s.w >= Math.abs(back[0]) * s.h ? [0, Math.sign(back[1])] : [Math.sign(back[0]), 0];
+      const lanes = aim ? [] : [[0, 0, back[0] * reach, back[1] * reach], [0, 0, axis[0] * reach * 0.7, axis[1] * reach * 0.7]];
+      const S = n > 1 ? Math.min(prm.molSpread, prm.molStep * (n - 1)) * DEG : 0;
       const subs = ch.map((c, i) => {
-        const cs = size(T.byId.get(c));
-        const t = net([n, n > 1 ? i / (n - 1) : 0.5, depth, ind[0], ind[1], s.w / U, s.h / U, cs.w / U, cs.h / U, Math.log1p(desc.get(c) - 1)])
-          || [(i - (n - 1) / 2) * 3 * U, 3.5 * U];
-        return { c, i, cs, t, g: null };
+        const a = (aim ? aim(c, i) : dir + (n > 1 ? S - (2 * S * i) / (n - 1) : 0)) + (rnd(c, 1) - 0.5) * prm.molJa * DEG;
+        return { c, a, i, g: atome(c, a) };
       });
-      // profondeur et penchant latéral appris (jamais au-dessus du parent : la lecture descend)
-      const lat = subs.map((sb) => sb.t[0]), mean = lat.reduce((a, b) => a + b, 0) / n;
-      subs.forEach((sb) => { sb.dy = Math.max(s.h / 2 + sb.cs.h / 2 + prm.molGap, sb.t[1]); });
-      // l'ordre de gauche à droite reste celui du cours (les miniatures ne disent pas l'ordre de lecture)
-      const byLat = subs;
-      // première pose côte à côte (vraies largeurs), centrée sous le parent, décalée comme le réseau le veut
-      const gap = prm.molPad + 8;
-      const tot = byLat.reduce((a, sb) => a + sb.cs.w, 0) + gap * (n - 1);
-      let x = -tot / 2 + Math.max(-tot / 4, Math.min(tot / 4, depth ? mean * 0.5 : 0));
-      for (const sb of byLat) { sb.dx = x + sb.cs.w / 2; x += sb.cs.w + gap; }
-      for (const sb of subs) sb.g = fan(sb.c, depth + 1, (() => { const m = Math.hypot(sb.dx, sb.dy) || 1; return [sb.dx / m, sb.dy / m]; })());
-      // dans l'ordre appris, du milieu vers les bords : chaque grappe ne glisse que vers l'extérieur (ou
-      // descend un peu) jusqu'à une place libre — l'ordre de lecture est gardé, aucun lien ne se croise
-      const mid = byLat.reduce((k, sb, i) => (Math.abs(sb.dx) < Math.abs(byLat[k].dx) ? i : k), 0);
-      const order = [byLat[mid]];
-      for (let d = 1; d < n; d++) { if (byLat[mid + d]) order.push(byLat[mid + d]); if (byLat[mid - d]) order.push(byLat[mid - d]); }
-      const rank = new Map(byLat.map((sb, i) => [sb, i]));
-      const steps = fanSteps(prm.fanDepth);
+      // les feuilles d'abord (au plus près), puis les grappes, des plus petites aux plus grandes
+      // (autour de la racine, l'inverse : les grosses parties d'abord, au plus près — les petites se glissent)
+      const order = subs.slice().sort((p, q) => (aim ? -1 : 1) * (p.g.pos.size - q.g.pos.size) || p.i - q.i);
       for (const sb of order) {
+        const cs = size(T.byId.get(sb.c));
         const L = T.labelTo && T.labelTo.get(sb.c), ls = L ? labelSize('x'.repeat(L)) : null;
-        const side = rank.get(sb) === mid ? 0 : rank.get(sb) > mid ? 1 : -1;
-        // boîte de toute la grappe : on ne regarde rectangle par rectangle que là où elle touche
-        const gb = sb.g.rects.reduce((a, q) => ({ x0: Math.min(a.x0, q.x0), y0: Math.min(a.y0, q.y0), x1: Math.max(a.x1, q.x1), y1: Math.max(a.y1, q.y1) }), { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
-        const free = (ox, oy, strict) => {
-          const gm = { x0: gb.x0 + ox - M, y0: gb.y0 + oy - M, x1: gb.x1 + ox + M, y1: gb.y1 + oy + M };
-          const near = rects.filter((p) => hit(gm, p));
-          let own = null;
-          if (near.length) {
-            own = sb.g.rects.map((q) => mv(q, ox, oy));
-            for (const q of own) {
-              const qm = { x0: q.x0 - M, y0: q.y0 - M, x1: q.x1 + M, y1: q.y1 + M };
-              for (const p of near) if (hit(qm, p)) return null;
-            }
-          }
-          if (strict) {
-            const gs = { x0: gb.x0 + ox, y0: gb.y0 + oy, x1: gb.x1 + ox, y1: gb.y1 + oy };
-            for (const g of segs) if (cut(g, gs)) { own = own || sb.g.rects.map((q) => mv(q, ox, oy)); for (const q of own) if (cut(g, q)) return null; }
-          }
-          own = own || sb.g.rects.map((q) => mv(q, ox, oy));
+        const free = (a, r, loose) => {
+          const ux = Math.cos(a), uy = Math.sin(a), ox = ux * r, oy = uy * r;
+          const link = [0, 0, ox, oy];
+          const own = sb.g.rects.map((q) => mv(q, ox, oy));
           const tag = ls ? box(ox / 2, oy / 2, ls.w, ls.h, 4) : null;
-          if (tag) for (const p of rects) if (hit(tag, p)) return null;
-          if (strict) {
-            const m = Math.hypot(ox, oy) || 1, ux = ox / m, uy = oy / m;
-            const e1 = edge(s.w, s.h, ux, uy), e2 = edge(sb.cs.w, sb.cs.h, ux, uy);
-            const body = [ux * e1, uy * e1, ox - ux * e2, oy - uy * e2];
-            for (const p of rects.slice(1)) if (cut(body, p)) return null;
-            for (const q of own.slice(1)) if (cut(body, q)) return null;
+          for (const q of own) {
+            const qm = { x0: q.x0 - M, y0: q.y0 - M, x1: q.x1 + M, y1: q.y1 + M };
+            for (const p of rects) if (hit(qm, p)) return false;
+            if (tag && hit(q, tag)) return false;
+            if (loose) continue;
+            for (const g of segs) if (cut(g, q)) return false;
+            for (const g of lanes) if (cut(g, q)) return false;
           }
-          return { ox, oy, own, tag };
+          if (loose) { for (const p of rects) if (tag && hit(tag, p)) return false; return { ox, oy, link, own, tag }; }
+          // le lien (sans ses deux extrémités) et son libellé ne touchent rien
+          const e1 = edge(s.w, s.h, ux, uy), e2 = edge(cs.w, cs.h, ux, uy);
+          const body = [ux * e1, uy * e1, ox - ux * e2, oy - uy * e2];
+          for (const p of rects.slice(1)) { if (cut(body, p)) return false; if (tag && hit(tag, p)) return false; }
+          for (const q of own.slice(1)) if (cut(body, q)) return false;
+          for (const g of sb.g.segs) for (const p of rects) if (cut([g[0] + ox, g[1] + oy, g[2] + ox, g[3] + oy], p)) return false;
+          return { ox, oy, link, own, tag };
         };
+        const ux = Math.cos(sb.a), uy = Math.sin(sb.a);
+        const r0 = edge(s.w, s.h, ux, uy) + edge(cs.w, cs.h, ux, uy) + prm.molGap + (ls ? Math.max(ls.w * Math.abs(ux), ls.h * Math.abs(uy)) + 8 : 0);
         let got = null;
-        for (const strict of [true, false]) {
-          for (const [dx, dy] of steps) {
-            if (!side && dx) { if ((got = free(sb.dx + dx, sb.dy + dy, strict)) || (got = free(sb.dx - dx, sb.dy + dy, strict))) break; continue; }
-            if ((got = free(sb.dx + side * dx, sb.dy + dy, strict))) break;
+        // du plus près au plus loin ; plus on s'éloigne, plus l'angle peut tourner (jusqu'à ±126°) :
+        // une grosse grappe qui ne tient pas dans son axe se pose de biais plutôt que d'être jetée au loin
+        const tries = (k) => { const t = [0]; for (let d = 1; d <= k; d++) t.push(d, -d); return t; };
+        for (const loose of [false, true]) {
+          for (let r = r0; !got && r < r0 + 1600; r += 8 + (r - r0) * 0.12) {
+            const k = Math.min(18, 3 + Math.floor((r - r0) / 90));
+            for (const d of tries(k)) if ((got = free(sb.a + d * prm.molTry * DEG, r, loose))) break;
           }
           if (got) break;
         }
-        if (!got) { let y = sb.dy; while (!(got = free(sb.dx, y, false))) y += 24; }
+        // dernier recours : tout droit, sans rien chevaucher
+        for (let r = r0 + 1600; !got; r += 40) got = free(sb.a, r, true);
         for (const [k, p] of sb.g.pos) pos.set(k, { x: p.x + got.ox, y: p.y + got.oy });
         rects.push(...got.own);
         if (got.tag) rects.push(got.tag);
-        segs.push([0, 0, got.ox, got.oy], ...sb.g.segs.map((g) => [g[0] + got.ox, g[1] + got.oy, g[2] + got.ox, g[3] + got.oy]));
+        segs.push(got.link, ...sb.g.segs.map((g) => [g[0] + got.ox, g[1] + got.oy, g[2] + got.ox, g[3] + got.oy]));
       }
       return { pos, rects, segs };
     };
-    const g = fan(rootId, 0, [0, 1]);
+    // la racine est elle aussi un atome : ses parties l'entourent dans l'ordre du cours — à gauche,
+    // dessous, à droite — et les dernières, si elles sont légères (une feuille, une petite grappe :
+    // « À retenir », une conclusion), gravitent au-dessus d'elle
+    const weight = (id) => { let n = 1; for (const c of T.kids.get(id) || []) n += weight(c); return n; };
+    const heavy = Math.max(...kids.map(weight));
+    const above = [];
+    for (let i = kids.length - 1; i >= 0 && kids.length - above.length > 2 && above.length < Math.floor(kids.length / 3); i--) {
+      if (weight(kids[i]) > Math.max(1, heavy * prm.molLight)) break;
+      above.unshift(kids[i]);
+    }
+    const row = kids.filter((c) => !above.includes(c));
+    const n = row.length, k = above.length;
+    const S = n > 1 ? Math.min(90, 45 * (n - 1)) * DEG : 0;
+    const aim = (c) => {
+      const i = row.indexOf(c);
+      if (i >= 0) return Math.PI / 2 + (n > 1 ? S - (2 * S * i) / (n - 1) : 0);
+      const j = above.indexOf(c);
+      return -Math.PI / 2 + (k > 1 ? (j / (k - 1) - 0.5) * 100 * DEG : 0);
+    };
+    const g = atome(rootId, Math.PI / 2, prm.molLane, aim);
     for (const [id, p] of g.pos) { const z = size(T.byId.get(id)); out[id] = { x: p.x + rs.w / 2 - z.w / 2, y: p.y + rs.h / 2 - z.h / 2 }; }
     return out;
   }
@@ -1451,6 +1429,16 @@
     const par = new Map();
     for (const e of map.edges) if (e.kind === 'tree') par.set(e.to, e.from);
     return separate(map, pos, size, mode, (a, b) => AIR + (par.get(a) !== par.get(b) ? 16 : 0) + (link.get(a + '|' + b) || 0));
+  }
+  /** Deux nœuds à moins de SAFE px l'un de l'autre ? */
+  function crowded(map, pos, size) {
+    const S = R.store;
+    const r = map.nodes.filter((n) => pos[n.id]).map((n) => { const z = size(S.node(map, n.id) || n), p = pos[n.id]; return [p.x, p.y, p.x + z.w, p.y + z.h]; });
+    for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) {
+      const a = r[i], b = r[j];
+      if (Math.min(a[2], b[2]) - Math.max(a[0], b[0]) + SAFE > 0.5 && Math.min(a[3], b[3]) - Math.max(a[1], b[1]) + SAFE > 0.5) return true;
+    }
+    return false;
   }
   function separate(map, pos, size, mode, pad = SAFE) {
     const padOf = typeof pad === 'function' ? pad : () => pad;
@@ -1786,7 +1774,14 @@
     for (const id in best.pos) pos[id] = { ...best.pos[id] };
     separate(map, pos, size, best.mode);
     // vers le bas : l'atome a déjà gardé ses distances (molPad) — l'aérer le disloquerait
-    if (best.mode !== 'tree') aerate(map, pos, size, best.mode);
+    // l'air n'est gardé que s'il n'a rien cassé (sur une très grande carte, les poussées en chaîne
+    // peuvent ne pas converger et laisser des nœuds se chevaucher : on garde alors la version sûre)
+    if (best.mode !== 'tree') {
+      const airy = {};
+      for (const id in pos) airy[id] = { ...pos[id] };
+      aerate(map, airy, size, best.mode);
+      if (!crowded(map, airy, size)) Object.assign(pos, airy);
+    }
     return { pos, mode: best.mode, score: best.score, params: best.prm, tried };
   }
 

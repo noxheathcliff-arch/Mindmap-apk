@@ -1,17 +1,17 @@
 # Graph Report - Mindmap-apk  (2026-11-04)
 
 ## Corpus Check
-- 74 files · ~425,844 words
+- 74 files · ~425,857 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 11 file(s) not represented in the graph (top: .css 8, (none) 2, .webmanifest 1)
 
 ## Summary
-- 1047 nodes · 2479 edges · 56 communities (44 shown, 12 thin omitted)
+- 1047 nodes · 2480 edges · 61 communities (49 shown, 12 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 215 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1f2867e0`
+- Built from commit: `781710fc`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -33,17 +33,21 @@
 - train.cjs
 - 6. Composition par écran
 - paint
+- .plural
 - from_maps.cjs
 - childrenOf
+- U
 - Utilisation
 - folders.test.cjs
 - checkvis.cjs
+- markdown.js
 - .clear
 - binder.js
 - 4. Système de design (Material Design 3)
 - train_nn.py
 - course.js
 - exercises.test.cjs
+- mount
 - sw.js
 - Mindmap-apk
 - carnet.js
@@ -63,6 +67,7 @@
 - 3. Architecture de l'information
 - fonts.js
 - 5. Motion design
+- mark.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `Editor()` - 164 edges
@@ -79,19 +84,19 @@
 ## Surprising Connections (you probably didn't know these)
 - `Éditeur, store` --references--> `sanitize()`  [INFERRED]
   docs/audit-organisation-3.md → js/store.js
-- `4.4 Types de nœuds — trois apparences (v4.1)` --references--> `calm()`  [INFERRED]
-  DESIGN.md → js/layout.js
-- `3. Style par nœud (données)` --references--> `calm()`  [INFERRED]
-  docs/plan-refonte-cartes.md → js/layout.js
+- `4.4 Types de nœuds — trois apparences (v4.1)` --references--> `h()`  [INFERRED]
+  DESIGN.md → js/carnet.js
+- `3. Style par nœud (données)` --references--> `h()`  [INFERRED]
+  docs/plan-refonte-cartes.md → js/carnet.js
+- `L'essentiel` --references--> `w()`  [INFERRED]
+  skills/pioneer-livre-vers-cours/SKILL.md → js/learn.js
 - `3. Inventaire (≥ 25 pistes) — gain, coût, risque, statut` --references--> `phraseRelations()`  [INFERRED]
-  docs/audit-organisation-3.md → js/organize.js
-- `Moteur (`js/organize.js`)` --references--> `mergeNodes()`  [INFERRED]
   docs/audit-organisation-3.md → js/organize.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (56 total, 12 thin omitted)
+## Communities (61 total, 12 thin omitted)
 
 ### Community 0 - "render"
 Cohesion: 0.16
@@ -102,8 +107,8 @@ Cohesion: 0.13
 Nodes (25): build(), addCourse(), addFolder(), addMap(), applyImport(), changed(), course(), deleteFolder() (+17 more)
 
 ### Community 2 - "layout.js"
-Cohesion: 0.07
-Nodes (67): Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), aerate(), anchorPoint(), arrange(), bbox(), buildTree(), busDown() (+59 more)
+Cohesion: 0.05
+Nodes (81): 4.4 Types de nœuds — trois apparences (v4.1), Historique : différenciation monochrome par type (jusqu'à v4.0), Routage et libellés (`js/layout.js`, `js/views/editor.js`), 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur (+73 more)
 
 ### Community 3 - "organize.js"
 Cohesion: 0.07
@@ -158,8 +163,12 @@ Cohesion: 0.50
 Nodes (4): 6. Composition par écran, Desktop (large / extra-large), Mobile (compact, Android), Tablette (medium / expanded)
 
 ### Community 16 - "paint"
-Cohesion: 0.14
-Nodes (19): cells(), inline(), legifrance(), parseList(), readTable(), render(), tableHtml(), tables() (+11 more)
+Cohesion: 0.27
+Nodes (11): articleRef(), byMap(), highlight(), open(), finish(), group(), paint(), paintScopes() (+3 more)
+
+### Community 17 - ".plural"
+Cohesion: 0.21
+Nodes (12): 4.6 Cours — des dossiers (dans « Mes cours » seulement), courseCard(), foldGestures(), mount(), openCourse(), reviewBtn(), sessionHero(), streakChip() (+4 more)
 
 ### Community 18 - "from_maps.cjs"
 Cohesion: 0.11
@@ -168,6 +177,10 @@ Nodes (14): ctx, files, fs, out, path, root, vm, win (+6 more)
 ### Community 20 - "childrenOf"
 Cohesion: 0.16
 Nodes (16): ancestors(), canTree(), childrenOf(), descendants(), hiddenSet(), isComponent(), isReviewable(), kickerOf() (+8 more)
+
+### Community 21 - "U"
+Cohesion: 0.22
+Nodes (7): U, autoLabel(), logicText(), markdown(), relations(), render(), tree()
 
 ### Community 22 - "Utilisation"
 Cohesion: 0.20
@@ -180,6 +193,10 @@ Nodes (10): course(), node(), { S, win }, ctx, files, fs, path, root (+2 more)
 ### Community 24 - "checkvis.cjs"
 Cohesion: 0.16
 Nodes (18): crosses(), ctx, files, fs, inRect(), measure(), ov(), overlapLen() (+10 more)
+
+### Community 25 - "markdown.js"
+Cohesion: 0.30
+Nodes (8): cells(), inline(), legifrance(), parseList(), readTable(), render(), tableHtml(), tables()
 
 ### Community 26 - ".clear"
 Cohesion: 0.15
@@ -198,20 +215,24 @@ Cohesion: 0.18
 Nodes (3): depth(), desc(), pr()
 
 ### Community 32 - "course.js"
-Cohesion: 0.06
-Nodes (51): 4.6 Cours — des dossiers (dans « Mes cours » seulement), dot(), hueFor(), mark(), paper(), tint(), vars(), U (+43 more)
+Cohesion: 0.23
+Nodes (18): contentsText(), countUp(), folderBlock(), levelBlocks(), mapCard(), mount(), notFound(), numeral() (+10 more)
 
 ### Community 33 - "exercises.test.cjs"
 Cohesion: 0.25
 Nodes (4): course(), EX, node(), { S }
+
+### Community 34 - "mount"
+Cohesion: 0.44
+Nodes (8): courseRow(), dayDeck(), forecastCard(), loyaltyCard(), masteryRing(), mount(), sessionHref(), weakList()
 
 ### Community 39 - "Mindmap-apk"
 Cohesion: 0.50
 Nodes (3): Graphify, Mindmap-apk, Quota
 
 ### Community 40 - "carnet.js"
-Cohesion: 0.07
-Nodes (52): 4.4 Types de nœuds — trois apparences (v4.1), 10. Autour, 1. Trois apparences, 2. Nouveau type `paragraphe`, 3. Style par nœud (données), 4. Couleur, 5. Typographie, 6. Liens (+44 more)
+Cohesion: 0.10
+Nodes (38): Carnet(), carve(), close(), cutAt(), draw(), fit(), flag(), _flipCover() (+30 more)
 
 ### Community 41 - "quota-router"
 Cohesion: 0.25
@@ -269,6 +290,10 @@ Nodes (7): 3.1 Systèmes d'organisation, 3.2 Système d'étiquetage, 3.3 bis Vue
 Cohesion: 0.33
 Nodes (6): 5.1 Diagnostic, 5.2 Tokens (un seul système, CSS et JS), 5.3 Spécification, 5.4 Performance, 5.5 Accessibilité, 5. Motion design
 
+### Community 59 - "mark.js"
+Cohesion: 0.43
+Nodes (6): dot(), hueFor(), mark(), paper(), tint(), vars()
+
 ## Knowledge Gaps
 - **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -281,11 +306,11 @@ _Questions this graph is uniquely positioned to answer:_
   _`Editor()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **Should `changed` be split into smaller, more focused modules?**
   _Cohesion score 0.12698412698412698 - nodes in this community are weakly interconnected._
-- **Why does `t()` connect `course.js` to `mapsOf`, `from_maps.cjs`?**
+- **Why does `t()` connect `.plural` to `mapsOf`, `from_maps.cjs`?**
   _High betweenness centrality (0.114) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `onKey()` (e.g. with `Editor()` and `.unmount()`) actually correct?**
   _`onKey()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `layout.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.06807511737089202 - nodes in this community are weakly interconnected._
-- **Why does `U` connect `course.js` to `changed`, `ui`, `app.js`, `mount`, `paint`, `mapsOf`, `.dayKey`, `.clear`?**
+  _Cohesion score 0.05185779203421545 - nodes in this community are weakly interconnected._
+- **Why does `U` connect `U` to `changed`, `ui`, `app.js`, `mount`, `paint`, `.plural`, `mapsOf`, `.dayKey`, `.clear`?**
   _High betweenness centrality (0.111) - this node is a cross-community bridge._

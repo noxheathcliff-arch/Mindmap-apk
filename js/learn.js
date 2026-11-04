@@ -28,7 +28,7 @@
   const prior = R.learnPrior || {};
   const PRIOR = { ...BASE, ...(prior.w || {}) };
   /** Réglages que l'optimiseur essaie (autour des valeurs par défaut de layout.js) */
-  const TUNE = { molGap: [24, 34, 46], fanDepth: [0.25, 0.5, 0.8] };
+  const TUNE = { molGap: [24, 34, 46], molSpread: [100, 125, 150], molStep: [24, 32, 40], molLight: [0.2, 0.34, 0.5] };
   const MEM = 300;
   const DEF_GAP = (R.layout && R.layout.P && R.layout.P.molGap) || 34;
 
