@@ -1732,8 +1732,7 @@ a.resume:active { transform: none; }
   bottom: 100%; left: calc(var(--sp-4) + var(--tab-at, 0) * 17%);
   min-width: 52px; height: 26px; padding: 0 14px;
   border-radius: 7px 7px 0 0;
-  background: var(--blanc-grain, none) 0 0 / 160px 160px, var(--card-face);
-  background-color: var(--card-face);
+  background: var(--card-face);
   /* l'onglet est renforcé (plastique translucide sur la carte) : un filet clair sur l'arête */
   box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 1px 0 0 rgb(255 255 255 / .25), 0 -1px 1px -0.5px rgb(70 60 40 / .18);
   color: color-mix(in oklab, var(--blanc-ink) 82%, var(--tab));
@@ -1770,9 +1769,6 @@ a.resume:active { transform: none; }
 }
 @media (hover: hover) {
   .page-course .unit-row.is-map:hover, .page-course .part .unit-row.is-map:hover {
-    background:
-      radial-gradient(circle at 16px 50%, var(--hole) 0 5px, rgb(70 60 40 / .42) 5px 5.8px, rgb(70 60 40 / .10) 5.8px 6.6px, transparent 7px),
-      var(--blanc-grain, none) 0 0 / 160px 160px, #fffffd;
     transform: translateY(-1px);
     box-shadow: 0 0 0 .5px rgb(70 60 40 / .14), 0 2px 3px rgb(70 60 40 / .10), 0 8px 18px -10px rgb(70 60 40 / .45);
   }
@@ -1789,7 +1785,7 @@ a.resume:active { transform: none; }
 .page-course .unit-list > li > .unit-row.is-folder {
   --card-face: var(--tab);
   border-radius: 3px;
-  background: var(--blanc-grain, none) 0 0 / 160px 160px, var(--card-face); background-color: var(--card-face);
+  background: var(--card-face);
   box-shadow: var(--sheet-shadow), inset 0 1px 0 rgb(255 255 255 / .5);
 }
 .page-course .unit-row.is-folder .unit-num { background: rgb(255 255 255 / .55); color: var(--blanc-ink); font-family: var(--font-serif, 'Source Serif 4', Georgia, serif); }

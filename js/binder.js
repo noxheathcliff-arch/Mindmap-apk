@@ -41,8 +41,7 @@
   function norm(x, y) { const l = Math.hypot(x, y) || 1; return { x: x / l, y: y / l, l }; }
   const f = (v) => +v.toFixed(2);
 
-  /* ---- Les définitions SVG partagées (dégradé de la carte, grain, reflet de l'onglet), posées une fois ---- */
-  const GRAIN = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
+  /* ---- Les définitions SVG partagées (dégradé de la carte, reflet de l'onglet), posées une fois ---- */
   function defs() {
     if (document.getElementById('binder-defs')) return;
     const s = svg('svg', { id: 'binder-defs', width: 0, height: 0, 'aria-hidden': 'true', style: 'position:absolute;width:0;height:0;overflow:hidden' }, [
@@ -52,9 +51,6 @@
           svg('stop', { offset: 0, 'stop-color': 'var(--card)' }),
           svg('stop', { offset: .55, 'stop-color': 'var(--card)' }),
           svg('stop', { offset: 1, 'stop-color': 'var(--card-2)' }),
-        ]),
-        svg('pattern', { id: 'inter-grain-p', width: 60, height: 60, patternUnits: 'userSpaceOnUse' }, [
-          svg('image', { href: GRAIN, width: 60, height: 60 }),
         ]),
         // plastique de l'onglet : reflet horizontal net (une feuille de Mylar plastifiée)
         svg('linearGradient', { id: 'inter-sheen', gradientUnits: 'userSpaceOnUse', x1: W - 4, y1: 0, x2: W + P, y2: 0 }, [
@@ -101,7 +97,6 @@
       svg('defs', {}, [svg('clipPath', { id }, [svg('rect', { x: W - 4, y: y0 - 4, width: P + 4, height: y1 - y0 + 8 })])]),
       o.shadow !== false && svg('path', { class: 'i-shadow', d: body, transform: 'translate(.5 1.1)' }),
       svg('path', { class: 'i-body', d: body }),
-      svg('path', { class: 'i-grain', d: body }),
       // l'onglet : le Mylar teinté recouvre 4 mm de carte puis dépasse
       svg('g', { 'clip-path': `url(#${id})` }, [
         svg('path', { class: 'i-tab', d: body }),

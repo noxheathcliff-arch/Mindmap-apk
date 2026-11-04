@@ -130,22 +130,12 @@
   position: absolute; inset: 0;
   border-radius: 2px 2px 3px 3px;
   background-color: var(--nb-paper);
-  /* feuille blanche unie (80 g) : ni lignes ni carreaux, seulement le grain du papier */
-  background-image: var(--blanc-grain, none);
-  background-size: 160px 160px;
+  /* feuille blanche unie (80 g), sans grain : la page tourne en 3D sous un masque (scintillement) */
   -webkit-mask: var(--nb-holes); mask: var(--nb-holes);
-}
-/* la bande des trous reste nette (pas de grain sous la reliure) */
-.nb-paper::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--nb-top) - 2px);
-  background: var(--nb-paper);
 }
 .nb-paper.is-back {
   background-color: var(--nb-paper-back);
-  background-image: var(--blanc-grain, none);
-  background-size: 160px 160px;
 }
-.nb-paper.is-back::before { background: var(--nb-paper-back); }
 
 .nb-content {
   position: absolute; inset: 0;
