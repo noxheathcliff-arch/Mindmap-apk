@@ -1816,8 +1816,13 @@
     return { x: last.x, y: last.y + size(last).h + GAP_Y };
   }
 
+  /* Version du moteur de rangement : À INCRÉMENTER à chaque changement de disposition ou de
+     rangement (layout.js, tailles, libellés…). Au chargement, toute carte rangée par une version
+     antérieure est rangée à nouveau (store.load → relayout), avec « Annuler » à l'ouverture. */
+  const ENGINE = 2;
+
   R.layout = {
-    P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
+    ENGINE, P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
     arrange, tidy, evaluate, childSlot, flow, separate, SAFE, _labelClashes: labelClashes,
     treeSides, treeCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,

@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1793760029.7574856,
-    "seen": 1793760174.4847028,
-    "ast_hash": "486de295206f17dddad1d068241c305a",
+    "mtime": 1793760872.8690186,
+    "seen": 1793760965.126874,
+    "ast_hash": "2c8c2aa40f32e9fd1a56a116f3ccb975",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1793759450.1079023,
-    "seen": 1793760174.4847252,
-    "ast_hash": "0cff461dca487c9ce75abcdddfca6539",
+    "mtime": 1793760872.870479,
+    "seen": 1793760965.1268914,
+    "ast_hash": "36696464f077e47564a5a55f76d7280c",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1793759477.876944,
-    "seen": 1793760174.484733,
-    "ast_hash": "d980613053844c0f46e86d96862bf994",
+    "mtime": 1793760881.345618,
+    "seen": 1793760965.1268969,
+    "ast_hash": "a78e85918c3b6fc8d116a7b563c6fde2",
     "semantic_hash": ""
   },
   "js/views/library.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793760170.9530225,
-    "seen": 1793760174.4847474,
-    "ast_hash": "6f5d723bad3b7fd72ac2584f0e655e0d",
+    "mtime": 1793760957.588762,
+    "seen": 1793760965.126907,
+    "ast_hash": "26d95e435c71db97d9f9e5afa4880274",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792835119.4164796,
-    "seen": 1792835130.0229673,
-    "ast_hash": "661c712cb4bff888c5b17e5d66f6ac4a",
+    "mtime": 1793760951.1930983,
+    "seen": 1793760965.126955,
+    "ast_hash": "142b2634f02b64a7cbe604af657fc910",
     "semantic_hash": ""
   },
   "tests/folders.test.cjs": {
@@ -534,15 +534,21 @@
     "semantic_hash": ""
   },
   "js/atelier.js": {
-    "mtime": 1793755068.9584339,
-    "seen": 1793755249.4335878,
-    "ast_hash": "82cd4cb09529f1c1d297b42d46f2241d",
+    "mtime": 1793760872.871316,
+    "seen": 1793760965.1268604,
+    "ast_hash": "63c0fef97926e2c7e21b2fb64debbbc7",
     "semantic_hash": ""
   },
   "tests/learn/fan/from_maps.cjs": {
     "mtime": 1793755178.3039796,
     "seen": 1793755249.4336555,
     "ast_hash": "0705524ec17d18cf211aefa782e8627a",
+    "semantic_hash": ""
+  },
+  "tests/relayout.test.cjs": {
+    "mtime": 1793760903.5764492,
+    "seen": 1793760965.1269307,
+    "ast_hash": "3b471d850620d8f87f1f442635599dec",
     "semantic_hash": ""
   }
 }

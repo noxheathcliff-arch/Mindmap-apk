@@ -1631,6 +1631,8 @@
       if (!opts.noUndo) { st.undo.push(snapshot()); st.redo = []; st.coalesce = null; }
       // l'ordre de lecture suit la disposition : on la fixe avant l'animation (rien ne se renumérote en route)
       map.layout = res.mode;
+      map.layoutVer = R.layout.ENGINE;
+      delete map.relaid;
       if (pick === 'organic') delete map.layoutPick; else map.layoutPick = pick;
       if (!moved) { S.touchMap(map, 'edit'); render(); fit(); announce(); return; }
       if (tidyStop) tidyStop();
@@ -3862,6 +3864,7 @@
         const res = R.layout.arrange(map, sizeFn, { mode: map.layoutPick || 'organic', viewport: viewportSize() });
         for (const n of map.nodes) if (res.pos[n.id]) Object.assign(n, res.pos[n.id]);
         map.layout = res.mode;
+        map.layoutVer = R.layout.ENGINE;
         delete map.needsLayout;
         laidOut = true;
         S.save();
@@ -3883,6 +3886,24 @@
         return true;
       };
       if (!laidOut) keepApart();
+      // carte rangée à nouveau après une mise à jour du moteur : on le dit, on propose d'annuler
+      if (map.relaid) {
+        const prev = map.relaid;
+        delete map.relaid;
+        S.save();
+        if (!map.readOnly) setTimeout(() => {
+          if (st.destroyed) return;
+          ui.snack('Carte rangée avec le nouveau moteur de disposition', { duration: 7000, action: 'Annuler', onAction: () => {
+            if (st.destroyed) return;
+            st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+            for (const n of map.nodes) if (prev.pos[n.id]) { n.x = prev.pos[n.id][0]; n.y = prev.pos[n.id][1]; }
+            if (prev.layout) map.layout = prev.layout;
+            if (prev.layoutPick) map.layoutPick = prev.layoutPick; else delete map.layoutPick;
+            S.touchMap(map, 'edit');
+            render(); fit(); updateHistoryBtns();
+          } });
+        }, 600);
+      }
       // polices pas encore chargées : les tailles mesurées sont provisoires — on remesure
       // (et on range à nouveau, dans la même disposition, si la carte vient d'être rangée)
       if (document.fonts && document.fonts.status !== 'loaded') {

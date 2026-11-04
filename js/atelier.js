@@ -60,6 +60,7 @@
     for (const [title, spec, links] of MAPS) {
       const m = R.seedBuild(course.id, title, spec, links || []);
       m.layout = 'tree';
+      m.keepPos = true; // positions faites à la main : jamais rangées automatiquement
       S.data.maps.push(m);
     }
     S.data.settings.atelier = VERSION;

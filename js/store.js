@@ -468,6 +468,11 @@
         ...(m.typeColors && typeof m.typeColors === 'object' && Object.keys(m.typeColors).some((t) => TYPES[t] && HUES[m.typeColors[t]])
           ? { typeColors: Object.fromEntries(Object.entries(m.typeColors).filter(([t, c]) => TYPES[t] && HUES[c])) } : {}),
         ...(inRange(m.calm, [0, 1]) && +m.calm > 0 ? { calm: Math.round(+m.calm * 100) / 100 } : {}),
+        // version du moteur qui a rangé la carte (rangement refait quand le moteur change) ;
+        // keepPos : positions faites à la main à garder (atelier) ; relaid : positions d'avant un rangement automatique
+        ...(Number.isFinite(+m.layoutVer) && m.layoutVer !== null ? { layoutVer: +m.layoutVer } : {}),
+        ...(m.keepPos ? { keepPos: true } : {}),
+        ...(m.relaid && m.relaid.pos && typeof m.relaid.pos === 'object' ? { relaid: { layout: LAYOUTS.includes(m.relaid.layout) ? m.relaid.layout : null, layoutPick: m.relaid.layoutPick || null, viewport: m.relaid.viewport || null, pos: m.relaid.pos } } : {}),
         // rangement : journal des corrections appliquées et corrections refusées (elles ne reviennent pas)
         ...(Array.isArray(m.organizeLog) && m.organizeLog.length ? { organizeLog: m.organizeLog.filter((x) => x && x.key && x.title).slice(-60).map((x) => ({
           at: +x.at || 0, key: String(x.key), kind: String(x.kind || ''), title: String(x.title), detail: String(x.detail || '').slice(0, 240),
@@ -627,6 +632,7 @@
         // plan rangé autrement qu'en pyramide (anciennes versions) : rangé à nouveau
         for (const m of this.data.maps) if (m.role === 'plan' && m.layout !== 'down' && m.nodes.length) { m.needsLayout = true; try { laid = this.prelayout(m, true) || laid; } catch (e) { /* idem */ } }
         for (const m of this.data.maps) { try { laid = this.prelayout(m) || laid; } catch (e) { /* rangement impossible : l'éditeur s'en chargera */ } }
+        laid = this.relayoutOutdated() || laid;
         if (laid) setTimeout(() => this.save(), 0);
         // migration (ou rattrapage) : la base principale reçoit tout de suite la bonne copie
         if (idb.ok && pick !== db) this._save();
@@ -855,7 +861,7 @@
       const root = this.newNode({ type: TYPES[rootType] ? rootType : 'notion', title: t, x: 0, y: 0 });
       const fid = folderId && this.folder(folderId) ? folderId : null;
       const m = { id: U.uid('m'), courseId, title: t, createdAt: Date.now(), updatedAt: Date.now(), viewport: null, nodes: [root], edges: [],
-        folderId: fid, order: this.nextOrder(courseId, fid) };
+        folderId: fid, order: this.nextOrder(courseId, fid), ...(R.layout ? { layoutVer: R.layout.ENGINE } : {}) };
       this.data.maps.push(m);
       const c = this.course(courseId);
       if (c) c.updatedAt = Date.now();
@@ -1468,7 +1474,33 @@
       const r = R.layout.arrange(m, (n) => R.layout.estimate(n, m), { mode: m.layoutPick || 'organic', viewport: vp, fast: true });
       for (const n of m.nodes) if (r.pos[n.id]) Object.assign(n, r.pos[n.id]);
       m.layout = r.mode;
+      m.layoutVer = R.layout.ENGINE;
       return true;
+    },
+    /**
+     * Moteur de rangement mis à jour : chaque carte rangée par une version antérieure est rangée
+     * à nouveau, dans sa disposition actuelle. Les positions d'avant sont gardées (relaid) : l'éditeur
+     * propose « Annuler » à la prochaine ouverture. Cartes à positions manuelles (atelier) : intactes.
+     */
+    relayoutOutdated() {
+      if (!R.layout || !R.layout.ENGINE) return false;
+      const atelier = new Set(this.data.courses.filter((c) => c.title === 'Atelier rangement').map((c) => c.id));
+      let any = false;
+      for (const m of this.data.maps) {
+        if (m.layoutVer === R.layout.ENGINE || m.keepPos || atelier.has(m.courseId) || m.needsLayout) continue;
+        if (m.nodes.length < 2) { m.layoutVer = R.layout.ENGINE; continue; }
+        const pos = {};
+        for (const n of m.nodes) pos[n.id] = [n.x, n.y];
+        const prev = { layout: m.layout || null, layoutPick: m.layoutPick || null, viewport: m.viewport || null, pos };
+        // la disposition affichée est gardée (pas de bascule silencieuse vers le défaut)
+        if (!m.layoutPick && m.layout && m.layout !== 'organic') m.layoutPick = m.layout;
+        m.needsLayout = true;
+        try {
+          if (this.prelayout(m, true)) { if (!m.relaid) m.relaid = prev; m.viewport = null; any = true; }
+          else delete m.needsLayout;
+        } catch (e) { delete m.needsLayout; }
+      }
+      return any;
     },
     restoreSnapshot(snapshot) {
       this.data = sanitize(JSON.parse(snapshot));
