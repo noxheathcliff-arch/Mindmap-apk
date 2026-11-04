@@ -518,6 +518,7 @@
       out.settings.readingAids = d.settings.readingAids !== false;
       // Ranger applique de lui-même les corrections d'organisation établies (vérifiées, annulables)
       out.settings.autoOrganize = d.settings.autoOrganize !== false;
+      out.settings.atelier = +d.settings.atelier || 0; // version du cours d'entraînement au rangement déjà ajoutée
       // typographie des cartes par niveau (chapitre, section… notes) : seules les valeurs valides sont gardées
       const ty = d.settings.typo;
       if (ty && typeof ty === 'object') {

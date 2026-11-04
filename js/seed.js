@@ -22,6 +22,7 @@
     return map;
   }
 
+  R.seedBuild = build;
   R.seed = function () {
     const S = R.store;
     const course = {

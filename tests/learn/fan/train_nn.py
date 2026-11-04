@@ -1,7 +1,11 @@
 import json,numpy as np
 from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GroupKFold
+import os
 D=json.load(open('xmind.json'))
+# cartes rangées à la main (from_maps.cjs) : on les ajoute, chacune répétée selon son poids
+if os.path.exists('hand.json'):
+  for o in json.load(open('hand.json')): D+= [o]*int(o.get('w',1))
 X=[];Y=[];G=[]
 for gi,o in enumerate(D):
   N=o['nodes']; P={int(k):v for k,v in o['parent'].items()}
@@ -24,7 +28,7 @@ for gi,o in enumerate(D):
     n=len(ch)
     for i,c in enumerate(ch):
       X.append([n, i/(n-1) if n>1 else .5, depth(p), ind[0], ind[1], W[p]/U, H[p]/U, W[c]/U, H[c]/U, np.log1p(desc(c)-1)])
-      Y.append([(C[c][0]-C[p][0])/U,(C[c][1]-C[p][1])/U]); G.append(gi)
+      Y.append([(C[c][0]-C[p][0])/U,(C[c][1]-C[p][1])/U]); G.append(id(o))
 X=np.array(X,float);Y=np.array(Y,float);G=np.array(G)
 print('exemples',len(X),'cartes',len(set(G)))
 mu,sd=X.mean(0),X.std(0)+1e-6; Xn=(X-mu)/sd
@@ -33,7 +37,7 @@ best=None
 for hid in [(8,),(16,),(16,8),(24,12)]:
   for a in [1e-2,1e-1,1.0]:
     errs=[]
-    for tr,te in KFold(5,shuffle=True,random_state=0).split(Xn):
+    for tr,te in GroupKFold(5).split(Xn,groups=G):
       m=MLPRegressor(hidden_layer_sizes=hid,activation='tanh',alpha=a,max_iter=4000,random_state=0).fit(Xn[tr],Y[tr]/ys)
       errs.append(np.mean(np.linalg.norm(m.predict(Xn[te])*ys-Y[te],axis=1)))
     e=np.mean(errs)

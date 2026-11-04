@@ -911,6 +911,7 @@
     applyMotion();
     applyNoteTypo();
     if (S.fresh) R.seed();
+    if (R.seedAtelier && (S.data.settings.atelier || 0) < R.seedAtelier.VERSION) R.seedAtelier(); // cours d’entraînement au rangement
     buildNav();
     const navLater = U.debounce(() => updateNav(), 800);
     S.on((type) => {
