@@ -121,6 +121,8 @@
   /* Géométrie des liens (partagée par l'éditeur, les vignettes et la note) */
   /* ------------------------------------------------------------------ */
   const DIRS = { r: [1, 0], l: [-1, 0], b: [0, 1], t: [0, -1] };
+  /** Marge d'ancrage depuis un coin : plus grand arrondi des nœuds (--shape-l, 16 px) + le trait */
+  const CORNER = 19;
   function sidePoint(n, s, side) {
     if (side === 'r') return [n.x + s.w, n.y + s.h / 2];
     if (side === 'l') return [n.x, n.y + s.h / 2];
@@ -281,7 +283,7 @@
   /** Point d'ancrage choisi à la main : côté s (t|r|b|l) et position t (0–1) le long de ce côté */
   function anchorPoint(n, s, a) {
     // jamais dans l'arrondi d'un coin : là, le trait semblerait décollé du nœud
-    const len = a.s === 'l' || a.s === 'r' ? s.h : s.w, m = Math.min(18, len / 2) / (len || 1);
+    const len = a.s === 'l' || a.s === 'r' ? s.h : s.w, m = Math.min(CORNER, len / 2) / (len || 1);
     const t = Math.max(m, Math.min(1 - m, a.t == null ? 0.5 : a.t));
     if (a.s === 'l') return [n.x, n.y + s.h * t];
     if (a.s === 'r') return [n.x + s.w, n.y + s.h * t];
@@ -429,7 +431,8 @@
     // libre : les départs s'étalent sur le flanc du parent selon la hauteur de l'enfant
     // (les courbes ne naissent pas toutes du même point, comme tracées à la main)
     if ((mode === 'organic' || mode === 'tree') && (s1 === 'l' || s1 === 'r')) {
-      const lim = Math.max(0, sa.h / 2 - 7);
+      // jamais dans l'arrondi d'un coin (16 px sur les notions) : le trait y semblerait décollé
+      const lim = Math.max(0, sa.h / 2 - CORNER);
       p1[1] += Math.max(-lim, Math.min(lim, (p2[1] - p1[1]) * 0.3));
       // et partent déjà orientés vers leur enfant (bouquet) : les courbes d'une grande fratrie
       // divergent dès le départ au lieu de courir côte à côte
