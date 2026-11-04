@@ -928,20 +928,12 @@
     isCentre(map, id) { return !this.parentEdge(map, id) && map.edges.some((e) => e.kind === 'tree' && e.from === id); },
     parentOf(map, id) { const e = this.parentEdge(map, id); return e ? this.node(map, e.from) : null; },
     /** Enfants dans l'ordre de lecture, qui dépend de la disposition :
-        droite → haut en bas ; pyramide → gauche à droite ; vers le bas → parties de gauche à droite (celles du dessus en dernier), puis haut en bas ; centrée → sens horaire autour de la
+        droite → haut en bas ; pyramide → gauche à droite ; vers le bas (plan en retrait) → haut en bas ; centrée → sens horaire autour de la
         racine (côté droit de haut en bas, puis côté gauche de bas en haut), haut en bas ensuite. */
     childrenOf(map, id) {
       const ids = new Set(map.edges.filter((e) => e.kind === 'tree' && e.from === id).map((e) => e.to));
       const list = map.nodes.filter((n) => ids.has(n.id));
       if (map.layout === 'down') return list.sort((a, b) => a.x - b.x || a.y - b.y);
-      // vers le bas : les parties autour de la racine se lisent en tournant — à gauche, dessous, à
-      // droite —, puis celles qui gravitent au-dessus d'elle (de gauche à droite) ; le reste de haut en bas
-      if (map.layout === 'tree' && !this.parentEdge(map, id)) {
-        const p = this.node(map, id) || { x: 0, y: 0 };
-        const up = (n) => (n.y - p.y < -20 && p.y - n.y > Math.abs(n.x - p.x) * 0.5 ? 1 : 0);
-        const turn = (n) => Math.atan2(Math.max(n.y - p.y, 0), n.x - p.x);
-        return list.sort((a, b) => up(a) - up(b) || (up(a) ? a.x - b.x : turn(b) - turn(a)) || a.y - b.y);
-      }
       if (map.layout === 'balanced' || map.layout === 'organic') {
         const p = this.node(map, id);
         if (p && !this.parentEdge(map, id)) {
@@ -955,7 +947,7 @@
     roots(map) {
       const has = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
       const list = map.nodes.filter((n) => !has.has(n.id));
-      return map.layout === 'down' || map.layout === 'tree' ? list.sort((a, b) => a.x - b.x || a.y - b.y) : list.sort((a, b) => a.y - b.y || a.x - b.x);
+      return map.layout === 'down' ? list.sort((a, b) => a.x - b.x || a.y - b.y) : list.sort((a, b) => a.y - b.y || a.x - b.x);
     },
     descendants(map, id) {
       const out = [];

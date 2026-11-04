@@ -363,7 +363,8 @@
       const left = U.isCompact() ? 24 : 112;
       // on ouvre sur la racine, là où commence la lecture : à gauche (droite), au centre (centrée), en haut (pyramide)
       if (map.layout === 'balanced' || map.layout === 'organic') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + r.h / 2 - (root.y + s.h / 2) * kk });
-      else if (map.layout === 'down' || map.layout === 'tree') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + 24 - root.y * kk });
+      else if (map.layout === 'tree') Object.assign(st.view, { k: kk, x: left - root.x * kk, y: r.y + 24 - root.y * kk });
+      else if (map.layout === 'down') Object.assign(st.view, { k: kk, x: r.x + r.w / 2 - (root.x + s.w / 2) * kk, y: r.y + 24 - root.y * kk });
       else Object.assign(st.view, { k: kk, x: left - root.x * kk, y: r.h / 2 - (root.y + s.h / 2) * kk });
       applyView();
     }
@@ -575,6 +576,7 @@
       const s = size(p);
       const f = R.layout.flow(map, p);
       if (f.child === 'down') return { x: p.x + s.w / 2, y: p.y + s.h };
+      if (f.child === 'indent') return { x: p.x + Math.min(R.layout.P.treeSpine, s.w / 2), y: p.y + s.h };
       return { x: f.child === 'left' ? p.x : p.x + s.w, y: p.y + s.h / 2 };
     }
     function playEmerge(list) {
@@ -1180,7 +1182,7 @@
       coach.classList.remove('in');
       setTimeout(() => (coach.hidden = true), 200);
     }
-    function addChild(parentId, { edit = true, title = '', type, at } = {}) {
+    function addChild(parentId, { edit = true, title = '', type, at, prep } = {}) {
       if (guard()) return null;
       const p = S.node(map, parentId);
       if (!p) return null;
@@ -1189,6 +1191,7 @@
       const slot = at || R.layout.childSlot(map, p, sizeFn);
       const n = S.newNode({ type: type || defaultChildType(p), title, x: slot.x, y: slot.y });
       mutate(() => {
+        if (prep) prep(n);
         map.nodes.push(n);
         const e = { id: U.uid('e'), from: p.id, to: n.id, kind: 'tree', label: '' };
         map.edges.push(e);
@@ -1216,9 +1219,20 @@
       const sibs = S.childrenOf(map, p.id);
       const idx = sibs.findIndex((s) => s.id === id);
       const next = sibs[idx + 1];
-      // pyramide (et parties de « vers le bas ») : les frères se suivent de gauche à droite
-      const across = map.layout === 'down' || map.layout === 'tree';
-      const sibGap = map.layout === 'tree' ? R.layout.P.treeColGap : R.layout.P.downSibGap;
+      // « vers le bas » (plan en retrait) : le frère se pose sous la branche courante, et tout ce
+      // qui suit dans le plan descend d'autant
+      if (map.layout === 'tree') {
+        const gap = R.layout.P.treeSib;
+        let bottom = cur.y + cs.h;
+        for (const d of S.descendants(map, id)) { const x = S.node(map, d); if (x) bottom = Math.max(bottom, x.y + size(x).h); }
+        const at = { x: cur.x, y: bottom + gap };
+        // ce qui suit descend avant que le frère ne naisse (même pas d'annulation)
+        const prep = (n) => { const shift = size(n).h + gap; for (const x of map.nodes) if (x.y >= at.y - 1) x.y += shift; };
+        return addChild(p.id, { type: cur.type, at, edit: true, prep });
+      }
+      // pyramide : les frères se suivent de gauche à droite
+      const across = map.layout === 'down';
+      const sibGap = R.layout.P.downSibGap;
       let at = across ? { x: cur.x + cs.w + sibGap, y: cur.y } : { x: cur.x, y: cur.y + cs.h + R.layout.GAP_Y };
       const n = addChild(p.id, { type: cur.type, at, edit: true });
       if (n && next) { // pousse les frères suivants

@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1793758956.8538978,
-    "seen": 1793758991.0397997,
-    "ast_hash": "414e16dcb3d9a5cdca4f4c1418f1eb79",
+    "mtime": 1793760029.7574856,
+    "seen": 1793760174.4847028,
+    "ast_hash": "486de295206f17dddad1d068241c305a",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "js/store.js": {
-    "mtime": 1793758968.240709,
-    "seen": 1793758991.039815,
-    "ast_hash": "aacf79c49f0fb0daede12fbc05f284f3",
+    "mtime": 1793759450.1079023,
+    "seen": 1793760174.4847252,
+    "ast_hash": "0cff461dca487c9ce75abcdddfca6539",
     "semantic_hash": ""
   },
   "js/ui.js": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1793758984.306713,
-    "seen": 1793758991.03982,
-    "ast_hash": "8fe5cb372d5fc67d42a3265cb022c276",
+    "mtime": 1793759477.876944,
+    "seen": 1793760174.484733,
+    "ast_hash": "d980613053844c0f46e86d96862bf994",
     "semantic_hash": ""
   },
   "js/views/library.js": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "js/views/outline.js": {
-    "mtime": 1793072128.4029622,
-    "seen": 1793072620.9573984,
-    "ast_hash": "d34458d3c4e5741ddce8f8f8c43bf0b9",
+    "mtime": 1793759450.1096742,
+    "seen": 1793760174.4847376,
+    "ast_hash": "94ebfe909b90dcc75bd2a4f00ca5730e",
     "semantic_hash": ""
   },
   "js/views/revhub.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793758984.3126495,
-    "seen": 1793758991.03983,
-    "ast_hash": "68c3a462fd888e8430ef7f63b85b0be5",
+    "mtime": 1793760170.9530225,
+    "seen": 1793760174.4847474,
+    "ast_hash": "6f5d723bad3b7fd72ac2584f0e655e0d",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {

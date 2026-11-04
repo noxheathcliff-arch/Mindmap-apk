@@ -1051,8 +1051,10 @@
   /** Écart en profondeur réservé aux libellés des liens parent → enfant (0 si aucun, multiple de 8) */
   function labelExtra(T, parentId) {
     const L = T.labels && T.labels.get(parentId);
-    return L ? Math.ceil(Math.min(64, 16 + L * 6) / 8) * 8 : 0;
+    return (L ? Math.ceil(Math.min(64, 16 + L * 6) / 8) * 8 : 0) + ((T.boost && T.boost.get(parentId)) || 0);
   }
+  /** Air ajouté avant un enfant dont le libellé (ou celui de son voisin) manquait de place */
+  const sibExtra = (T, id) => (T.sib && T.sib.get(id)) || 0;
 
   /**
    * Empile des sous-arbres le long de l'axe « largeur » au plus serré, par contours :
@@ -1191,7 +1193,7 @@
     // les enfants commencent après le parent — ou au début de la colonne suivante (colonnes alignées)
     const cd = cfg.cols && cfg.cols[level + 1] != null ? cfg.cols[level + 1] - cfg.cols[level] : own.dl + cfg.gap + labelExtra(T, id);
     for (const s of subs) for (const l of s.lv) { l.d0 += cd; l.d1 += cd; }
-    const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) + linkGap(T, ch[i - 1], ch[i]) : cfg.cousinGap));
+    const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) + linkGap(T, ch[i - 1], ch[i]) + sibExtra(T, ch[i]) : cfg.cousinGap + sibExtra(T, ch[i])));
     const first = st.offs[0] + subs[0].c, last = st.offs[subs.length - 1] + subs[subs.length - 1].c;
     const mid = (first + last) / 2;
     const pb = mid - own.bl / 2;
@@ -1231,7 +1233,7 @@
       // séquences en ligne : seulement quand la lecture va vers la droite (sinon l'ordre s'inverserait)
       const scfg = { ...cfg, cols, seq: side.dir > 0 && prm.seq !== 0 };
       const subs = side.ids.map((c) => subtree(c, T, dim, scfg, seen, 1));
-      const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) + linkGap(T, side.ids[i - 1], side.ids[i]) : cfg.cousinGap));
+      const st = stack(subs, (i, la, lb) => (la === 0 && lb === 0 ? sepFor(cfg, subs[i - 1], subs[i]) + linkGap(T, side.ids[i - 1], side.ids[i]) + sibExtra(T, side.ids[i]) : cfg.cousinGap + sibExtra(T, side.ids[i])));
       const first = st.offs[0] + subs[0].c, last = st.offs[subs.length - 1] + subs[subs.length - 1].c;
       const shift = rs.h / 2 - (first + last) / 2; // la racine au milieu de ses branches
       subs.forEach((s, i) => {
@@ -1270,14 +1272,14 @@
       const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
       if (!ch.length) return y + s.h;
       const ls = lbl(id);
-      const cx = x + Math.min(prm.treeSpine, s.w / 2) + (ls ? Math.max(prm.treeStub, ls.w + 16) : prm.treeStub);
+      const cx = x + Math.min(prm.treeSpine, s.w / 2) + (ls ? Math.max(prm.treeStub, ls.w + 16) : prm.treeStub) + ((T.boost && T.boost.get(id)) || 0);
       let cy = y + s.h + (depth === 0 ? prm.treeGroup : prm.treeGap), prev = null;
       for (const c of ch) {
         if (seen.has(c)) continue;
         const n = T.byId.get(c);
         if (prev) {
           const group = depth === 0 ? prm.treeGroup * 1.5 : (T.kids.get(prev) || []).length || isStruct(T.byId.get(prev)) || isStruct(n) ? prm.treeGroup : prm.treeSib;
-          cy += group + linkGap(T, prev, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
+          cy += group + linkGap(T, prev, c) + sibExtra(T, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
         }
         cy = list(c, cx, cy, depth + 1);
         prev = c;
@@ -1309,7 +1311,7 @@
       ids.forEach((id) => done.add(id));
       const bb = bbox(loc, T, size, ids);
       // arbres successifs : les uns sous les autres (pyramide : côte à côte)
-      const across = mode === 'down' || mode === 'tree';
+      const across = mode === 'down';
       const dx = across ? cursor - bb.x0 : -bb.x0;
       const dy = across ? -bb.y0 : cursor - bb.y0;
       for (const id of ids) out[id] = { x: loc[id].x + dx, y: loc[id].y + dy };
@@ -1495,6 +1497,39 @@
   /* ------------------------------------------------------------------ */
   /* Note d'une disposition                                              */
   /* ------------------------------------------------------------------ */
+  /**
+   * Libellés des liens d'arbre qui n'ont pas leur place : posés comme à l'écran (même courbe,
+   * mêmes obstacles, libellés déjà posés, traits des autres liens), ceux qui recouvrent un nœud,
+   * un autre libellé ou coupent un trait.
+   */
+  function labelClashes(map, pos, size, mode) {
+    const rects = [], at = new Map();
+    for (const n of map.nodes) { const p = pos[n.id]; if (!p) continue; const s = size(n); const r = { id: n.id, x: p.x, y: p.y, w: s.w, h: s.h }; rects.push(r); at.set(n.id, r); }
+    const seqPrev = sequencePrev(map, at, mode);
+    const child = new Set(map.edges.filter((e) => e.kind === 'tree').map((e) => e.to));
+    const polys = [], items = [];
+    for (const e of map.edges) {
+      if (e.kind !== 'tree') continue;
+      const a = at.get(e.from), b = at.get(e.to);
+      if (!a || !b) continue;
+      const prev = seqPrev.get(e.to);
+      let cv;
+      if (prev) { const q = at.get(prev); cv = elbow([[q.x + q.w, q.y + q.h / 2], [b.x, b.y + b.h / 2]]); }
+      else cv = treeCurve(mode, a, a, b, b, !child.has(e.from));
+      polys.push({ pts: sample(cv, 8), ends: new Set([e.from, e.to]) });
+      if (e.label) items.push({ e, cv });
+    }
+    const placed = [], out = [];
+    for (const it of items) {
+      const p = placeLabel(it.cv, labelSize(it.e.label), rects, placed, { prefer: it.cv.lt != null ? it.cv.lt : 0.5, segs: polys, ends: [it.e.from, it.e.to] });
+      placed.push(p.box);
+      // un frôlement de marge ne compte pas ; un texte caché ou un trait coupé, si
+      const sev = (p.ov > 120 ? p.ov : 0) + p.cut * 400;
+      if (sev) { it.e._sev = sev; out.push(it.e); }
+    }
+    return out;
+  }
+
   function evaluate(map, pos, size, mode, vp = {}, quick = false) {
     const S = R.store;
     const rects = [];
@@ -1523,7 +1558,7 @@
     }
     let hits = 0, cross = 0, len = 0, lblOv = 0, over = 0;
     const placed = [];
-    for (const t of treeLabels) { const p = placeLabel(t.cv, labelSize(t.label), rects, placed, { prefer: t.cv.lt != null ? t.cv.lt : 0.5 }); if (p.ov > 0) lblOv++; }
+    for (const t of treeLabels) { const p = placeLabel(t.cv, labelSize(t.label), rects, placed, { prefer: t.cv.lt != null ? t.cv.lt : 0.5 }); placed.push(p.box); if (p.ov > 0) lblOv++; }
     for (const e of map.edges) {
       if (e.kind !== 'link') continue;
       const a = at.get(e.from), b = at.get(e.to);
@@ -1534,7 +1569,7 @@
       hits += rt.hits; cross += rt.cross; len += rt.len;
       if (rt.pts) over += overRun(rt.pts, pointGrid(polys), a, a, b, b);
       polys.push({ pts: rt.pts, ends: new Set([e.from, e.to]) });
-      if (e.label) { const p = placeLabel(rt, labelSize(e.label), rects, placed); if (p.ov > 0) lblOv++; }
+      if (e.label) { const p = placeLabel(rt, labelSize(e.label), rects, placed); placed.push(p.box); if (p.ov > 0) lblOv++; }
     }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const r of rects) { x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
@@ -1684,17 +1719,49 @@
       if (full.score.cost < best.score.cost) best = full;
     }
     // garantie finale : distance de sécurité entre tous les nœuds, quelle que soit la disposition
-    const pos = {};
-    for (const id in best.pos) pos[id] = { ...best.pos[id] };
-    separate(map, pos, size, best.mode);
-    // vers le bas : l'atome a déjà gardé ses distances (molPad) — l'aérer le disloquerait
-    // l'air n'est gardé que s'il n'a rien cassé (sur une très grande carte, les poussées en chaîne
-    // peuvent ne pas converger et laisser des nœuds se chevaucher : on garde alors la version sûre)
-    if (best.mode !== 'tree') {
-      const airy = {};
-      for (const id in pos) airy[id] = { ...pos[id] };
-      aerate(map, airy, size, best.mode);
-      if (!crowded(map, airy, size)) Object.assign(pos, airy);
+    const finish = (src) => {
+      const pos = {};
+      for (const id in src) pos[id] = { ...src[id] };
+      separate(map, pos, size, best.mode);
+      // vers le bas : le plan a déjà gardé ses distances — l'aérer le disloquerait
+      // l'air n'est gardé que s'il n'a rien cassé (sur une très grande carte, les poussées en chaîne
+      // peuvent ne pas converger et laisser des nœuds se chevaucher : on garde alors la version sûre)
+      if (best.mode !== 'tree') {
+        const airy = {};
+        for (const id in pos) airy[id] = { ...pos[id] };
+        aerate(map, airy, size, best.mode);
+        if (!crowded(map, airy, size)) Object.assign(pos, airy);
+      }
+      return pos;
+    };
+    let pos = finish(best.pos);
+    // place des libellés : là où un libellé ne tient pas sur son lien (il recouvrirait un nœud, un
+    // autre libellé ou un trait), on donne de l'air — plus de longueur au lien, plus d'écart entre
+    // l'enfant et ses voisins — et on refait la disposition ; on garde la meilleure, en peu de tours
+    if (opts.labelFit !== false && map.edges.some((e) => e.kind === 'tree' && e.label)) {
+      let bad = labelClashes(map, pos, size, best.mode);
+      T.boost = new Map(); T.sib = new Map();
+      const parentOf = new Map();
+      for (const [pid, ks] of T.kids) for (const k of ks) parentOf.set(k, pid);
+      for (let round = 0, R2 = map.nodes.length > 150 ? 2 : 4; round < R2 && bad.length; round++) {
+        for (const e of bad) {
+          const ls = labelSize(e.label);
+          T.boost.set(e.from, Math.min(160, (T.boost.get(e.from) || 0) + (best.mode === 'tree' ? 16 : 24)));
+          const add = Math.ceil(ls.h / 2 + 6);
+          T.sib.set(e.to, Math.min(96, (T.sib.get(e.to) || 0) + add));
+          // le voisin qui suit s'écarte aussi : le libellé a de l'air des deux côtés
+          const ks = T.kids.get(parentOf.get(e.to)) || [];
+          const nx = ks[ks.indexOf(e.to) + 1];
+          if (nx) T.sib.set(nx, Math.min(96, (T.sib.get(nx) || 0) + add));
+        }
+        const again = finish(run({ mode: best.mode, split: best.split }, best.prm, true).pos);
+        const b2 = labelClashes(map, again, size, best.mode);
+        const sum = (l) => l.reduce((t, e) => t + e._sev, 0);
+        if (b2.length < bad.length || (b2.length === bad.length && sum(b2) < sum(bad) * 0.8)) { pos = again; bad = b2; }
+        else if (b2.length > bad.length) break;
+      }
+      for (const e of map.edges) delete e._sev;
+      T.boost = null; T.sib = null;
     }
     return { pos, mode: best.mode, score: best.score, params: best.prm, tried };
   }
@@ -1708,8 +1775,8 @@
   function flow(map, node) {
     if (map.layout === 'down') return { child: 'down', sib: 'x' };
     const S = R.store;
-    // vers le bas : chaque nœud pose ses enfants en dessous, côte à côte
-    if (map.layout === 'tree') return { child: 'down', sib: 'x' };
+    // vers le bas : plan en retrait — l'enfant se pose dessous, décalé à droite ; les frères s'empilent
+    if (map.layout === 'tree') return { child: 'indent', sib: 'y' };
     const p = S.parentOf(map, node.id);
     // côté gauche d'une carte centrée : la branche pousse vers la gauche
     if (p && node.x + 1 < p.x) return { child: 'left', sib: 'y' };
@@ -1725,10 +1792,18 @@
     const ch = S.childrenOf(map, parent.id);
     const ps = size(parent);
     const f = flow(map, parent);
+    if (f.child === 'indent') {
+      // sous le dernier enfant et toute sa descendance, au même retrait
+      if (!ch.length) return { x: parent.x + Math.min(P.treeSpine, ps.w / 2) + P.treeStub, y: parent.y + ps.h + P.treeGap };
+      const last = ch[ch.length - 1];
+      let bottom = last.y + size(last).h;
+      for (const id of S.descendants(map, last.id)) { const n = S.node(map, id); if (n) bottom = Math.max(bottom, n.y + size(n).h); }
+      return { x: last.x, y: bottom + P.treeSib };
+    }
     if (f.child === 'down') {
       if (!ch.length) return { x: parent.x + ps.w / 2 - 60, y: parent.y + ps.h + P.downGap };
       const last = ch[ch.length - 1];
-      return { x: last.x + size(last).w + (map.layout === 'tree' ? P.treeColGap : P.downSibGap), y: last.y };
+      return { x: last.x + size(last).w + P.downSibGap, y: last.y };
     }
     // séquence en ligne (méthode, chronologie) : l'étape suivante se pose à droite de la dernière
     if (ch.length >= 2 && ch.every((c) => Math.abs(c.y - ch[0].y) <= 1) && ch[0].x > parent.x + ps.w) {
@@ -1744,7 +1819,7 @@
   R.layout = {
     P, SEARCH, role, GAP_X, GAP_Y, GAP_ROOT,
     estimate, labelSize,
-    arrange, tidy, evaluate, childSlot, flow, separate, SAFE,
+    arrange, tidy, evaluate, childSlot, flow, separate, SAFE, _labelClashes: labelClashes,
     treeSides, treeCurve, sequencePrev, LABEL_W, calm, orthoOf, manualCurve, viaPoint, toVia, viaInsertAt, throughCurve, anchorPoint, nearestAnchor, busySides, sidePoint, cubic, elbow, busDown, route, placeLabel, sample,
   };
 })(window.R);
