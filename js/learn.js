@@ -28,16 +28,18 @@
   const prior = R.learnPrior || {};
   const PRIOR = { ...BASE, ...(prior.w || {}) };
   /** Réglages que l'optimiseur essaie (autour des valeurs par défaut de layout.js) */
-  const TUNE = { molGap: [24, 34, 46], molSpread: [100, 125, 150], molStep: [24, 32, 40], molLight: [0.2, 0.34, 0.5] };
+  const TUNE = { molGap: [24, 34, 46], fanDepth: [0.25, 0.5, 0.8] };
   const MEM = 300;
   const DEF_GAP = (R.layout && R.layout.P && R.layout.P.molGap) || 34;
 
-  const fresh = () => ({ w: { ...PRIOR }, n: 0, gap: null, mem: (prior.mem || []).map((m) => ({ ...m, seed: true })) });
+  // les graines d'anciennes versions peuvent porter des réglages retirés : on ne garde que les connus
+  const keep = (p) => Object.fromEntries(Object.entries(p || {}).filter(([k]) => k in TUNE));
+  const fresh = () => ({ w: { ...PRIOR }, n: 0, gap: null, mem: (prior.mem || []).map((m) => ({ ...m, p: keep(m.p), seed: true })).filter((m) => Object.keys(m.p).length) });
   let st = fresh();
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
     const d = raw && JSON.parse(raw);
-    if (d && d.w) st = { w: { ...PRIOR, ...d.w }, n: +d.n || 0, gap: d.gap == null ? null : +d.gap, mem: Array.isArray(d.mem) ? d.mem : st.mem };
+    if (d && d.w) st = { w: { ...PRIOR, ...d.w }, n: +d.n || 0, gap: d.gap == null ? null : +d.gap, mem: Array.isArray(d.mem) ? d.mem.map((m) => ({ ...m, p: keep(m.p) })).filter((m) => Object.keys(m.p).length) : st.mem };
   } catch (e) { /* stockage indisponible : on apprend pour la séance */ }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* plein ou bloqué */ } };
 

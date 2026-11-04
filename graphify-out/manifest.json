@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "js/layout.js": {
-    "mtime": 1793674066.3805368,
-    "seen": 1793674334.7282398,
-    "ast_hash": "471b10139514461c58d82fe4f655ce1b",
+    "mtime": 1793754467.0543149,
+    "seen": 1793754637.8259115,
+    "ast_hash": "9e289d58199b0cc42d53131b7b7cbc24",
     "semantic_hash": ""
   },
   "js/mark.js": {
@@ -78,9 +78,9 @@
     "semantic_hash": ""
   },
   "js/views/editor.js": {
-    "mtime": 1793674066.381243,
-    "seen": 1793674334.7282681,
-    "ast_hash": "a6e3a397f3440c10fca58aba8cd6d546",
+    "mtime": 1793754602.3994715,
+    "seen": 1793754637.8259375,
+    "ast_hash": "00ec0f5fc3522854762d680e42e9e253",
     "semantic_hash": ""
   },
   "js/views/library.js": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793675379.5810683,
-    "seen": 1793675384.1510646,
-    "ast_hash": "062db53579adc060d35e2b0c16ff8cdd",
+    "mtime": 1793754434.2407944,
+    "seen": 1793754637.825948,
+    "ast_hash": "d460a1ef53bf1115613518c9339195af",
     "semantic_hash": ""
   },
   "tests/gold/cards.cjs": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1793674066.378994,
-    "seen": 1793674334.7283363,
-    "ast_hash": "6909a95cf522858810eaeac0daaf2001",
+    "mtime": 1793754434.238175,
+    "seen": 1793754637.8260105,
+    "ast_hash": "eeab7971217282414fedf1e03a52c45e",
     "semantic_hash": ""
   },
   "icons/icon-192.png": {
@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "js/learn.js": {
-    "mtime": 1793675218.3362296,
-    "seen": 1793675384.1510274,
-    "ast_hash": "6be6ceb22528f6a84ebf064fb46daaa1",
+    "mtime": 1793754451.0896337,
+    "seen": 1793754637.825915,
+    "ast_hash": "759d1cfe2848c9912cefe7e058395e46",
     "semantic_hash": ""
   },
   "tests/learn.test.cjs": {
@@ -501,6 +501,36 @@
     "mtime": 1793675246.2762783,
     "seen": 1793675384.151079,
     "ast_hash": "8d6a5d8174efcbe6e9e15a922fe1c597",
+    "semantic_hash": ""
+  },
+  "cours-mythologie.json": {
+    "mtime": 1793720171.3323848,
+    "seen": 1793754637.8258855,
+    "ast_hash": "1bcf8ee5fc58f462bb35077dfc22a2b0",
+    "semantic_hash": ""
+  },
+  "js/fan-net.js": {
+    "mtime": 1793754064.4057057,
+    "seen": 1793754637.825903,
+    "ast_hash": "8113fe0a82d4b0cfcc9526cc1eecafdc",
+    "semantic_hash": ""
+  },
+  "tests/learn/fan/extract.py": {
+    "mtime": 1793754064.4192502,
+    "seen": 1793754637.8259606,
+    "ast_hash": "6eb73220cafe56b88c4156079ef09267",
+    "semantic_hash": ""
+  },
+  "tests/learn/fan/train_nn.py": {
+    "mtime": 1793754064.4193141,
+    "seen": 1793754637.8259623,
+    "ast_hash": "8980d177d17c1a894d481769d68c124d",
+    "semantic_hash": ""
+  },
+  "tests/learn/fan/xmind.json": {
+    "mtime": 1793754064.4193976,
+    "seen": 1793754637.8259635,
+    "ast_hash": "3744e0f64ea25c9c7965963a4aecd28d",
     "semantic_hash": ""
   }
 }

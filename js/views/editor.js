@@ -670,16 +670,18 @@
         if (!bundles.has(key)) bundles.set(key, { key, explicit, from: e.from, kind: e.kind, edges: [] });
         bundles.get(key).edges.push(e);
       };
+      // un départ déplacé (a1) est celui de toute la fourche : les branches qui le partagent restent
+      // ensemble ; seule une branche dont le départ diffère de ses sœurs se dessine à part
+      const a1k = (e) => (e.a1 ? '@' + e.a1.s + (e.a1.t == null ? 0.5 : e.a1.t) : '');
       for (const e of visible) {
-        if (e.a1) continue;
-        if (e.group) add('g:' + e.group, e, true);
+        if (e.group) add('g:' + e.group + a1k(e), e, true);
         else if (e.kind === 'tree' && !e.label && !seqIds.has(e.to)) {
           const p = S.node(map, e.from);
           if (!p || !p.logic) continue;
           // un faisceau par côté (carte centrée : la racine a des enfants des deux côtés)
           const c = S.node(map, e.to);
           const side = map.layout === 'down' || map.layout === 'tree' ? '' : c && c.x < p.x ? ':L' : ':R';
-          add('l:' + e.from + side, e, false);
+          add('l:' + e.from + side + a1k(e), e, false);
         }
       }
       // ET / OU et fourches libellées : dès deux branches (plus de peigne : chaque enfant garde sa courbe)
@@ -731,7 +733,12 @@
       // côté de sortie : direction dominante entre le centre de la source et celui des cibles
       const dx = (x0 + x1) / 2 - (a.x + sa.w / 2), dy = (y0 + y1) / 2 - (a.y + sa.h / 2);
       let p1, d1;
-      if (b.kind === 'tree' && map.layout === 'down') {
+      const fixed = b.edges[0].a1;
+      if (fixed) {
+        // départ choisi à la main : le tronc sort de ce point, perpendiculaire au bord
+        p1 = R.layout.anchorPoint(a, sa, fixed);
+        d1 = ({ r: [1, 0], l: [-1, 0], b: [0, 1], t: [0, -1] })[fixed.s] || [0, 1];
+      } else if (b.kind === 'tree' && map.layout === 'down') {
         // pyramide : la jonction est sur le bus, à mi-chemin entre le parent et ses enfants
         d1 = [0, Math.sign(dy) || 1];
         p1 = [a.x + sa.w / 2, d1[1] > 0 ? a.y + sa.h : a.y];
@@ -750,12 +757,15 @@
       else if (d1[1] > 0) gap = y0 - p1[1]; else gap = p1[1] - y1;
       const reach = U.clamp(gap * 0.42, 24, 120);
       const J = [p1[0] + d1[0] * reach, p1[1] + d1[1] * reach];
-      if (b.explicit && b.kind === 'tree') {
+      if (b.explicit && b.kind === 'tree' && !fixed) {
         // branche libellée : le tronc part vers ses propres cibles (deux branches d'un même
         // parent — « causes », « conséquences » — ont chacune leur tronc et leur libellé)
         const ax = d1[0] ? 1 : 0, c = ax ? (y0 + y1) / 2 : (x0 + x1) / 2, half = (ax ? sa.h : sa.w) / 2 - 6;
         p1[ax] += U.clamp((c - p1[ax]) * 0.25, -half, half);
         J[ax] = p1[ax] + U.clamp((c - p1[ax]) * 0.5, -90, 90);
+        // assez de longueur dans l'axe pour que le S du tronc reste doux
+        const lat = Math.abs(J[ax] - p1[ax]), along = Math.max(reach, Math.min(lat * 0.8, gap * 0.6));
+        J[1 - ax] = p1[1 - ax] + d1[1 - ax] * along;
       }
       return { p1, d1, J };
     }
@@ -867,6 +877,7 @@
       }
       const bundleOf = new Map();
       for (const b of bundles.values()) for (const e of b.edges) bundleOf.set(e.id, b);
+      st.bundleOf = bundleOf;
       // 1) troncs + étiquette unique des fourches
       const aliveB = new Set();
       const geo = new Map();
@@ -889,7 +900,11 @@
         }
         const gm = geoPre.get(b.key) || bundleGeometry(b, byId, rects, busy);
         geo.set(b.key, gm);
-        const d = `M${gm.p1[0]},${gm.p1[1]} L${gm.J[0]},${gm.J[1]}`;
+        // tronc en S doux : il quitte la source et arrive à la jonction dans l'axe des branches
+        // (même tangente des deux côtés du point de séparation : aucun angle)
+        // (poignées mesurées dans l'axe de sortie : un tronc qui descend en biais ne fait pas de boucle)
+        const tl = Math.max(4, Math.abs((gm.J[0] - gm.p1[0]) * gm.d1[0] + (gm.J[1] - gm.p1[1]) * gm.d1[1]) * 0.5);
+        const d = `M${gm.p1[0]},${gm.p1[1]} C${gm.p1[0] + gm.d1[0] * tl},${gm.p1[1] + gm.d1[1] * tl} ${gm.J[0] - gm.d1[0] * tl},${gm.J[1] - gm.d1[1] * tl} ${gm.J[0]},${gm.J[1]}`;
         br.trunk.setAttribute('d', d);
         br.hit.setAttribute('d', d);
         // tronc d'une fourche explicite : cliquable (sélectionne la fourche) ; implicite : non
@@ -953,16 +968,18 @@
         let c;
         if (bundle) {
           const gm = geo.get(bundle.key);
+          // dans une fourche, le départ (a1) est celui du tronc : la branche, elle, part de la jonction
+          const eb = e.a1 ? Object.assign({}, e, { a1: null }) : e;
           if (e.kind === 'link') {
             // branche de fourche : depuis la jonction, trajet qui évite les nœuds (sortie dans l'axe du tronc)
             const side = gm.d1[0] > 0 ? 'r' : gm.d1[0] < 0 ? 'l' : gm.d1[1] > 0 ? 'b' : 't';
             const cv = R.layout.route({ id: bundle.from, x: gm.J[0], y: gm.J[1] }, { w: 0, h: 0 }, { id: b.id, x: b.x, y: b.y }, size(b), { rects, polys, busy, fromJ: true, fast: !!st.fastEdges, side });
-            c = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), Object.assign({}, cv, { d1: gm.d1 })) : { d: cv.d, at: cv.at };
+            c = shaped(eb) ? R.layout.manualCurve(eb, a, size(a), b, size(b), Object.assign({}, cv, { d1: gm.d1 })) : { d: cv.d, at: cv.at };
             polys.push({ pts: R.layout.sample(cv, 12), ends: new Set([e.from, e.to]) });
           } else {
             const base = branchCurve(gm.J, gm.d1, b, e.kind);
             // branche retouchée : sa forme part de la jonction, elle ne quitte pas la fourche
-            c = shaped(e) ? R.layout.manualCurve(e, a, size(a), b, size(b), Object.assign({}, base, { d1: gm.d1 })) : R.layout.calm(base, calmK);
+            c = shaped(eb) ? R.layout.manualCurve(eb, a, size(a), b, size(b), Object.assign({}, base, { d1: gm.d1 })) : R.layout.calm(base, calmK);
           }
           rec.mid = gm.J;
           rec.cv = c; rec.bundled = true;
@@ -1253,6 +1270,9 @@
       mutate(() => { map.edges = map.edges.filter((e) => e.id !== id); st.selEdge = null; });
       ui.snack('Lien supprimé', { action: 'Annuler', onAction: undo });
     }
+    const canAdopt = (from, to) => from !== to && !S.descendants(map, to).includes(from);
+    /** L'ancien lien parent de `to` devient un renvoi (la relation est gardée, la hiérarchie change) */
+    function adopt(to) { const pe = S.parentEdge(map, to); if (pe) pe.kind = 'link'; }
     function connect(from, to) {
       if (guard()) return;
       if (from === to) return;
@@ -1260,9 +1280,11 @@
         ui.snack('Ces deux nœuds sont déjà reliés');
         return;
       }
-      const tree = S.canTree(map, from, to);
+      // hiérarchique par défaut : si la cible a déjà un parent, le nouveau lien la rattache et l'ancien
+      // devient un renvoi ; renvoi seulement quand la hiérarchie bouclerait
+      const tree = canAdopt(from, to);
       const e = { id: U.uid('e'), from, to, kind: tree ? 'tree' : 'link', label: '' };
-      mutate(() => { map.edges.push(e); ed._newEdges.add(e.id); });
+      mutate(() => { if (tree) adopt(to); map.edges.push(e); ed._newEdges.add(e.id); });
       const tel = st.els.get(to);
       if (tel && !motion.reduced()) { tel.classList.remove('linked'); void tel.offsetWidth; tel.classList.add('linked'); setTimeout(() => tel.classList.remove('linked'), 300); }
       motion.haptic(10);
@@ -2175,10 +2197,10 @@
       if (!targets.length) { ui.snack('Ces éléments sont déjà reliés'); return null; }
       if (targets.length === 1) { connect(from, targets[0]); return null; }
       // décomposition si tous les éléments peuvent devenir enfants, sinon renvoi
-      const tree = targets.every((t) => S.canTree(map, from, t));
+      const tree = targets.every((t) => canAdopt(from, t));
       const group = U.uid('g');
       const made = targets.map((t) => ({ id: U.uid('e'), from, to: t, kind: tree ? 'tree' : 'link', label: '', group }));
-      mutate(() => { for (const x of made) { map.edges.push(x); ed._newEdges.add(x.id); } });
+      mutate(() => { if (tree) targets.forEach(adopt); for (const x of made) { map.edges.push(x); ed._newEdges.add(x.id); } });
       for (const t of targets) {
         const tel = st.els.get(t);
         if (tel && !motion.reduced()) { tel.classList.remove('linked'); void tel.offsetWidth; tel.classList.add('linked'); setTimeout(() => tel.classList.remove('linked'), 300); }
@@ -2672,7 +2694,10 @@
           const a = R.layout.nearestAnchor(n, size(n), [p.x, p.y]);
           const prev = ex[gesture.which];
           if (prev && (prev.s !== a.s || (a.t === 0.5) !== (prev.t === 0.5))) motion.haptic(6); // changement de bord ou milieu atteint
-          ex[gesture.which] = a;
+          // départ d'une branche de fourche : c'est le tronc de toute la fourche qui bouge — elle ne se détache pas
+          if (gesture.which === 'a1' && !gesture.fork) { const fb = st.bundleOf && st.bundleOf.get(ex.id); gesture.fork = fb ? fb.edges.map((x) => x.id) : [ex.id]; }
+          if (gesture.which === 'a1') for (const id of gesture.fork) { const y = map.edges.find((x) => x.id === id); if (y) y.a1 = a; }
+          else ex[gesture.which] = a;
         }
         st.fastEdges = true; renderEdges(); st.fastEdges = false;
         positionCtx();
