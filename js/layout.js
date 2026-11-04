@@ -33,6 +33,11 @@
     rootGap: 96,      // entre deux arbres indépendants
     // « vers le bas » : parties côte à côte sous la racine, chacune en grappe (molécule)
     treeColGap: 72,   // entre deux parties voisines
+    treeGap: 40,      // bas du parent → haut du premier enfant (air de lecture entre niveaux)
+    treeSib: 24,      // entre deux feuilles sœurs d'une liste
+    treeGroup: 40,    // après une sœur qui a des enfants (on change de groupe)
+    treeSpine: 22,    // l'arête verticale part à cette distance du bord gauche du parent
+    treeStub: 28,     // longueur minimale du trait horizontal qui mène à l'enfant
     molGap: 34,       // bord du parent → bord de l'enfant (place pour la courbe)
     molPad: 18,       // marge autour de chaque nœud posé
     molSpread: 125,   // demi-ouverture max de l'atome (degrés autour de la direction d'arrivée)
@@ -145,13 +150,9 @@
 
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
   function treeSides(mode, a, sa, b, sb, top = false) {
+    if (mode === 'tree' && top && b.y >= a.y + sa.h + TRUNK_BUS) return ['b', 'l'];
     if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
-    if (mode === 'tree') {
-      // atome : chaque bout du lien sort par le côté que traverse la droite qui joint les deux centres
-      const dx = b.x + sb.w / 2 - (a.x + sa.w / 2), dy = b.y + sb.h / 2 - (a.y + sa.h / 2);
-      const side = (s, x, y) => (Math.abs(y) * s.w >= Math.abs(x) * s.h ? (y > 0 ? 'b' : 't') : (x > 0 ? 'r' : 'l'));
-      return [side(sa, dx, dy), side(sb, -dx, -dy)];
-    }
+    if (mode === 'tree' && isIndented(a, sa, b, sb)) return ['b', 'l'];
     const gap = 6;
     if (b.x >= a.x + sa.w + gap) return ['r', 'l'];
     if (b.x + sb.w <= a.x - gap) return ['l', 'r'];
@@ -186,6 +187,29 @@
       return z;
     };
     return { d, at, p1: pts[0], p2: z };
+  }
+  /** « Vers le bas » : couloir à gauche d'une partie (le lien de la racine y descend), bus sous la racine */
+  const TRUNK = 20, TRUNK_BUS = 20;
+  let VIEW = null;
+  /** racine → partie : descente sous la racine, bus, couloir à gauche de la colonne, entrée par le flanc */
+  function trunkCurve(a, sa, b, sb) {
+    const p1 = [a.x + sa.w / 2, a.y + sa.h], by = p1[1] + TRUNK_BUS, lx = b.x - TRUNK, cy = b.y + sb.h / 2;
+    const cv = elbow([p1, [p1[0], by], [lx, by], [lx, cy], [b.x, cy]]);
+    const drop = cy - by, total = TRUNK_BUS + Math.abs(lx - p1[0]) + drop + TRUNK;
+    cv.lt = total > 0 ? (TRUNK_BUS + Math.abs(lx - p1[0]) + drop / 2) / total : 0.5;
+    return cv;
+  }
+  /** « Vers le bas », sous une partie : l'enfant est en dessous et décalé à droite de l'arête */
+  const spineX = (a, sa) => a.x + Math.min(P.treeSpine, sa.w / 2);
+  const isIndented = (a, sa, b, sb) => b.x >= spineX(a, sa) + 8 && b.y + sb.h / 2 >= a.y + sa.h + 4;
+  /** Liste indentée : arête verticale sous le parent, puis trait horizontal vers l'enfant. cv.lt :
+      position du libellé, au milieu du trait horizontal (il se lit entre l'arête et l'enfant) */
+  function spineCurve(a, sa, b, sb) {
+    const sx = spineX(a, sa), p1 = [sx, a.y + sa.h], cy = b.y + sb.h / 2;
+    const cv = elbow([p1, [sx, cy], [b.x, cy]]);
+    const stub = b.x - sx, total = cy - p1[1] + stub;
+    cv.lt = total > 0 ? 1 - stub / 2 / total : 0.5;
+    return cv;
   }
   /** Pyramide : parent → bus horizontal à mi-hauteur → enfant (bus partagé par les frères) */
   function busDown(p1, p2, busY) {
@@ -403,22 +427,8 @@
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
   function treeCurve(mode, a, sa, b, sb, top = false) {
     const [s1, s2] = treeSides(mode, a, sa, b, sb, top);
-    if (mode === 'tree') {
-      // atome : le lien s'ancre là où la droite des centres sort de chaque nœud (jamais de crochet :
-      // il part déjà vers son enfant) et ne fléchit qu'un peu vers la normale du côté — une courbe souple
-      const ca = [a.x + sa.w / 2, a.y + sa.h / 2], cb = [b.x + sb.w / 2, b.y + sb.h / 2];
-      const L = Math.hypot(cb[0] - ca[0], cb[1] - ca[1]) || 1, u = [(cb[0] - ca[0]) / L, (cb[1] - ca[1]) / L];
-      const anchor = (c, z, n, ux, uy, sd) => {
-        const t = Math.min(ux ? z.w / 2 / Math.abs(ux) : Infinity, uy ? z.h / 2 / Math.abs(uy) : Infinity);
-        const ix = Math.min(14, z.w / 2 - 2), iy = Math.min(8, z.h / 2 - 2);
-        const x = c[0] + ux * t, y = c[1] + uy * t;
-        if (sd === 'l' || sd === 'r') return [n.x + (sd === 'r' ? z.w : 0), Math.max(n.y + iy, Math.min(n.y + z.h - iy, y))];
-        return [Math.max(n.x + ix, Math.min(n.x + z.w - ix, x)), n.y + (sd === 'b' ? z.h : 0)];
-      };
-      const p1 = anchor(ca, sa, a, u[0], u[1], s1), p2 = anchor(cb, sb, b, -u[0], -u[1], s2);
-      const bend = (v, d) => { const x = v[0] * 0.7 + d[0] * 0.3, y = v[1] * 0.7 + d[1] * 0.3, m = Math.hypot(x, y) || 1; return [x / m, y / m]; };
-      return cubic(p1, bend(u, DIRS[s1]), p2, bend([-u[0], -u[1]], DIRS[s2]), handle(p1, p2) * 0.8);
-    }
+    if (mode === 'tree' && top && b.y >= a.y + sa.h + TRUNK_BUS) return trunkCurve(a, sa, b, sb);
+    if (mode === 'tree' && s1 === 'b' && s2 === 'l') return spineCurve(a, sa, b, sb);
     if (mode === 'down') {
       // colonne de feuilles : tronc vertical sous le parent, puis l'enfant par son flanc gauche
       const cx = a.x + sa.w / 2, off = b.x - cx;
@@ -1259,118 +1269,89 @@
   function layoutDown(rootId, T, size, prm) {
     const out = { [rootId]: { x: 0, y: 0 } };
     const rs = size(T.byId.get(rootId));
-    const kids = T.kids.get(rootId) || [];
+    const kids = (T.kids.get(rootId) || []).slice();
     if (!kids.length) return out;
     const seen = new Set([rootId]);
     const lbl = (id) => { const L = T.labels && T.labels.get(id); return L ? labelSize('x'.repeat(L)) : null; };
-    const DEG = Math.PI / 180, M = prm.molPad;
-    // géométrie : boîtes { x0, y0, x1, y1 } et segments [ax, ay, bx, by]
-    const box = (cx, cy, w, h, m = 0) => ({ x0: cx - w / 2 - m, y0: cy - h / 2 - m, x1: cx + w / 2 + m, y1: cy + h / 2 + m });
-    const mv = (r, dx, dy) => ({ x0: r.x0 + dx, y0: r.y0 + dy, x1: r.x1 + dx, y1: r.y1 + dy });
-    const hit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
-    const cut = (sg, r) => { // segment ∩ boîte (Liang–Barsky)
-      const [ax, ay, bx, by] = sg, dx = bx - ax, dy = by - ay;
-      let t0 = 0, t1 = 1;
-      for (const [p, q] of [[-dx, ax - r.x0], [dx, r.x1 - ax], [-dy, ay - r.y0], [dy, r.y1 - ay]]) {
-        if (p === 0) { if (q < 0) return false; continue; }
-        const t = q / p;
-        if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
-      }
-      return t0 < t1;
-    };
-    // distance du centre au bord d'une boîte w × h dans la direction (ux, uy)
-    const edge = (w, h, ux, uy) => Math.min(ux ? w / 2 / Math.abs(ux) : Infinity, uy ? h / 2 / Math.abs(uy) : Infinity);
-    // un atome → { pos: id → centre (relatif au centre du nœud), rects (nœuds et libellés), segs (liens) }
-    const atome = (id, dir, reach = prm.molLane, aim = null) => {
+    // une partie = une liste indentée qui descend : arête verticale sous chaque nœud, ses enfants
+    // décalés à droite, l'un sous l'autre. Positions relatives à la tête de la partie.
+    const list = (id, x, y, acc) => {
       seen.add(id);
+      acc[id] = { x, y };
       const s = size(T.byId.get(id));
-      const pos = new Map([[id, { x: 0, y: 0 }]]);
-      const rects = [box(0, 0, s.w, s.h)];
-      const segs = [];
+      let bottom = y + s.h, right = x + s.w;
       const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
-      if (!ch.length) return { pos, rects, segs };
-      const n = ch.length;
-      // le couloir du lien entrant : rien ne s'y pose
-      // (droit vers le parent, et dans l'axe : le lien entre par un flanc, perpendiculairement)
-      const back = [Math.cos(dir + Math.PI), Math.sin(dir + Math.PI)];
-      const axis = Math.abs(back[1]) * s.w >= Math.abs(back[0]) * s.h ? [0, Math.sign(back[1])] : [Math.sign(back[0]), 0];
-      const lanes = aim ? [] : [[0, 0, back[0] * reach, back[1] * reach], [0, 0, axis[0] * reach * 0.7, axis[1] * reach * 0.7]];
-      const S = n > 1 ? Math.min(prm.molSpread, prm.molStep * (n - 1)) * DEG : 0;
-      const subs = ch.map((c, i) => {
-        const a = (aim ? aim(c, i) : dir + (n > 1 ? S - (2 * S * i) / (n - 1) : 0)) + (rnd(c, 1) - 0.5) * prm.molJa * DEG;
-        return { c, a, i, g: atome(c, a) };
-      });
-      // les feuilles d'abord (au plus près), puis les grappes, des plus petites aux plus grandes
-      // (autour de la racine, l'inverse : les grosses parties d'abord, au plus près — les petites se glissent)
-      const order = subs.slice().sort((p, q) => (aim ? -1 : 1) * (p.g.pos.size - q.g.pos.size) || p.i - q.i);
-      for (const sb of order) {
-        const cs = size(T.byId.get(sb.c));
-        const L = T.labelTo && T.labelTo.get(sb.c), ls = L ? labelSize('x'.repeat(L)) : null;
-        const free = (a, r, loose) => {
-          const ux = Math.cos(a), uy = Math.sin(a), ox = ux * r, oy = uy * r;
-          const link = [0, 0, ox, oy];
-          const own = sb.g.rects.map((q) => mv(q, ox, oy));
-          const tag = ls ? box(ox / 2, oy / 2, ls.w, ls.h, 4) : null;
-          for (const q of own) {
-            const qm = { x0: q.x0 - M, y0: q.y0 - M, x1: q.x1 + M, y1: q.y1 + M };
-            for (const p of rects) if (hit(qm, p)) return false;
-            if (tag && hit(q, tag)) return false;
-            if (loose) continue;
-            for (const g of segs) if (cut(g, q)) return false;
-            for (const g of lanes) if (cut(g, q)) return false;
-          }
-          if (loose) { for (const p of rects) if (tag && hit(tag, p)) return false; return { ox, oy, link, own, tag }; }
-          // le lien (sans ses deux extrémités) et son libellé ne touchent rien
-          const e1 = edge(s.w, s.h, ux, uy), e2 = edge(cs.w, cs.h, ux, uy);
-          const body = [ux * e1, uy * e1, ox - ux * e2, oy - uy * e2];
-          for (const p of rects.slice(1)) { if (cut(body, p)) return false; if (tag && hit(tag, p)) return false; }
-          for (const q of own.slice(1)) if (cut(body, q)) return false;
-          for (const g of sb.g.segs) for (const p of rects) if (cut([g[0] + ox, g[1] + oy, g[2] + ox, g[3] + oy], p)) return false;
-          return { ox, oy, link, own, tag };
-        };
-        const ux = Math.cos(sb.a), uy = Math.sin(sb.a);
-        const r0 = edge(s.w, s.h, ux, uy) + edge(cs.w, cs.h, ux, uy) + prm.molGap + (ls ? Math.max(ls.w * Math.abs(ux), ls.h * Math.abs(uy)) + 8 : 0);
-        let got = null;
-        // du plus près au plus loin ; plus on s'éloigne, plus l'angle peut tourner (jusqu'à ±126°) :
-        // une grosse grappe qui ne tient pas dans son axe se pose de biais plutôt que d'être jetée au loin
-        const tries = (k) => { const t = [0]; for (let d = 1; d <= k; d++) t.push(d, -d); return t; };
-        for (const loose of [false, true]) {
-          for (let r = r0; !got && r < r0 + 1600; r += 8 + (r - r0) * 0.12) {
-            const k = Math.min(18, 3 + Math.floor((r - r0) / 90));
-            for (const d of tries(k)) if ((got = free(sb.a + d * prm.molTry * DEG, r, loose))) break;
-          }
-          if (got) break;
+      if (!ch.length) return { bottom, right };
+      const ls = lbl(id);
+      const cx = x + Math.min(prm.treeSpine, s.w / 2) + (ls ? Math.max(prm.treeStub, ls.w + 16) : prm.treeStub);
+      let cy = bottom + prm.treeGap, prev = null;
+      for (const c of ch) {
+        const n = T.byId.get(c);
+        if (prev) {
+          const group = (T.kids.get(prev) || []).length || isStruct(T.byId.get(prev)) || isStruct(n);
+          cy += (group ? prm.treeGroup : prm.treeSib) + linkGap(T, prev, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
         }
-        // dernier recours : tout droit, sans rien chevaucher
-        for (let r = r0 + 1600; !got; r += 40) got = free(sb.a, r, true);
-        for (const [k, p] of sb.g.pos) pos.set(k, { x: p.x + got.ox, y: p.y + got.oy });
-        rects.push(...got.own);
-        if (got.tag) rects.push(got.tag);
-        segs.push(got.link, ...sb.g.segs.map((g) => [g[0] + got.ox, g[1] + got.oy, g[2] + got.ox, g[3] + got.oy]));
+        const r = list(c, cx, cy, acc);
+        cy = r.bottom; right = Math.max(right, r.right); prev = c;
       }
-      return { pos, rects, segs };
+      return { bottom: cy, right };
     };
-    // la racine est elle aussi un atome : ses parties l'entourent dans l'ordre du cours — à gauche,
-    // dessous, à droite — et les dernières, si elles sont légères (une feuille, une petite grappe :
-    // « À retenir », une conclusion), gravitent au-dessus d'elle
-    const weight = (id) => { let n = 1; for (const c of T.kids.get(id) || []) n += weight(c); return n; };
-    const heavy = Math.max(...kids.map(weight));
-    const above = [];
-    for (let i = kids.length - 1; i >= 0 && kids.length - above.length > 2 && above.length < Math.floor(kids.length / 3); i--) {
-      if (weight(kids[i]) > Math.max(1, heavy * prm.molLight)) break;
-      above.unshift(kids[i]);
+    const parts = [];
+    for (const c of kids) {
+      if (seen.has(c)) continue;
+      const acc = {};
+      const r = list(c, 0, 0, acc);
+      parts.push({ id: c, acc, w: r.right, h: r.bottom, ls: (T.labelTo && T.labelTo.get(c)) ? labelSize('x'.repeat(T.labelTo.get(c))) : null });
     }
-    const row = kids.filter((c) => !above.includes(c));
-    const n = row.length, k = above.length;
-    const S = n > 1 ? Math.min(90, 45 * (n - 1)) * DEG : 0;
-    const aim = (c) => {
-      const i = row.indexOf(c);
-      if (i >= 0) return Math.PI / 2 + (n > 1 ? S - (2 * S * i) / (n - 1) : 0);
-      const j = above.indexOf(c);
-      return -Math.PI / 2 + (k > 1 ? (j / (k - 1) - 0.5) * 100 * DEG : 0);
+    // les parties en colonnes, dans l'ordre du cours (de haut en bas, puis colonne suivante) ;
+    // chaque colonne a son couloir à gauche : le lien de la racine y descend puis entre dans la
+    // partie par son flanc. Nombre de colonnes : celui qui rend la carte la plus lisible à l'écran.
+    const ls = lbl(rootId);
+    const top = rs.h + TRUNK_BUS + Math.max(24, ls ? ls.h + 16 : 0);
+    const vp = VIEW || { w: 360, h: 640 };
+    const GAPV = prm.treeGroup + 16;
+    const lane = (pt) => TRUNK + (pt.ls ? Math.max(0, pt.ls.w + 12 - TRUNK) : 0);
+    const build = (k) => {
+      // découpe contiguë : chaque colonne vise la même hauteur
+      const H = parts.reduce((a, pt) => a + pt.h + GAPV, 0) / k;
+      const cols = [[]];
+      let h = 0;
+      parts.forEach((pt, i) => {
+        const left = parts.length - i, need = k - cols.length;
+        if (cols[cols.length - 1].length && (h + pt.h / 2 > H || left <= need) && cols.length < k) { cols.push([]); h = 0; }
+        cols[cols.length - 1].push(pt); h += pt.h + GAPV;
+      });
+      const pos = {};
+      let x = 0, W = 0, Hh = 0;
+      const heads = [];
+      for (const col of cols) {
+        const ln = Math.max(...col.map(lane));
+        const cx = x + ln;
+        let y = top, right = cx;
+        for (const pt of col) {
+          for (const id in pt.acc) pos[id] = { x: cx + pt.acc[id].x, y: y + pt.acc[id].y };
+          right = Math.max(right, cx + pt.w);
+          y += pt.h + GAPV;
+        }
+        heads.push(cx);
+        Hh = Math.max(Hh, y - GAPV);
+        W = right; x = right + prm.treeColGap;
+      }
+      // la racine au-dessus du milieu des couloirs
+      const mid = (heads[0] - TRUNK + heads[heads.length - 1]) / 2;
+      pos[rootId] = { x: mid - rs.w / 2, y: 0 };
+      const x0 = Math.min(0, pos[rootId].x), x1 = Math.max(W, pos[rootId].x + rs.w);
+      return { pos, k: cols.length, W: x1 - x0, H: Hh };
     };
-    const g = atome(rootId, Math.PI / 2, prm.molLane, aim);
-    for (const [id, p] of g.pos) { const z = size(T.byId.get(id)); out[id] = { x: p.x + rs.w / 2 - z.w / 2, y: p.y + rs.h / 2 - z.h / 2 }; }
+    let best = null;
+    for (let k = 1; k <= parts.length; k++) {
+      const b = build(k);
+      if (b.k < k) break;
+      // lisible à l'écran (échelle pour tout voir), sans colonne si étroite qu'elle gaspille la largeur
+      b.v = Math.min(vp.w / b.W, vp.h / b.H) * (1 - 0.02 * k);
+      if (!best || b.v > best.v + 1e-9) best = b;
+    }
+    Object.assign(out, best.pos);
     return out;
   }
 
@@ -1671,6 +1652,7 @@
   function arrange(map, size = (n) => estimate(n, map), opts = {}) {
     const T = buildTree(map);
     if (!T.roots.length) return { pos: {}, mode: 'right', score: null, tried: [] };
+    VIEW = opts.viewport && opts.viewport.w > 0 && opts.viewport.h > 0 ? { w: opts.viewport.w, h: opts.viewport.h } : null;
     // la carte du plan est toujours une pyramide : sommaire lisible d'un coup d'œil
     const want = map.role === 'plan' ? 'down' : opts.mode && opts.mode !== 'auto' ? opts.mode : 'auto';
     const main = T.kids.get(T.roots[0]) || [];

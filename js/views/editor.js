@@ -1368,7 +1368,7 @@
     const LAYOUT_CHOICES = [
       ['auto', 'Automatique (conseillé)', 'Pioneer compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
         '<rect x="2.5" y="9.5" width="7" height="5" rx="1.2"/><path d="M9.5 12h3"/><path d="M17 3.5l1.1 2.6 2.6 1.1-2.6 1.1L17 10.9l-1.1-2.6-2.6-1.1 2.6-1.1z"/><path d="M17.5 14.5v5M15 17h5"/>'],
-      ['tree', 'Vers le bas', 'Les grandes parties côte à côte, de gauche à droite : on voit d’emblée comment la carte se divise. Chaque partie se déploie en grappe vers le bas, avec des liens souples.',
+      ['tree', 'Vers le bas', 'Le titre en haut, les grandes parties en dessous, dans l’ordre, en une ou plusieurs colonnes selon l’écran. Chaque partie descend comme un plan : ses idées en retrait, l’une sous l’autre.',
         '<rect x="8.5" y="2" width="7" height="4.5" rx="1.2"/><rect x="2" y="11" width="7" height="3.5" rx="1.2"/><rect x="15" y="10" width="7" height="3.5" rx="1.2"/><rect x="1" y="18.5" width="4.5" height="3.5" rx="1"/><rect x="7.5" y="19" width="4.5" height="3.5" rx="1"/><rect x="17" y="18" width="4.5" height="3.5" rx="1"/><path d="M10.5 6.5C8 7.5 6 8.5 5.5 11M13.5 6.5c2.5 1 4.5 2 5 3.5M4.5 14.5c-.5 1.5-1 2.5-1.25 4M6 14.5c1 1.5 2.5 2.5 3.75 4.5M18.5 13.5c.5 1.5.75 2.5.75 4.5"/>'],
       ['right', 'Vers la droite', 'La lecture la plus familière : de gauche à droite, de haut en bas.',
         '<rect x="2" y="9.5" width="6" height="5" rx="1.2"/><rect x="15" y="3.5" width="7" height="4" rx="1.2"/><rect x="15" y="10" width="7" height="4" rx="1.2"/><rect x="15" y="16.5" width="7" height="4" rx="1.2"/><path d="M8 12h3.5M11.5 5.5v13M11.5 5.5H15M11.5 12H15M11.5 18.5H15"/>'],
