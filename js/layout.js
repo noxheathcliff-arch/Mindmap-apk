@@ -150,7 +150,6 @@
 
   /** Côtés d'attache d'un lien hiérarchique, selon la disposition */
   function treeSides(mode, a, sa, b, sb, top = false) {
-    if (mode === 'tree' && top && b.y >= a.y + sa.h + TRUNK_BUS) return ['b', 'l'];
     if (mode === 'down') return b.y + sb.h / 2 >= a.y + sa.h / 2 ? ['b', 't'] : ['t', 'b'];
     if (mode === 'tree' && isIndented(a, sa, b, sb)) return ['b', 'l'];
     const gap = 6;
@@ -187,17 +186,6 @@
       return z;
     };
     return { d, at, p1: pts[0], p2: z };
-  }
-  /** « Vers le bas » : couloir à gauche d'une partie (le lien de la racine y descend), bus sous la racine */
-  const TRUNK = 20, TRUNK_BUS = 20;
-  let VIEW = null;
-  /** racine → partie : descente sous la racine, bus, couloir à gauche de la colonne, entrée par le flanc */
-  function trunkCurve(a, sa, b, sb) {
-    const p1 = [a.x + sa.w / 2, a.y + sa.h], by = p1[1] + TRUNK_BUS, lx = b.x - TRUNK, cy = b.y + sb.h / 2;
-    const cv = elbow([p1, [p1[0], by], [lx, by], [lx, cy], [b.x, cy]]);
-    const drop = cy - by, total = TRUNK_BUS + Math.abs(lx - p1[0]) + drop + TRUNK;
-    cv.lt = total > 0 ? (TRUNK_BUS + Math.abs(lx - p1[0]) + drop / 2) / total : 0.5;
-    return cv;
   }
   /** « Vers le bas », sous une partie : l'enfant est en dessous et décalé à droite de l'arête */
   const spineX = (a, sa) => a.x + Math.min(P.treeSpine, sa.w / 2);
@@ -292,7 +280,9 @@
   }
   /** Point d'ancrage choisi à la main : côté s (t|r|b|l) et position t (0–1) le long de ce côté */
   function anchorPoint(n, s, a) {
-    const t = a.t == null ? 0.5 : a.t;
+    // jamais dans l'arrondi d'un coin : là, le trait semblerait décollé du nœud
+    const len = a.s === 'l' || a.s === 'r' ? s.h : s.w, m = Math.min(18, len / 2) / (len || 1);
+    const t = Math.max(m, Math.min(1 - m, a.t == null ? 0.5 : a.t));
     if (a.s === 'l') return [n.x, n.y + s.h * t];
     if (a.s === 'r') return [n.x + s.w, n.y + s.h * t];
     if (a.s === 't') return [n.x + s.w * t, n.y];
@@ -427,7 +417,6 @@
   /** Courbe d'un lien hiérarchique (ou d'un lien sans contrainte) */
   function treeCurve(mode, a, sa, b, sb, top = false) {
     const [s1, s2] = treeSides(mode, a, sa, b, sb, top);
-    if (mode === 'tree' && top && b.y >= a.y + sa.h + TRUNK_BUS) return trunkCurve(a, sa, b, sb);
     if (mode === 'tree' && s1 === 'b' && s2 === 'l') return spineCurve(a, sa, b, sb);
     if (mode === 'down') {
       // colonne de feuilles : tronc vertical sous le parent, puis l'enfant par son flanc gauche
@@ -991,8 +980,9 @@
     }
     const p1 = cv.at(0), p2 = cv.at(1);
     const excl = [{ x: p2[0] - LM.end, y: p2[1] - LM.end, w: 2 * LM.end, h: 2 * LM.end }, { x: p1[0] - LM.end / 2, y: p1[1] - LM.end / 2, w: LM.end, h: LM.end }, ...(zones || [])];
-    // sur le trait d'abord ; à défaut, décalé de part et d'autre (perpendiculaire), puis plus loin
-    for (const shift of [0, 1, -1, 2, -2]) {
+    // sur le trait d'abord ; à défaut, collé au trait d'un côté ou de l'autre — jamais plus loin :
+    // un libellé qui flotte à l'écart ne se lit plus comme celui de son lien
+    for (const shift of [0, 1, -1]) {
       for (const t of ts) {
         const p = cv.at(t);
         let x = p[0], y = p[1];
@@ -1000,7 +990,7 @@
           const q = cv.at(Math.min(1, t + 0.02)), o = cv.at(Math.max(0, t - 0.02));
           let nx = -(q[1] - o[1]), ny = q[0] - o[0];
           const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
-          const off = (Math.abs(nx) > Math.abs(ny) ? size.w / 2 + 6 : size.h / 2 + 6) + (Math.abs(shift) === 2 ? 20 : 0); // un cran plus loin, pas une demi-largeur de plus
+          const off = Math.abs(nx) > Math.abs(ny) ? size.w / 2 + 2 : size.h / 2 + 2; // le bord du libellé touche le trait
           x += nx * off * Math.sign(shift); y += ny * off * Math.sign(shift);
         }
         const box = { x: x - size.w / 2, y: y - size.h / 2, w: size.w, h: size.h };
@@ -1267,91 +1257,34 @@
    * ni le libellé du lien ne touchent ce qui est déjà posé. Léger désordre déterministe.
    */
   function layoutDown(rootId, T, size, prm) {
-    const out = { [rootId]: { x: 0, y: 0 } };
-    const rs = size(T.byId.get(rootId));
-    const kids = (T.kids.get(rootId) || []).slice();
-    if (!kids.length) return out;
-    const seen = new Set([rootId]);
+    // un plan qui descend : le titre en haut à gauche, chaque idée sous son parent, en retrait,
+    // reliée à l'arête verticale qui descend sous lui. Les grandes parties se lisent dans l'ordre,
+    // de haut en bas, séparées d'un blanc plus large.
+    const out = {};
+    const seen = new Set();
     const lbl = (id) => { const L = T.labels && T.labels.get(id); return L ? labelSize('x'.repeat(L)) : null; };
-    // une partie = une liste indentée qui descend : arête verticale sous chaque nœud, ses enfants
-    // décalés à droite, l'un sous l'autre. Positions relatives à la tête de la partie.
-    const list = (id, x, y, acc) => {
+    const list = (id, x, y, depth) => {
       seen.add(id);
-      acc[id] = { x, y };
+      out[id] = { x, y };
       const s = size(T.byId.get(id));
-      let bottom = y + s.h, right = x + s.w;
       const ch = (T.kids.get(id) || []).filter((c) => !seen.has(c));
-      if (!ch.length) return { bottom, right };
+      if (!ch.length) return y + s.h;
       const ls = lbl(id);
       const cx = x + Math.min(prm.treeSpine, s.w / 2) + (ls ? Math.max(prm.treeStub, ls.w + 16) : prm.treeStub);
-      let cy = bottom + prm.treeGap, prev = null;
+      let cy = y + s.h + (depth === 0 ? prm.treeGroup : prm.treeGap), prev = null;
       for (const c of ch) {
+        if (seen.has(c)) continue;
         const n = T.byId.get(c);
         if (prev) {
-          const group = (T.kids.get(prev) || []).length || isStruct(T.byId.get(prev)) || isStruct(n);
-          cy += (group ? prm.treeGroup : prm.treeSib) + linkGap(T, prev, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
+          const group = depth === 0 ? prm.treeGroup * 1.5 : (T.kids.get(prev) || []).length || isStruct(T.byId.get(prev)) || isStruct(n) ? prm.treeGroup : prm.treeSib;
+          cy += group + linkGap(T, prev, c) + (ls ? Math.max(0, ls.h + 8 - size(n).h) : 0);
         }
-        const r = list(c, cx, cy, acc);
-        cy = r.bottom; right = Math.max(right, r.right); prev = c;
+        cy = list(c, cx, cy, depth + 1);
+        prev = c;
       }
-      return { bottom: cy, right };
+      return cy;
     };
-    const parts = [];
-    for (const c of kids) {
-      if (seen.has(c)) continue;
-      const acc = {};
-      const r = list(c, 0, 0, acc);
-      parts.push({ id: c, acc, w: r.right, h: r.bottom, ls: (T.labelTo && T.labelTo.get(c)) ? labelSize('x'.repeat(T.labelTo.get(c))) : null });
-    }
-    // les parties en colonnes, dans l'ordre du cours (de haut en bas, puis colonne suivante) ;
-    // chaque colonne a son couloir à gauche : le lien de la racine y descend puis entre dans la
-    // partie par son flanc. Nombre de colonnes : celui qui rend la carte la plus lisible à l'écran.
-    const ls = lbl(rootId);
-    const top = rs.h + TRUNK_BUS + Math.max(24, ls ? ls.h + 16 : 0);
-    const vp = VIEW || { w: 360, h: 640 };
-    const GAPV = prm.treeGroup + 16;
-    const lane = (pt) => TRUNK + (pt.ls ? Math.max(0, pt.ls.w + 12 - TRUNK) : 0);
-    const build = (k) => {
-      // découpe contiguë : chaque colonne vise la même hauteur
-      const H = parts.reduce((a, pt) => a + pt.h + GAPV, 0) / k;
-      const cols = [[]];
-      let h = 0;
-      parts.forEach((pt, i) => {
-        const left = parts.length - i, need = k - cols.length;
-        if (cols[cols.length - 1].length && (h + pt.h / 2 > H || left <= need) && cols.length < k) { cols.push([]); h = 0; }
-        cols[cols.length - 1].push(pt); h += pt.h + GAPV;
-      });
-      const pos = {};
-      let x = 0, W = 0, Hh = 0;
-      const heads = [];
-      for (const col of cols) {
-        const ln = Math.max(...col.map(lane));
-        const cx = x + ln;
-        let y = top, right = cx;
-        for (const pt of col) {
-          for (const id in pt.acc) pos[id] = { x: cx + pt.acc[id].x, y: y + pt.acc[id].y };
-          right = Math.max(right, cx + pt.w);
-          y += pt.h + GAPV;
-        }
-        heads.push(cx);
-        Hh = Math.max(Hh, y - GAPV);
-        W = right; x = right + prm.treeColGap;
-      }
-      // la racine au-dessus du milieu des couloirs
-      const mid = (heads[0] - TRUNK + heads[heads.length - 1]) / 2;
-      pos[rootId] = { x: mid - rs.w / 2, y: 0 };
-      const x0 = Math.min(0, pos[rootId].x), x1 = Math.max(W, pos[rootId].x + rs.w);
-      return { pos, k: cols.length, W: x1 - x0, H: Hh };
-    };
-    let best = null;
-    for (let k = 1; k <= parts.length; k++) {
-      const b = build(k);
-      if (b.k < k) break;
-      // lisible à l'écran (échelle pour tout voir), sans colonne si étroite qu'elle gaspille la largeur
-      b.v = Math.min(vp.w / b.W, vp.h / b.H) * (1 - 0.02 * k);
-      if (!best || b.v > best.v + 1e-9) best = b;
-    }
-    Object.assign(out, best.pos);
+    list(rootId, 0, 0, 0);
     return out;
   }
 
@@ -1652,7 +1585,6 @@
   function arrange(map, size = (n) => estimate(n, map), opts = {}) {
     const T = buildTree(map);
     if (!T.roots.length) return { pos: {}, mode: 'right', score: null, tried: [] };
-    VIEW = opts.viewport && opts.viewport.w > 0 && opts.viewport.h > 0 ? { w: opts.viewport.w, h: opts.viewport.h } : null;
     // la carte du plan est toujours une pyramide : sommaire lisible d'un coup d'œil
     const want = map.role === 'plan' ? 'down' : opts.mode && opts.mode !== 'auto' ? opts.mode : 'auto';
     const main = T.kids.get(T.roots[0]) || [];

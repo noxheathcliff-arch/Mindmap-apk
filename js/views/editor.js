@@ -55,6 +55,17 @@
       lastTap: null,
       destroyed: false,
     };
+    // un nœud qui change de taille après coup (police, progression, image, texte) : sans ça, les
+    // liens restent accrochés à l'ancien bord et semblent se décoller
+    let sizeDirty = false;
+    const sizeWatch = typeof ResizeObserver === 'function' ? new ResizeObserver((entries) => {
+      for (const en of entries) {
+        const el = en.target, id = el.dataset.id, old = id && st.sizes.get(id);
+        if (!old || el.classList.contains('dying') || !el.isConnected) continue;
+        if (Math.abs(el.offsetWidth - old.w) > 1 || Math.abs(el.offsetHeight - old.h) > 1) { el.dataset.sized = ''; sizeDirty = true; }
+      }
+      if (sizeDirty && !st.destroyed) requestAnimationFrame(() => { if (!sizeDirty || st.destroyed) return; sizeDirty = false; measure(); renderEdges(); });
+    }) : null;
     ed.st = st;
 
     /* ------------------------------------------------------------------ */
@@ -609,6 +620,7 @@
         if (el.dataset.sized === '1' && st.sizes.has(id)) continue;
         st.sizes.set(id, { w: el.offsetWidth, h: el.offsetHeight });
         el.dataset.sized = '1';
+        if (sizeWatch && !el.__watched) { el.__watched = true; sizeWatch.observe(el); }
       }
     }
 
@@ -1366,14 +1378,14 @@
 
     /** Disposition : automatique (le moteur compare et garde la plus lisible) ou imposée */
     const LAYOUT_CHOICES = [
-      ['auto', 'Automatique (conseillé)', 'Pioneer compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
+      ['organic', 'Libre (par défaut)', 'Les branches s’ouvrent en éventail, un peu en désordre, comme à la main — sans qu’aucun lien ne traverse un nœud.',
+        '<rect x="9" y="10" width="6" height="4.5" rx="1.2"/><rect x="2" y="3.5" width="5" height="4" rx="1.2"/><rect x="3.5" y="17" width="5" height="4" rx="1.2"/><rect x="17" y="2.5" width="5" height="4" rx="1.2"/><rect x="16" y="16.5" width="5.5" height="4" rx="1.2"/><path d="M9 11.5C7 10 6.5 8.5 6 7.5M9.5 14.5C8.5 16 7.5 16.5 7 17M15 11c1.2-1.5 2-3 2.5-4.5M14.5 14.5c1 1 1.8 1.6 2.3 2"/>'],
+      ['auto', 'Automatique', 'Pioneer compare les dispositions et garde la plus lisible pour cette carte et cet écran.',
         '<rect x="2.5" y="9.5" width="7" height="5" rx="1.2"/><path d="M9.5 12h3"/><path d="M17 3.5l1.1 2.6 2.6 1.1-2.6 1.1L17 10.9l-1.1-2.6-2.6-1.1 2.6-1.1z"/><path d="M17.5 14.5v5M15 17h5"/>'],
-      ['tree', 'Vers le bas', 'Le titre en haut, les grandes parties en dessous, dans l’ordre, en une ou plusieurs colonnes selon l’écran. Chaque partie descend comme un plan : ses idées en retrait, l’une sous l’autre.',
+      ['tree', 'Vers le bas', 'Comme un plan de cours : le titre en haut, puis chaque partie et ses idées l’une sous l’autre, en retrait, dans l’ordre de lecture.',
         '<rect x="8.5" y="2" width="7" height="4.5" rx="1.2"/><rect x="2" y="11" width="7" height="3.5" rx="1.2"/><rect x="15" y="10" width="7" height="3.5" rx="1.2"/><rect x="1" y="18.5" width="4.5" height="3.5" rx="1"/><rect x="7.5" y="19" width="4.5" height="3.5" rx="1"/><rect x="17" y="18" width="4.5" height="3.5" rx="1"/><path d="M10.5 6.5C8 7.5 6 8.5 5.5 11M13.5 6.5c2.5 1 4.5 2 5 3.5M4.5 14.5c-.5 1.5-1 2.5-1.25 4M6 14.5c1 1.5 2.5 2.5 3.75 4.5M18.5 13.5c.5 1.5.75 2.5.75 4.5"/>'],
       ['right', 'Vers la droite', 'La lecture la plus familière : de gauche à droite, de haut en bas.',
         '<rect x="2" y="9.5" width="6" height="5" rx="1.2"/><rect x="15" y="3.5" width="7" height="4" rx="1.2"/><rect x="15" y="10" width="7" height="4" rx="1.2"/><rect x="15" y="16.5" width="7" height="4" rx="1.2"/><path d="M8 12h3.5M11.5 5.5v13M11.5 5.5H15M11.5 12H15M11.5 18.5H15"/>'],
-      ['organic', 'Libre', 'Les branches s’ouvrent en éventail, un peu en désordre, comme à la main — sans qu’aucun lien ne traverse un nœud.',
-        '<rect x="9" y="10" width="6" height="4.5" rx="1.2"/><rect x="2" y="3.5" width="5" height="4" rx="1.2"/><rect x="3.5" y="17" width="5" height="4" rx="1.2"/><rect x="17" y="2.5" width="5" height="4" rx="1.2"/><rect x="16" y="16.5" width="5.5" height="4" rx="1.2"/><path d="M9 11.5C7 10 6.5 8.5 6 7.5M9.5 14.5C8.5 16 7.5 16.5 7 17M15 11c1.2-1.5 2-3 2.5-4.5M14.5 14.5c1 1 1.8 1.6 2.3 2"/>'],
       ['balanced', 'Centrée', 'Le sujet au centre, les branches de chaque côté, dans le sens des aiguilles d’une montre.',
         '<rect x="9" y="9.5" width="6" height="5" rx="1.2"/><rect x="1.5" y="4" width="5" height="4" rx="1.2"/><rect x="1.5" y="16" width="5" height="4" rx="1.2"/><rect x="17.5" y="4" width="5" height="4" rx="1.2"/><rect x="17.5" y="16" width="5" height="4" rx="1.2"/><path d="M9 12H6.5M6.5 6v12M15 12h2.5M17.5 6v12"/>'],
       ['down', 'Pyramide', 'De haut en bas : pour une petite hiérarchie large et peu profonde.',
@@ -1381,7 +1393,7 @@
     ];
     function chooseLayout() {
       if (guard()) return;
-      const cur = map.layoutPick || 'auto';
+      const cur = map.layoutPick || 'organic';
       let closeFn = null;
       const list = h('div.choice-list.form-choice.layout-choices', { role: 'radiogroup', 'aria-label': 'Disposition de la carte' },
         LAYOUT_CHOICES.map(([v, title, text, icon]) => {
@@ -1593,19 +1605,19 @@
         ui.snack(`Rangé · ${n > 1 ? n + ' corrections d’organisation appliquées' : '1 correction d’organisation appliquée'}`, { action: 'Voir', onAction: openOrganize, duration: 5000 });
         return true;
       };
-      const pick = mode ? (mode === 'auto' ? null : mode) : map.layoutPick || null;
-      const res = R.layout.arrange(map, sizeFn, { mode: pick || 'auto', viewport: viewportSize() });
+      const pick = mode || map.layoutPick || 'organic';
+      const res = R.layout.arrange(map, sizeFn, { mode: pick, viewport: viewportSize() });
       const target = res.pos;
       const modeChanged = res.mode !== (map.layout || 'right');
       const from = {};
       for (const n of map.nodes) from[n.id] = { x: n.x, y: n.y };
       const moved = map.nodes.some((n) => target[n.id] && (Math.abs(target[n.id].x - n.x) > 1 || Math.abs(target[n.id].y - n.y) > 1));
-      const pickChanged = (pick || null) !== (map.layoutPick || null);
+      const pickChanged = pick !== (map.layoutPick || 'organic');
       if (!moved && !modeChanged && !pickChanged) { fit(); if (userTidy && !announce()) setTimeout(hintOrganize, 500); return; }
       if (!opts.noUndo) { st.undo.push(snapshot()); st.redo = []; st.coalesce = null; }
       // l'ordre de lecture suit la disposition : on la fixe avant l'animation (rien ne se renumérote en route)
       map.layout = res.mode;
-      if (pick) map.layoutPick = pick; else delete map.layoutPick;
+      if (pick === 'organic') delete map.layoutPick; else map.layoutPick = pick;
       if (!moved) { S.touchMap(map, 'edit'); render(); fit(); announce(); return; }
       if (tidyStop) tidyStop();
       /* Overlapping action : chaque niveau de profondeur démarre 24 ms après son
@@ -3833,7 +3845,7 @@
       let laidOut = false;
       if (map.needsLayout) {
         // première ouverture d'une carte importée : rangement avec les tailles réelles
-        const res = R.layout.arrange(map, sizeFn, { mode: map.layoutPick || 'auto', viewport: viewportSize() });
+        const res = R.layout.arrange(map, sizeFn, { mode: map.layoutPick || 'organic', viewport: viewportSize() });
         for (const n of map.nodes) if (res.pos[n.id]) Object.assign(n, res.pos[n.id]);
         map.layout = res.mode;
         delete map.needsLayout;
@@ -3907,6 +3919,7 @@
     this.unmount = () => {
       flushEdit();
       st.destroyed = true;
+      if (sizeWatch) sizeWatch.disconnect();
       if (R.actions.chooseLayout === chooseLayout) R.actions.chooseLayout = null;
       if (R.actions.organize === openOrganize) R.actions.organize = null;
       offStore();

@@ -461,9 +461,9 @@
         ...(m.role === 'plan' ? { role: 'plan' } : {}),
         ...(m.needsLayout || (rep && stacked) ? { needsLayout: true } : {}),
         ...(m.readOnly ? { readOnly: true } : {}),
-        // disposition : celle en place (layout) et celle choisie par l'utilisateur (layoutPick, sinon automatique)
+        // disposition : celle en place (layout) et celle choisie par l'utilisateur (layoutPick, sinon libre)
         ...(LAYOUTS.includes(m.layout) ? { layout: m.layout } : {}),
-        ...(LAYOUTS.includes(m.layoutPick) ? { layoutPick: m.layoutPick } : {}),
+        ...(LAYOUTS.includes(m.layoutPick) || m.layoutPick === 'auto' ? { layoutPick: m.layoutPick } : {}),
         // couleur par type propre à la carte (« tous les <type> ») et stabilisateur des liens (0 libre → 1 orthogonal)
         ...(m.typeColors && typeof m.typeColors === 'object' && Object.keys(m.typeColors).some((t) => TYPES[t] && HUES[m.typeColors[t]])
           ? { typeColors: Object.fromEntries(Object.entries(m.typeColors).filter(([t, c]) => TYPES[t] && HUES[c])) } : {}),
@@ -1473,7 +1473,7 @@
       const stacked = m.nodes.every((n) => n.x === m.nodes[0].x && n.y === m.nodes[0].y);
       if (!stacked && !force) return false;
       const vp = typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight - 64 } : undefined;
-      const r = R.layout.arrange(m, (n) => R.layout.estimate(n, m), { mode: m.layoutPick || m.layout || 'auto', viewport: vp, fast: true });
+      const r = R.layout.arrange(m, (n) => R.layout.estimate(n, m), { mode: m.layoutPick || 'organic', viewport: vp, fast: true });
       for (const n of m.nodes) if (r.pos[n.id]) Object.assign(n, r.pos[n.id]);
       m.layout = r.mode;
       return true;
