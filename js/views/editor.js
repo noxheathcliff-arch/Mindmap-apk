@@ -809,10 +809,17 @@
       for (const [k, j] of joins) if (j.edges.length < 2) joins.delete(k);
       return joins;
     }
+    /** Ce qui se lit sur J : le libellé libre d'abord, sinon ET / OU, sinon rien (un simple point) */
     function joinLabel(j) {
       const e = j.edges[0];
       if (e.label) return e.label;
       return e.op === 'et' ? 'ET' : e.op === 'ou' ? 'OU' : '';
+    }
+    /** Apparence d'une jonction (celle de ses branches) posée sur le tronc : la flèche y est, au bout */
+    function paintJoinTrunk(trunk, e, sel) {
+      const es = e.style || {};
+      const arrow = es.arrow === 'none' ? 'none' : 'end';
+      paintEdgeStyle({ path: trunk, seq: true }, { kind: 'link', style: { ...es, arrow } }, sel);
     }
     /** Géométrie : côté d'entrée du résultat face au barycentre des sources, J à ~42 % de l'écart */
     function joinGeometry(j, byId) {
@@ -838,7 +845,17 @@
       }
       if (!Number.isFinite(gap)) gap = 80;
       const reach = U.clamp(gap * 0.42, 24, 120);
-      return { p2, d, J: [p2[0] + d[0] * reach, p2[1] + d[1] * reach] };
+      const auto = [p2[0] + d[0] * reach, p2[1] + d[1] * reach];
+      const off = j.edges[0].jxy;
+      if (!off) return { p2, d, J: auto, auto };
+      // point de fusion déplacé à la main : décalage depuis le point automatique (il suit le résultat) ;
+      // le tronc entre par le côté du résultat qui fait face au nouveau point
+      const J = [auto[0] + off.x, auto[1] + off.y];
+      const tc = [t.x + stt.w / 2, t.y + stt.h / 2], ox = J[0] - tc[0], oy = J[1] - tc[1];
+      const s2 = Math.abs(ox) / (stt.w / 2 || 1) >= Math.abs(oy) / (stt.h / 2 || 1) ? (ox < 0 ? 'l' : 'r') : (oy < 0 ? 't' : 'b');
+      const q2 = R.layout.sidePoint(t, stt, s2);
+      const vx = J[0] - q2[0], vy = J[1] - q2[1], l = Math.hypot(vx, vy);
+      return { p2: q2, d: l > 1 ? [vx / l, vy / l] : ({ r: [1, 0], l: [-1, 0], b: [0, 1], t: [0, -1] })[s2], J, auto };
     }
     /** Branche d'une jonction : de la source jusqu'à J, où elle arrive dans l'axe du tronc */
     function joinBranch(a, gm) {
@@ -936,7 +953,7 @@
       for (const n of map.nodes) if (!hidden.has(n.id)) { const s2 = size(n); rects.push({ id: n.id, x: n.x, y: n.y, w: s2.w, h: s2.h }); }
       const rectAt = new Map(rects.map((r) => [r.id, r]));
       // signature de la géométrie : si rien n'a bougé ni changé (sélection, survol…), les renvois gardent leur tracé sans recalcul
-      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '') + (e.join ? '+' + e.join + (e.op || '') : '') + (shaped(e) ? JSON.stringify([e.a1, e.a2, e.bend, e.via, e.style && e.style.shape]) : '')).join('|') + '#' + map.layout + (map.calm || 0);
+      const geoSig = rects.map((r) => `${r.id}:${Math.round(r.x)},${Math.round(r.y)},${r.w},${r.h}`).join('|') + '#' + visible.map((e) => e.id + e.kind + e.label + (e.group || '') + (e.join ? '+' + e.join + (e.op || '') + (e.jxy ? '@' + e.jxy.x + ',' + e.jxy.y : '') : '') + (shaped(e) ? JSON.stringify([e.a1, e.a2, e.bend, e.via, e.style && e.style.shape]) : '')).join('|') + '#' + map.layout + (map.calm || 0);
       const sameGeo = st.geoSig === geoSig;
       if (!st.fastEdges) st.geoSig = geoSig;
       if (!st.routePrev) st.routePrev = new Map();
@@ -1029,15 +1046,21 @@
         const sel = !!(selJoin && j.join === selJoin);
         const related = st.sel.has(j.to) || j.edges.some((e) => st.sel.has(e.from));
         jr.trunk.setAttribute('class', `edge trunk k-join${sel ? ' sel' : ''}${related ? ' rel' : ''}`);
-        jr.trunk.setAttribute('marker-end', sel ? 'url(#arw-sel)' : 'url(#arw)');
+        paintJoinTrunk(jr.trunk, j.edges[0], sel);
         const lbl = joinLabel(j);
         setLabel(jr.label, lbl, { sel, logic: !j.edges[0].label && !!lbl });
+        // ni libellé ni ET / OU : un petit point neutre, toujours saisissable (menu, glisser)
+        jr.label.hidden = false;
+        jr.label.classList.toggle('join-dot', !lbl);
+        jr.label.classList.toggle('moved', !!j.edges[0].jxy);
         jr.label.dataset.edge = j.edges[0].id;
+        if (lbl) delete jr.label.dataset.tip; else jr.label.dataset.tip = 'Jonction : toucher pour nommer, glisser pour déplacer';
         jr.label.setAttribute('aria-label', `Jonction ${lbl || 'sans libellé'} (${j.edges.length} branches) — modifier`);
         jr.label.style.transform = `translate(${gm.J[0]}px, ${gm.J[1]}px) translate(-50%, -50%)`;
         if (lbl) { const w = jr.label.offsetWidth || 28, hh = jr.label.offsetHeight || 19; jr.label._box = { x: gm.J[0] - w / 2, y: gm.J[1] - hh / 2, w, h: hh }; }
-        else jr.label._box = null;
+        else jr.label._box = { x: gm.J[0] - 7, y: gm.J[1] - 7, w: 14, h: 14 };
       }
+      st.jgeo = jgeo;
       for (const [k, jr] of st.joinEls) {
         if (aliveJ.has(k)) continue;
         jr.g.remove(); jr.label.remove();
@@ -1497,6 +1520,7 @@
           // une fourche (ou une jonction) dupliquée devient une fourche (une jonction) indépendante
           if (e.group) copy.group = groupMap[e.group] || (groupMap[e.group] = U.uid('g'));
           if (e.join) copy.join = joinMap[e.join] || (joinMap[e.join] = U.uid('j'));
+          if (e.jxy) copy.jxy = { ...e.jxy };
           map.edges.push(copy);
         }
         const pe = S.parentEdge(map, id);
@@ -1933,8 +1957,9 @@
       const menu = edgeMenuItems(e);
       const jn = S.joinOf(map, e);
       if (jn.length) return [
-        { chip: true, label: e.op ? opName(e.op) : 'ET / OU', act: run((x, b) => ui.menu(b, joinMenuItems(x))), tip: `Jonction de ${jn.length} branches : ET, OU, séparer`, v: `${e.join}|${e.op || ''}|${jn.length}` },
-        { icon: 'palette', label: 'Libellé', act: run((x, b) => edgeSheet(x, b)), tip: 'Libellé commun et apparence' },
+        { chip: true, label: e.label || 'Libellé', act: run((x, b) => edgeSheet(x, b)), tip: `Libellé libre de la jonction (${jn.length} branches)`, v: `${e.join}|${jn.length}` },
+        { icon: 'logic', label: e.op ? opName(e.op) : 'ET / OU', act: run((x, b) => ui.menu(b, joinMenuItems(x, b))), tip: 'ET, OU ou sans ; point de fusion', v: `${e.op || ''}|${e.jxy ? 1 : 0}` },
+        { icon: 'palette', label: 'Apparence', act: run((x, b) => edgeSheet(x, b)), tip: 'Couleur, trait, flèche de toute la jonction' },
         { icon: 'link', label: 'Détacher', act: run((x) => detachJoinBranch(x)), tip: 'Détacher cette branche de la jonction' },
         { icon: 'swap', label: 'Séparer', act: run((x) => unjoin(x)), tip: 'Séparer la jonction en liens simples' },
         { icon: 'trash', label: 'Supprimer', act: run((x) => deleteEdge(x.id)), danger: true, kbd: 'Suppr', tip: 'Supprimer cette branche' },
@@ -2214,8 +2239,14 @@
       const cur = () => map.edges.find((x) => x.id === id);
       const before = snapshot();
       const grp = S.groupOf(map, e);
-      let scope = grp.length ? 'fork' : 'edge';
-      const targets = () => { const x = cur(); if (!x) return []; const g = S.groupOf(map, x); return scope === 'fork' && g.length ? g : [x]; };
+      // jonction : libellé, ET / OU et apparence valent pour toutes les branches (et le tronc)
+      const jn0 = S.joinOf(map, e);
+      let scope = jn0.length ? 'join' : grp.length ? 'fork' : 'edge';
+      const targets = () => {
+        const x = cur(); if (!x) return [];
+        if (scope === 'join') { const j = S.joinOf(map, x); return j.length ? j : [x]; }
+        const g = S.groupOf(map, x); return scope === 'fork' && g.length ? g : [x];
+      };
       // aperçu : on modifie la carte sans pas d'annulation ; Valider l'enregistre d'un bloc
       const live = (fn) => { if (!cur()) return; fn(); S.normalizeGroups(map.edges); render(); };
       const styleSet = (k, v) => live(() => {
@@ -2245,7 +2276,7 @@
       const SIDE_OPTS = [['auto', 'Auto'], ['t', 'Haut'], ['r', 'Droite'], ['b', 'Bas'], ['l', 'Gauche']];
 
       // libellé : champ contouré, compteur, puces (le libellé est commun à toute la fourche)
-      const field = ui.fieldOutlined({ label: grp.length ? `Libellé commun · ${grp.length} branches` : 'Libellé du lien', value: e.label || '', icon: 'edit', maxlength: S.LABEL_MAX, placeholder: 'Ex. sauf si, à défaut, renvoie à…' });
+      const field = ui.fieldOutlined({ label: jn0.length ? `Libellé de la jonction · ${jn0.length} branches` : grp.length ? `Libellé commun · ${grp.length} branches` : 'Libellé du lien', value: e.label || '', icon: 'edit', maxlength: S.LABEL_MAX, placeholder: jn0.length ? 'Ex. conditions de validité, ensemble, à défaut…' : 'Ex. sauf si, à défaut, renvoie à…' });
       const count = h('span.es-count');
       const syncCount = () => { const n = field.input.value.length; count.textContent = `${n} / ${S.LABEL_MAX}`; count.classList.toggle('near', n >= S.LABEL_MAX - 10); };
       field.wrap.appendChild(h('div.es-support', h('span', 'Court et parlant : il se lit sur la carte et en révision.'), count));
@@ -2278,8 +2309,14 @@
         if (!x) return;
         const es = x.style || {};
         U.clear(look);
+        const isJoin = scope === 'join' && S.joinOf(map, x).length;
+        if (isJoin) {
+          // ET / OU : facultatif (aucun par défaut) ; le libellé libre, s'il existe, se lit à sa place
+          const opSeg = seg('Liaison', [['none', 'Sans'], ['et', 'ET'], ['ou', 'OU']], x.op || 'none', (v) => live(() => { for (const y of targets()) { if (v === 'none') delete y.op; else y.op = v; } }), 'es-op');
+          look.appendChild(sec('Liaison', opSeg, h('p.sty-help', 'Facultatif. ET : toutes les branches sont requises ; OU : une seule suffit. Un libellé saisi plus haut s’affiche à la place.')));
+        }
         // portée de l'apparence : cette branche ou toute la fourche
-        if (S.groupOf(map, x).length) {
+        if (!isJoin && S.groupOf(map, x).length) {
           const sc = seg('Portée', [['edge', 'Cette branche'], ['fork', 'Toute la fourche']], scope, (v) => { scope = v; }, 'sty-scope');
           look.appendChild(sc); ui.segIndicator(sc, 'es-scope');
         }
@@ -2287,6 +2324,7 @@
           h('button.sty-sw.sty-sw-none', { type: 'button', role: 'radio', 'aria-checked': String(!es.c), 'aria-label': 'Couleur par défaut', 'data-tip': 'Par défaut', onclick: () => { styleSet('c', null); paint(); } }, R.icon('close', 16)),
           Object.entries(S.HUES).map(([k, c]) => h('button.sty-sw', { type: 'button', role: 'radio', 'aria-checked': String(es.c === k), 'aria-label': c.label, 'data-tip': c.label, style: { background: hueCss(k) }, onclick: () => { styleSet('c', k); paint(); } })));
         look.appendChild(sec('Couleur', sw));
+        const jArrows = ARROWS.filter(([v]) => v !== 'both');
         // épaisseur : 0 = Auto (épaisseur du thème)
         const out = h('output.sty-val');
         const inp = h('input.slider', { type: 'range', min: '0.5', max: '8', step: '0.5', value: String(es.w || 0.5), 'aria-label': 'Épaisseur' });
@@ -2296,7 +2334,16 @@
         look.appendChild(sec('Trait',
           h('div.sty-slide', h('div.sty-slide-h', h('span', 'Épaisseur'), out), inp),
           seg('Trait', DASHES, es.dash || 'solid', (v) => styleSet('dash', v === 'solid' ? null : v)),
-          h('div.es-row', h('span.es-row-l', 'Flèche'), seg('Flèche', ARROWS, es.arrow || 'auto', (v) => styleSet('arrow', v === 'auto' ? null : v)))));
+          h('div.es-row', h('span.es-row-l', isJoin ? 'Flèche du tronc' : 'Flèche'), seg('Flèche', isJoin ? jArrows : ARROWS, es.arrow === 'both' && isJoin ? 'end' : es.arrow || 'auto', (v) => styleSet('arrow', v === 'auto' ? null : v)))));
+        if (isJoin) {
+          // tracé : le point de fusion se glisse sur la carte ; ici, on le remet à sa place
+          const back = ui.btn('Point de fusion automatique', { icon: 'undo', variant: 'text', onClick: () => { live(() => { for (const y of targets()) delete y.jxy; }); paint(); } });
+          back.disabled = !x.jxy;
+          look.appendChild(sec('Point de fusion',
+            h('p.sty-help', 'Glissez le point (ou la pastille) de la jonction sur la carte pour le déplacer ; il suit ensuite le résultat.'),
+            h('div.sty-foot', back)));
+          return;
+        }
         // tracé : forme, ancres, courbure
         const sideSeg = (k) => seg(k === 'a1' ? 'Départ' : 'Arrivée', SIDE_OPTS, x[k] ? x[k].s : 'auto', (v) => live(() => { const y = cur(); if (v === 'auto') delete y[k]; else y[k] = { s: v, t: 0.5 }; }), 'es-sides');
         const reshaped = x.a1 || x.a2 || x.bend || (x.via && x.via.length) || es.shape;
@@ -2314,11 +2361,14 @@
       }
       paint();
       box.append(
-        h('div.es-head',
+        jn0.length ? h('div.es-head',
+          h('div.es-ends', h('span.es-node', `${jn0.length} éléments`), h('span.es-arrow', R.icon('chevronRight', 18)), h('span.es-node', title(e.to))),
+          h('span.es-kind', R.icon('join', 16), 'Jonction'))
+        : h('div.es-head',
           h('div.es-ends', h('span.es-node', title(e.from)), h('span.es-arrow', R.icon('chevronRight', 18)), h('span.es-node', title(e.to))),
           h('span.es-kind', R.icon(e.kind === 'tree' ? 'fork' : 'link', 16), e.kind === 'tree' ? 'Hiérarchie' : 'Renvoi')),
         labelSec, look);
-      ui.dialog({ title: 'Lien', body: box, cls: 'dialog-style dialog-edge', origin, autoFocus: !U.isCompact(), sheet: true,
+      ui.dialog({ title: jn0.length ? 'Jonction' : 'Lien', body: box, cls: 'dialog-style dialog-edge', origin, autoFocus: !U.isCompact(), sheet: true,
         actions: [{ label: 'Annuler', value: false }, { label: 'Valider', value: true, variant: 'filled', primary: true }],
         onOpen: () => {
           st.edgeSheet = paint;
@@ -2332,7 +2382,7 @@
         st.redo = []; st.coalesce = null;
         S.touchMap(map, 'edit');
         render(); renderPane(true); updateHistoryBtns();
-        ui.snack('Lien mis à jour', { action: 'Annuler', onAction: undo });
+        ui.snack(jn0.length ? 'Jonction mise à jour' : 'Lien mis à jour', { action: 'Annuler', onAction: undo });
       });
     }
     function setEdgeLabel(e, l) {
@@ -2442,7 +2492,7 @@
         if (mid.collapsed) mid.collapsed = false;
         map.nodes.push(n);
         for (const a of src) {
-          const e = { id: U.uid('e'), from: a.id, to: n.id, kind: a === mid ? 'tree' : 'link', label: '', join, op: 'et' };
+          const e = { id: U.uid('e'), from: a.id, to: n.id, kind: a === mid ? 'tree' : 'link', label: '', join };
           map.edges.push(e); ed._newEdges.add(e.id); made.push(e);
         }
         st.origin.set(n.id, mid.id);
@@ -2454,7 +2504,7 @@
       ensureVisible(n.id);
       motion.haptic(10);
       startEdit(n.id, true);
-      ui.snack(`Jonction ET de ${src.length} éléments : écrivez le résultat`, { action: 'Passer en OU', onAction: () => { const x = map.edges.find((y) => y.id === made[0].id); if (x) setJoinOp(x, 'ou'); } });
+      ui.snack(`Jonction de ${src.length} éléments : écrivez le résultat`, { action: 'Nommer la jonction', onAction: () => { const x = map.edges.find((y) => y.id === made[0].id); if (x) edgeSheet(x); } });
       return n;
     }
     /** Converger vers un nœud existant : un lien depuis chaque source (créé s'il manque), réunis en jonction */
@@ -2477,12 +2527,12 @@
             e = { id: U.uid('e'), from: id, to: toId, kind: tree ? 'tree' : 'link', label: '' };
             map.edges.push(e); ed._newEdges.add(e.id);
           }
-          e.join = join; e.op = 'et'; delete e.group;
+          e.join = join; delete e.op; delete e.jxy; delete e.group;
           if (!first) first = e;
         }
       });
       selectEdge(first.id);
-      ui.snack(`Jonction ET vers « ${t.title || 'Sans titre'} »`, { action: 'Annuler', onAction: undo });
+      ui.snack(`Jonction vers « ${t.title || 'Sans titre'} »`, { action: 'Annuler', onAction: undo });
     }
     /** Réunir en jonction les liens qui arrivent déjà au même nœud */
     function joinIncoming(e) {
@@ -2490,10 +2540,10 @@
       const members = map.edges.filter((x) => x.to === e.to && !seen.has(x.from) && seen.add(x.from));
       if (members.length < 2) return;
       const join = e.join || U.uid('j');
-      const op = e.op || 'et';
-      mutate(() => { for (const x of members) { x.join = join; x.op = op; delete x.group; } });
+      const op = e.op || null;
+      mutate(() => { for (const x of members) { x.join = join; if (op) x.op = op; else delete x.op; delete x.group; } });
       selectEdge(e.id);
-      ui.snack(`Jonction ${opName(op)} de ${members.length} branches`, { action: 'Annuler', onAction: undo });
+      ui.snack(`Jonction de ${members.length} branches`, { action: 'Annuler', onAction: undo });
     }
     function setJoinOp(e, op) {
       const members = S.joinOf(map, e);
@@ -2503,25 +2553,34 @@
     }
     function unjoin(e) {
       const members = S.joinOf(map, e);
-      mutate(() => { for (const x of members) { delete x.join; delete x.op; } });
+      mutate(() => { for (const x of members) { delete x.join; delete x.op; delete x.jxy; } });
       selectEdge(e.id);
       ui.snack(`Jonction séparée en ${members.length} liens`, { action: 'Annuler', onAction: undo });
     }
     function detachJoinBranch(e) {
-      mutate(() => { delete e.join; delete e.op; });
+      mutate(() => { delete e.join; delete e.op; delete e.jxy; });
       selectEdge(e.id);
       ui.snack('Branche détachée de la jonction', { action: 'Annuler', onAction: undo });
     }
-    function joinMenuItems(e) {
+    function resetJoinPoint(e) {
+      const members = S.joinOf(map, e);
+      if (!members.some((x) => x.jxy)) return;
+      mutate(() => { for (const x of members) delete x.jxy; });
+      ui.snack('Point de fusion automatique', { action: 'Annuler', onAction: undo });
+    }
+    function joinMenuItems(e, origin) {
       const jn = S.joinOf(map, e);
       return [
+        { label: e.label ? `Libellé : « ${e.label.slice(0, 30)} »…` : 'Nommer la jonction…', icon: 'edit', onClick: () => edgeSheet(e, origin) },
         { label: 'ET — toutes les conditions', icon: e.op === 'et' ? 'check' : 'logic', onClick: () => setJoinOp(e, 'et') },
         { label: 'OU — une seule suffit', icon: e.op === 'ou' ? 'check' : 'logic', onClick: () => setJoinOp(e, 'ou') },
         { label: 'Sans ET / OU', icon: !e.op ? 'check' : 'close', onClick: () => setJoinOp(e, null) },
         { divider: true },
+        { label: 'Apparence…', icon: 'palette', onClick: () => edgeSheet(e, origin) },
+        e.jxy ? { label: 'Point de fusion automatique', icon: 'undo', onClick: () => resetJoinPoint(e) } : null,
         { label: 'Détacher cette branche', icon: 'link', onClick: () => detachJoinBranch(e) },
         { label: `Séparer la jonction (${jn.length})`, icon: 'swap', onClick: () => unjoin(e) },
-      ];
+      ].filter(Boolean);
     }
     /** Menu « Converger » d'une sélection multiple */
     function convergeMenu(b) {
@@ -2948,6 +3007,15 @@
         st.sizes.set(n.id, { w: el.offsetWidth, h: el.offsetHeight });
         st.fastEdges = true; renderEdges(); st.fastEdges = false;
         positionCtx();
+      } else if (gesture.type === 'join-drag') {
+        const members = map.edges.filter((x) => x.join === gesture.join);
+        const gm = st.jgeo && st.jgeo.get('j:' + gesture.join);
+        if (!members.length || !gm) return;
+        const p = toWorld(e.clientX, e.clientY);
+        const off = { x: Math.round(p.x + gesture.grab[0] - gm.auto[0]), y: Math.round(p.y + gesture.grab[1] - gm.auto[1]) };
+        for (const x of members) { if (off.x || off.y) x.jxy = { ...off }; else delete x.jxy; }
+        st.fastEdges = true; renderEdges(); st.fastEdges = false;
+        autoPan(e);
       } else if (gesture.type === 'edge-handle') {
         const ex = map.edges.find((x) => x.id === gesture.edgeId);
         if (!ex) return;
@@ -3021,6 +3089,20 @@
         st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
         canvas.classList.add('is-resizing');
         return;
+      }
+      if (gesture.type === 'edge' && !st.linking && !st.masked && !ro()) {
+        // jonction : la pastille, le point ou une branche se glissent → le point de fusion se déplace
+        const jx = map.edges.find((x) => x.id === gesture.edgeId);
+        const gm = jx && jx.join && st.jgeo && st.jgeo.get('j:' + jx.join);
+        if (gm) {
+          if (st.selEdge !== jx.id) { st.sel.clear(); st.primary = null; st.selEdge = jx.id; render(); renderPane(); }
+          st.undo.push(snapshot()); st.redo = []; st.coalesce = null;
+          const p = toWorld(gesture.start.x, gesture.start.y);
+          // prise relative : le point ne saute pas sous le doigt
+          Object.assign(gesture, { type: 'join-drag', join: jx.join, grab: [gm.J[0] - p.x, gm.J[1] - p.y] });
+          canvas.classList.add('is-eh');
+          return;
+        }
       }
       if (gesture.type === 'edge' && !st.linking && !st.masked && !ro()) {
         // tirer le trait lui-même : il se déforme là où on l'a saisi (un point de passage naît sous le doigt)
@@ -3125,6 +3207,15 @@
         } else positionHandles();
         return;
       }
+      if (g.type === 'join-drag') {
+        S.normalizeGroups(map.edges);
+        S.touchMap(map, 'edit');
+        updateHistoryBtns();
+        render();
+        if (st.edgeSheet) st.edgeSheet();
+        motion.haptic(8);
+        return;
+      }
       if (g.type === 'resize') {
         const el = st.els.get(g.nodeId);
         if (el) {
@@ -3187,9 +3278,9 @@
       } else if (g.type === 'edge') {
         if (st.linking || st.masked || ro()) return;
         selectEdge(g.edgeId);
-        // badge d'une jonction : ET / OU, séparer, détacher
+        // pastille (ou point) d'une jonction : libellé, ET / OU, apparence, point de fusion, détacher, séparer
         const je = g.joinAnchor && map.edges.find((x) => x.id === g.edgeId);
-        if (je && je.join) ui.menu(g.joinAnchor, joinMenuItems(je));
+        if (je && je.join) ui.menu(g.joinAnchor, joinMenuItems(je, g.joinAnchor));
       } else if (g.type === 'logic') {
         if (st.linking || st.masked || ro()) return;
         const p = S.node(map, g.from);
@@ -3210,7 +3301,7 @@
         const el = st.els.get(gesture.nodeId); if (el) el.classList.remove('resizing');
         if (gesture.moved) { st.sizes.delete(gesture.nodeId); S.touchMap(map, 'edit'); }
       }
-      if (gesture && gesture.type === 'edge-handle' && gesture.moved) S.touchMap(map, 'edit');
+      if (gesture && (gesture.type === 'edge-handle' || gesture.type === 'join-drag') && gesture.moved) S.touchMap(map, 'edit');
       st.ehDrag = null;
       tempEdge.setAttribute('d', '');
       marquee.hidden = true;

@@ -83,5 +83,42 @@ test('copie de carte : la jonction copiée reste une jonction (ids d’arêtes n
   ok(c && c.edges.length === 2 && c.edges.every((e) => e.join && e.op === 'et'), 'jonction perdue à la copie');
 });
 
+test('sans op par défaut : la jonction reste sans op, le libellé libre est partagé', () => {
+  const es = [E('1', 'a', 'r', { join: 'j' }), E('2', 'b', 'r', { join: 'j', label: 'conditions de validité' }), E('3', 'c', 'r', { join: 'j' })];
+  S.normalizeGroups(es);
+  ok(es.every((e) => !('op' in e)), 'op ajouté par défaut');
+  ok(es.every((e) => e.label === 'conditions de validité'), 'libellé non partagé : ' + es.map((e) => e.label));
+});
+
+test('consigne : libellé libre en priorité, neutre sans op ni libellé', () => {
+  const n = (id) => ({ id, type: 'notion', title: id, note: '', x: 0, y: 0 });
+  const mk = (extra) => S.sanitize({ courses: [{ id: 'c' }], maps: [{ id: 'm', courseId: 'c', nodes: ['a', 'b', 'r'].map(n),
+    edges: [{ from: 'a', to: 'r', kind: 'tree', join: 'J', ...extra }, { from: 'b', to: 'r', kind: 'link', join: 'J' }] }] }).maps[0];
+  const m1 = mk({ label: 'conditions de validité', op: 'et' });
+  ok(m1.edges.every((e) => e.label === 'conditions de validité'), 'libellé non normalisé');
+  ok(/\(conditions de validité\)/.test(S.promptFor(m1, m1.nodes[2])), 'consigne sans libellé : ' + S.promptFor(m1, m1.nodes[2]));
+  const m2 = mk({});
+  ok(m2.edges.every((e) => !('op' in e)), 'op inventé');
+  ok(/^Qu'est-ce qui mène à « r » \?/.test(S.promptFor(m2, m2.nodes[2])), 'consigne neutre : ' + S.promptFor(m2, m2.nodes[2]));
+});
+
+test('jxy : nettoyé, partagé, retiré hors jonction', () => {
+  const n = (id) => ({ id, type: 'notion', title: id, note: '', x: 0, y: 0 });
+  const d = S.sanitize({ courses: [{ id: 'c' }], maps: [{ id: 'm', courseId: 'c', nodes: ['a', 'b', 'x', 'r'].map(n),
+    edges: [{ from: 'a', to: 'r', kind: 'tree', join: 'J', jxy: { x: 12.4, y: -9e9 } }, { from: 'b', to: 'r', kind: 'link', join: 'J', jxy: { x: 'bof', y: 3 } },
+      { from: 'x', to: 'a', kind: 'link', jxy: { x: 5, y: 5 } }] }] });
+  const m = d.maps[0];
+  ok(m.edges[0].jxy && m.edges[0].jxy.x === 12 && m.edges[0].jxy.y === -4000, 'jxy mal borné : ' + JSON.stringify(m.edges[0].jxy));
+  ok(JSON.stringify(m.edges[1].jxy) === JSON.stringify(m.edges[0].jxy), 'jxy non partagé');
+  ok(m.edges[0].jxy !== m.edges[1].jxy, 'jxy partagé par référence');
+  ok(!('jxy' in m.edges[2]), 'jxy hors jonction gardé');
+  const es = [E('1', 'a', 'r', { join: 'j', jxy: { x: 0, y: 0 } }), E('2', 'b', 'r', { join: 'j' })];
+  S.normalizeJoins(es);
+  ok(es.every((e) => !('jxy' in e)), 'décalage nul gardé');
+  const es2 = [E('1', 'a', 'r', { join: 'j', jxy: { x: 4, y: 4 } }), E('2', 'b', 'z', { join: 'j', jxy: { x: 4, y: 4 } })];
+  S.normalizeJoins(es2);
+  ok(es2.every((e) => !('jxy' in e)), 'jxy gardé après dissolution');
+});
+
 console.log(`\n${passed} réussi(s), ${failed} échec(s)`);
 process.exit(failed ? 1 : 0);

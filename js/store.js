@@ -351,18 +351,25 @@
    * Invariants garantis ici :
    *  - même cible dans une jonction (la cible majoritaire ; les autres branches sont détachées) ;
    *  - une seule branche par source ;
-   *  - un seul `op` et un seul libellé (les premiers renseignés) ;
+   *  - un seul `op` (aucun par défaut), un seul libellé libre et un seul point de fusion `jxy`
+   *    (décalage depuis le point automatique) : les premiers renseignés ;
    *  - au moins deux branches (sinon la jonction disparaît).
    * Un lien d'une jonction ne fait partie d'aucune fourche (la jonction l'emporte).
    */
+  /** Point de fusion déplacé à la main : décalage (px) depuis le point automatique, qui suit le résultat */
+  function cleanJxy(q) {
+    if (!q || typeof q !== 'object' || q.x === null || q.y === null || !Number.isFinite(+q.x) || !Number.isFinite(+q.y)) return null;
+    const x = U.clamp(Math.round(+q.x), -4000, 4000), y = U.clamp(Math.round(+q.y), -4000, 4000);
+    return x || y ? { x, y } : null;
+  }
   function normalizeJoins(edges) {
     const joins = new Map();
     for (const e of edges) {
-      if (!e.join) { if ('op' in e) delete e.op; continue; }
+      if (!e.join) { if ('op' in e) delete e.op; if ('jxy' in e) delete e.jxy; continue; }
       if (!joins.has(e.join)) joins.set(e.join, []);
       joins.get(e.join).push(e);
     }
-    const strip = (e) => { delete e.join; delete e.op; };
+    const strip = (e) => { delete e.join; delete e.op; delete e.jxy; };
     for (const members of joins.values()) {
       const count = new Map();
       for (const e of members) count.set(e.to, (count.get(e.to) || 0) + 1);
@@ -374,9 +381,11 @@
       if (ok.length < 2) { for (const e of ok) strip(e); continue; }
       const op = (ok.find((e) => e.op === 'et' || e.op === 'ou') || {}).op || null;
       const label = (ok.find((e) => e.label) || ok[0]).label || '';
+      const jxy = cleanJxy((ok.find((e) => e.jxy) || {}).jxy);
       for (const e of ok) {
         if (op) e.op = op; else delete e.op;
         e.label = label;
+        if (jxy) e.jxy = { ...jxy }; else delete e.jxy;
         delete e.group;
       }
     }
@@ -466,7 +475,7 @@
           id: String(e.id || U.uid('e')), from: String(e.from), to: String(e.to), kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || '').slice(0, LABEL_MAX),
           ...(e.group ? { group: String(e.group) } : {}),
           // jonction : branches qui convergent vers le même résultat (ET / OU)
-          ...(e.join ? { join: String(e.join), ...(e.op === 'et' || e.op === 'ou' ? { op: e.op } : {}) } : {}),
+          ...(e.join ? { join: String(e.join), ...(e.op === 'et' || e.op === 'ou' ? { op: e.op } : {}), ...(cleanJxy(e.jxy) ? { jxy: cleanJxy(e.jxy) } : {}) } : {}),
           // apparence et tracé libres (couleur, trait, forme, flèche, ancres, courbure)
           ...cleanEdgeStyle(e),
         })) : [];
@@ -1173,10 +1182,11 @@
       const jn = this.joinInto(map, node.id);
       if (jn.length) {
         const what = `« ${(node.title || 'Sans titre').trim()} »`;
-        const op = jn[0].op;
-        const base = op === 'et' ? `Quelles conditions, toutes cumulatives, mènent à ${what} ?`
+        const op = jn[0].op, label = (jn[0].label || '').trim();
+        const base = label ? `Qu'est-ce qui mène à ${what} (${label}) ?`
+          : op === 'et' ? `Quelles conditions, toutes cumulatives, mènent à ${what} ?`
           : op === 'ou' ? `Une seule suffit : quelles conditions mènent à ${what} ?`
-          : `Qu'est-ce qui mène ensemble à ${what} ?`;
+          : `Qu'est-ce qui mène à ${what} ?`;
         return `${base} — ${jn.length} à retrouver${kids.length ? `, puis ${kids.length} élément${kids.length > 1 ? 's' : ''}` : ''}`;
       }
       if (!kids.length) return T.prompt;

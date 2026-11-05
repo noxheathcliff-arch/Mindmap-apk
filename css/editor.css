@@ -96,6 +96,14 @@
 .edge.k-join { stroke: var(--on-surface-variant); stroke-width: 1.8; stroke-linecap: round; }
 .edge.k-join.rel { stroke-width: 2.2; }
 .edge.k-join.sel { stroke: var(--on-surface); stroke-width: 2.6; }
+/* pastille de jonction : se touche (menu) et se glisse (point de fusion) */
+.edge-label.join-label { touch-action: none; cursor: grab; }
+/* ni libellé ni ET / OU : un simple point neutre, avec une zone de saisie plus large que lui */
+.edge-label.join-dot { width: 12px; height: 12px; min-width: 0; padding: 0; border-radius: 50%; text-shadow: none;
+  background: var(--surface); border: 2px solid var(--on-surface-variant); }
+.edge-label.join-dot::after { content: ''; position: absolute; inset: -14px; border-radius: 50%; }
+.edge-label.join-dot.sel { background: var(--primary); border-color: var(--primary); }
+.canvas.is-eh .edge-label.join-label { cursor: grabbing; }
 .canvas.is-masked .edge-label:not(.logic) { filter: blur(4px); }
 
 /* ---- Nœuds ------------------------------------------------------------- */

@@ -304,7 +304,7 @@
           }
           // résultat d'une jonction : d'abord ce qui y mène (ET : toutes ; OU : une seule suffit)
           const jn = S.joinInto(map, node.id);
-          const jpre = jn.length ? (jn[0].op === 'et' ? 'ET' : jn[0].op === 'ou' ? 'OU' : jn[0].label || null) : null;
+          const jpre = jn.length ? (jn[0].op === 'et' ? 'ET' : jn[0].op === 'ou' ? 'OU' : null) : null; // le libellé libre est dans la consigne
           const jrows = jn.map((e) => S.node(map, e.from)).filter(Boolean).map((c) => ({ c, depth: 0, pre: jpre }));
           const rows = jrows.concat(chain.length ? chain : kids.map((c) => ({ c, depth: 0 })));
           const rel = [];
