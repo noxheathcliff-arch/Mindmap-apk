@@ -1271,7 +1271,7 @@
     /* ------------------------------------------------------------------ */
     function select(id, { add = false, toggle = false, keepEdge = false } = {}) {
       if (!keepEdge) st.selEdge = null;
-      if (!id) { st.sel.clear(); st.primary = null; }
+      if (!id) { st.sel.clear(); st.primary = null; st.multi = false; }
       else if (toggle) {
         if (st.sel.has(id)) { st.sel.delete(id); if (st.primary === id) st.primary = [...st.sel][0] || null; }
         else { st.sel.add(id); st.primary = id; }
@@ -2165,6 +2165,12 @@
         { label: 'Alternatifs (OU)', checked: n.logic === 'ou', onClick: () => setLogic(n.id, 'ou') },
       ], { align: 'start' });
     }
+    /** Sélection multiple au toucher : chaque toucher ajoute ou retire un élément ; toucher le vide termine */
+    function startMulti(id) {
+      st.multi = true;
+      if (!st.sel.has(id)) select(id);
+      ui.snack('Touchez d’autres éléments pour les ajouter — puis « Converger »');
+    }
     function nodeMenu(anchor, n) {
       const kids = S.childrenOf(map, n.id).length;
       if (ro()) {
@@ -2183,6 +2189,7 @@
         { label: 'Renommer', icon: 'edit', hint: 'F2', onClick: () => startEdit(n.id) },
         { label: 'Ajouter un frère', icon: 'sibling', hint: 'Entrée', onClick: () => addSibling(n.id) },
         { label: 'Apparence…', icon: 'palette', hint: 'A', onClick: () => styleSheet([n.id]) },
+        { label: 'Sélectionner plusieurs', icon: 'check', onClick: () => startMulti(n.id) },
         { label: 'Dupliquer la branche', icon: 'copy', onClick: () => duplicateBranch(n.id) },
         { label: 'Centrer', icon: 'target', onClick: () => centerOn(n.id) },
         ...structMenuItems(n),
@@ -3259,7 +3266,7 @@
       st.lastTap = { id, t: now };
       if (st.masked) { reveal(id); return; }
       if (st.linking) { togglePick(id); return; }
-      if (g.shift) { select(id, { toggle: true }); return; }
+      if (g.shift || st.multi) { select(id, { toggle: true }); if (!st.sel.size) st.multi = false; return; }
       clearTimeout(st.noteTimer);
       if (dbl) { st.lastTap = null; select(id); if (ro()) openNote(id); else startEdit(id); return; }
       // 2e toucher sur le nœud déjà sélectionné → sa note (après la fenêtre du double-toucher)
