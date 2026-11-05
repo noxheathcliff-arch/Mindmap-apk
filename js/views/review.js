@@ -134,7 +134,7 @@
 
   /** Indice : la forme de la réponse sans la réponse (nombre d'éléments, leur nature, l'initiale) */
   function hintFor(map, node) {
-    const kids = S.childrenOf(map, node.id);
+    const kids = S.joinInto(map, node.id).map((e) => S.node(map, e.from)).filter(Boolean).concat(S.childrenOf(map, node.id));
     const nums = S.structNumbers(map);
     if (kids.length) {
       return kids.map((c) => {
@@ -302,10 +302,14 @@
             const walk = (id, depth) => { for (const k of S.childrenOf(map, id)) { chain.push({ c: k, depth }); if (k.type === 'idee') walk(k.id, depth + 1); } };
             walk(node.id, 0);
           }
-          const rows = chain.length ? chain : kids.map((c) => ({ c, depth: 0 }));
+          // résultat d'une jonction : d'abord ce qui y mène (ET : toutes ; OU : une seule suffit)
+          const jn = S.joinInto(map, node.id);
+          const jpre = jn.length ? (jn[0].op === 'et' ? 'ET' : jn[0].op === 'ou' ? 'OU' : jn[0].label || null) : null;
+          const jrows = jn.map((e) => S.node(map, e.from)).filter(Boolean).map((c) => ({ c, depth: 0, pre: jpre }));
+          const rows = jrows.concat(chain.length ? chain : kids.map((c) => ({ c, depth: 0 })));
           const rel = [];
           for (const e of map.edges) {
-            if (e.kind !== 'link') continue;
+            if (e.kind !== 'link' || (e.join && e.to === node.id)) continue;
             const out = e.from === node.id, inn = e.to === node.id;
             if (!out && !inn) continue;
             const o = S.node(map, out ? e.to : e.from);
@@ -315,9 +319,9 @@
           const noteEl = node.note.trim() ? [h('div.nb-md.nb-red', { html: R.md.render(node.note) }), 'red', 2200] : null;
           if (noteEl && chain.length) ans.push(noteEl); // définition : le texte exact d'abord, sa décomposition ensuite
           if (rows.length) {
-            ans.push([h('ol.nb-list.nb-red', rows.map(({ c, depth }) => {
+            ans.push([h('ol.nb-list.nb-red', rows.map(({ c, depth, pre: jp }) => {
               const pe = S.parentEdge(map, c.id);
-              const pre = node.logic ? (node.logic === 'et' ? 'ET' : 'OU') : pe && pe.label ? pe.label : S.TYPES[c.type].kicker ? S.kickerOf(map, c, nums) : null;
+              const pre = jp !== undefined ? jp : node.logic ? (node.logic === 'et' ? 'ET' : 'OU') : pe && pe.label ? pe.label : S.TYPES[c.type].kicker ? S.kickerOf(map, c, nums) : null;
               return h('li', { style: depth ? `margin-left:${depth * 18}px` : null }, pre ? h('span.nb-lead', pre + ' ') : null, c.title || 'Sans titre');
             })), 'red', 2200]);
           }

@@ -64,6 +64,7 @@
     panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M14.5 4.5v15"/>',
     dot: '<circle cx="12" cy="12" r="3" />',
     fork: '<path d="M3 12h6"/><path d="M9 12c3 0 4.5-6 10-6M9 12c3 0 4.5 6 10 6M9 12h10"/><circle cx="9" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+    join: '<path d="M5 6c5.5 0 7 6 10 6M5 18c5.5 0 7-6 10-6M5 12h10"/><path d="M15 12h4.5M17 9.5l2.5 2.5-2.5 2.5"/><circle cx="15" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
     pause: '<rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/>',
     swap: '<path d="M7 4L3.5 7.5 7 11M3.5 7.5H17M17 13l3.5 3.5L17 20M20.5 16.5H7"/>',
     palette: '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.9 1.4-1.9l-.4-1c-.5-1.2.4-2.4 1.6-2.4h1.9a4 4 0 0 0 4-4C20.5 6.9 16.7 3.5 12 3.5z"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="10" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7.5" r="1.1" fill="currentColor" stroke="none"/>',

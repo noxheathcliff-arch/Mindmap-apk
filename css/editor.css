@@ -92,6 +92,10 @@
 /* Fourche : un tronc, une étiquette posée sur le point de séparation, puis les branches */
 .edge.trunk { stroke-linecap: round; }
 .edge-label.junction:not(.logic):not(.sel) { color: var(--on-surface); }
+/* Jonction : les branches convergent en un point, un seul tronc fléché mène au résultat */
+.edge.k-join { stroke: var(--on-surface-variant); stroke-width: 1.8; stroke-linecap: round; }
+.edge.k-join.rel { stroke-width: 2.2; }
+.edge.k-join.sel { stroke: var(--on-surface); stroke-width: 2.6; }
 .canvas.is-masked .edge-label:not(.logic) { filter: blur(4px); }
 
 /* ---- Nœuds ------------------------------------------------------------- */

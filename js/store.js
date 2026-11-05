@@ -344,7 +344,47 @@
    *  - un seul libellé (le premier non vide) ;
    *  - au moins deux branches (sinon le groupe disparaît).
    */
+  /**
+   * Jonctions (convergences) : plusieurs liens qui arrivent au même nœud (le résultat) et
+   * partagent un `join`. `op` dit comment ils se combinent : 'et' (conditions cumulatives),
+   * 'ou' (une seule suffit) ou rien. Les branches peuvent mêler hiérarchie et renvois.
+   * Invariants garantis ici :
+   *  - même cible dans une jonction (la cible majoritaire ; les autres branches sont détachées) ;
+   *  - une seule branche par source ;
+   *  - un seul `op` et un seul libellé (les premiers renseignés) ;
+   *  - au moins deux branches (sinon la jonction disparaît).
+   * Un lien d'une jonction ne fait partie d'aucune fourche (la jonction l'emporte).
+   */
+  function normalizeJoins(edges) {
+    const joins = new Map();
+    for (const e of edges) {
+      if (!e.join) { if ('op' in e) delete e.op; continue; }
+      if (!joins.has(e.join)) joins.set(e.join, []);
+      joins.get(e.join).push(e);
+    }
+    const strip = (e) => { delete e.join; delete e.op; };
+    for (const members of joins.values()) {
+      const count = new Map();
+      for (const e of members) count.set(e.to, (count.get(e.to) || 0) + 1);
+      let to = members[0].to;
+      for (const [k, c] of count) if (c > count.get(to)) to = k;
+      const froms = new Set();
+      const ok = members.filter((e) => e.to === to && !froms.has(e.from) && froms.add(e.from));
+      for (const e of members) if (!ok.includes(e)) strip(e);
+      if (ok.length < 2) { for (const e of ok) strip(e); continue; }
+      const op = (ok.find((e) => e.op === 'et' || e.op === 'ou') || {}).op || null;
+      const label = (ok.find((e) => e.label) || ok[0]).label || '';
+      for (const e of ok) {
+        if (op) e.op = op; else delete e.op;
+        e.label = label;
+        delete e.group;
+      }
+    }
+    return edges;
+  }
+
   function normalizeGroups(edges) {
+    normalizeJoins(edges);
     const groups = new Map();
     for (const e of edges) {
       if (!e.group) continue;
@@ -425,6 +465,8 @@
       }).map((e) => ({
           id: String(e.id || U.uid('e')), from: String(e.from), to: String(e.to), kind: e.kind === 'link' ? 'link' : 'tree', label: String(e.label || '').slice(0, LABEL_MAX),
           ...(e.group ? { group: String(e.group) } : {}),
+          // jonction : branches qui convergent vers le même résultat (ET / OU)
+          ...(e.join ? { join: String(e.join), ...(e.op === 'et' || e.op === 'ou' ? { op: e.op } : {}) } : {}),
           // apparence et tracé libres (couleur, trait, forme, flèche, ancres, courbure)
           ...cleanEdgeStyle(e),
         })) : [];
@@ -589,9 +631,17 @@
       return out;
     },
     normalizeGroups,
+    normalizeJoins,
     sanitize, // exposé pour les tests (journal et refus du rangement survivent à l’export)
     /** Branches d'une fourche (liens du même groupe) — [] si le lien n'est pas groupé */
     groupOf(map, e) { return e && e.group ? map.edges.filter((x) => x.group === e.group) : []; },
+    /** Branches d'une jonction (liens qui convergent vers le même résultat) — [] si le lien n'en fait pas partie */
+    joinOf(map, e) { return e && e.join ? map.edges.filter((x) => x.join === e.join) : []; },
+    /** Branches de la jonction qui aboutit au nœud `id` (la première s'il y en a plusieurs) — [] sinon */
+    joinInto(map, id) {
+      const e = map.edges.find((x) => x.join && x.to === id);
+      return e ? this.joinOf(map, e) : [];
+    },
     data: blank(),
     fresh: false,
     saveError: null,
@@ -1041,7 +1091,7 @@
 
     /* ---------------- Révision ---------------- */
     isReviewable(map, n) {
-      return !!(n.title.trim() && (n.note.trim() || this.childrenOf(map, n.id).length)) && !this.isComponent(map, n);
+      return !!(n.title.trim() && (n.note.trim() || this.childrenOf(map, n.id).length || this.joinInto(map, n.id).length)) && !this.isComponent(map, n);
     },
     /** Composante d'une définition décomposée (idee sous la définition, directement ou en chaîne) :
         elle se révise avec la définition, jamais seule et hors contexte. */
@@ -1119,6 +1169,16 @@
     promptFor(map, node) {
       const T = TYPES[node.type];
       const kids = this.childrenOf(map, node.id);
+      // résultat d'une jonction : on retrouve ce qui y mène (cumulatif ou alternatif)
+      const jn = this.joinInto(map, node.id);
+      if (jn.length) {
+        const what = `« ${(node.title || 'Sans titre').trim()} »`;
+        const op = jn[0].op;
+        const base = op === 'et' ? `Quelles conditions, toutes cumulatives, mènent à ${what} ?`
+          : op === 'ou' ? `Une seule suffit : quelles conditions mènent à ${what} ?`
+          : `Qu'est-ce qui mène ensemble à ${what} ?`;
+        return `${base} — ${jn.length} à retrouver${kids.length ? `, puis ${kids.length} élément${kids.length > 1 ? 's' : ''}` : ''}`;
+      }
       if (!kids.length) return T.prompt;
       if (node.logic) return `${T.prompt} — ${kids.length} éléments ${node.logic === 'et' ? 'cumulatifs' : 'alternatifs'} à retrouver`;
       // définition décomposée : la consigne pose les questions de la chaîne (c'est · désigne · de qui ? · à qui ?)
